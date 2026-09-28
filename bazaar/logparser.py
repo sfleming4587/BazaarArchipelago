@@ -28,7 +28,8 @@ PURCHASE_RE = re.compile(r"Card Purchased: InstanceId: (itm_\S+) - TemplateId([0
                          r"Section(Player|Storage)")
 
 # EHero enum names that differ from the display names used by the apworld
-HERO_ALIASES = {"Pyg": "Pygmalien", "Dragons": "The Dragons", "Hero8": "The Dragons", "TheDragons": "The Dragons"}
+HERO_ALIASES = {"Pyg": "Pygmalien", "Hero8": "The Dragons", "Dragon": "The Dragons", "Dragons": "The Dragons",
+                "TheDragons": "The Dragons"}
 
 
 @dataclass(frozen=True)

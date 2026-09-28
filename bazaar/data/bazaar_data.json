@@ -466,7 +466,7 @@
    "ap_id": 1036,
    "name": "Atlatl",
    "hero": "Pygmalien",
-   "tier": "Silver",
+   "tier": "Diamond",
    "size": "Medium",
    "tags": [
     "Relic",
@@ -543,7 +543,7 @@
    "ap_id": 1042,
    "name": "Aurora Vista",
    "hero": "Karnok",
-   "tier": "Gold",
+   "tier": "Silver",
    "size": "Large",
    "tags": [
     "Property"
@@ -595,6 +595,7 @@
    "tier": "Bronze",
    "size": "Medium",
    "tags": [
+    "Instrument",
     "Tool"
    ],
    "shop": true
@@ -927,9 +928,10 @@
    "ap_id": 1074,
    "name": "Beast Call",
    "hero": "Karnok",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Small",
    "tags": [
+    "Instrument",
     "Tool"
    ],
    "shop": true
@@ -1868,7 +1870,7 @@
    "ap_id": 1151,
    "name": "Capacitor",
    "hero": "Dooley",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Small",
    "tags": [
     "Tech"
@@ -2150,7 +2152,7 @@
    "ap_id": 1174,
    "name": "Chemsnail",
    "hero": "Dooley",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Medium",
    "tags": [
     "Friend"
@@ -2162,7 +2164,7 @@
    "ap_id": 1175,
    "name": "Chicken Cannon",
    "hero": "Stelle",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Medium",
    "tags": [
     "Weapon"
@@ -2198,7 +2200,7 @@
    "ap_id": 1178,
    "name": "Chopsticks",
    "hero": "Jules",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Small",
    "tags": [
     "Tool",
@@ -2485,7 +2487,7 @@
    "ap_id": 1201,
    "name": "Compass",
    "hero": "Stelle",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Small",
    "tags": [
     "Tool"
@@ -2950,6 +2952,7 @@
    "size": "Medium",
    "tags": [
     "Friend",
+    "Tech",
     "Weapon"
    ],
    "shop": true
@@ -3395,7 +3398,7 @@
    "ap_id": 1273,
    "name": "Dragon Tooth",
    "hero": "Pygmalien",
-   "tier": "Gold",
+   "tier": "Silver",
    "size": "Small",
    "tags": [
     "Dragon",
@@ -3510,7 +3513,7 @@
    "ap_id": 1282,
    "name": "Duct Tape",
    "hero": "Dooley",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Small",
    "tags": [
     "Tool"
@@ -3522,7 +3525,7 @@
    "ap_id": 1283,
    "name": "Durian",
    "hero": "Jules",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Medium",
    "tags": [
     "Food",
@@ -3536,7 +3539,7 @@
    "name": "Eagle Sigil",
    "hero": "Karnok",
    "tier": "Silver",
-   "size": "Small",
+   "size": "Medium",
    "tags": [],
    "shop": true
   },
@@ -3715,7 +3718,7 @@
    "ap_id": 1299,
    "name": "Event Poster",
    "hero": "The Dragons",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Small",
    "tags": [
     "Dragon"
@@ -3967,7 +3970,7 @@
    "ap_id": 1320,
    "name": "Firecrackers",
    "hero": "Stelle",
-   "tier": "Silver",
+   "tier": "Bronze",
    "size": "Small",
    "tags": [
     "Weapon"
@@ -4080,7 +4083,7 @@
    "ap_id": 1329,
    "name": "Flamberge",
    "hero": "Common",
-   "tier": "Diamond",
+   "tier": "Legendary",
    "size": "Large",
    "tags": [
     "Weapon"
@@ -4324,7 +4327,7 @@
    "ap_id": 1349,
    "name": "Forklift",
    "hero": "Dooley",
-   "tier": "Gold",
+   "tier": "Silver",
    "size": "Large",
    "tags": [
     "Tool",
@@ -4338,7 +4341,7 @@
    "ap_id": 1350,
    "name": "Fort",
    "hero": "Pygmalien",
-   "tier": "Diamond",
+   "tier": "Gold",
    "size": "Large",
    "tags": [
     "Property"
@@ -4585,7 +4588,9 @@
    "hero": "Pygmalien",
    "tier": "Bronze",
    "size": "Medium",
-   "tags": [],
+   "tags": [
+    "Instrument"
+   ],
    "shop": true
   },
   {
@@ -4690,7 +4695,7 @@
    "ap_id": 1379,
    "name": "Gingerbread House",
    "hero": "Jules",
-   "tier": "Gold",
+   "tier": "Silver",
    "size": "Large",
    "tags": [
     "Food",
@@ -5054,7 +5059,7 @@
    "ap_id": 1409,
    "name": "Hang Glider",
    "hero": "Stelle",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Large",
    "tags": [
     "Vehicle",
@@ -5944,6 +5949,7 @@
    "tier": "Silver",
    "size": "Large",
    "tags": [
+    "Instrument",
     "Relic"
    ],
    "shop": true
@@ -5966,7 +5972,7 @@
    "ap_id": 1484,
    "name": "Jambalaya",
    "hero": "Jules",
-   "tier": "Silver",
+   "tier": "Bronze",
    "size": "Medium",
    "tags": [
     "Food"
@@ -6347,7 +6353,7 @@
    "ap_id": 1515,
    "name": "Laser Security System",
    "hero": "Pygmalien",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Small",
    "tags": [
     "Tech",
@@ -6469,7 +6475,7 @@
    "ap_id": 1525,
    "name": "Leeches",
    "hero": "Mak",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Medium",
    "tags": [
     "Friend",
@@ -6485,6 +6491,7 @@
    "tier": "Silver",
    "size": "Large",
    "tags": [
+    "Food",
     "Property"
    ],
    "shop": true
@@ -6531,7 +6538,7 @@
    "ap_id": 1530,
    "name": "Library",
    "hero": "Mak",
-   "tier": "Gold",
+   "tier": "Diamond",
    "size": "Large",
    "tags": [
     "Property"
@@ -7143,7 +7150,7 @@
    "ap_id": 1580,
    "name": "Micro Mach",
    "hero": "Dooley",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Small",
    "tags": [
     "Toy",
@@ -7783,7 +7790,7 @@
    "ap_id": 1632,
    "name": "Outlands Terror",
    "hero": "Karnok",
-   "tier": "Gold",
+   "tier": "Silver",
    "size": "Large",
    "tags": [
     "Friend",
@@ -7896,7 +7903,7 @@
    "ap_id": 1641,
    "name": "Parachute",
    "hero": "Stelle",
-   "tier": "Silver",
+   "tier": "Diamond",
    "size": "Medium",
    "tags": [
     "Vehicle"
@@ -8005,7 +8012,7 @@
    "ap_id": 1650,
    "name": "Pendulum",
    "hero": "Mak",
-   "tier": "Diamond",
+   "tier": "Gold",
    "size": "Medium",
    "tags": [
     "Relic",
@@ -8093,7 +8100,9 @@
    "hero": "Vanessa",
    "tier": "Gold",
    "size": "Medium",
-   "tags": [],
+   "tags": [
+    "Instrument"
+   ],
    "shop": true
   },
   {
@@ -8436,7 +8445,7 @@
    "ap_id": 1685,
    "name": "Portable Shield Generator",
    "hero": "Stelle",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Medium",
    "tags": [
     "Tech",
@@ -8510,7 +8519,7 @@
    "ap_id": 1691,
    "name": "Power Drill",
    "hero": "Dooley",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Medium",
    "tags": [
     "Tool",
@@ -9425,7 +9434,7 @@
    "ap_id": 1765,
    "name": "Runic Daggers",
    "hero": "Mak",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Medium",
    "tags": [
     "Relic",
@@ -9826,7 +9835,7 @@
    "ap_id": 1798,
    "name": "Seeker Probe",
    "hero": "Stelle",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Small",
    "tags": [
     "Drone",
@@ -9992,7 +10001,7 @@
    "ap_id": 1811,
    "name": "Shotgun",
    "hero": "Karnok",
-   "tier": "Silver",
+   "tier": "Bronze",
    "size": "Medium",
    "tags": [
     "Weapon"
@@ -10422,7 +10431,7 @@
    "ap_id": 1846,
    "name": "Solar Farm",
    "hero": "Dooley",
-   "tier": "Gold",
+   "tier": "Silver",
    "size": "Large",
    "tags": [
     "Property",
@@ -10794,7 +10803,7 @@
    "ap_id": 1876,
    "name": "Star Chart",
    "hero": "Vanessa",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Medium",
    "tags": [
     "Relic",
@@ -11159,7 +11168,7 @@
    "ap_id": 1905,
    "name": "Tanky Anky",
    "hero": "Dooley",
-   "tier": "Gold",
+   "tier": "Silver",
    "size": "Large",
    "tags": [
     "Dinosaur",
@@ -11694,7 +11703,7 @@
    "ap_id": 1948,
    "name": "Trapvine",
    "hero": "Karnok",
-   "tier": "Gold",
+   "tier": "Diamond",
    "size": "Large",
    "tags": [
     "Friend",
@@ -11810,7 +11819,7 @@
    "ap_id": 1957,
    "name": "Turtle Shell",
    "hero": "Vanessa",
-   "tier": "Gold",
+   "tier": "Silver",
    "size": "Medium",
    "tags": [
     "Aquatic"
@@ -11873,7 +11882,7 @@
    "ap_id": 1962,
    "name": "Unstable Grav Well",
    "hero": "Dooley",
-   "tier": "Gold",
+   "tier": "Silver",
    "size": "Medium",
    "tags": [
     "Tech"
@@ -11885,9 +11894,11 @@
    "ap_id": 1963,
    "name": "Upgrade Hammer",
    "hero": "Common",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Small",
-   "tags": [],
+   "tags": [
+    "Loot"
+   ],
    "shop": true
   },
   {
@@ -11895,7 +11906,7 @@
    "ap_id": 1964,
    "name": "Utility Belt",
    "hero": "Karnok",
-   "tier": "Silver",
+   "tier": "Bronze",
    "size": "Medium",
    "tags": [
     "Apparel"
@@ -12228,7 +12239,7 @@
    "ap_id": 1992,
    "name": "Warpaint",
    "hero": "Karnok",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Small",
    "tags": [
     "Apparel"
@@ -12364,7 +12375,7 @@
    "ap_id": 2003,
    "name": "Wetware",
    "hero": "Vanessa",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Medium",
    "tags": [
     "Apparel",
@@ -12717,7 +12728,1545 @@
    "hero": "Common",
    "tier": "Gold",
    "size": "Medium",
+   "tags": [
+    "Instrument"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "9f838069-1801-4fc7-8f7e-3195dbc606e2",
+   "ap_id": 2032,
+   "name": "A Note",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
    "tags": [],
+   "shop": true
+  },
+  {
+   "guid": "00ab28d4-c3d2-420e-ba71-b88bc29f4834",
+   "ap_id": 2033,
+   "name": "Aila Chibi",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Friend",
+    "Toy",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "ef504cf8-b33a-41ae-a964-7e1864de5ae1",
+   "ap_id": 2034,
+   "name": "Amp",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Medium",
+   "tags": [
+    "Tech",
+    "Tool"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "33c070fe-7af5-4157-b81c-a98c5cbbe4c3",
+   "ap_id": 2035,
+   "name": "Arcade Machine",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Medium",
+   "tags": [
+    "Property",
+    "Tech",
+    "Toy",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "84ff4edd-8669-4d55-8e9e-551b481d268a",
+   "ap_id": 2036,
+   "name": "B Note",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [],
+   "shop": true
+  },
+  {
+   "guid": "5786f330-7b87-425b-91ac-29fb0fa235ae",
+   "ap_id": 2037,
+   "name": "Backstage Pass",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [],
+   "shop": true
+  },
+  {
+   "guid": "a6f6893a-ca8e-4a60-838f-dc0ba7ef126d",
+   "ap_id": 2038,
+   "name": "Backup Dancer",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Friend"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "ff8b9d41-9da2-41af-ae63-bd353c0ea71e",
+   "ap_id": 2039,
+   "name": "Bandana",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Apparel"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "fea41e28-c739-43eb-b517-de8ac096a297",
+   "ap_id": 2040,
+   "name": "Bangles",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Apparel",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "04312f35-0ac9-4fd0-9118-6367be0d4690",
+   "ap_id": 2041,
+   "name": "Bass",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Instrument",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "6f14619e-3bf8-4b98-bf2f-1d09f0356f4e",
+   "ap_id": 2042,
+   "name": "Bedazzler",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Tool"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "7d8bcfd8-4f9a-42f0-9104-93f64139a7e7",
+   "ap_id": 2043,
+   "name": "Black Lipstick",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Apparel"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "5db24337-1a59-4d9a-aa50-a4df31be06a6",
+   "ap_id": 2044,
+   "name": "Blades",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Medium",
+   "tags": [
+    "Apparel",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "c17658e7-3144-4eb3-9fd5-41f73fb7b917",
+   "ap_id": 2045,
+   "name": "Bomber Jacket",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Medium",
+   "tags": [
+    "Apparel"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "ede5614d-3569-47f6-b590-a24e0ad69b1f",
+   "ap_id": 2046,
+   "name": "Bongos",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Instrument"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "7e4801dd-a475-4102-a4b0-323189841941",
+   "ap_id": 2047,
+   "name": "Boom Mic",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Medium",
+   "tags": [
+    "Tool",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "4cb78e15-b57c-43b4-b1bd-00eec55f89fd",
+   "ap_id": 2048,
+   "name": "Boombox",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "6f65b541-ec4e-4475-8ca1-fa8546aa2477",
+   "ap_id": 2049,
+   "name": "Box of Fireworks",
+   "hero": "Stelle",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [],
+   "shop": true
+  },
+  {
+   "guid": "6b1a6c54-74dc-45b2-bc99-2f15395c1204",
+   "ap_id": 2050,
+   "name": "Bubble Gum",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Food"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "dc1af079-1645-4a36-a687-d21b5b388c47",
+   "ap_id": 2051,
+   "name": "C Note",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [],
+   "shop": true
+  },
+  {
+   "guid": "e070f897-18e6-4846-b744-01f96e906b1e",
+   "ap_id": 2052,
+   "name": "Choker",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Apparel"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "f9136a1a-7c98-44df-8964-4c6543113897",
+   "ap_id": 2053,
+   "name": "Chronos Chibi",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Friend",
+    "Toy"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "5c32e9bb-bf6e-43e7-ae62-494bc250c553",
+   "ap_id": 2054,
+   "name": "Cirrus Feather",
+   "hero": "Stelle",
+   "tier": "Gold",
+   "size": "Small",
+   "tags": [
+    "Apparel"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "5f848d29-b05d-4681-afed-8e167f692070",
+   "ap_id": 2055,
+   "name": "Cobweb Chibi",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Friend",
+    "Toy"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "8bf6a0b7-52f0-498c-bc45-21e47c8ea76f",
+   "ap_id": 2056,
+   "name": "Concert Hall",
+   "hero": "The Dragons",
+   "tier": "Diamond",
+   "size": "Large",
+   "tags": [
+    "Property"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "fd9c50f0-79cb-440f-bd98-70848de586a0",
+   "ap_id": 2057,
+   "name": "Confetti Cannon",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Toy"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "719c5db8-85ff-41ca-8494-25741c8c5f1d",
+   "ap_id": 2058,
+   "name": "Cymbal",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Medium",
+   "tags": [
+    "Instrument",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "bcad7f87-a591-4d4d-9d65-c2fed1994280",
+   "ap_id": 2059,
+   "name": "D Note",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [],
+   "shop": true
+  },
+  {
+   "guid": "3358ca56-8efc-4ace-89de-bea24a684a4e",
+   "ap_id": 2060,
+   "name": "Death Metal Drum Kit",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Large",
+   "tags": [
+    "Instrument",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "568ca1fe-7d31-44a9-8e11-bdcc28086948",
+   "ap_id": 2061,
+   "name": "Dilly",
+   "hero": "Dooley",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Dinosaur",
+    "Friend",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "87bdd963-4b75-4d91-bd05-99fd5b3ad11d",
+   "ap_id": 2062,
+   "name": "Disco Drone",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Drone",
+    "Friend",
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "bbf61633-0f56-4bdd-821d-2da018afc40a",
+   "ap_id": 2063,
+   "name": "Drag Racer",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Large",
+   "tags": [
+    "Tech",
+    "Vehicle",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "cbf2c5d2-9f0a-4a2e-91d1-c95bf0170262",
+   "ap_id": 2064,
+   "name": "Dragon Lighter",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Dragon",
+    "Tool"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "0152f1f7-1efd-40de-8de3-fdf936d793ed",
+   "ap_id": 2065,
+   "name": "Dragon Statue",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Dragon",
+    "Property"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "e7666f40-7b3e-4850-8f84-4891b6224e9d",
+   "ap_id": 2066,
+   "name": "Dragon's Breath Mints",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Dragon",
+    "Food"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "c2973ebf-fd70-4bb9-bb66-3f43f6c10243",
+   "ap_id": 2067,
+   "name": "Dragonheart Pendant",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Apparel",
+    "Dragon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "df3583a9-c4da-46b6-a26c-4be5b5b1fc2b",
+   "ap_id": 2068,
+   "name": "E Note",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [],
+   "shop": true
+  },
+  {
+   "guid": "7eb05c4b-2389-419d-b90c-5ac9e7879774",
+   "ap_id": 2069,
+   "name": "Energy Shot",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Food"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "e09ba727-16b0-4c9a-a357-73333e9ddbf0",
+   "ap_id": 2070,
+   "name": "Equipment Van",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Large",
+   "tags": [
+    "Vehicle"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "64017706-af26-41fb-8889-0690cc079903",
+   "ap_id": 2071,
+   "name": "F Note",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [],
+   "shop": true
+  },
+  {
+   "guid": "65a761b6-923f-4508-be89-dd831fa0f7c3",
+   "ap_id": 2072,
+   "name": "Fingerless Gloves",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Small",
+   "tags": [
+    "Apparel"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "f0b1da01-1bad-4b85-b39a-b709675a2bb3",
+   "ap_id": 2073,
+   "name": "Fireworks Drone",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Drone",
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "df0c5724-7078-4a13-b211-5ecf19304f88",
+   "ap_id": 2074,
+   "name": "Flame Skirt",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Apparel"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "9ccd5d5d-8527-4106-94dd-90be201c37b2",
+   "ap_id": 2075,
+   "name": "Flute",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Instrument",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "b67f5d70-cb4f-4446-8947-121b90b8a6bd",
+   "ap_id": 2076,
+   "name": "Fridge Art",
+   "hero": "Jules",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Toy"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "16c2083c-27a5-44eb-968b-e81a18dfbefb",
+   "ap_id": 2077,
+   "name": "G Note",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [],
+   "shop": true
+  },
+  {
+   "guid": "62c10400-c215-4edb-a410-5f253b8b863a",
+   "ap_id": 2078,
+   "name": "Green Screen",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Medium",
+   "tags": [
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "d2862667-22f2-4f85-b337-9b0dda06f5af",
+   "ap_id": 2079,
+   "name": "Guzheng",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Large",
+   "tags": [
+    "Instrument",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "297d8e78-aaf8-4b95-a8ce-02029edda6c1",
+   "ap_id": 2080,
+   "name": "Hairpins",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Apparel",
+    "Dragon",
+    "Tool",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "f3390c0e-1e34-4a8c-b44d-ec50c5640f7e",
+   "ap_id": 2081,
+   "name": "Harmonica",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Instrument",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "6d77bee5-7e9c-46f4-974f-38c26e4615be",
+   "ap_id": 2082,
+   "name": "Heels",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Small",
+   "tags": [
+    "Apparel"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "e28b5687-826c-4705-9c5a-99a591f17957",
+   "ap_id": 2083,
+   "name": "Hef Chibi",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Friend",
+    "Toy"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "59f5169f-5717-4ff7-bef7-22ca274d538d",
+   "ap_id": 2084,
+   "name": "Hoodie",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Apparel",
+    "Dragon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "aca8450d-9f03-44bd-87b8-28f412b1bf56",
+   "ap_id": 2085,
+   "name": "Hot Pants",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Apparel"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "9179a3dc-7297-4138-8011-2c7c573bd170",
+   "ap_id": 2086,
+   "name": "Hover Pad",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Medium",
+   "tags": [
+    "Tech",
+    "Vehicle"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "c49dac47-a0e1-45db-bfe7-e84fe740d9ef",
+   "ap_id": 2087,
+   "name": "Ice Tongs",
+   "hero": "Jules",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Tool",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "362f4a5d-0085-4270-9666-87afa213df20",
+   "ap_id": 2088,
+   "name": "ISO-Belle",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Drone",
+    "Friend",
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "ee729aab-0107-4f42-91b2-636e252a17fd",
+   "ap_id": 2089,
+   "name": "Jabalian Totem",
+   "hero": "Pygmalien",
+   "tier": "Bronze",
+   "size": "Medium",
+   "tags": [
+    "Relic",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "c990b6ac-ddb4-4cd2-bfd1-fbadf4cea537",
+   "ap_id": 2090,
+   "name": "Jammer",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Small",
+   "tags": [
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "9a525285-63ae-4c79-8a3f-9b06cea65e73",
+   "ap_id": 2091,
+   "name": "Jin Chibi",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Dragon",
+    "Friend",
+    "Toy"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "e3f3f966-2f8d-47a9-a443-fb31df1554b4",
+   "ap_id": 2092,
+   "name": "Keytar",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Dragon",
+    "Instrument"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "fe0b67aa-9eaf-472e-bf7a-00a932919084",
+   "ap_id": 2093,
+   "name": "Kicks",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Medium",
+   "tags": [
+    "Apparel",
+    "Dragon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "6721d8b9-c87d-4b0d-bbe3-425414831ad3",
+   "ap_id": 2094,
+   "name": "Laser Bow",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Tech",
+    "Tool"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "6941b9f1-e905-438a-a943-fe0b26786f62",
+   "ap_id": 2095,
+   "name": "Light Drone",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Drone",
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "3f606167-f95b-4622-88ad-53503e6ef8c8",
+   "ap_id": 2096,
+   "name": "Light-Up Sneakers",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Apparel"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "5c5bcb43-12a9-464d-8eb6-44707ae273dd",
+   "ap_id": 2097,
+   "name": "Lightstick",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Small",
+   "tags": [
+    "Toy"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "743652ce-51f9-408f-af43-5546a216ac3a",
+   "ap_id": 2098,
+   "name": "Lionfish",
+   "hero": "Vanessa",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Aquatic",
+    "Friend"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "bd5f3c8e-7703-4db7-a505-aee2ce043798",
+   "ap_id": 2099,
+   "name": "Lumi",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Friend"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "b469d6e0-2283-4a17-bda9-cc1955791a77",
+   "ap_id": 2100,
+   "name": "Maracas",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Instrument",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "a6900350-97fd-4398-8ce9-ecc4363e673d",
+   "ap_id": 2101,
+   "name": "Megaphone",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Tool"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "a176e286-6309-4652-ab61-afcb7fbfa7de",
+   "ap_id": 2102,
+   "name": "Microphone",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Tool",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "405653a8-e6c3-463d-bda2-316c48d5b97c",
+   "ap_id": 2103,
+   "name": "Mini Disc Launcher",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Tech",
+    "Toy",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "5f96d1ec-f10b-49ba-b264-26090fdfe0b9",
+   "ap_id": 2104,
+   "name": "Mini Keyboard",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Instrument",
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "ae2a2609-a2cf-4657-8abb-a73ce3c56d30",
+   "ap_id": 2105,
+   "name": "Multimeter",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Small",
+   "tags": [
+    "Tech",
+    "Tool"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "41f1bb20-6e95-4943-b401-1f3c41ffce1f",
+   "ap_id": 2106,
+   "name": "Neon Sign",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Medium",
+   "tags": [
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "c0cdb375-1f81-4cfe-a437-70e9713ff0c2",
+   "ap_id": 2107,
+   "name": "Panpipes",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Instrument"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "d32d8efd-ca3c-49d5-b9e3-dc9a6d481ed9",
+   "ap_id": 2108,
+   "name": "Patch",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Dragon",
+    "Friend"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "df3ab573-d900-43fc-8766-21fbd43b8021",
+   "ap_id": 2109,
+   "name": "Photo Booth",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Property"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "410dbcde-16e1-4b92-9e12-cc7b9fa90600",
+   "ap_id": 2110,
+   "name": "Pipe Organ",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Large",
+   "tags": [
+    "Instrument"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "b207b156-f9f3-46bf-8843-63b628a6dadb",
+   "ap_id": 2111,
+   "name": "Power Bank",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "183734bb-5fb5-4eec-b25e-2ff4e7c979cb",
+   "ap_id": 2112,
+   "name": "Puffer Jacket",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Apparel"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "9e625714-d0a1-420d-b93b-9f8e02dfe4d7",
+   "ap_id": 2113,
+   "name": "Pyrotechnics",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "d5885c75-0251-4351-867a-e5c9c865b4eb",
+   "ap_id": 2114,
+   "name": "Quixel Chibi",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Friend",
+    "Toy"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "68e7c206-6e85-42b6-a2d0-0f02a5822dcb",
+   "ap_id": 2115,
+   "name": "Razor Bow",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Small",
+   "tags": [
+    "Tool",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "62a5bafc-a5c4-4fa0-a8b2-df751c29aa2c",
+   "ap_id": 2116,
+   "name": "Rhythm Sticks",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Instrument",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "06a83b9a-9035-4b96-b3ab-c9aaa86634e8",
+   "ap_id": 2117,
+   "name": "Rin Chibi",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Dragon",
+    "Friend",
+    "Toy"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "7fa38578-d71d-440e-8220-49a12e78fa9b",
+   "ap_id": 2118,
+   "name": "Rings",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Small",
+   "tags": [
+    "Apparel",
+    "Dragon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "991efa4e-b4d6-4a20-9de5-81ce00c3e2ae",
+   "ap_id": 2119,
+   "name": "River Otter",
+   "hero": "Karnok",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Aquatic",
+    "Friend"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "9d33944f-745c-41aa-b282-66b9bd7250b7",
+   "ap_id": 2120,
+   "name": "Saxophone",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Instrument"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "a4b80890-d2a4-4dab-bf40-b895cedb61e0",
+   "ap_id": 2121,
+   "name": "Scaled Jacket",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Medium",
+   "tags": [
+    "Apparel",
+    "Dragon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "97ee275a-1fcf-4400-a197-4859af251704",
+   "ap_id": 2122,
+   "name": "Scorch",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Dragon",
+    "Friend"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "559caaf2-db9f-40c5-b9ea-5aa6bffc7eea",
+   "ap_id": 2123,
+   "name": "Shelby Chibi",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Friend",
+    "Toy"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "d4cd0e12-e6ea-42e2-bcfa-599f2bfd1044",
+   "ap_id": 2124,
+   "name": "Shredder",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Medium",
+   "tags": [
+    "Instrument",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "0b58c58a-0701-44a2-a9b6-faf45b82ea96",
+   "ap_id": 2125,
+   "name": "Signal Booster",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Medium",
+   "tags": [
+    "Property",
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "b18ca39c-8aa4-40c1-a687-524380b64370",
+   "ap_id": 2126,
+   "name": "Sitting Duck",
+   "hero": "Vanessa",
+   "tier": "Legendary",
+   "size": "Small",
+   "tags": [
+    "Aquatic",
+    "Friend"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "59f6ef93-f590-4e4c-8031-a13a0bd50c13",
+   "ap_id": 2127,
+   "name": "Smoke Machine",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Dragon",
+    "Tool"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "c5b3ece6-f5c6-4d18-962b-1a51d18a4360",
+   "ap_id": 2128,
+   "name": "Smokey",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Dragon",
+    "Friend"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "3df1d01b-db01-4970-b045-2401382a5925",
+   "ap_id": 2129,
+   "name": "Sound Engineer",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Friend"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "fd351616-5f4f-448c-bb3a-a4cb2fc26eac",
+   "ap_id": 2130,
+   "name": "Sparkler",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Toy"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "70f3fd94-d441-4ac3-824a-42d9738dbe47",
+   "ap_id": 2131,
+   "name": "Spiked Censer",
+   "hero": "Mak",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Relic",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "9324d058-b2e0-4552-9b5b-295b6e48161c",
+   "ap_id": 2132,
+   "name": "Spray Can",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Small",
+   "tags": [
+    "Tool"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "f113f6c0-7c39-412f-b797-81e565de25cb",
+   "ap_id": 2133,
+   "name": "Star Projector",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Tech",
+    "Toy"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "a8eb0939-0b32-4888-9a93-fa062aff99d4",
+   "ap_id": 2134,
+   "name": "Stompers",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Apparel",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "43f30c00-1741-4141-8fdc-eb7d597428e0",
+   "ap_id": 2135,
+   "name": "Straight Edge",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Tool",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "e9e60111-06cf-4526-8530-6eb275a40b13",
+   "ap_id": 2136,
+   "name": "Strobe Grenade",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Small",
+   "tags": [],
+   "shop": true
+  },
+  {
+   "guid": "109af4f3-b1c5-41c3-bf28-a4551ea3108a",
+   "ap_id": 2137,
+   "name": "Superfan",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Friend",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "2bf24a3d-6b2c-424f-9221-442fcc71bf81",
+   "ap_id": 2138,
+   "name": "Sweeper Drone",
+   "hero": "Stelle",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Drone",
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "3b90bed2-c0f6-4164-8343-5b83d2351b0b",
+   "ap_id": 2139,
+   "name": "Synth",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "66232c03-441d-4de1-9191-1a48a7edc579",
+   "ap_id": 2140,
+   "name": "Talon Earrings",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Apparel",
+    "Dragon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "d6c55b70-fcc7-454c-af9c-06b99d2d01e3",
+   "ap_id": 2141,
+   "name": "Tambourine",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Instrument",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "57347bb6-29f5-40d6-89a1-c1b4ed1a23d0",
+   "ap_id": 2142,
+   "name": "Ticket Terra",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Medium",
+   "tags": [
+    "Friend",
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "d1edc0f5-8c49-4c4a-b65b-6924a26888d9",
+   "ap_id": 2143,
+   "name": "Tour Bus",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Large",
+   "tags": [
+    "Vehicle"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "b4e92058-ea77-43a6-af6b-858fd73e5750",
+   "ap_id": 2144,
+   "name": "Tour Schedule",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [],
+   "shop": true
+  },
+  {
+   "guid": "4d1bdb16-40f8-4932-a56c-c2e89895e433",
+   "ap_id": 2145,
+   "name": "Toxic Sigil",
+   "hero": "Karnok",
+   "tier": "Gold",
+   "size": "Medium",
+   "tags": [],
+   "shop": true
+  },
+  {
+   "guid": "794c2d7e-f6b0-45d5-ae2c-7e31899d962e",
+   "ap_id": 2146,
+   "name": "Trumpet",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Instrument"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "93001232-e995-43a9-82e0-bd6615ea746e",
+   "ap_id": 2147,
+   "name": "Tuba",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Instrument"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "5d9c6a35-84d0-4992-a07d-3a83e39f5474",
+   "ap_id": 2148,
+   "name": "Turner",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Drone",
+    "Friend",
+    "Instrument",
+    "Tech"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "b83790e4-e5a4-4c03-9bf5-55e286caf402",
+   "ap_id": 2149,
+   "name": "Visor",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Small",
+   "tags": [
+    "Apparel"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "98aa3e24-d793-408b-b20b-8ce98cd4708b",
+   "ap_id": 2150,
+   "name": "Vocoder",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Tech",
+    "Tool"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "45b2aadd-105e-43a9-82f3-4afe2137676d",
+   "ap_id": 2151,
+   "name": "Whistling Glaive",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Large",
+   "tags": [
+    "Dragon",
+    "Instrument",
+    "Weapon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "40079237-f48b-4e58-8e4d-f2f198a5d624",
+   "ap_id": 2152,
+   "name": "Wig Closet",
+   "hero": "The Dragons",
+   "tier": "Gold",
+   "size": "Medium",
+   "tags": [
+    "Apparel"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "3d05c2c8-05e5-4569-a9fd-7f351035b201",
+   "ap_id": 2153,
+   "name": "Wings",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Apparel",
+    "Dragon"
+   ],
+   "shop": true
+  },
+  {
+   "guid": "ea03ebf9-d6c3-4f03-875e-ae1a75931d60",
+   "ap_id": 2154,
+   "name": "Wireless Headset",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Apparel",
+    "Tech"
+   ],
    "shop": true
   }
  ],
