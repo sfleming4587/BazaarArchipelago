@@ -1,0 +1,11 @@
+# local dev environment
+Archipelago/
+.venv/
+__pycache__/
+*.pyc
+# build outputs and third-party files
+*.apworld
+!/releases/*.apworld
+
+# quick_run.ps1 scratch files
+.quickrun/
