@@ -11,28 +11,102 @@ so this integration only reads the log file the game writes on your PC. Locks ar
 
 ## What are the checks?
 
-- **Reach Day N** with each hero, from day 1 up to the `max_day` option (default 15).
-- **10 Wins** with each hero.
+Per hero, for each day from 1 up to `max_day` (default 15):
 
-Getting 10 wins with a hero also sends every one of that hero's day checks, since winning fast ends a run early.
+- **Reach Day N**.
+- **Day N PvP Win** (`pvp_win_checks`): win the PvP fight at the end of the day.
+- **Day N Monster (Rarity)** (`monster_checks`): one check per rarity that day's hour-3 monsters can have -
+  day 1 up to Silver, day 2 up to Gold, days 3-5 up to Diamond, day 6+ up to Legendary.
+  Beating a monster sends its rarity and every rarity below it for that day. Monsters from events don't count.
+  `max_monster_tier` caps the highest rarity with a check.
+
+Plus **10 Wins** with each hero. Getting 10 wins sends all of that hero's "Reach Day" checks, plus the PvP and
+monster checks for the days that run never reached (winning fast ends a run early).
+
+The game's log doesn't say who won a PvP fight unless it ended the run, so after each PvP fight the client
+asks "Did you win?" with Won / Lost buttons (or type `/pvpwin <day>`).
+
+## Logic
+
+Logic only decides where items can be placed (in a tracker, out-of-logic checks show as "yellow", not
+impossible); you can always try anything. It keeps important items off hard checks like a 10-win run.
+
+- You can't get any check for a hero you haven't received. `early_hero_unlock` (off by default) puts a second
+  hero's unlock among the checks you can do right away.
+- Each hero (and the Common pool) keeps `starter_cards` Bronze cards (default 20) that are never locked.
+- Days 1-7 only need the hero: every run reaches day 7, even with zero wins.
+- Days 8-9 expect half of `logic_day_10_cards` (default 15) of that hero's own locked cards; day 10+ and the
+  10-win check expect all of them. A day's PvP win is treated like the next day (winning is harder than
+  just reaching it). Locked Common cards never count toward logic.
+- Bronze, Silver and Gold monsters follow their day. Diamond and Legendary monsters also expect
+  `logic_diamond_cards` / `logic_legendary_cards` (defaults 10 / 20) of the hero's locked cards.
+
+## How many cards are locked?
+
+Every check that isn't a hero, pack or group unlock holds a different locked card (`locked_cards_percent`,
+default 100). Lower it and the spare checks hold duplicates instead: extra hero unlocks first (up to 3 of each),
+then extra Legendary Items / Expedition Tickets (up to 3 of each), then extra copies of locked cards.
 
 ## What is the goal?
 
-Get 10 wins with a number of different heroes (the `heroes_required` option).
+Get 10 wins with a number of different heroes (`heroes_required`, default 3, up to the number of heroes
+you have enabled).
 
 ## What items can I receive?
 
 - **Hero: X** - you may now play hero X.
-- **Individual cards** - you may now buy that card.
+- **Individual cards** - you may now buy that card. With `duplicate_cards` / `duplicate_all_cards` a card can
+  have two copies in the multiworld; either one unlocks it.
+- **Legendary Items** (`legendary_items`, default 2 copies) - unlocks every Legendary item. The first copy found
+  unlocks them; the other copy is a spare.
+- **Expedition Tickets** (`expedition_tickets`, default 2 copies) - unlocks the expedition ticket cards.
 - **Pack: X** (optional, `legacy_card_packs`) - one of the ten original hero expansions, such as Mysteries of the
   Deep or Dooltron. Unlocks all of its cards at once.
 - Filler items with no effect.
 
+## Checks are blocked while you break a rule
+
+The client refuses to send **any** check (days, PvP, monsters, 10 wins) while:
+
+- you're playing a hero you haven't received - for the whole run;
+- you're holding a locked card - until the game's log shows you sold it (or you receive it as an item);
+- you've received a DeathLink - for the rest of that run, including the fight you're in.
+
+A banner at the top of the screen says "CHECKS ARE BLOCKED ..." and why. Checks you miss this way can still be
+earned in a later run.
+
+## Sell Traps (optional, off by default)
+
+With `sell_traps` above 0, the multiworld contains Sell Traps. When you receive one, the client picks a random item
+you're holding and gives you `sell_trap_days` days (default 2) to sell it. If you still have it when that day
+starts, checks are blocked until you sell it. A trap never blocks the fight you're in. If it arrives while
+you're between runs or holding nothing it can pick, it's **dodged** and does nothing.
+
+**Items the game makes for you are always allowed.** Items created by other items (for example what you get from
+selling B Note, a Shovel dig, or a transformation) never block checks, even if the card is locked - you didn't
+choose them, and the game's log only shows them as a count. Sell Traps can't pick them either. Rewards the log does
+name (such as Make a Wish) still count as held and must be sold.
+
+## DeathLink
+
+- A DeathLink is sent when you lose a run: your last PvP fight takes the last of your prestige. Losing a single
+  fight never sends one.
+- `death_link_on_concede`: conceding also sends a DeathLink (on by default). Conceding because you received a
+  DeathLink never sends one.
+
+## Game updates
+
+The apworld keeps working when The Bazaar is patched. The client warns once (in its window and above the game)
+when it sees a newer game version, or a card, hero or monster the apworld doesn't know yet: new cards are never
+locked, new heroes aren't part of the seed, and a new monster counts as Bronze. A newer apworld picks them up.
+
 ## Rules you enforce yourself
 
 - Only play heroes you've received.
-- Don't buy locked cards. If an event or reward hands you one, sell it or keep it off your board.
-  Use `/locked` in the client to see what's locked.
+- Don't keep locked cards. Events, loot and level-ups can hand you one; that's fine, just sell it before
+  your next fight. When you open a shop, the client lists which locked cards that merchant could sell, and it pops up a
+  warning whenever you end up with one anyway. The warning clears
+  itself once you sell it. Use `/locked` to see what's locked.
 - DeathLink: when someone else dies, abandon your current run.
 
 ## Is this allowed by Tempo?

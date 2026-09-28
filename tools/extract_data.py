@@ -10,6 +10,7 @@ multiworlds generated with an older version of the apworld.
 """
 import json
 import os
+import re
 import sqlite3
 import sys
 from pathlib import Path
@@ -65,12 +66,50 @@ def main() -> None:
     next_card_id = max(old_card_ids.values(), default=CARD_ID_START - 1) + 1
     next_pack_id = max(old_pack_ids.values(), default=PACK_ID_START - 1) + 1
 
-    db = sqlite3.connect(GAME_DB)
+    # read-only + immutable: never lock, journal or modify the game's own database (safe even with the game open)
+    db = sqlite3.connect(f"{GAME_DB.as_uri()}?mode=ro&immutable=1", uri=True)
     raw = {}
+    # Encounters tagged Merchant: items taken inside them were bought, not rewarded. Their SpawnContext
+    # describes what they can stock, which the client uses to warn about locked cards before you shop.
+    merchants = []
+    # Events and steps (level-up choices, "Enchanted item", ...) that hand you a choice of items.
+    offers = []
+    monsters = []  # hour-3 monster fights: tier = rarity shown in game (level is NOT the day it shows up)
     for (data,) in db.execute("SELECT Data FROM cards"):
         card = json.loads(data if isinstance(data, str) else data.decode("utf-8"))
         if card.get("Type") == "Item":
             raw[card["Id"]] = card
+        elif card.get("Type") == "CombatEncounter" \
+                and (card.get("CombatantType") or {}).get("$type") == "TCombatantMonster":
+            monsters.append({"guid": card["Id"].lower(), "name": card_name(card), "tier": card.get("StartingTier"),
+                             "level": (card.get("CombatantType") or {}).get("Level"),
+                             "spawns": card.get("SpawningEligibility") == "Always"})
+        elif card.get("Type") == "EventEncounter" and "Merchant" in (card.get("Tags") or []):
+            merchants.append({"guid": card["Id"].lower(), "name": card_name(card),
+                              "stock": (card.get("SelectionContext") or {}).get("SpawnContext")})
+        elif card.get("Type") in ("EventEncounter", "EncounterStep", "PedestalEncounter"):
+            # Only real choices ("pick one"): skip "take everything" deals like Make a Wish (you can't choose, so
+            # a warning can't help - the held-card alert covers it) and direct grants (TActionGameSpawnCards).
+            def is_choice(rules, spawn) -> bool:
+                dealt = ((spawn or {}).get("Limit") or {}).get("Value")
+                return not (rules or {}).get("CanSelectMultiple") and (dealt is None or dealt > 1)
+            groups = []
+            selection = card.get("SelectionContext") or {}
+            if selection.get("SpawnContext") and is_choice(selection.get("Rules"), selection["SpawnContext"]):
+                groups += selection["SpawnContext"].get("Groups") or []
+            for ability in (card.get("Abilities") or {}).values():
+                action = (ability or {}).get("Action") or {}
+                if action.get("$type") == "TActionGameDealCards" and action.get("SpawnContext") \
+                        and is_choice(action.get("SelectionContextRules"), action["SpawnContext"]):
+                    groups += action["SpawnContext"].get("Groups") or []
+            if groups:
+                offers.append({"guid": card["Id"].lower(), "name": card_name(card), "stock": {"Groups": groups}})
+
+    def can_deal_items(stock: dict) -> bool:
+        text = json.dumps(stock)
+        return '"Item"' in text or any(guid in raw for guid in re.findall(r"[0-9a-f-]{36}", text))
+
+    offers = [o for o in offers if can_deal_items(o["stock"])]
 
     legacy_packs = []
     if LEGACY_PACKS.exists():
@@ -85,6 +124,9 @@ def main() -> None:
     wanted = {guid for guid, c in raw.items() if c.get("SpawningEligibility") == "Always"} | (pack_guids & raw.keys())
     # never drop a card that already has an id, even if Tempo made it unobtainable
     wanted |= old_card_ids.keys() & raw.keys()
+    # Expedition tickets only come from events (never shops), but they're locked as their own group.
+    tickets = {guid for guid, c in raw.items() if "Expedition Ticket" in (c.get("InternalName") or "")}
+    wanted |= tickets
 
     unknown_heroes = set()
     cards = []
@@ -104,7 +146,11 @@ def main() -> None:
             "tier": card.get("StartingTier"),
             "size": card.get("Size"),
             "tags": sorted(card.get("Tags") or []),
+            "hidden_tags": sorted(card.get("HiddenTags") or []),
+            "enchants": sorted(card.get("Enchantments") or {}),
+            "tiers": sorted(card.get("Tiers") or {}),
             "shop": card.get("SpawningEligibility") == "Always",
+            "ticket": guid in tickets,
         })
     # keep cards that vanished from the game so ids and names stay reserved
     known = {c["guid"] for c in cards}
@@ -133,14 +179,21 @@ def main() -> None:
                       "cards": [g for g in guids if g in known or g in old_card_ids]})
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    out = {"heroes": HEROES, "cards": sorted(cards, key=lambda c: c["ap_id"]), "packs": packs}
+    versions = re.findall(r"\[VersionShow\]\s+Version: (\d+\.\d+\.\d+)", (CACHE / "Player.log").read_text(
+        encoding="utf-8", errors="replace")) if (CACHE / "Player.log").exists() else []
+    out = {"game_version": versions[-1] if versions else old.get("game_version", "unknown"),
+           "heroes": HEROES, "cards": sorted(cards, key=lambda c: c["ap_id"]), "packs": packs,
+           "merchants": sorted(merchants, key=lambda m: m["name"]),
+           "offers": sorted(offers, key=lambda m: m["name"]),
+           "monsters": sorted(monsters, key=lambda m: (m["level"] or 0, m["name"]))}
     OUT.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
 
     per_hero = {}
     for c in cards:
         if c["shop"]:
             per_hero[c["hero"]] = per_hero.get(c["hero"], 0) + 1
-    print(f"wrote {OUT}: {len(cards)} cards, {len(packs)} packs")
+    print(f"wrote {OUT}: {len(cards)} cards, {len(packs)} packs, {len(out['merchants'])} merchants, "
+          f"{len(out['offers'])} item choices, {len(out['monsters'])} monsters")
     print("shop items per hero:", dict(sorted(per_hero.items())))
     if unknown_heroes:
         print(f"WARNING: unknown hero names {sorted(unknown_heroes)} - add them to HEROES/HERO_ALIASES")

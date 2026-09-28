@@ -2,7 +2,9 @@ import os
 import tempfile
 import unittest
 
-from ..logparser import CardBought, DayReached, LogParser, LogTailer, RunEnded, RunStarted
+from ..logparser import (CardGained, CardSold, DayReached, EncounterEntered, EncounterLeft, FightStarted, LogParser,
+                         MonsterFought, PvPFought, GameVersion, UnrecognizedRun,
+                         LogTailer, RunEnded, RunStarted)
 
 GUID = "d4c0cf1e-7856-4e40-877f-c77b34f596ed"
 
@@ -28,9 +30,24 @@ RUN_START = [
 class TestLogParser(unittest.TestCase):
     def test_full_losing_run(self) -> None:
         lines = RUN_START + pvp_day() + pvp_day() + pvp_day("EndRunDefeatState")
-        events = LogParser().feed_all(lines)
-        self.assertEqual(events, [RunStarted("Dooley"), DayReached(1), DayReached(2), DayReached(3),
+        events = [e for e in LogParser().feed_all(lines) if not isinstance(e, FightStarted)]
+        self.assertEqual(events, [RunStarted("Dooley"), DayReached(1), PvPFought(1, None), DayReached(2),
+                                  PvPFought(2, None), DayReached(3), PvPFought(3, False),
                                   RunEnded(victory=False, day=3)])
+
+    def test_monster_fights(self) -> None:
+        monster = "33333333-3333-3333-3333-333333333333"
+
+        def fight(result: str, picked: bool = True) -> list:
+            pick = [f"[x] [BoardManager] Card Purchased: InstanceId: com_abc - TemplateId{monster} - "
+                    "Target:OpponentSocket_5 - SectionOpponent"] if picked else []
+            return [state("ChoiceState", "CombatState"), *pick, state("CombatState", "ReplayState"),
+                    state("ReplayState", result)]
+
+        lines = RUN_START + fight("LootState") + fight("ChoiceState") + fight("LootState", picked=False)
+        events = [e for e in LogParser().feed_all(lines) if isinstance(e, MonsterFought)]
+        # the third fight came from an event (no hour-3 monster pick), so it doesn't count
+        self.assertEqual(events, [MonsterFought(monster, 1, True), MonsterFought(monster, 1, False)])
 
     def test_victory(self) -> None:
         lines = RUN_START + pvp_day("EndRunVictoryState")
@@ -39,18 +56,66 @@ class TestLogParser(unittest.TestCase):
     def test_pve_fight_does_not_advance_day(self) -> None:
         lines = RUN_START + [state("ChoiceState", "CombatState"), state("CombatState", "ReplayState"),
                              state("ReplayState", "LootState")]
-        self.assertEqual(LogParser().feed_all(lines), [RunStarted("Dooley"), DayReached(1)])
+        self.assertEqual(LogParser().feed_all(lines), [RunStarted("Dooley"), DayReached(1), FightStarted(pvp=False)])
 
-    def test_purchases(self) -> None:
-        buy = (f"[12:00:00.000] [BoardManager] Card Purchased: InstanceId: itm_Q0TQQjd - TemplateId{GUID} - "
-               "Target:PlayerSocket_3 - SectionPlayer")
-        encounter = ("[12:00:00.000] [BoardManager] Card Purchased: InstanceId: enc_CRcYdZa - "
-                     f"TemplateId{GUID} - Target:OpponentSocket_5 - SectionOpponent")
-        events = LogParser().feed_all(RUN_START + [buy, encounter])
-        self.assertEqual([e for e in events if isinstance(e, CardBought)], [CardBought(GUID)])
+    def test_gains_bought_vs_reward(self) -> None:
+        merchant, event = "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"
 
-    def test_nothing_outside_a_run(self) -> None:
-        self.assertEqual(LogParser().feed_all(pvp_day("EndRunDefeatState")), [])
+        def pick(guid: str) -> str:
+            return (f"[x] [BoardManager] Card Purchased: InstanceId: enc_abc - TemplateId{guid} - "
+                    "Target:OpponentSocket_5 - SectionOpponent")
+
+        def gain(instance: str) -> str:
+            return (f"[x] [BoardManager] Card Purchased: InstanceId: {instance} - TemplateId{GUID} - "
+                    "Target:PlayerSocket_3 - SectionPlayer")
+
+        lines = RUN_START + [
+            pick(merchant), state("ChoiceState", "EncounterState"), gain("itm_a"), state("EncounterState", "ChoiceState"),
+            pick(event), state("ChoiceState", "EncounterState"), gain("itm_b"),
+            state("ChoiceState", "LootState"), gain("itm_c"),
+            "[x] [NetworkManager] [HttpGameClient] Command completed: type=SellCardCommand, requestId=9",
+            "[x] [BoardManager] Sold Card itm_c for 1 gold.",
+        ]
+        events = [e for e in LogParser([merchant]).feed_all(lines) if isinstance(e, (CardGained, CardSold))]
+        self.assertEqual(events, [CardGained(GUID, "itm_a", True), CardGained(GUID, "itm_b", False),
+                                  CardGained(GUID, "itm_c", False), CardSold("itm_c")])
+
+    def test_encounter_enter_and_leave(self) -> None:
+        shop = "11111111-1111-1111-1111-111111111111"
+        lines = RUN_START + [state("ChoiceState", "EncounterState"),
+                             f"[x] [BoardManager] Card Purchased: InstanceId: enc_abc - TemplateId{shop} - "
+                             "Target:OpponentSocket_5 - SectionOpponent",
+                             state("EncounterState", "ChoiceState")]
+        events = [e for e in LogParser().feed_all(lines) if isinstance(e, (EncounterEntered, EncounterLeft))]
+        self.assertEqual(events, [EncounterEntered(shop), EncounterLeft()])
+
+    def test_level_up_step_enter_and_leave(self) -> None:
+        step = "44444444-4444-4444-4444-444444444444"
+        lines = RUN_START + [state("EncounterState", "LevelUpState"),
+                             f"[x] [BoardManager] Card Purchased: InstanceId: ste_abc - TemplateId{step} - "
+                             "Target:OpponentSocket_5 - SectionOpponent",
+                             state("LevelUpState", "ChoiceState")]
+        events = [e for e in LogParser().feed_all(lines) if isinstance(e, (EncounterEntered, EncounterLeft))]
+        # leaving the event that triggered the level-up closes its warning first
+        self.assertEqual(events, [EncounterLeft(), EncounterEntered(step), EncounterLeft()])
+
+    def test_fight_without_a_recognised_run_start_is_reported_once(self) -> None:
+        # e.g. a patch renamed the run-start line: nothing counts, but the client can say why
+        events = LogParser().feed_all(pvp_day("EndRunDefeatState") + pvp_day())
+        self.assertEqual(events, [UnrecognizedRun()])
+
+    def test_concede_and_version(self) -> None:
+        lines = ["[x] [VersionShow]  Version: 1.0.12293-prod-windows-x64-a0455053 ", *RUN_START,
+                 "[x] [NetworkManager] [HttpGameClient] Command completed: type=AbandonRunCommand, requestId=25",
+                 state("ChoiceState", "EndRunDefeatState")]
+        events = LogParser().feed_all(lines)
+        self.assertEqual(events[0], GameVersion("1.0.12293"))
+        self.assertEqual(events[-1], RunEnded(victory=False, day=1, conceded=True))
+
+    def test_dragons(self) -> None:
+        lines = ["[x] [RunConfigurationCache] RunConfigurationCache: Changing EHero to Hero8",
+                 "[x] [StartRunAppState] Run initialization finalized."]
+        self.assertEqual(LogParser().feed_all(lines)[0], RunStarted("The Dragons"))
 
     def test_hero_alias(self) -> None:
         lines = ["[x] [RunConfigurationCache] RunConfigurationCache: Changing EHero to Pyg",
