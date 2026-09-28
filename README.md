@@ -29,8 +29,8 @@ types for you.
    **Archipelago Launcher** to the Start menu. Nothing else (like Python) is needed.
 
 ### 3. Add The Bazaar to Archipelago
-1. Download [`releases/bazaar.apworld`](releases/bazaar.apworld) from this repository (open it, then **Download
-   raw file**).
+1. Download `bazaar.apworld` from the [latest release](https://github.com/sfleming4587/BazaarArchipelago/releases/latest)
+   ([direct download](https://github.com/sfleming4587/BazaarArchipelago/releases/latest/download/bazaar.apworld)).
 2. Double-click the downloaded `bazaar.apworld`, **or** open the Archipelago Launcher and click
    **Install APWorld** and pick the file.
 3. Close and reopen the Launcher. You should now see **The Bazaar Client** in its list.
@@ -106,7 +106,7 @@ why:
 - **Closed the game mid-run?** Just continue the run; the client picks it back up.
 
 ## Updating
-Download the newest [`releases/bazaar.apworld`](releases/bazaar.apworld) and install it the same way (step 3).
+Download `bazaar.apworld` from the [latest release](https://github.com/sfleming4587/BazaarArchipelago/releases/latest) and install it the same way (step 3).
 Games that are already running keep working with the version they were generated with.
 
 ## Credits

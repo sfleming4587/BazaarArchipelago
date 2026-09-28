@@ -50,7 +50,9 @@ powershell -ExecutionPolicy Bypass -File tools\quick_run.ps1 -StartingHero vanes
 
 ## Rules that keep saves and seeds working
 
-- Bump `world_version` in `bazaar/archipelago.json` for every release, and commit `releases/bazaar.apworld`.
+- Bump `world_version` in `bazaar/archipelago.json` for every release, build, commit `releases/bazaar.apworld`,
+  push, then publish a GitHub release with the file attached (players download from the latest release):
+  `gh release create v<version> bazaar.apworld --target main --title "The Bazaar for Archipelago v<version>" --notes "..."`
 - Never renumber item or location ids. The extractor keeps existing `ap_id`s and appends new cards; heroes are
   append-only (their index sets their location ids).
 - Retired options become `Removed` options (so old YAMLs get a clear message), never silently deleted.
