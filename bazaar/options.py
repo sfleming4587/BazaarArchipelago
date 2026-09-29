@@ -5,7 +5,6 @@ from Options import (Choice, DeathLink, DefaultOnToggle, ItemSet, OptionGroup, O
                      Range, Removed, StartInventoryPool, Toggle, Visibility)
 
 from .data import CARDS, DLC_HEROES, HEROES, TIERS, hero_key
-from .locations import MAX_DAY
 
 
 class OwnedDLCHeroes(OptionSet):
@@ -90,11 +89,12 @@ class MaxDay(Range):
     Day-based checks (reach day, PvP win, monsters) exist for every day from 1 up to this number.
     Getting 10 wins with a hero sends all of that hero's "Reach Day" checks, plus the PvP and monster
     checks for the days that run never got to.
+    Days after 16 only happen through specific events, so 16 is the highest.
     """
     display_name = "Max Day Check"
     range_start = 5
-    range_end = MAX_DAY
-    default = 16
+    range_end = 16  # later days need specific events; ids stay reserved up to MAX_DAY for old seeds
+    default = 13
 
 
 class PvPWinChecks(DefaultOnToggle):
