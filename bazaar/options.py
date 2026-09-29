@@ -1,19 +1,50 @@
 from dataclasses import dataclass
 
 from Options import (Choice, DeathLink, DefaultOnToggle, ItemSet, OptionGroup, OptionSet, PerGameCommonOptions,
-                     Range, Removed, StartInventoryPool, Toggle)
+                     Range, Removed, StartInventoryPool, Toggle, Visibility)
 
 from .data import CARDS, DLC_HEROES, HEROES
 
 
 class OwnedDLCHeroes(OptionSet):
     """
-    DLC heroes you own. Vanessa, Pygmalien and Dooley come with the base game and are always available.
-    Valid names: Mak, Stelle, Jules, Karnok, The Dragons
+    Old way to list the DLC heroes you own (still accepted, so older YAMLs keep working). Use the "Own ..." options
+    instead: they're simple on/off switches.
     """
-    display_name = "Owned DLC Heroes"
+    display_name = "Owned DLC Heroes (old)"
     valid_keys = frozenset(DLC_HEROES)
     default = frozenset()
+    visibility = Visibility.none  # hidden from the website, the Options Creator and new templates
+
+
+class OwnMak(Toggle):
+    """You own Mak (DLC hero). Vanessa, Pygmalien and Dooley come with the base game and are always in."""
+    display_name = "Own Mak"
+
+
+class OwnStelle(Toggle):
+    """You own Stelle (DLC hero)."""
+    display_name = "Own Stelle"
+
+
+class OwnJules(Toggle):
+    """You own Jules (DLC hero)."""
+    display_name = "Own Jules"
+
+
+class OwnKarnok(Toggle):
+    """You own Karnok (DLC hero)."""
+    display_name = "Own Karnok"
+
+
+class OwnTheDragons(Toggle):
+    """You own The Dragons (DLC hero)."""
+    display_name = "Own The Dragons"
+
+
+# option name -> DLC hero it owns (user 2026-09-29: pick DLC heroes by ticking, not by typing names)
+OWN_HERO_OPTIONS = {"own_mak": "Mak", "own_stelle": "Stelle", "own_jules": "Jules", "own_karnok": "Karnok",
+                    "own_the_dragons": "The Dragons"}
 
 
 class ExcludedHeroes(OptionSet):
@@ -253,8 +284,9 @@ class DeathLinkTrigger(Removed):
     display_name = "DeathLink Trigger"
 
 
-class DeathLinkOnConcede(DefaultOnToggle):
-    """Conceding (abandoning) a run also sends a DeathLink. Conceding because you received a DeathLink never does."""
+class DeathLinkOnConcede(Toggle):
+    """Conceding (abandoning) a run also sends a DeathLink. Conceding because you received a DeathLink never does.
+    Off by default."""
     display_name = "DeathLink On Concede"
 
 
@@ -268,6 +300,11 @@ class DeathLinkAmnesty(Range):
 
 @dataclass
 class BazaarOptions(PerGameCommonOptions):
+    own_mak: OwnMak
+    own_stelle: OwnStelle
+    own_jules: OwnJules
+    own_karnok: OwnKarnok
+    own_the_dragons: OwnTheDragons
     owned_dlc_heroes: OwnedDLCHeroes
     excluded_heroes: ExcludedHeroes
     starting_hero: StartingHero
@@ -317,7 +354,8 @@ option_presets = {
 }
 
 option_groups = [
-    OptionGroup("Heroes", [OwnedDLCHeroes, ExcludedHeroes, StartingHero, HeroesRequired, EarlyHeroUnlock]),
+    OptionGroup("Heroes", [OwnMak, OwnStelle, OwnJules, OwnKarnok, OwnTheDragons, ExcludedHeroes, StartingHero,
+                           HeroesRequired, EarlyHeroUnlock]),
     OptionGroup("Checks", [MaxDay, PvPWinChecks, MonsterChecks, MaxMonsterTier]),
     OptionGroup("Card Locks", [LockedCardsPercent, LockCommonCards, LockLootItems, StarterCards, LegacyCardPacks,
                                LegendaryItems, ExpeditionTickets, DuplicateAllCards, DuplicateCards]),

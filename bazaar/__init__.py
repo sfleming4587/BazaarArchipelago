@@ -1,5 +1,4 @@
 import logging
-import math
 from typing import Any, ClassVar, Dict, List, Mapping
 
 import settings
@@ -9,11 +8,11 @@ from worlds.AutoWorld import WebWorld, World
 from worlds.LauncherComponents import Component, Type, components, launch
 
 from .data import BASE_HEROES, CARDS, CARDS_BY_NAME, HEROES, LEGENDARY_GUIDS, PACKS, TIERS, max_monster_tier_by_day
-from .items import (PACKS_BY_ITEM as PACKS_BY_NAME, EXPEDITION_TICKETS, FILLER_ITEMS, GAME, GROUP_ITEMS, LEGENDARY_ITEMS, SELL_TRAP, BazaarItem,
-                    hero_item, item_name_groups, item_name_to_id, pack_item)
-from .locations import (BazaarLocation, champion_event, day_location, location_name_groups, location_name_to_id,
-                        monster_location, pvp_location, win_location)
-from .options import BazaarOptions, option_groups, option_presets
+from .items import (EXPEDITION_TICKETS, FILLER_ITEMS, GAME, GROUP_ITEMS, LEGENDARY_ITEMS, SELL_TRAP, BazaarItem,
+                    hero_item, item_name_groups, item_name_to_id, lock_items_by_hero, pack_item)
+from .locations import (BazaarLocation, card_requirements, champion_event, day_location, location_name_groups,
+                        location_name_to_id, monster_location, pvp_location, win_location)
+from .options import OWN_HERO_OPTIONS, BazaarOptions, option_groups, option_presets
 
 
 def run_client(*args: str) -> None:
@@ -54,15 +53,6 @@ class BazaarWeb(WebWorld):
 MAX_COPIES = 3  # most copies of one item the duplicate filling adds up to
 
 
-def days_card_requirement(day: int, lock_count: int, day_10_cards: int) -> int:
-    """How many of a hero's own locked items logic expects before a day: none on days 1-7 (every run, even with
-    zero wins, reaches day 7), half the day-10 amount on days 8-9, the full amount from day 10 on."""
-    if day <= 7:
-        return 0
-    wanted = day_10_cards if day >= 10 else math.ceil(day_10_cards / 2)
-    return min(wanted, lock_count)
-
-
 class BazaarWorld(World):
     """
     The Bazaar is an asynchronous PvP roguelike deckbuilder. Pick a hero, spend each day
@@ -96,7 +86,8 @@ class BazaarWorld(World):
         if self.passthrough:
             self.rebuild_from_slot_data(self.passthrough)
             return
-        owned = set(BASE_HEROES) | set(self.options.owned_dlc_heroes.value)
+        owned = set(BASE_HEROES) | set(self.options.owned_dlc_heroes.value) \
+            | {hero for option, hero in OWN_HERO_OPTIONS.items() if getattr(self.options, option)}
         self.heroes = [h for h in HEROES if h in owned and h not in self.options.excluded_heroes.value]
         if not self.heroes:
             raise OptionError(f"{self.player_name}: every hero is excluded, at least one is needed.")
@@ -234,15 +225,7 @@ class BazaarWorld(World):
 
     def create_items_from_slot_data(self, data: Dict[str, Any]) -> None:
         """Universal Tracker only needs the same locations and rules; the item pool just has to be the right size."""
-        names = {item_id: name for name, item_id in item_name_to_id.items()}
-        self.lock_items, self.group_items = {}, []
-        for item_id in data["lock_items"]:
-            name = names[item_id]
-            if name in GROUP_ITEMS:
-                self.group_items.append(name)
-            else:
-                hero = CARDS_BY_NAME[name].hero if name in CARDS_BY_NAME else PACKS_BY_NAME[name].hero
-                self.lock_items.setdefault(hero, []).append(name)
+        self.lock_items, self.group_items = lock_items_by_hero(data["lock_items"])
         pool = [hero_item(h) for h in self.heroes if h != self.starting_hero]
         pool += [name for names_ in self.lock_items.values() for name in names_] + self.group_items
         slots = len(self.multiworld.get_unfilled_locations(self.player))
@@ -291,23 +274,15 @@ class BazaarWorld(World):
         return picked
 
     def set_rules(self) -> None:
+        logic = {"day_10": self.options.logic_day_10_cards.value, "diamond": self.options.logic_diamond_cards.value,
+                 "legendary": self.options.logic_legendary_cards.value}
         for hero in self.heroes:
             items = self.lock_items.get(hero, [])
-            day_10 = self.options.logic_day_10_cards.value
-            tier_cards = {"Diamond": self.options.logic_diamond_cards.value,
-                          "Legendary": self.options.logic_legendary_cards.value}
-            for day in range(1, self.options.max_day.value + 1):
-                need = days_card_requirement(day, len(items), day_10)
-                self.set_card_rule(day_location(hero, day), items, need)
-                if self.options.pvp_win_checks:  # winning the day's fight is harder than just reaching the day
-                    self.set_card_rule(pvp_location(hero, day), items,
-                                       days_card_requirement(day + 1, len(items), day_10))
-                for tier in self.monster_tiers(day):  # Bronze/Silver/Gold only follow the day's requirement
-                    self.set_card_rule(monster_location(hero, day, tier), items,
-                                       max(need, min(len(items), tier_cards.get(tier, 0))))
-            late = days_card_requirement(10, len(items), day_10)
-            self.set_card_rule(win_location(hero), items, late)
-            self.set_card_rule(champion_event(hero), items, late)
+            needs = card_requirements(hero, len(items), self.options.max_day.value, bool(self.options.pvp_win_checks),
+                                      self.monster_tiers, logic)
+            for name, count in needs.items():
+                self.set_card_rule(name, items, count)
+            self.set_card_rule(champion_event(hero), items, needs[win_location(hero)])
 
         self.multiworld.completion_condition[self.player] = \
             lambda state: state.has("Champion", self.player, self.goal_count)

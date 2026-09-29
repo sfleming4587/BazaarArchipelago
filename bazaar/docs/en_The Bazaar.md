@@ -23,8 +23,8 @@ Per hero, for each day from 1 up to `max_day` (default 15):
 Plus **10 Wins** with each hero. Getting 10 wins sends all of that hero's "Reach Day" checks, plus the PvP and
 monster checks for the days that run never reached (winning fast ends a run early).
 
-The game's log doesn't say who won a PvP fight unless it ended the run, so after each PvP fight the client
-asks "Did you win?" with Won / Lost buttons (or type `/pvpwin <day>`).
+PvP wins are counted automatically: after a won fight the game's log always writes "Waiting for N exit tasks",
+and never after a lost one (checked against a full run's answers).
 
 ## Logic
 
@@ -91,7 +91,7 @@ name (such as Make a Wish) still count as held and must be sold.
 
 - A DeathLink is sent when you lose a run: your last PvP fight takes the last of your prestige. Losing a single
   fight never sends one.
-- `death_link_on_concede`: conceding also sends a DeathLink (on by default). Conceding because you received a
+- `death_link_on_concede`: conceding also sends a DeathLink (off by default). Conceding because you received a
   DeathLink never sends one.
 
 ## Game updates

@@ -226,6 +226,18 @@ class TestSellTrapsInPool(BazaarTestBase):
         self.assertEqual(names.count("Sell Trap"), 5)
 
 
+class TestOwnHeroSwitches(BazaarTestBase):
+    """DLC heroes are picked with on/off switches (user 2026-09-29); the old owned_dlc_heroes list still works."""
+    options = {"own_karnok": True, "own_the_dragons": True, "starting_hero": "karnok"}
+
+    def test_switched_on_heroes_are_in(self) -> None:
+        self.assertEqual(set(self.world.heroes), {"Vanessa", "Pygmalien", "Dooley", "Karnok", "The Dragons"})
+
+    def test_deathlink_options_default_off(self) -> None:
+        self.assertFalse(self.world.options.death_link)
+        self.assertFalse(self.world.options.death_link_on_concede)
+
+
 class TestUniversalTrackerRebuild(BazaarTestBase):
     """Universal Tracker rebuilds the world from slot_data with default options; it must match the real seed."""
     options = {"owned_dlc_heroes": ["Mak", "Karnok"], "max_day": 12, "max_monster_tier": "diamond",

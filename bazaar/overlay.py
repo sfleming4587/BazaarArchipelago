@@ -212,12 +212,10 @@ def draw_columns(tk, parent, columns: List[List[str]], font, bold, column_width:
 
 
 class Overlay:
-    def __init__(self, art_cache_dir: Optional[str] = None, on_pvp: Optional[Callable[[str, bool], None]] = None,
-                 guide_file: Optional[str] = None) -> None:
+    def __init__(self, art_cache_dir: Optional[str] = None, guide_file: Optional[str] = None) -> None:
         self.only_over_game = True  # False shows the windows whatever is in front (tests)
         self.game_window: Optional[tuple] = None  # tests: pretend the game's client area is here (x, y, w, h)
         self.guide_file = guide_file  # where the Shop Guide remembers its position, size and whether it's closed
-        self.on_pvp = on_pvp  # called from the Tk thread with (question key, won)
         self.art_cache_dir = art_cache_dir
         self.commands: "queue.Queue" = queue.Queue()
         self.available = True  # False if tkinter is missing: no alert window at all
@@ -239,17 +237,13 @@ class Overlay:
         """Shop Guide: allowed cards in colour first, locked cards greyed out below. title=None hides it."""
         self.commands.put(("board", (title, list(allowed), list(locked)) if title else None))
 
-    def ask_pvp(self, questions: Dict[str, str]) -> None:
-        """questions: key -> text such as "Vanessa day 3". Each gets Won / Lost buttons. Empty dict hides them."""
-        self.commands.put(("pvp", dict(questions)))
-
     def toast(self, text: str, seconds: float = 6, warning: bool = False) -> None:
         """A short message at the bottom of the alert box that disappears by itself."""
         self.commands.put(("toast", (text, time.monotonic() + seconds, warning)))
 
-    def show_status(self, text: Optional[str], warning: bool = False) -> None:
-        """One line at the bottom of the alert box: run progress, or which heroes you may pick. None hides it."""
-        self.commands.put(("status", (text, warning) if text else None))
+    def show_status(self, text: Optional[str], warning: bool = False, big: bool = False) -> None:
+        """The bottom of the alert box: run progress, or (big) the heroes you may pick on the menu. None hides it."""
+        self.commands.put(("status", (text, warning, big) if text else None))
 
     def show_deathlink(self, text: Optional[str]) -> None:
         self.commands.put(("deathlink", text))
@@ -307,7 +301,7 @@ class Overlay:
             return ("Segoe UI", -max(MIN_FONT, round(size * 4 / 3 * g["k"])), weight)
 
         relayout((0, 0, root.winfo_screenwidth(), root.winfo_screenheight()))  # until the game is seen
-        state = {"locked": None, "deathlink": None, "shop": None, "pvp": {}, "toasts": [], "status": None,
+        state = {"locked": None, "deathlink": None, "shop": None, "toasts": [], "status": None,
                  "list_hidden": False}  # the player hid the locked-card list (until they show it again)
         # what each window shows now, to skip redraws that change nothing
         drawn: dict = {"alerts": None, "shop": None, "toasts": None, "alerts_height": 0, "toasts_height": 0}
@@ -361,7 +355,7 @@ class Overlay:
                 drawn["toasts_height"] = render_toasts(moves)
             right_height = g["right"][3] - (drawn["toasts_height"] + 4 if drawn["toasts_height"] else 0)
             board["fit"](*g["right"][:3], right_height)
-            alerts = (state["deathlink"], state["locked"], tuple(state["pvp"].items()), state["status"],
+            alerts = (state["deathlink"], state["locked"], state["status"],
                       tuple(label for label, _ in shop_buttons()))
             if alerts != drawn["alerts"]:
                 drawn["alerts"] = alerts
@@ -397,8 +391,8 @@ class Overlay:
         def alert_severity() -> str:
             if state["deathlink"] or (state["locked"] and state["locked"][0].startswith("CHECKS ARE BLOCKED")):
                 return "critical"
-            if state["locked"] or state["pvp"] or (state["status"] and state["status"][1]):
-                return "warning"  # a Sell Trap to deal with, a question to answer, a locked hero picked
+            if state["locked"] or (state["status"] and state["status"][1]):
+                return "warning"  # a Sell Trap to deal with, a locked hero picked
             return "info"
 
         def render_toasts(moves: list) -> int:
@@ -420,7 +414,7 @@ class Overlay:
 
         def render_alerts(moves: list) -> int:
             """Draws the alert box; returns its height (0 when hidden)."""
-            if not (state["deathlink"] or state["locked"] or state["pvp"] or state["status"] or shop_buttons()):
+            if not (state["deathlink"] or state["locked"] or state["status"] or shop_buttons()):
                 moves.append((alert_box, None))
                 return 0
             bg = SEVERITY[alert_severity()]
@@ -440,16 +434,6 @@ class Overlay:
                 for text in cards:  # cleared automatically when the log says it was sold
                     tk.Label(frame, text=text, fg=FG, bg=bg, font=f(11), wraplength=g["inner_w"],
                              justify="left").pack(anchor="w")
-            if state["pvp"]:
-                tk.Label(frame, text="Did you win the PvP fight?", fg=ACCENT, bg=bg,
-                         font=f(13, "bold")).pack(anchor="w", pady=(6 if frame.winfo_children() else 0, 2))
-                for key, text in state["pvp"].items():
-                    row = tk.Frame(frame, bg=bg)
-                    row.pack(fill="x", pady=1)
-                    tk.Label(row, text=text, fg=FG, bg=bg, font=f(11), wraplength=g["inner_w"] - 110,
-                             justify="left").pack(side="left")
-                    tk.Button(row, text="Lost", command=lambda k=key: answer(k, False)).pack(side="right", padx=(6, 0))
-                    tk.Button(row, text="Won", command=lambda k=key: answer(k, True)).pack(side="right", padx=(12, 0))
             # last line: the status text with the shop buttons on its right; the buttons get a row of their own
             # only when that would squeeze the text below half the width
             row = tk.Frame(frame, bg=bg)
@@ -465,9 +449,9 @@ class Overlay:
             if shop_buttons():
                 buttons.pack(side="bottom" if own_row else "right", anchor="e", pady=(4, 0) if own_row else 0)
             if state["status"]:
-                text, warning = state["status"]
-                tk.Label(row, text=text, fg=WARN if warning else MUTED, bg=bg,
-                         font=f(11 if warning else 10, "bold" if warning else "normal"),
+                text, warning, big = state["status"]
+                tk.Label(row, text=text, fg=WARN if warning else (FG if big else MUTED), bg=bg,
+                         font=f(12 if big else 11 if warning else 10, "bold" if warning or big else "normal"),
                          wraplength=g["inner_w"] if own_row else room, justify="left").pack(side="left", anchor="w")
             show()
             x, y, width, strip_height = g["left"]
@@ -531,12 +515,6 @@ class Overlay:
                 place(moves, shop_second, g["right"][0], g["right"][1], g["right"][2], right_height)
             else:
                 moves.append((shop_second, None))
-
-        def answer(key: str, won: bool) -> None:
-            state["pvp"].pop(key, None)
-            render()
-            if self.on_pvp:
-                self.on_pvp(key, won)
 
         def dismiss_deathlink() -> None:
             state["deathlink"] = None

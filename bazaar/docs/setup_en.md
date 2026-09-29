@@ -24,11 +24,12 @@ checks are in logic for your seed.
 
 
 Open the Launcher, click **Generate Template Options**, and edit `The Bazaar.yaml`.
-List the DLC heroes you own under `owned_dlc_heroes`, for example:
+Switch on each DLC hero you own (in the Options Creator or on the website they're simple on/off switches):
 
 ```yaml
 The Bazaar:
-  owned_dlc_heroes: ["Mak", "Stelle", "Jules", "Karnok", "The Dragons"]
+  own_mak: true
+  own_karnok: true
   heroes_required: 3
 ```
 
@@ -40,7 +41,7 @@ The Bazaar:
 3. Play. Checks are sent as you reach new days and win runs.
 
 Useful commands: `/status`, `/locked [hero]` (with hints: where each locked card is), `/where <card>` (shows your hint for
-a locked card; only hints you already got through Archipelago), `/pvpwin <day>` (answers an open PvP question), `/logpath`,
+a locked card; only hints you already got through Archipelago), `/logpath`,
 `/unblock` (emergency only: shows what's blocking checks; `/unblock confirm` clears it if something broke).
 
 ### The alert window
@@ -60,15 +61,15 @@ Alerts appear in a small window at the top left of your screen, above the game:
   (Make a Wish), says so. Items handed to you with no choice get no warning; if one is locked, sell it.
 - **CHECKS ARE BLOCKED:** shown while you hold a locked card, play a locked hero or owe a DeathLink. It clears
   by itself when you sell the card; a locked hero or DeathLink blocks the rest of the run.
-- **PvP result:** after each PvP fight, press **Won** or **Lost**.
 - **DeathLink:** abandon your run.
 - **Unlocks and notices:** short pop-ups in the bottom right when you receive an unlock (and from whom), one of
   your checks sends an item to another player (**SENT**) or finds filler for you (**FOUND**), you buy or get a
   locked card (**SELL IT NOW**), a Sell
   Trap arrives, or the game was updated since the apworld was made. A red **CHECK NOT SENT** pop-up names any
   check the moment it is blocked.
-- **Status line:** during a run, your hero, day and goal progress (what's left to check: use a tracker). On the hero-select screen, which
-  heroes you may play - and a warning if the hero you picked is locked.
+- **Status line:** during a run, your hero, day and goal progress (what's left to check: use a tracker). On the
+  hero-select screen, in bigger text: every hero you may play with its checks done / checks in logic, and a warning
+  if the hero you picked is locked.
 
 The overlay sits in the strips left and right of the board, never over the board itself or over another overlay
 window: alerts at the top left, a shop's locked cards under them, pop-ups at the bottom right. Its colour tells you

@@ -9,7 +9,6 @@ import asyncio
 import dataclasses
 import json
 import os
-import queue
 import random
 from typing import Any, Dict, Optional, Set
 
@@ -20,8 +19,9 @@ from NetUtils import ClientStatus
 
 from .data import (CARDS, CARDS_BY_GUID, GAME_VERSION, HEROES, MERCHANT_DATA, MERCHANTS, MONSTERS, OFFER_DATA, PACKS,
                    TIERS)
-from .items import BASE_ID, GAME, GROUP_ITEMS, SELL_TRAP, hero_item, item_name_to_id
-from .locations import day_location, location_name_to_id, monster_location, pvp_location, win_location
+from .items import BASE_ID, GAME, GROUP_ITEMS, SELL_TRAP, hero_item, item_name_to_id, lock_items_by_hero
+from .locations import (card_requirements, day_location, location_name_to_id, monster_location, pvp_location,
+                        win_location)
 from .logparser import (DEFAULT_LOG_PATH, HeroSelected, CardGained, CardSold, DayReached, EncounterEntered, EncounterLeft,
                         FightStarted, GameVersion, LogParser, LogTailer, MonsterFought, PvPFought, RunEnded,
                         RunStarted, UnrecognizedRun)
@@ -32,6 +32,7 @@ STATE_FILE = "bazaar_client_state.json"
 
 SHOP_CARDS = [c for c in CARDS if c.shop]
 GUIDE_MAX = 300  # the Shop Guide skips deals that could be almost anything (hundreds of pictures)
+ITEM_NAMES = {item_id: name for name, item_id in item_name_to_id.items()}
 FILE_ONLY = {"NoStream": True, "skip_gui": True}  # to the log file only: not the console or the client window
 LOCK_ITEM_GUIDS: Dict[int, Set[str]] = {BASE_ID + c.ap_id: {c.guid} for c in CARDS}
 LOCK_ITEM_GUIDS.update({BASE_ID + p.ap_id: set(p.cards) for p in PACKS})
@@ -109,16 +110,6 @@ class BazaarCommandProcessor(ClientCommandProcessor):
         self.output("All blocks for this run were cleared by hand.")
         return True
 
-    def _cmd_pvpwin(self, day: str = "") -> bool:
-        """Answer the client's "did you win?" question for a PvP fight, e.g. /pvpwin 3"""
-        key = f"{self.ctx.run.get('hero')}|{day}"
-        if key not in self.ctx.pvp_questions:
-            self.output("There's no open PvP question for that day.")
-            return False
-        self.ctx.ui_events.put(("pvp", key, True))
-        self.output(f"Noted: won day {day}'s PvP fight.")
-        return True
-
     def _cmd_logpath(self, path: str = "") -> bool:
         """Show or change the path of The Bazaar's Player.log."""
         if path:
@@ -145,10 +136,6 @@ class BazaarContext(CommonContext):
         self.goal_sent = False
         self.overlay = None
         self.shop_guide = True  # the picture window next to the game; --no-shop-guide turns it off
-        self.ui_events: "queue.Queue[tuple]" = queue.Queue()  # button presses from the overlay
-        self.pvp_questions: Dict[str, str] = {}  # "hero|day" -> text, waiting for Won / Lost
-        self.pvp_signals: Dict[str, bool] = {}  # "hero|day" -> candidate win signal seen (evidence gathering)
-        self.pvp_blocked: Dict[str, Optional[str]] = {}  # "hero|day" -> why checks were blocked during that fight
         self.notices_shown: Set[str] = set()  # patch warnings are shown once per session
         self.traps_seen = 0
         self.menu_hero: Optional[str] = None  # hero picked on the hero-select screen, while not in a run
@@ -300,11 +287,6 @@ class BazaarContext(CommonContext):
         # A new run is a clean slate: nothing from an earlier run (held cards, DeathLink, PvP questions) carries over.
         self.run = {"active": True, "hero": event.hero, "day": 1, "counting": counting, "legal": counting,
                     "deathlink_owed": False, "held": {}, "inventory": {}, "traps": []}
-        self.pvp_questions.clear()
-        self.pvp_signals.clear()
-        self.pvp_blocked.clear()
-        if self.overlay:
-            self.overlay.ask_pvp({})
         self.refresh_held()
         self.update_status()
 
@@ -502,32 +484,6 @@ class BazaarContext(CommonContext):
             if self.shop_guide:
                 self.overlay.show_board(None, [], [])
 
-    async def drain_ui_events(self) -> None:
-        changed = False
-        while True:
-            try:
-                event = self.ui_events.get_nowait()
-            except queue.Empty:
-                break
-            if event[0] == "pvp":
-                _, key, won = event
-                if self.pvp_questions.pop(key, None) is None:
-                    continue  # only a question the client actually asked can be answered
-                hero, day = key.split("|")
-                self.record_pvp_evidence(hero, int(day), self.pvp_signals.pop(key, None), won)
-                # blocked during the fight, or since (a DeathLink arriving before the answer also counts)
-                blocked = self.pvp_blocked.pop(key, None) or self.blocked_reason()
-                if won and blocked:
-                    self.event(f"Day {day} PvP win not sent: checks were blocked {blocked} during that fight.",
-                               warning=True)
-                    if self.overlay:
-                        self.overlay.toast(f"CHECK NOT SENT: {pvp_location(hero, int(day))}", seconds=10,
-                                           warning=True)
-                elif won:
-                    await self.send_checks([pvp_location(hero, int(day))])
-        if changed:
-            self.save_state()
-
     def day_checks_after(self, hero: str, last_day: int) -> list:
         """PvP and monster checks for the days after `last_day` (days a 10-win run never reached)."""
         names = []
@@ -564,18 +520,14 @@ class BazaarContext(CommonContext):
             return
         if event.day > self.slot_data.get("max_day", 15):
             return
-        if event.won is not None:
+        if event.won is not None:  # the run-ending fight: the log says how it went, keep checking the signal
             self.record_pvp_evidence(self.run["hero"], event.day, event.exit_tasks, event.won)
-        if event.won:
+        # Mid-run the log doesn't say who won, but "Waiting for N exit tasks" only follows a won fight: it matched
+        # all 10 answers in the user's Karnok run (2026-09-28), so wins are counted from it (user: "yes on the pvp
+        # win auto count").
+        won = event.won if event.won is not None else event.exit_tasks
+        if won:
             await self.send_run_checks([pvp_location(self.run["hero"], event.day)])
-        elif event.won is None:
-            self.pvp_signals[f"{self.run['hero']}|{event.day}"] = event.exit_tasks
-            self.pvp_blocked[f"{self.run['hero']}|{event.day}"] = self.blocked_reason()
-            self.pvp_questions[f"{self.run['hero']}|{event.day}"] = f"{self.run['hero']}, day {event.day}"
-            if self.overlay:
-                self.overlay.ask_pvp(self.pvp_questions)
-            else:
-                self.event(f"Did you win day {event.day}'s PvP fight? Type /pvpwin {event.day} if you did.")
 
     async def handle_run_end(self, event: RunEnded) -> None:
         if not self.run.get("active"):
@@ -667,23 +619,44 @@ class BazaarContext(CommonContext):
             Utils.async_start(self.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}]))
             logger.info("Goal complete! Congratulations, champion of the Bazaar.")
 
+    def hero_progress(self, hero: str) -> Optional[tuple]:
+        """(checks done, checks in logic) for a hero, from the same card requirements the world's rules use.
+        None for seeds made before the client could tell."""
+        logic = self.slot_data.get("logic")
+        if not logic or "lock_items" not in self.slot_data:
+            return None
+        items = lock_items_by_hero(self.slot_data["lock_items"])[0].get(hero, [])
+        received = {ITEM_NAMES.get(item.item) for item in self.items_received}
+        have = len(set(items) & received)
+        tiers = self.slot_data.get("monster_tiers", {})
+        needs = card_requirements(hero, len(items), self.slot_data.get("max_day", 15),
+                                  bool(self.slot_data.get("pvp_win_checks")), lambda day: tiers.get(str(day), []), logic)
+        done = sum(location_name_to_id[name] in self.done() for name in needs)
+        in_logic = sum(have >= need for need in needs.values()) if self.hero_unlocked(hero) else 0
+        return done, in_logic
+
     def status_line(self) -> tuple:
-        """The overlay's status line: (text or None, is it a warning). In a run: hero, day and goal (what's still to
-        check is PopTracker's job - user, 2026-09-28).
-        On the hero-select screen: which heroes may be played, and a warning if the picked one may not."""
+        """The overlay's status line: (text or None, is it a warning, show it big). In a run: hero, day and goal
+        (what's still to check is PopTracker's job - user, 2026-09-28). On the hero-select screen: the heroes you
+        may play with (checks done / checks in logic), and a warning if the picked one is locked (user, 2026-09-29:
+        "make it more obvious on the homescreen which heros are available")."""
         if not self.slot_data:
-            return None, False
+            return None, False, False
         goal = f"Goal {len(self.heroes_won())}/{self.slot_data.get('heroes_required', 1)}"
         if self.run.get("active"):
             hero, day, max_day = self.run["hero"], self.run.get("day", 1), self.slot_data.get("max_day", 15)
-            return f"{hero}: day {day}/{max_day} · {goal}", False
+            return f"{hero}: day {day}/{max_day} · {goal}", False, False
         if self.menu_hero:
             playable = [h for h in self.slot_data.get("heroes", []) if self.hero_unlocked(h)]
-            can_play = f"You can play: {', '.join(playable) or 'nobody yet'}"
+            lines = ["HEROES YOU CAN PLAY  (checks done / in logic)"] if playable else ["No hero unlocked yet"]
+            for hero in playable:
+                progress = self.hero_progress(hero)
+                lines.append(f"   {hero}   {progress[0]} / {progress[1]}" if progress else f"   {hero}")
+            lines.append(goal)
             if self.menu_hero not in playable:
-                return f"{self.menu_hero.upper()} IS LOCKED - pick another hero. {can_play}", True
-            return f"{can_play} · {goal}", False
-        return None, False
+                return "\n".join([f"{self.menu_hero.upper()} IS LOCKED - pick another hero."] + lines), True, True
+            return "\n".join(lines), False, True
+        return None, False, False
 
     def update_status(self) -> None:
         if self.overlay:
@@ -790,7 +763,6 @@ async def watch_log(ctx: BazaarContext) -> None:
 
         while not ctx.exit_event.is_set() and ctx.slot_data and not ctx.restart_watcher:
             lines = tailer.read_new_lines()
-            await ctx.drain_ui_events()
             if lines is None:  # the game restarted and began a fresh log
                 parser, runs_seen = LogParser(MERCHANTS), 0
                 ctx.event("The Bazaar restarted, following the new log.")
@@ -812,8 +784,7 @@ async def main(args) -> None:
     ctx.shop_guide = not args.no_shop_guide
     if not args.no_overlay:
         from .overlay import Overlay
-        ctx.overlay = Overlay(on_pvp=lambda key, won: ctx.ui_events.put(("pvp", key, won)),
-                              art_cache_dir=Utils.cache_path("bazaar_card_art") if ctx.shop_guide else None,
+        ctx.overlay = Overlay(                              art_cache_dir=Utils.cache_path("bazaar_card_art") if ctx.shop_guide else None,
                               guide_file=Utils.user_path("bazaar_shop_guide.json"))
     ctx.server_task = asyncio.create_task(server_loop(ctx), name="server loop")
     if ctx.overlay:

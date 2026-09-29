@@ -111,26 +111,20 @@ class TestLockedHero(ClientTestBase):
         self.assertIn("DOOLEY IS LOCKED", self.ctx.blocked_reason() or "DOOLEY IS LOCKED")
 
 
-class TestPvPAnswers(ClientTestBase):
-    def answer(self, key: str) -> None:
-        self.ctx.ui_events.put(("pvp", key, True))
-        self.await_(self.ctx.drain_ui_events())
+class TestPvPWins(ClientTestBase):
+    """A mid-run PvP win is counted from the "Waiting for N exit tasks" line (no question any more)."""
 
-    def test_cannot_answer_a_question_that_was_never_asked(self) -> None:
-        self.play(RunStarted("Vanessa"))
-        self.answer("Vanessa|4")
-        self.assertEqual(self.sent - {location_name_to_id[day_location("Vanessa", 1)]}, set())
+    def test_win_signal_sends_the_check(self) -> None:
+        self.play(RunStarted("Vanessa"), PvPFought(1, None, exit_tasks=True))
+        self.assertTrue(self.was_sent("Vanessa - Day 1 PvP Win"))
 
-    def test_answer_for_a_fight_fought_while_blocked_is_refused(self) -> None:
-        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", False), PvPFought(1, None),
-                  CardSold("itm_x"))
-        self.answer("Vanessa|1")
+    def test_no_signal_is_a_loss(self) -> None:
+        self.play(RunStarted("Vanessa"), PvPFought(1, None, exit_tasks=False))
         self.assertFalse(self.was_sent("Vanessa - Day 1 PvP Win"))
 
-    def test_honest_answer_is_sent(self) -> None:
-        self.play(RunStarted("Vanessa"), PvPFought(1, None))
-        self.answer("Vanessa|1")
-        self.assertTrue(self.was_sent("Vanessa - Day 1 PvP Win"))
+    def test_win_while_holding_a_locked_card_is_not_sent(self) -> None:
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", False), PvPFought(1, None, exit_tasks=True))
+        self.assertFalse(self.was_sent("Vanessa - Day 1 PvP Win"))
 
 
 class TestCatchUp(ClientTestBase):
@@ -180,7 +174,7 @@ class TestSavedState(ClientTestBase):
 class TestStatusLine(ClientTestBase):
     def test_run_shows_hero_day_and_goal(self) -> None:
         self.play(RunStarted("Vanessa"), DayReached(2))
-        text, warning = self.ctx.status_line()
+        text, warning, _ = self.ctx.status_line()
         self.assertFalse(warning)
         self.assertIn("Vanessa: day 2/15", text)
         self.assertNotIn("next", text)  # what's left to check is PopTracker's job
@@ -188,12 +182,30 @@ class TestStatusLine(ClientTestBase):
 
     def test_picking_a_locked_hero_warns(self) -> None:
         self.play(HeroSelected("Dooley"))
-        text, warning = self.ctx.status_line()
-        self.assertTrue(warning)
+        text, warning, big = self.ctx.status_line()
+        self.assertTrue(warning and big)
         self.assertIn("DOOLEY IS LOCKED", text)
-        self.assertIn("You can play: Vanessa", text)
+        self.assertIn("HEROES YOU CAN PLAY", text)
+        self.assertNotIn("   Dooley", text)
         self.play(HeroSelected("Vanessa"))
         self.assertFalse(self.ctx.status_line()[1])
+
+    def test_menu_lists_checks_done_and_in_logic(self) -> None:
+        """Vanessa has no locked items in this test seed, so every check (days 1-15, PvP, 2 monsters a day,
+        10 wins) is in logic: 15 * 4 + 1 = 61. Nothing done yet."""
+        self.ctx.slot_data.update(logic={"day_10": 15, "diamond": 10, "legendary": 20}, lock_items=[])
+        self.play(HeroSelected("Vanessa"))
+        self.assertIn("   Vanessa   0 / 61", self.ctx.status_line()[0])
+        self.ctx.checked_locations = {location_name_to_id[day_location("Vanessa", 1)]}
+        self.assertIn("   Vanessa   1 / 61", self.ctx.status_line()[0])
+
+    def test_locked_items_keep_late_checks_out_of_logic(self) -> None:
+        """With 20 of Vanessa's cards locked and none received, day 8+ checks aren't in logic yet (days 1-7:
+        reach, 2 monsters = 21, plus PvP days 1-6 = 6 -> 27)."""
+        vanessa = [BASE_ID + c.ap_id for c in CARDS if c.hero == "Vanessa" and c.shop][:20]
+        self.ctx.slot_data.update(logic={"day_10": 15, "diamond": 10, "legendary": 20}, lock_items=vanessa)
+        self.play(HeroSelected("Vanessa"))
+        self.assertIn("   Vanessa   0 / 27", self.ctx.status_line()[0])
 
     def test_buying_a_locked_card_says_sell_it_now(self) -> None:
         self.ctx.overlay = mock.Mock()
@@ -238,7 +250,6 @@ class TestNewRunIsACleanSlate(ClientTestBase):
         self.play(RunEnded(False, 1), RunStarted("Vanessa"))
         self.assertIsNone(self.ctx.blocked_reason())
         self.assertEqual(self.ctx.run["held"], {})
-        self.assertEqual(self.ctx.pvp_questions, {})
 
     def test_nothing_carries_over_when_the_old_run_ended_unseen(self) -> None:
         """e.g. the run was conceded while the client was closed: the next run start still resets everything."""
@@ -273,9 +284,7 @@ class TestDeathLinkTriggers(ClientTestBase):
         self.assertEqual(len(self.deaths), 1)
 
     def test_losing_single_fights_never_sends(self) -> None:
-        self.play(RunStarted("Vanessa"), PvPFought(1, None))
-        self.ctx.ui_events.put(("pvp", "Vanessa|1", False))  # answered "Lost": prestige lost, run goes on
-        self.await_(self.ctx.drain_ui_events())
+        self.play(RunStarted("Vanessa"), PvPFought(1, None))  # lost: prestige lost, run goes on
         self.assertEqual(self.deaths, [])
 
     def test_conceding_because_of_a_received_deathlink_never_echoes(self) -> None:

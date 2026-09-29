@@ -39,8 +39,8 @@ types for you.
 1. In the Launcher, click **Generate Template Options**. A folder opens; find `The Bazaar.yaml` in it.
 2. Copy it somewhere and open it with Notepad. At minimum set:
    - `name:` - your player name (no spaces is easiest), e.g. `name: YourName`
-   - `owned_dlc_heroes:` - the DLC heroes you own, e.g. `["Mak", "Stelle", "Jules", "Karnok", "The Dragons"]`
-     (Vanessa, Pygmalien and Dooley are always included)
+   - `own_mak:`, `own_stelle:`, `own_jules:`, `own_karnok:`, `own_the_dragons:` - set `true` for each DLC hero
+     you own (Vanessa, Pygmalien and Dooley are always included)
    - `heroes_required:` - how many heroes need a 10-win run to finish (default 3)
 3. Every other option has a description in the file; the defaults are a good start.
 
@@ -80,7 +80,7 @@ why:
 - **DeathLink** (if on): when someone else dies, abandon your current run (Settings > Abandon Run). No checks
   count for the rest of that run. Losing a run, or conceding one, sends a DeathLink to everyone else.
 - **Sell Traps** (if on): sell the named item before the day shown, or checks are blocked until you do.
-- After each PvP fight the client asks **Did you win?** - answer honestly; the game's log doesn't say.
+- PvP wins are counted automatically.
 
 ## Client commands
 
@@ -89,7 +89,6 @@ why:
 | `/status` | your heroes, days done, 10-win runs, goal progress and the current run |
 | `/locked [hero]` | cards that are still locked (and where they are, if you have a hint for them) |
 | `/where <card>` | where a locked card is - only if you already got a hint for it through Archipelago |
-| `/pvpwin <day>` | answer the client's "did you win?" question for that day |
 | `/logpath [path]` | show or change where the client looks for The Bazaar's log |
 | `/unblock` | emergency only: shows what's blocking checks; `/unblock confirm` clears it if something broke |
 

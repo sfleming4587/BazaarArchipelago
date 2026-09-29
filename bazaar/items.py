@@ -1,8 +1,8 @@
-from typing import Dict
+from typing import Dict, Iterable, List, Tuple
 
 from BaseClasses import Item, ItemClassification
 
-from .data import CARDS, HEROES, LEGENDARY_GUIDS, PACKS, PACKS_BY_ITEM, TICKET_GUIDS
+from .data import CARDS, CARDS_BY_NAME, HEROES, LEGENDARY_GUIDS, PACKS, PACKS_BY_ITEM, TICKET_GUIDS
 
 GAME = "The Bazaar"
 BASE_ID = 0xBA20000
@@ -55,3 +55,20 @@ item_name_groups = {
     "Common Cards": {c.name for c in CARDS if c.hero == "Common" and not c.ticket},
     **{f"{h} Cards": {c.name for c in CARDS if c.hero == h and not c.ticket} for h in HEROES},
 }
+
+
+def lock_items_by_hero(item_ids: Iterable[int]) -> Tuple[Dict[str, List[str]], List[str]]:
+    """slot_data's lock item ids -> ({hero or "Common": item names}, group unlocks). Universal Tracker's rebuild and
+    the client's hero list both read the seed's locks this way."""
+    names = {item_id: name for name, item_id in item_name_to_id.items()}
+    by_hero: Dict[str, List[str]] = {}
+    groups: List[str] = []
+    for item_id in item_ids:
+        name = names[item_id]
+        if name in GROUP_ITEMS:
+            groups.append(name)
+        else:
+            hero = CARDS_BY_NAME[name].hero if name in CARDS_BY_NAME else PACKS_BY_ITEM[name].hero
+            by_hero.setdefault(hero, []).append(name)
+    return by_hero, groups
+

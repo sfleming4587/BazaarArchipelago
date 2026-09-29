@@ -20,7 +20,11 @@ New-Item -ItemType Directory -Force $players, $output | Out-Null
 name: $Name
 game: The Bazaar
 The Bazaar:
-  owned_dlc_heroes: ["Mak", "Stelle", "Jules", "Karnok", "The Dragons"]
+  own_mak: true
+  own_stelle: true
+  own_jules: true
+  own_karnok: true
+  own_the_dragons: true
   starting_hero: $StartingHero
   heroes_required: 1
   max_day: 15
