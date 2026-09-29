@@ -20,8 +20,8 @@ from NetUtils import ClientStatus
 from .data import (CARDS, CARDS_BY_GUID, GAME_VERSION, HEROES, MERCHANT_DATA, MERCHANTS, MONSTERS, OFFER_DATA, PACKS,
                    TIERS)
 from .items import BASE_ID, GAME, GROUP_ITEMS, SELL_TRAP, hero_item, item_name_to_id, lock_items_by_hero
-from .locations import (card_requirements, day_location, location_name_to_id, monster_location, pvp_location,
-                        win_location)
+from .locations import (card_requirements, day_location, hero_checks, location_name_to_id, monster_location,
+                        pvp_location, win_location)
 from .logparser import (DEFAULT_LOG_PATH, HeroSelected, CardGained, CardSold, DayReached, EncounterEntered, EncounterLeft,
                         FightStarted, GameVersion, LogParser, LogTailer, MonsterFought, PvPFought, RunEnded,
                         RunStarted, UnrecognizedRun)
@@ -108,6 +108,14 @@ class BazaarCommandProcessor(ClientCommandProcessor):
             return True
         self.ctx.clear_blocks()
         self.output("All blocks for this run were cleared by hand.")
+        return True
+
+    def _cmd_tracker(self) -> bool:
+        """Open or close the tracker (also the Tracker button on the overlay)."""
+        if not self.ctx.overlay or not self.ctx.overlay.available:
+            self.output("The tracker needs the overlay, which can't open on this PC.")
+            return False
+        self.ctx.overlay.toggle_tracker()
         return True
 
     def _cmd_logpath(self, path: str = "") -> bool:
@@ -619,9 +627,10 @@ class BazaarContext(CommonContext):
             Utils.async_start(self.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}]))
             logger.info("Goal complete! Congratulations, champion of the Bazaar.")
 
-    def hero_progress(self, hero: str) -> Optional[tuple]:
-        """(checks done, checks in logic) for a hero, from the same card requirements the world's rules use.
-        None for seeds made before the client could tell."""
+    def check_states(self, hero: str) -> Optional[list]:
+        """[(Check, done, in logic)] for every check of a hero, from the same card requirements the world's rules
+        use. The menu's hero list and the tracker both read this. None for seeds made before the client could
+        tell (no "logic" in slot_data)."""
         logic = self.slot_data.get("logic")
         if not logic or "lock_items" not in self.slot_data:
             return None
@@ -629,11 +638,36 @@ class BazaarContext(CommonContext):
         received = {ITEM_NAMES.get(item.item) for item in self.items_received}
         have = len(set(items) & received)
         tiers = self.slot_data.get("monster_tiers", {})
-        needs = card_requirements(hero, len(items), self.slot_data.get("max_day", 15),
-                                  bool(self.slot_data.get("pvp_win_checks")), lambda day: tiers.get(str(day), []), logic)
-        done = sum(location_name_to_id[name] in self.done() for name in needs)
-        in_logic = sum(have >= need for need in needs.values()) if self.hero_unlocked(hero) else 0
-        return done, in_logic
+        max_day, pvp = self.slot_data.get("max_day", 15), bool(self.slot_data.get("pvp_win_checks"))
+        needs = card_requirements(hero, len(items), max_day, pvp, lambda day: tiers.get(str(day), []), logic)
+        unlocked, done = self.hero_unlocked(hero), self.done()
+        return [(check, location_name_to_id[check.name] in done, unlocked and have >= needs[check.name])
+                for check in hero_checks(hero, max_day, pvp, lambda day: tiers.get(str(day), []))]
+
+    def hero_progress(self, hero: str) -> Optional[tuple]:
+        """(checks done, checks in logic) for the menu's hero list."""
+        states = self.check_states(hero)
+        if states is None:
+            return None
+        return sum(done for _, done, _ in states), sum(in_logic for _, _, in_logic in states)
+
+    def tracker_data(self) -> Dict[str, dict]:
+        """What the tracker shows: every hero (in the seed or not) and each check's colour. User's colour rules
+        (2026-09-29): grey = done, green = in logic, yellow = out of logic, red = hero locked."""
+        data: Dict[str, dict] = {}
+        if not self.slot_data:
+            return data
+        for hero in HEROES:
+            states = self.check_states(hero) if hero in self.slot_data.get("heroes", []) else None
+            if states is None:
+                data[hero] = {"in_seed": False, "unlocked": False, "checks": []}
+                continue
+            unlocked = self.hero_unlocked(hero)
+            data[hero] = {"in_seed": True, "unlocked": unlocked, "checks": [
+                (check.kind, check.day, check.tier, check.name,
+                 "done" if done else "red" if not unlocked else "green" if in_logic else "yellow")
+                for check, done, in_logic in states]}
+        return data
 
     def status_line(self) -> tuple:
         """The overlay's status line: (text or None, is it a warning, show it big). In a run: hero, day and goal
@@ -656,11 +690,12 @@ class BazaarContext(CommonContext):
             if self.menu_hero not in playable:
                 return "\n".join([f"{self.menu_hero.upper()} IS LOCKED - pick another hero."] + lines), True, True
             return "\n".join(lines), False, True
-        return None, False, False
+        return goal, False, False  # connected, game not showing a hero yet: keeps the box (and its Tracker button)
 
     def update_status(self) -> None:
         if self.overlay:
             self.overlay.show_status(*self.status_line())
+            self.overlay.show_tracker_data(self.tracker_data())
 
     def handle_hero_selected(self, event: HeroSelected) -> None:
         self.menu_hero = event.hero

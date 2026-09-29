@@ -89,6 +89,7 @@ why:
 | `/status` | your heroes, days done, 10-win runs, goal progress and the current run |
 | `/locked [hero]` | cards that are still locked (and where they are, if you have a hint for them) |
 | `/where <card>` | where a locked card is - only if you already got a hint for it through Archipelago |
+| `/tracker` | open or close the tracker (same as the **Tracker** button on the overlay) |
 | `/logpath [path]` | show or change where the client looks for The Bazaar's log |
 | `/unblock` | emergency only: shows what's blocking checks; `/unblock confirm` clears it if something broke |
 

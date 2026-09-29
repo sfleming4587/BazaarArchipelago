@@ -40,7 +40,7 @@ The Bazaar:
    else, use `/logpath <path>` or set `bazaar_options.log_path` in `host.yaml`.
 3. Play. Checks are sent as you reach new days and win runs.
 
-Useful commands: `/status`, `/locked [hero]` (with hints: where each locked card is), `/where <card>` (shows your hint for
+Useful commands: `/tracker` (opens the tracker, see below), `/status`, `/locked [hero]` (with hints: where each locked card is), `/where <card>` (shows your hint for
 a locked card; only hints you already got through Archipelago), `/logpath`,
 `/unblock` (emergency only: shows what's blocking checks; `/unblock confirm` clears it if something broke).
 
@@ -83,14 +83,23 @@ Start the client with `--no-overlay` to turn it off.
 
 **Shop Guide** (only when Archipelago runs from source - the Windows installer leaves out the image library the
 pictures need, so there the shop warning above is what you get): a second window with card pictures (from [howbazaar.gg](https://www.howbazaar.gg)) of everything
-the merchant you're visiting could stock, locked ones greyed out with a red X (the shorter list goes on top). It sits in
+the merchant you're visiting could stock, locked ones greyed out with a red X (the shorter list goes on top). It opens in
 the strip right of the board (the locked-card list then stays on the left; if it doesn't fit, it says how many
-more are in the Shop Guide). **Locked only** (top of the guide) shows just the cards you
+more are in the Shop Guide). It's a real window: drag it anywhere, another monitor too, and it stays there. **Locked only** (top of the guide) shows just the cards you
 may not buy, so you learn their pictures; **Show all** brings the rest back. After you leave a shop it keeps
 showing the last one. Closing it with **X** keeps it
 closed (also next time) and lets a long list use the right strip, until you press **Pictures** in the alert
 window while at a merchant. All card pictures are downloaded once in the background when the client starts.
 Start the client with `--no-shop-guide` to turn it off completely.
+
+**Tracker:** press **Tracker** in the alert window (top left) or type `/tracker`. A window with a card for every
+hero opens; each card has four squares - **1** reach day N, **2** PvP win on day N, **3** monster checks, **4** 10
+wins. A square is green when something in it is in logic, yellow when what's left is out of logic (doable, but
+logic expects more of that hero's cards first), red when the hero is still locked, grey when it's all done. Hover a
+square to see its checks (square 3 shows a row per day with Bronze to Legendary); click it to keep the list open,
+click again to close. Heroes not in your seed are dimmed. It's a normal window you can put on another monitor.
+
+Every overlay window stays fully on a monitor, whatever the game's resolution or window size.
 
 If you close the game mid-run, the client picks the run back up when you resume it.
 Start the client before the game if possible, so it sees the start of every run.

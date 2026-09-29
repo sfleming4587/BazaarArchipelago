@@ -1,4 +1,5 @@
 import math
+from dataclasses import dataclass
 from typing import Callable, Dict, List
 
 from BaseClasses import Location
@@ -38,23 +39,46 @@ def days_card_requirement(day: int, lock_count: int, day_10_cards: int) -> int:
     return min(wanted, lock_count)
 
 
+@dataclass(frozen=True)
+class Check:
+    """One check of a hero, described by what it is (never by parsing its name)."""
+    name: str
+    kind: str  # "day" (reach the day), "pvp" (win that day's fight), "monster" (beat a tier), "win" (10 wins)
+    day: int
+    tier: str = ""
+
+
+def hero_checks(hero: str, max_day: int, pvp_win_checks: bool,
+                monster_tiers: Callable[[int], List[str]]) -> List[Check]:
+    """Every check a hero has in a seed. The world's rules and the client's tracker both list them this way."""
+    checks = []
+    for day in range(1, max_day + 1):
+        checks.append(Check(day_location(hero, day), "day", day))
+        if pvp_win_checks:
+            checks.append(Check(pvp_location(hero, day), "pvp", day))
+        checks += [Check(monster_location(hero, day, tier), "monster", day, tier) for tier in monster_tiers(day)]
+    checks.append(Check(win_location(hero), "win", 10))
+    return checks
+
+
 def card_requirements(hero: str, lock_count: int, max_day: int, pvp_win_checks: bool,
                       monster_tiers: Callable[[int], List[str]], logic: Dict[str, int]) -> Dict[str, int]:
     """
     Every check of a hero -> how many of that hero's locked items logic wants received first. The one definition:
-    the world's rules and the client's "checks in logic" count both use it. logic: day_10 / diamond / legendary.
+    the world's rules, the client's "checks in logic" count and its tracker all use it. logic: day_10 / diamond /
+    legendary.
     """
     day_10 = logic["day_10"]
     tier_cards = {"Diamond": logic["diamond"], "Legendary": logic["legendary"]}
     needs: Dict[str, int] = {}
-    for day in range(1, max_day + 1):
-        need = days_card_requirement(day, lock_count, day_10)
-        needs[day_location(hero, day)] = need
-        if pvp_win_checks:  # winning the day's fight is harder than just reaching the day
-            needs[pvp_location(hero, day)] = days_card_requirement(day + 1, lock_count, day_10)
-        for tier in monster_tiers(day):  # Bronze/Silver/Gold only follow the day's requirement
-            needs[monster_location(hero, day, tier)] = max(need, min(lock_count, tier_cards.get(tier, 0)))
-    needs[win_location(hero)] = days_card_requirement(10, lock_count, day_10)
+    for check in hero_checks(hero, max_day, pvp_win_checks, monster_tiers):
+        if check.kind == "pvp":  # winning the day's fight is harder than just reaching the day
+            needs[check.name] = days_card_requirement(check.day + 1, lock_count, day_10)
+        elif check.kind == "monster":  # Bronze/Silver/Gold only follow the day's requirement
+            needs[check.name] = max(days_card_requirement(check.day, lock_count, day_10),
+                                    min(lock_count, tier_cards.get(check.tier, 0)))
+        else:  # reaching a day; 10 wins counts as reaching day 10
+            needs[check.name] = days_card_requirement(check.day, lock_count, day_10)
     return needs
 
 

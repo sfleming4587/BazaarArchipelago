@@ -14,6 +14,9 @@ import threading
 import time
 from typing import Callable, Dict, List, Optional, Set
 
+from . import screens
+from .tracker import Tracker
+
 BOARD_BG = "#16141c"
 TILE = 76
 COLUMNS = 7
@@ -245,6 +248,13 @@ class Overlay:
         """The bottom of the alert box: run progress, or (big) the heroes you may pick on the menu. None hides it."""
         self.commands.put(("status", (text, warning, big) if text else None))
 
+    def show_tracker_data(self, data: Dict[str, dict]) -> None:
+        """What the tracker shows (see tracker.Tracker.update); sent whenever items or checks change."""
+        self.commands.put(("tracker", data))
+
+    def toggle_tracker(self) -> None:
+        self.commands.put(("tracker_toggle", None))
+
     def show_deathlink(self, text: Optional[str]) -> None:
         self.commands.put(("deathlink", text))
 
@@ -288,13 +298,21 @@ class Overlay:
         g: dict = {}  # the strips for where the game window is now (see relayout)
 
         def relayout(window: tuple) -> None:
+            primary = (0, 0, root.winfo_screenwidth(), root.winfo_screenheight())
+            monitors = screens.monitors() or [primary]
+            screen = screens.monitor_for(window, monitors)
+            if screen is None:  # the game's position is on no monitor at all: don't trust it, use the main screen
+                logging.getLogger("Client").warning(f"Overlay: game window {window} is on no monitor {monitors}; "
+                                                    f"using {primary}", extra={"NoStream": True, "skip_gui": True})
+                window = screen = screens.monitor_for(primary, monitors) or primary
             left, right, k = strips(*window)
-            g.update(window=window, left=left, right=right, k=k, inner_w=left[2] - 2 * PAD - 4)
+            # every window the overlay shows is kept inside this monitor (see render / screens.clamp)
+            g.update(window=window, screen=screen, left=left, right=right, k=k, inner_w=left[2] - 2 * PAD - 4)
             # to the log file only: where the overlay thinks the game is (for placement bugs on other screens)
             logging.getLogger("Client").info(
                 f"Overlay layout: game window {window}, screen {root.winfo_screenwidth()}x{root.winfo_screenheight()}"
                 f", Tk scaling {root.tk.call('tk', 'scaling'):.2f}, DPI awareness {dpi_awareness()}, left strip {left}"
-                f", right strip {right}", extra={"NoStream": True, "skip_gui": True})
+                f", right strip {right}, monitor {screen}", extra={"NoStream": True, "skip_gui": True})
 
         def f(size: float, weight: str = "normal") -> tuple:
             """A font of `size` points at 1080p, scaled with the game window."""
@@ -309,6 +327,7 @@ class Overlay:
         front = {"game": not self.only_over_game}
         widths: Dict[tuple, int] = {}  # (font size, text) -> pixels; measuring hundreds of names is the slow part
         board = self._make_board(tk, root, g["right"])
+        tracker = Tracker(tk, root, lambda: g["screen"])
 
         def swap(panel, bg: str):
             """A fresh content frame for the panel. The old one is destroyed only after the new one is packed, so
@@ -326,7 +345,7 @@ class Overlay:
             The move is only queued (see render) and its height returned."""
             panel.update_idletasks()
             height = min(panel.winfo_reqheight(), max_height)
-            moves.append((panel, f"{width}x{height}+{x}+{y}"))
+            moves.append((panel, (x, y, width, height)))
             return height
 
         def sync_visibility() -> None:
@@ -341,6 +360,8 @@ class Overlay:
                         layer.lift()
                         if window in (shop_first, shop_second, toast_box):
                             click_through(layer)  # nothing to click in these: never catch the game's clicks
+                    if window is guide:
+                        board["place_on_screen"](g["screen"])  # needs it shown to measure its frame
                 elif not show and window.state() == "normal":
                     for layer in layers:
                         layer.withdraw()
@@ -354,7 +375,7 @@ class Overlay:
                 drawn["toasts"] = toasts
                 drawn["toasts_height"] = render_toasts(moves)
             right_height = g["right"][3] - (drawn["toasts_height"] + 4 if drawn["toasts_height"] else 0)
-            board["fit"](*g["right"][:3], right_height)
+            board["fit"](*screens.clamp((*g["right"][:3], right_height), g["screen"]), g["screen"])
             alerts = (state["deathlink"], state["locked"], state["status"],
                       tuple(label for label, _ in shop_buttons()))
             if alerts != drawn["alerts"]:
@@ -364,11 +385,12 @@ class Overlay:
             if shop != drawn["shop"]:
                 drawn["shop"] = shop
                 render_shop(moves, drawn["alerts_height"], right_height)
-            for panel, geometry in sorted(moves, key=lambda move: move[0] is alert_box):  # alert box grows last
-                if geometry is None:
+            for panel, rect in sorted(moves, key=lambda move: move[0] is alert_box):  # alert box grows last
+                if rect is None:
                     wanted.discard(panel)
                 else:
                     wanted.add(panel)
+                    geometry = screens.geometry(screens.clamp(rect, g["screen"]))  # never off the monitor
                     if panel.geometry() != geometry:  # leave an unchanged window alone
                         panel.geometry(geometry)
                         if panel in backdrops:
@@ -378,7 +400,7 @@ class Overlay:
         def shop_buttons() -> list:
             """(label, action) for the buttons shown while at a shop. They live in the alert box, since the list
             lets clicks through: open the Shop Guide when it's closed, and hide or show the locked-card list."""
-            buttons = []
+            buttons = [("Tracker", tracker.toggle)] if tracker.data else []  # user: on the permanent top-left box
             if state["shop"] and state["shop"][2] == "sell" and board["hidden"]:
                 buttons.append(("Pictures", board["show"]))  # opens the Shop Guide
             if state["shop"] and state["shop"][1]:
@@ -409,7 +431,7 @@ class Overlay:
             toast_box.update_idletasks()
             height = min(toast_box.winfo_reqheight(), g["right"][3] // 3)
             x, y, width, strip_height = g["right"]
-            moves.append((toast_box, f"{width}x{height}+{x}+{y + strip_height - height}"))
+            moves.append((toast_box, (x, y + strip_height - height, width, height)))
             return height
 
         def render_alerts(moves: list) -> int:
@@ -522,7 +544,8 @@ class Overlay:
 
         def own_windows() -> Set[int]:
             guide = board.get("win")
-            return {window_handle(w) for w in panels + list(backdrops.values()) + ([guide] if guide else [])}
+            return {window_handle(w) for w in panels + list(backdrops.values()) + ([guide] if guide else [])
+                    + tracker.windows()}
 
         def poll() -> None:
             changed = False
@@ -545,6 +568,14 @@ class Overlay:
                 if kind == "redraw":
                     changed = True
                     continue
+                if kind == "tracker":  # new data for the tracker (it only redraws while open)
+                    first = not tracker.data
+                    tracker.update(value)
+                    changed = changed or first  # the Tracker button appears once there's something to track
+                    continue
+                if kind == "tracker_toggle":
+                    tracker.toggle()
+                    continue
                 if kind == "toast":  # (text, expires, warning)
                     state["toasts"] = (state["toasts"] + [value])[-4:]  # at most 4 at a time
                     changed = True
@@ -566,6 +597,9 @@ class Overlay:
             if game is not None and game != front["game"]:
                 front["game"] = game
                 sync_visibility()
+            guide = board.get("win")
+            if guide and front["game"] and board["hidden"] is False and guide.state() == "iconic":
+                guide.deiconify()  # Windows minimised it along with something else: it belongs on screen
             if changed:
                 render()
             else:
@@ -590,7 +624,7 @@ class Overlay:
         info: dict = {"art": None, "shown": None, "shown_guids": set(), "photos": {}, "columns": COLUMNS,
                       "hidden": None, "stale": False}
         off = dict(render=lambda value, keep_scroll=False: None, refresh=lambda guid: None, show=lambda: None,
-                   fit=lambda x, y, width, height: None, win=None)
+                   fit=lambda x, y, width, height, monitor: None, win=None, place_on_screen=lambda fallback: None)
         if not self.art_cache_dir:  # Shop Guide turned off
             info.update(off)
             return info
@@ -608,24 +642,54 @@ class Overlay:
         saved = self._load_guide()
         info["hidden"] = bool(saved.get("hidden"))
         info["locked_only"] = bool(saved.get("locked_only"))  # show only the cards you may not buy
+        # A real window you can drag anywhere, other monitors too (user 2026-09-29: "allow windows to leave the
+        # game"). Until you move it, it sits in the right strip; once moved it stays where you put it.
+        info["moved_to"] = saved.get("moved_to")  # (x, y, width, height), or None while it follows the strip
+        info["fitted"] = None  # the geometry it was last put at by the strip
+        info["strip"] = None  # (rect, monitor) of the right strip it follows
 
         def persist() -> None:
-            self._save_guide({"hidden": info["hidden"], "locked_only": info["locked_only"]})
+            self._save_guide({"hidden": info["hidden"], "locked_only": info["locked_only"],
+                              "moved_to": info["moved_to"]})
         win = tk.Toplevel(root)
         win.title("Shop Guide - The Bazaar")
-        win.overrideredirect(True)  # no title bar or border, which would reach past the strip
         win.configure(bg=BOARD_BG)
         win.attributes("-topmost", True)
+        win.attributes("-toolwindow", True)  # a small title bar with only X: nothing to minimise it by
         win.geometry("{2}x{3}+{0}+{1}".format(*area))
-        win.withdraw()  # shown by the overlay's render, only while the game is in front
-        never_focus(win)
+        win.withdraw()  # shown by the overlay's render, only while the game (or one of its windows) is in front
+        win.protocol("WM_DELETE_WINDOW", lambda: close())
 
-        def fit(x: int, y: int, width: int, height: int) -> None:
-            """The right strip minus any pop-ups below it."""
-            geometry = f"{width}x{height}+{x}+{y}"
-            if win.geometry() != geometry:
-                win.geometry(geometry)
-                header.configure(wraplength=width - 60)
+        def fit(x: int, y: int, width: int, height: int, monitor: tuple) -> None:
+            """Follow the right strip (minus any pop-ups below it) - unless you moved the guide yourself."""
+            if info["moved_to"] or info["strip"] == ((x, y, width, height), monitor):
+                return
+            info["strip"] = ((x, y, width, height), monitor)
+            header.configure(wraplength=width - 60)
+            if win.winfo_ismapped():
+                place_on_screen(monitor)
+
+        def moved(event) -> None:
+            # <Configure> also fires for child widgets and for our own placing: only a real move/resize counts
+            if event.widget is not win or win.state() != "normal" or not info["fitted"] \
+                    or win.geometry() == info["fitted"]:
+                return
+            rect = screens.visible_bounds(win)
+            if rect and list(rect) != info["moved_to"]:
+                info["moved_to"] = list(rect)
+                persist()
+
+        def place_on_screen(fallback: tuple) -> None:
+            """Once shown: where you put it, or the right strip - its visible frame always fully on a monitor."""
+            if info["moved_to"]:
+                target = tuple(info["moved_to"])
+                area = screens.monitor_for(target, screens.monitors()) or fallback
+            elif info["strip"]:
+                target, area = info["strip"]
+            else:
+                return
+            screens.settle(win, target, area)
+            info["fitted"] = win.geometry()
 
         def close() -> None:
             info["hidden"] = True
@@ -750,7 +814,8 @@ class Overlay:
             if not keep_scroll:
                 canvas.yview_moveto(0)
 
-        info.update(render=render, refresh=refresh, show=show, fit=fit, win=win)
+        win.bind("<Configure>", moved)
+        info.update(render=render, refresh=refresh, show=show, fit=fit, win=win, place_on_screen=place_on_screen)
         return info
 
     def _load_guide(self) -> dict:
