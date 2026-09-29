@@ -440,7 +440,8 @@ class BazaarContext(CommonContext):
         if self.run.get("active"):
             self.run.setdefault("inventory", {})[event.instance] = event.guid
         if event.guid not in CARDS_BY_GUID:
-            self.notice("card", "You got a card this apworld doesn't know (added by a patch). It's never locked.")
+            self.notice("card", "You got a card this apworld doesn't track (a special item like Midsworth's Package, "
+                                "or one added by a patch). It's never locked.")
         if not self.run.get("active") or event.guid not in self.locked_guids():
             return
         self.run.setdefault("held", {})[event.instance] = event.guid
@@ -556,7 +557,7 @@ class BazaarContext(CommonContext):
         if signal is None:
             return
         with open(Utils.user_path("bazaar_pvp_evidence.csv"), "a", encoding="utf-8") as f:
-            f.write(f"{self.seed_name},{hero},{day},{int(signal)},{int(won)}\n")
+            f.write(f"{self.room_seed},{hero},{day},{int(signal)},{int(won)}\n")
 
     async def handle_pvp(self, event: PvPFought) -> None:
         if not self.run.get("active") or not self.slot_data.get("pvp_win_checks"):
