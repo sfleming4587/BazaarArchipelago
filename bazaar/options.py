@@ -4,7 +4,8 @@ from dataclasses import dataclass, make_dataclass
 from Options import (Choice, DeathLink, DefaultOnToggle, ItemSet, OptionGroup, OptionSet, PerGameCommonOptions,
                      Range, Removed, StartInventoryPool, Toggle, Visibility)
 
-from .data import CARDS, DLC_HEROES, HEROES, hero_key
+from .data import CARDS, DLC_HEROES, HEROES, TIERS, hero_key
+from .locations import MAX_DAY
 
 
 class OwnedDLCHeroes(OptionSet):
@@ -92,7 +93,7 @@ class MaxDay(Range):
     """
     display_name = "Max Day Check"
     range_start = 5
-    range_end = 20
+    range_end = MAX_DAY
     default = 15
 
 
@@ -112,15 +113,14 @@ class MonsterChecks(DefaultOnToggle):
     display_name = "Monster Checks"
 
 
-class MaxMonsterTier(Choice):
-    """The highest monster rarity that has a check. Pick diamond to leave out Legendary monster checks."""
-    display_name = "Maximum Monster Difficulty"
-    option_bronze = 0
-    option_silver = 1
-    option_gold = 2
-    option_diamond = 3
-    option_legendary = 4
-    default = 4
+def _max_monster_tier_body(namespace: dict) -> None:
+    namespace.update(
+        __doc__="The highest monster rarity that has a check. Pick diamond to leave out Legendary monster checks.",
+        display_name="Maximum Monster Difficulty", default=len(TIERS) - 1, __module__=__name__,
+        **{f"option_{tier.lower()}": number for number, tier in enumerate(TIERS)})  # from data.TIERS
+
+
+MaxMonsterTier = types.new_class("MaxMonsterTier", (Choice,), exec_body=_max_monster_tier_body)
 
 
 class LockedCards(Removed):
@@ -217,7 +217,7 @@ class LogicDay10Cards(Range):
     """
     display_name = "Logic: Cards Before Day 10"
     range_start = 0
-    range_end = 30  # more can't fit in the checks days 1-7 give every hero before cards are needed
+    range_end = 30  # lowered for a seed with too few checks that need no cards (see BazaarWorld.fit_logic)
     default = 15
 
 
@@ -225,7 +225,7 @@ class LogicDiamondCards(Range):
     """Logic: how many of a hero's own locked cards are expected before beating a Diamond monster."""
     display_name = "Logic: Cards Before Diamond Monsters"
     range_start = 0
-    range_end = 30  # more can't fit in the checks days 1-7 give every hero before cards are needed
+    range_end = 30  # lowered for a seed with too few checks that need no cards (see BazaarWorld.fit_logic)
     default = 10
 
 
@@ -233,7 +233,7 @@ class LogicLegendaryCards(Range):
     """Logic: how many of a hero's own locked cards are expected before beating a Legendary monster."""
     display_name = "Logic: Cards Before Legendary Monsters"
     range_start = 0
-    range_end = 30  # more can't fit in the checks days 1-7 give every hero before cards are needed
+    range_end = 30  # lowered for a seed with too few checks that need no cards (see BazaarWorld.fit_logic)
     default = 20
 
 

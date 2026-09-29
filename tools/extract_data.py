@@ -166,11 +166,18 @@ def main() -> None:
         if c["guid"] not in known:
             cards.append({**c, "shop": False})
 
-    names = {}
-    for c in cards:
-        if c["name"] in names:
-            c["name"] = f'{c["name"]} ({c["hero"]})'
-        names[c["name"]] = c["guid"]
+    # A card's name is its item's name (in YAMLs, hints, trackers), so a name once given never changes, and older
+    # ids claim a plain name first. A clash gets the hero added, then the id, so no two cards ever share a name.
+    old_names = {c["guid"]: c["name"] for c in old["cards"]}
+    taken = set()
+    for c in sorted(cards, key=lambda c: c["ap_id"]):
+        name = old_names.get(c["guid"], c["name"])
+        if name in taken:
+            name = f'{name} ({c["hero"]})'
+        if name in taken:
+            name = f'{name} #{c["ap_id"]}'
+        c["name"] = name
+        taken.add(name)
 
     packs = []
     old_pack_by_key = {p["key"]: p for p in old["packs"]}

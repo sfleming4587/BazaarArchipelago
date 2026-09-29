@@ -17,9 +17,10 @@ from CommonClient import (ClientCommandProcessor, CommonContext, get_base_parser
                           logger, server_loop)
 from NetUtils import ClientStatus
 
-from .data import (CARDS, CARDS_BY_GUID, GAME_VERSION, HEROES, MERCHANT_DATA, MONSTERS, OFFER_DATA, PACKS,
+from .data import (CARDS, CARDS_BY_GUID, GAME_VERSION, HEROES, MERCHANT_DATA, MONSTERS, OFFER_DATA,
                    TIERS)
-from .items import BASE_ID, GAME, GROUP_ITEMS, SELL_TRAP, hero_item, item_name_to_id, lock_items_by_hero
+from .items import (GAME, HERO_ITEM_IDS, SELL_TRAP, SELL_TRAP_ID, UNLOCKS, hero_item,
+                    item_id_to_name, item_name_to_id, lock_items_by_hero)
 from .locations import (card_requirements, day_location, hero_checks, location_name_to_id, monster_location,
                         pvp_location, win_location)
 from .logparser import (DEFAULT_LOG_PATH, PREV_LOG, HeroSelected, CardGained, CardSold, DayReached, EncounterEntered,
@@ -33,10 +34,15 @@ STATE_FILE = "bazaar_client_state.json"
 
 SHOP_CARDS = [c for c in CARDS if c.shop]
 GUIDE_MAX = 300  # the Shop Guide skips deals that could be almost anything (hundreds of pictures)
-ITEM_NAMES = {item_id: name for name, item_id in item_name_to_id.items()}
-LOCK_ITEM_GUIDS: Dict[int, Set[str]] = {BASE_ID + c.ap_id: {c.guid} for c in CARDS}
-LOCK_ITEM_GUIDS.update({BASE_ID + p.ap_id: set(p.cards) for p in PACKS})
-LOCK_ITEM_GUIDS.update({item_name_to_id[name]: set(guids) for name, guids in GROUP_ITEMS.items()})
+# what the client assumes when a seed's slot_data lacks a setting (older apworlds); read through BazaarContext.setting()
+SLOT_DEFAULTS = {"heroes": [], "max_day": 15, "pvp_win_checks": False, "monster_tiers": {}, "heroes_required": 1,
+                 "lock_items": [], "logic": None, "death_link": False, "death_link_amnesty": 0, "sell_trap_days": 2,
+                 "death_link_on_concede": False}
+
+
+def own_popup(item_id: int) -> bool:
+    """Items announced by their own pop-up (UNLOCKED, a Sell Trap) rather than the generic item pop-ups."""
+    return item_id in UNLOCKS or item_id in HERO_ITEM_IDS or item_id == SELL_TRAP_ID
 
 
 def default_log_path() -> str:
@@ -72,7 +78,7 @@ class BazaarCommandProcessor(ClientCommandProcessor):
         hints = self.ctx.locked_card_hints()
         names = sorted(CARDS_BY_GUID[g].name + f" ({CARDS_BY_GUID[g].hero})" + (f"  -> {hints[g]}" if g in hints else "")
                        for g in self.ctx.locked_guids()
-                       if g in CARDS_BY_GUID and (not hero or CARDS_BY_GUID[g].hero.lower() == hero.lower()))
+                       if (not hero or CARDS_BY_GUID[g].hero.lower() == hero.lower()))
         self.output(f"{len(names)} locked card(s):" if names else "No locked cards.")
         for name in names:
             self.output(f"  {name}")
@@ -81,7 +87,7 @@ class BazaarCommandProcessor(ClientCommandProcessor):
     def _cmd_where(self, *card: str) -> bool:
         """Where is a locked card? Only answers if you already got a hint for it through Archipelago."""
         wanted = " ".join(card).strip().lower()
-        guid = next((g for g in self.ctx.locked_guids() if g in CARDS_BY_GUID and CARDS_BY_GUID[g].name.lower() == wanted),
+        guid = next((g for g in self.ctx.locked_guids() if CARDS_BY_GUID[g].name.lower() == wanted),
                     None)
         if not guid:
             self.output("That isn't one of your locked cards (see /locked).")
@@ -132,12 +138,11 @@ class BazaarContext(CommonContext):
     items_handling = 0b111
     command_processor = BazaarCommandProcessor
     want_slot_data = True
-    log_path_override: Optional[str] = None
 
     def __init__(self, server_address: Optional[str] = None, password: Optional[str] = None) -> None:
         super().__init__(server_address, password)
         self.slot_data: Dict[str, Any] = {}
-        self.log_path = self.log_path_override or default_log_path()
+        self.log_path = default_log_path()
         self.restart_watcher = False
         self.run: Dict[str, Any] = {}  # persisted: hero, day, counting, tainted, deathlink_owed
         self.defeats_since_death = 0
@@ -164,15 +169,15 @@ class BazaarContext(CommonContext):
         elif cmd == "Connected":
             self.slot_data = args.get("slot_data") or {}
             self.load_state()
-            Utils.async_start(self.update_death_link(bool(self.slot_data.get("death_link"))))
+            Utils.async_start(self.update_death_link(bool(self.setting("death_link"))))
             logger.info(f"Watching {self.log_path}", extra=FILE_ONLY)
         elif cmd == "ReceivedItems":
             for item in args["items"]:
                 name = self.item_names.lookup_in_game(item.item)
-                if item.item in LOCK_ITEM_GUIDS or name.startswith("Hero: "):
+                if item.item in UNLOCKS or item.item in HERO_ITEM_IDS:
                     logger.info(f"Unlocked: {name}", extra=FILE_ONLY)
                     if self.overlay and args.get("index", 0) > 0:  # index 0 = the full list resent on connect
-                        self.overlay.toast(f"UNLOCKED: {name.replace('Hero: ', '')}  (from {self.who(item.player)})")
+                        self.overlay.toast(f"UNLOCKED: {HERO_ITEM_IDS.get(item.item, name)}  (from {self.who(item.player)})")
             self.refresh_held()
             self.receive_traps()
             self.update_status()
@@ -189,13 +194,13 @@ class BazaarContext(CommonContext):
             name = self.item_names.lookup_in_slot(item.item, receiver)
             if receiver != self.slot:
                 self.overlay.toast(f"SENT: {name} to {self.who(receiver)}")
-            elif item.item not in LOCK_ITEM_GUIDS and not name.startswith("Hero: ") and name != SELL_TRAP:
+            elif not own_popup(item.item):
                 self.overlay.toast(f"FOUND: {name}  (in {self.who(self.slot)})")
         elif self.overlay and args.get("type") == "ItemSend" and args["receiving"] == self.slot:
             # someone else found something for you; unlocks and Sell Traps have their own pop-ups
             item = args["item"]
             name = self.item_names.lookup_in_slot(item.item, self.slot)
-            if item.item not in LOCK_ITEM_GUIDS and not name.startswith("Hero: ") and name != SELL_TRAP:
+            if not own_popup(item.item):
                 self.overlay.toast(f"RECEIVED: {name}  (from {self.who(item.player)})")
 
     def who(self, slot: int) -> str:
@@ -259,8 +264,8 @@ class BazaarContext(CommonContext):
     def unlock_item_for(self, guid: str) -> str:
         """The name of the item (card, pack or group) in this seed that unlocks a locked card."""
         received = self.received_ids()
-        for item_id in self.slot_data.get("lock_items", []):
-            if item_id not in received and guid in LOCK_ITEM_GUIDS.get(item_id, set()):
+        for item_id in self.setting("lock_items"):
+            if item_id not in received and guid in UNLOCKS.get(item_id, set()):
                 return self.item_names.lookup_in_game(item_id)
         return CARDS_BY_GUID[guid].name
 
@@ -270,7 +275,7 @@ class BazaarContext(CommonContext):
         for hint in self.stored_data.get(f"_read_hints_{self.team}_{self.slot}") or []:
             if hint.get("receiving_player") != self.slot or hint.get("found"):
                 continue
-            guids = LOCK_ITEM_GUIDS.get(hint.get("item"))
+            guids = UNLOCKS.get(hint.get("item"))
             if not guids:
                 continue
             finder = hint.get("finding_player")
@@ -282,9 +287,9 @@ class BazaarContext(CommonContext):
     def locked_guids(self) -> Set[str]:
         received = self.received_ids()
         locked: Set[str] = set()
-        for item_id in self.slot_data.get("lock_items", []):
+        for item_id in self.setting("lock_items"):
             if item_id not in received:
-                locked |= LOCK_ITEM_GUIDS.get(item_id, set())
+                locked |= UNLOCKS.get(item_id, set())
         return locked
 
     # --- game events --------------------------------------------------------------------------------------------
@@ -315,7 +320,7 @@ class BazaarContext(CommonContext):
         elif event.hero not in HEROES:
             self.notice(f"hero:{event.hero}", f"{event.hero} is newer than this apworld, so it isn't part of this "
                                               f"seed.")
-        if event.hero not in self.slot_data.get("heroes", []):
+        if event.hero not in self.setting("heroes"):
             self.event(f"CHECKS ARE BLOCKED: {event.hero} isn't part of this multiworld.", warning=True)
             counting = False
         elif not self.hero_unlocked(event.hero):
@@ -337,7 +342,7 @@ class BazaarContext(CommonContext):
         if not self.run.get("active"):
             return
         # send the day's own check before moving the day on, so a Sell Trap due today doesn't block reaching it
-        if event.day <= self.slot_data.get("max_day", 15):
+        if event.day <= self.setting("max_day"):
             await self.send_run_checks([day_location(self.run["hero"], event.day)])
         self.run["day"] = event.day
         self.save_state()
@@ -380,7 +385,7 @@ class BazaarContext(CommonContext):
             return
         instance = random.choice(choices)
         guid = self.run["inventory"][instance]
-        deadline = self.run.get("day", 1) + self.slot_data.get("sell_trap_days", 2)
+        deadline = self.run.get("day", 1) + self.setting("sell_trap_days")
         self.run.setdefault("traps", []).append({"instance": instance, "guid": guid, "deadline": deadline})
         name = self.card_name(guid)
         self.event(f"SELL TRAP! Sell {name} before day {deadline} starts, or checks get blocked.", warning=True)
@@ -507,8 +512,7 @@ class BazaarContext(CommonContext):
             return
         verb = "sell" if event.guid in MERCHANT_DATA else "offer"
         locked = self.locked_guids()
-        stock = possible_stock(merchant["stock"], self.run["hero"], (CARDS_BY_GUID[g] for g in locked
-                                                                     if g in CARDS_BY_GUID))
+        stock = possible_stock(merchant["stock"], self.run["hero"], (CARDS_BY_GUID[g] for g in locked))
         names = sorted(c.name for c in stock)
         if names:
             logger.info(f"{merchant['name']} may {verb} these locked cards: {', '.join(names)}", extra=FILE_ONLY)
@@ -526,15 +530,6 @@ class BazaarContext(CommonContext):
             if self.shop_guide:
                 self.overlay.show_board(None, [], [])
 
-    def day_checks_after(self, hero: str, last_day: int) -> list:
-        """PvP and monster checks for the days after `last_day` (days a 10-win run never reached)."""
-        names = []
-        for day in range(last_day + 1, self.slot_data.get("max_day", 15) + 1):
-            if self.slot_data.get("pvp_win_checks"):
-                names.append(pvp_location(hero, day))
-            names += [monster_location(hero, day, t) for t in self.slot_data.get("monster_tiers", {}).get(str(day), [])]
-        return names
-
     async def handle_monster(self, event: MonsterFought) -> None:
         if not self.run.get("active") or not event.won:
             return
@@ -544,31 +539,21 @@ class BazaarContext(CommonContext):
             self.notice("monster", "You beat a monster this apworld doesn't know (added by a patch). "
                                    "It counts as a Bronze monster until the apworld is updated.")
             monster = {"name": "a new monster", "tier": "Bronze"}
-        tiers = self.slot_data.get("monster_tiers", {}).get(str(event.day), [])
+        tiers = self.tiers(event.day)
         beaten = [t for t in tiers if TIERS.index(t) <= TIERS.index(monster["tier"])]
         self.event(f"Beat {monster['name']} ({monster['tier']}) on day {event.day}.")
         if beaten:
             await self.send_run_checks([monster_location(self.run["hero"], event.day, t) for t in beaten])
 
-    def record_pvp_evidence(self, hero: str, day: int, signal: Optional[bool], won: bool) -> None:
-        """Pairs the candidate log signal with the real result so we can learn whether it predicts a win."""
-        if signal is None:
-            return
-        with open(Utils.user_path("bazaar_pvp_evidence.csv"), "a", encoding="utf-8") as f:
-            f.write(f"{self.room_seed},{hero},{day},{int(signal)},{int(won)}\n")
-
     async def handle_pvp(self, event: PvPFought) -> None:
-        if not self.run.get("active") or not self.slot_data.get("pvp_win_checks"):
+        if not self.run.get("active") or not self.setting("pvp_win_checks"):
             return
-        if event.day > self.slot_data.get("max_day", 15):
+        if event.day > self.setting("max_day"):
             return
-        if event.won is not None:  # the run-ending fight: the log says how it went, keep checking the signal
-            self.record_pvp_evidence(self.run["hero"], event.day, event.exit_tasks, event.won)
         # Mid-run the log doesn't say who won, but "Waiting for N exit tasks" only follows a won fight: it matched
         # all 10 answers in the user's Karnok run (2026-09-28), so wins are counted from it (user: "yes on the pvp
         # win auto count").
-        won = event.won if event.won is not None else event.exit_tasks
-        if won:
+        if event.won:
             await self.send_run_checks([pvp_location(self.run["hero"], event.day)])
 
     async def handle_run_end(self, event: RunEnded) -> None:
@@ -577,10 +562,11 @@ class BazaarContext(CommonContext):
         hero = self.run["hero"]
         deathlink_owed = self.run.get("deathlink_owed")
         if event.victory:
-            max_day = self.slot_data.get("max_day", 15)
             self.event(f"10 wins with {hero}!")
-            await self.send_run_checks([day_location(hero, d) for d in range(1, max_day + 1)] + [win_location(hero)]
-                                       + self.day_checks_after(hero, event.day))
+            # every day check and the 10-win check, plus PvP and monster checks of the days the run never reached
+            await self.send_run_checks([c.name for c in hero_checks(hero, self.setting("max_day"), self.setting("pvp_win_checks"),
+                                                                    self.tiers)
+                                        if c.kind in ("day", "win") or c.day > event.day])
         self.run = {**self.run, "active": False, "held": {}}
         self.refresh_held()
         self.handle_encounter_left()
@@ -590,22 +576,21 @@ class BazaarContext(CommonContext):
         elif deathlink_owed:
             self.event("Run over. DeathLink paid off.")
         elif event.conceded:
-            if self.slot_data.get("death_link_on_concede"):
-                await self.maybe_send_death(f"conceded on day {event.day}", legal=self.run.get("legal", True))
+            if self.setting("death_link_on_concede"):
+                await self.maybe_send_death(f"conceded on day {event.day}")
             else:
                 self.event("Run conceded. Conceding doesn't send a DeathLink.")
         else:
-            await self.maybe_send_death(f"ran out of prestige on day {event.day}", legal=self.run.get("legal", True))
+            await self.maybe_send_death(f"ran out of prestige on day {event.day}")
         self.save_state()
 
-    async def maybe_send_death(self, what: str, legal: Optional[bool] = None) -> None:
+    async def maybe_send_death(self, what: str) -> None:
         """Send a DeathLink unless it's off, the run doesn't count (locked hero / DeathLink owed) or amnesty applies."""
-        if legal is None:
-            legal = self.run.get("legal", True) and not self.run.get("deathlink_owed")
+        legal = self.run.get("legal", True) and not self.run.get("deathlink_owed")
         if "DeathLink" not in self.tags or not legal:
             return
         self.defeats_since_death += 1
-        amnesty = self.slot_data.get("death_link_amnesty", 0)
+        amnesty = self.setting("death_link_amnesty")
         if self.defeats_since_death > amnesty:
             self.defeats_since_death = 0
             player = self.player_names.get(self.slot, "A Bazaar player")
@@ -645,17 +630,25 @@ class BazaarContext(CommonContext):
         else:
             (logger.warning if warning else logger.info)(text)
 
+    def setting(self, key: str):
+        """A setting of the connected seed (slot_data), or what older seeds meant when they didn't send it."""
+        return self.slot_data.get(key, SLOT_DEFAULTS[key])
+
+    def tiers(self, day: int) -> list:
+        """The monster rarities with a check on this day (slot_data keys are strings after the server)."""
+        return self.setting("monster_tiers").get(str(day), [])
+
     def done(self) -> Set[int]:
         return self.checked_locations | self.locations_checked
 
     def heroes_won(self) -> list:
         """Heroes whose 10-win check is done: the goal counts these (/status and the overlay show the same)."""
-        return [h for h in self.slot_data.get("heroes", []) if location_name_to_id[win_location(h)] in self.done()]
+        return [h for h in self.setting("heroes") if location_name_to_id[win_location(h)] in self.done()]
 
     def check_goal(self) -> None:
         if self.goal_sent or not self.slot_data:
             return
-        if len(self.heroes_won()) >= self.slot_data.get("heroes_required", 1):
+        if len(self.heroes_won()) >= self.setting("heroes_required"):
             self.goal_sent = True
             self.finished_game = True
             Utils.async_start(self.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}]))
@@ -665,14 +658,14 @@ class BazaarContext(CommonContext):
         """[(Check, done, in logic)] for every check of a hero, from the same card requirements the world's rules
         use. The menu's hero list and the tracker both read this. None for seeds made before the client could
         tell (no "logic" in slot_data)."""
-        logic = self.slot_data.get("logic")
+        logic = self.setting("logic")
         if not logic or "lock_items" not in self.slot_data:
             return None
-        items = lock_items_by_hero(self.slot_data["lock_items"])[0].get(hero, [])
-        received = {ITEM_NAMES.get(item.item) for item in self.items_received}
+        items = lock_items_by_hero(self.setting("lock_items"))[0].get(hero, [])
+        received = {item_id_to_name.get(item.item) for item in self.items_received}
         have = len(set(items) & received)
-        tiers = self.slot_data.get("monster_tiers", {})
-        max_day, pvp = self.slot_data.get("max_day", 15), bool(self.slot_data.get("pvp_win_checks"))
+        tiers = self.setting("monster_tiers")
+        max_day, pvp = self.setting("max_day"), bool(self.setting("pvp_win_checks"))
         needs = card_requirements(hero, len(items), max_day, pvp, lambda day: tiers.get(str(day), []), logic)
         unlocked, done = self.hero_unlocked(hero), self.done()
         return [(check, location_name_to_id[check.name] in done, unlocked and have >= needs[check.name])
@@ -692,7 +685,7 @@ class BazaarContext(CommonContext):
         if not self.slot_data:
             return data
         for hero in HEROES:
-            states = self.check_states(hero) if hero in self.slot_data.get("heroes", []) else None
+            states = self.check_states(hero) if hero in self.setting("heroes") else None
             if states is None:
                 data[hero] = {"in_seed": False, "unlocked": False, "checks": []}
                 continue
@@ -710,12 +703,12 @@ class BazaarContext(CommonContext):
         "make it more obvious on the homescreen which heros are available")."""
         if not self.slot_data:
             return None, False, False
-        goal = f"Goal {len(self.heroes_won())}/{self.slot_data.get('heroes_required', 1)}"
+        goal = f"Goal {len(self.heroes_won())}/{self.setting('heroes_required')}"
         if self.run.get("active"):
-            hero, day, max_day = self.run["hero"], self.run.get("day", 1), self.slot_data.get("max_day", 15)
+            hero, day, max_day = self.run["hero"], self.run.get("day", 1), self.setting("max_day")
             return f"{hero}: day {day}/{max_day} · {goal}", False, False
         if self.menu_hero:
-            playable = [h for h in self.slot_data.get("heroes", []) if self.hero_unlocked(h)]
+            playable = [h for h in self.setting("heroes") if self.hero_unlocked(h)]
             lines = ["HEROES YOU CAN PLAY  (checks done / in logic)"] if playable else ["No hero unlocked yet"]
             for hero in playable:
                 progress = self.hero_progress(hero)
@@ -740,13 +733,13 @@ class BazaarContext(CommonContext):
             logger.info("Not connected.")
             return
         done = self.done()
-        max_day = self.slot_data["max_day"]
-        for hero in self.slot_data["heroes"]:
+        max_day = self.setting("max_day")
+        for hero in self.setting("heroes"):
             days = sum(location_name_to_id[day_location(hero, d)] in done for d in range(1, max_day + 1))
             won = location_name_to_id[win_location(hero)] in done
             lock = "unlocked" if self.hero_unlocked(hero) else "LOCKED"
             logger.info(f"{hero:12} {lock:9} days {days}/{max_day}  10 wins: {'yes' if won else 'no'}")
-        logger.info(f"Goal: {len(self.heroes_won())}/{self.slot_data['heroes_required']} heroes with 10 wins")
+        logger.info(f"Goal: {len(self.heroes_won())}/{self.setting('heroes_required')} heroes with 10 wins")
         if self.run.get("active"):
             reason = self.blocked_reason()
             note = f" - CHECKS ARE BLOCKED {reason}" if reason else ""
@@ -867,6 +860,8 @@ async def watch_log(ctx: BazaarContext) -> None:
 async def main(args) -> None:
     ctx = BazaarContext(args.connect, args.password)
     ctx.auth = args.name
+    if args.logpath:
+        ctx.log_path = args.logpath
     ctx.shop_guide = not args.no_shop_guide
     if not args.no_overlay:
         from .overlay import Overlay
@@ -903,8 +898,6 @@ def launch_client(*args: str) -> None:
                         help="Don't open the Shop Guide window (card pictures of what a merchant can sell).")
     parser.add_argument("url", nargs="?", help="Archipelago connection url")
     parsed = handle_url_arg(parser.parse_args(args), parser=parser)
-    if parsed.logpath:
-        BazaarContext.log_path_override = parsed.logpath
     colorama.just_fix_windows_console()
     asyncio.run(main(parsed))
     colorama.deinit()

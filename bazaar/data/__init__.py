@@ -53,7 +53,6 @@ PACKS: List[Pack] = [Pack(p["key"], p["ap_id"], p["name"], p["hero"], tuple(p["c
 
 # encounter guid -> {"name": ..., "stock": SpawnContext}; taking an item inside one of these costs gold
 MERCHANT_DATA: Dict[str, dict] = {m["guid"]: m for m in _raw.get("merchants", [])}
-MERCHANTS = frozenset(MERCHANT_DATA)
 # events / steps that let you take an item for free: guid -> {"name": ..., "stock": SpawnContext}
 OFFER_DATA: Dict[str, dict] = {m["guid"]: m for m in _raw.get("offers", [])}
 
@@ -69,10 +68,9 @@ MONSTERS: Dict[str, dict] = {m["guid"]: m for m in _raw.get("monsters", [])}
 FIRST_DAY_OF_TIER = {"Bronze": 1, "Silver": 1, "Gold": 2, "Diamond": 3, "Legendary": 6}
 
 
-def max_monster_tier_by_day(last_day: int) -> Dict[int, int]:
-    """Highest monster rarity (index into TIERS) you can meet on each day."""
-    return {day: max(i for i, tier in enumerate(TIERS) if FIRST_DAY_OF_TIER[tier] <= day)
-            for day in range(1, last_day + 1)}
+def tiers_on_day(day: int, highest: str) -> List[str]:
+    """The monster rarities you can meet on a day, up to and including `highest`."""
+    return [tier for tier in TIERS[:TIERS.index(highest) + 1] if FIRST_DAY_OF_TIER[tier] <= day]
 
 
 # Cards unlocked together by one group item.
@@ -81,4 +79,5 @@ TICKET_GUIDS = frozenset(c.guid for c in CARDS if c.ticket)
 
 CARDS_BY_NAME: Dict[str, Card] = {c.name: c for c in CARDS}
 CARDS_BY_GUID: Dict[str, Card] = {c.guid: c for c in CARDS}
-PACKS_BY_ITEM: Dict[str, Pack] = {}  # filled in by items.py once item names are known
+# card names are item names: two cards with one name would silently share an item id (the extractor prevents it)
+assert len(CARDS_BY_NAME) == len(CARDS), "two cards share a name - rerun tools/extract_data.py"

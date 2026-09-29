@@ -37,8 +37,8 @@ class TestLogParser(unittest.TestCase):
     def test_full_losing_run(self) -> None:
         lines = RUN_START + pvp_day() + pvp_day() + pvp_day("EndRunDefeatState")
         events = [e for e in run_events(lines) if not isinstance(e, FightStarted)]
-        self.assertEqual(events, [RunStarted("Dooley"), DayReached(1), PvPFought(1, None), DayReached(2),
-                                  PvPFought(2, None), DayReached(3), PvPFought(3, False),
+        self.assertEqual(events, [RunStarted("Dooley"), DayReached(1), PvPFought(1, False), DayReached(2),
+                                  PvPFought(2, False), DayReached(3), PvPFought(3, False),
                                   RunEnded(victory=False, day=3)])
 
     def test_monster_fights(self) -> None:

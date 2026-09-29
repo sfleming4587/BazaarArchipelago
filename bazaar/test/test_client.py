@@ -115,15 +115,15 @@ class TestPvPWins(ClientTestBase):
     """A mid-run PvP win is counted from the "Waiting for N exit tasks" line (no question any more)."""
 
     def test_win_signal_sends_the_check(self) -> None:
-        self.play(RunStarted("Vanessa"), PvPFought(1, None, exit_tasks=True))
+        self.play(RunStarted("Vanessa"), PvPFought(1, True))
         self.assertTrue(self.was_sent("Vanessa - Day 1 PvP Win"))
 
     def test_no_signal_is_a_loss(self) -> None:
-        self.play(RunStarted("Vanessa"), PvPFought(1, None, exit_tasks=False))
+        self.play(RunStarted("Vanessa"), PvPFought(1, False))
         self.assertFalse(self.was_sent("Vanessa - Day 1 PvP Win"))
 
     def test_win_while_holding_a_locked_card_is_not_sent(self) -> None:
-        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", False), PvPFought(1, None, exit_tasks=True))
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", False), PvPFought(1, True))
         self.assertFalse(self.was_sent("Vanessa - Day 1 PvP Win"))
 
 
@@ -256,7 +256,7 @@ class TestItemPopUps(ClientTestBase):
 
 class TestNewRunIsACleanSlate(ClientTestBase):
     def test_nothing_carries_over_after_a_lost_run(self) -> None:
-        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", False), PvPFought(1, None))
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", False), PvPFought(1, False))
         self.ctx.on_deathlink({"time": 1.0, "source": "Friend", "cause": "Friend fell."})
         self.play(RunEnded(False, 1), RunStarted("Vanessa"))
         self.assertIsNone(self.ctx.blocked_reason())
@@ -291,11 +291,11 @@ class TestDeathLinkTriggers(ClientTestBase):
         self.assertEqual(len(self.deaths), 1)
 
     def test_run_lost_sends_once(self) -> None:
-        self.play(RunStarted("Vanessa"), PvPFought(2, None), PvPFought(3, False), RunEnded(False, 3))
+        self.play(RunStarted("Vanessa"), PvPFought(2, False), PvPFought(3, False), RunEnded(False, 3))
         self.assertEqual(len(self.deaths), 1)
 
     def test_losing_single_fights_never_sends(self) -> None:
-        self.play(RunStarted("Vanessa"), PvPFought(1, None))  # lost: prestige lost, run goes on
+        self.play(RunStarted("Vanessa"), PvPFought(1, False))  # lost: prestige lost, run goes on
         self.assertEqual(self.deaths, [])
 
     def test_conceding_because_of_a_received_deathlink_never_echoes(self) -> None:
@@ -449,7 +449,7 @@ class TestRunIdentity(ClientTestBase):
         self.write_prev_log(["[10:00:01.000] [StartRunAppState] Run initialization finalized."])  # never finished
         self.ctx.log_session = "11:00:00.000"  # the game was restarted
         self.sent.clear()
-        self.play(RunStarted("Vanessa", 0), DayReached(1), DayReached(2), PvPFought(2, None, exit_tasks=True))
+        self.play(RunStarted("Vanessa", 0), DayReached(1), DayReached(2), PvPFought(2, True))
         self.assertEqual(self.ctx.run["day"], 7)
         self.assertTrue(self.was_sent(day_location("Vanessa", 7)))
         self.assertTrue(self.was_sent("Vanessa - Day 7 PvP Win"))

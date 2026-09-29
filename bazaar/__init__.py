@@ -1,5 +1,5 @@
 import logging
-from typing import Any, ClassVar, Dict, List, Mapping
+from typing import Any, ClassVar, Dict, List, Mapping, Optional
 
 import settings
 from BaseClasses import ItemClassification, Region, Tutorial
@@ -7,12 +7,11 @@ from Options import OptionError
 from worlds.AutoWorld import WebWorld, World
 from worlds.LauncherComponents import Component, Type, components, launch
 
-from .data import (BASE_HEROES, CARDS, CARDS_BY_NAME, HEROES, LEGENDARY_GUIDS, PACKS, TIERS, hero_key,
-                   max_monster_tier_by_day)
+from .data import BASE_HEROES, CARDS, CARDS_BY_NAME, HEROES, LEGENDARY_GUIDS, PACKS, TIERS, hero_key, tiers_on_day
 from .items import (EXPEDITION_TICKETS, FILLER_ITEMS, GAME, GROUP_ITEMS, LEGENDARY_ITEMS, SELL_TRAP, BazaarItem,
                     hero_item, item_name_groups, item_name_to_id, lock_items_by_hero, pack_item)
-from .locations import (BazaarLocation, card_requirements, champion_event, day_location, location_name_groups,
-                        location_name_to_id, monster_location, pvp_location, win_location)
+from .locations import (BazaarLocation, card_requirements, champion_event, hero_checks, location_name_groups,
+                        location_name_to_id, win_location)
 from .options import EXCLUDE_HERO_OPTIONS, OWN_HERO_OPTIONS, BazaarOptions, option_groups, option_presets
 
 
@@ -52,6 +51,8 @@ class BazaarWeb(WebWorld):
 
 
 MAX_COPIES = 3  # most copies of one item the duplicate filling adds up to
+FREE_MARGIN = 2  # checks per hero that need no cards and that logic never counts on (so fill always has room)
+DEFAULT_LOGIC = {"day_10": 15, "diamond": 10, "legendary": 20}  # seeds from before slot_data carried it
 
 
 class BazaarWorld(World):
@@ -75,7 +76,11 @@ class BazaarWorld(World):
     heroes: List[str]
     starting_hero: str
     goal_count: int
+    logic: Dict[str, int]  # day_10 / diamond / legendary: cards logic expects first (see locations.card_requirements)
     lock_items: Dict[str, List[str]]  # hero (or "Common") -> lock item names placed in the pool
+    group_items: List[str]  # group unlocks (Legendary Items, Expedition Tickets) in the pool
+    starters: Dict[str, List[str]]  # pool -> Bronze cards never locked
+    passthrough: Optional[Dict[str, Any]]  # Universal Tracker: the real seed's slot_data
 
     @staticmethod
     def interpret_slot_data(slot_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -109,7 +114,27 @@ class BazaarWorld(World):
         if self.options.duplicate_all_cards:
             logging.warning(f"{self.player_name} (The Bazaar): duplicate_all_cards is on. Not intended - half the "
                             f"item slots hold duplicates, so only about half as many cards start locked.")
-        self.monster_table = max_monster_tier_by_day(self.options.max_day.value)
+        self.starters = {}
+        self.logic = {"day_10": self.options.logic_day_10_cards.value,
+                      "diamond": self.options.logic_diamond_cards.value,
+                      "legendary": self.options.logic_legendary_cards.value}
+        self.fit_logic()
+
+    def fit_logic(self) -> None:
+        """Logic can't expect more of a hero's cards (before day 8, a Diamond or a Legendary monster) than the
+        hero has checks that need no cards: those are where the cards have to be. With PvP and monster checks both
+        off that's only days 1-7, and generation failed (review 2026-09-29). Lowered here, with a warning."""
+        huge = {key: 10 ** 6 for key in self.logic}  # every check that needs any cards at all needs "a lot"
+        free = sum(need == 0 for need in card_requirements(self.heroes[0], 10 ** 6, self.options.max_day.value,
+                                                          bool(self.options.pvp_win_checks), self.monster_tiers,
+                                                          huge).values())
+        room = max(0, free - FREE_MARGIN)
+        fitted = {"day_10": min(self.logic["day_10"], 2 * room), "diamond": min(self.logic["diamond"], room),
+                  "legendary": min(self.logic["legendary"], room)}
+        if fitted != self.logic:
+            logging.warning(f"{self.player_name} (The Bazaar): logic card counts lowered to {fitted} - each hero "
+                            f"only has {free} checks that need no cards.")
+            self.logic = fitted
 
     def rebuild_from_slot_data(self, data: Dict[str, Any]) -> None:
         """Universal Tracker: take every random choice and setting from the real seed instead of rolling new ones."""
@@ -117,10 +142,10 @@ class BazaarWorld(World):
         self.starting_hero = data["starting_hero"]
         self.goal_count = data["heroes_required"]
         self.options.max_day.value = data["max_day"]
-        self.options.pvp_win_checks.value = int(data["pvp_win_checks"])
-        for key, option in (("day_10", self.options.logic_day_10_cards), ("diamond", self.options.logic_diamond_cards),
-                            ("legendary", self.options.logic_legendary_cards)):
-            option.value = data["logic"][key]
+        # seeds from before v0.5.2 lack these: the defaults of that time
+        self.options.pvp_win_checks.value = int(data.get("pvp_win_checks", True))
+        self.logic = data.get("logic", DEFAULT_LOGIC)
+        self.starters = {}
         self.multiworld.push_precollected(self.create_item(hero_item(self.starting_hero)))
 
     def create_regions(self) -> None:
@@ -128,9 +153,8 @@ class BazaarWorld(World):
         self.multiworld.regions.append(menu)
         for hero in self.heroes:
             region = Region(hero, self.player, self.multiworld)
-            names = [name for day in range(1, self.options.max_day.value + 1) for name in self.day_checks(hero, day)]
-            names.append(win_location(hero))
-            region.add_locations({name: location_name_to_id[name] for name in names}, BazaarLocation)
+            checks = hero_checks(hero, self.options.max_day.value, bool(self.options.pvp_win_checks), self.monster_tiers)
+            region.add_locations({c.name: location_name_to_id[c.name] for c in checks}, BazaarLocation)
 
             champion = BazaarLocation(self.player, champion_event(hero), None, region)
             champion.place_locked_item(BazaarItem("Champion", ItemClassification.progression, None, self.player))
@@ -142,19 +166,11 @@ class BazaarWorld(World):
     def monster_tiers(self, day: int) -> List[str]:
         """Rarities with a check on this day: everything that day's monsters can reach, up to the cap."""
         if self.passthrough:  # slot_data keys are strings once they've been through the server
-            tiers = self.passthrough["monster_tiers"]
+            tiers = self.passthrough.get("monster_tiers", {})
             return list(tiers.get(str(day), tiers.get(day, [])))
         if not self.options.monster_checks:
             return []
-        top = min(self.monster_table[day], self.options.max_monster_tier.value)
-        return list(TIERS[:top + 1])
-
-    def day_checks(self, hero: str, day: int) -> List[str]:
-        names = [day_location(hero, day)]
-        if self.options.pvp_win_checks:
-            names.append(pvp_location(hero, day))
-        names += [monster_location(hero, day, tier) for tier in self.monster_tiers(day)]
-        return names
+        return tiers_on_day(day, TIERS[self.options.max_monster_tier.value])
 
     def create_item(self, name: str) -> BazaarItem:
         if name in FILLER_ITEMS:
@@ -191,8 +207,9 @@ class BazaarWorld(World):
             copies = min(copies, max(0, slots - len(pool) - len(groups)))
             if copies:
                 groups += [name] * copies
-        if LEGENDARY_ITEMS in groups:
-            excluded |= LEGENDARY_GUIDS  # unlocked by the group item, never individually
+        # Legendary cards are only ever locked as a group: with no Legendary Items unlock in the pool (0 copies, or
+        # no room) they're simply never locked, as the option says - never one by one (review 2026-09-29)
+        excluded |= LEGENDARY_GUIDS
         pool += groups
         pool += [SELL_TRAP] * min(self.options.sell_traps.value, max(0, slots - len(pool)))
 
@@ -261,7 +278,6 @@ class BazaarWorld(World):
         candidates = {g: [c for c in CARDS if c.hero == g and c.shop and c.guid not in excluded_guids
                           and (loot_ok or "Loot" not in c.tags)]
                       for g in groups}
-        self.starters = {}
         for group, cards in candidates.items():
             self.random.shuffle(cards)
             bronze = [c for c in cards if c.tier == "Bronze"]
@@ -276,12 +292,10 @@ class BazaarWorld(World):
         return picked
 
     def set_rules(self) -> None:
-        logic = {"day_10": self.options.logic_day_10_cards.value, "diamond": self.options.logic_diamond_cards.value,
-                 "legendary": self.options.logic_legendary_cards.value}
         for hero in self.heroes:
             items = self.lock_items.get(hero, [])
             needs = card_requirements(hero, len(items), self.options.max_day.value, bool(self.options.pvp_win_checks),
-                                      self.monster_tiers, logic)
+                                      self.monster_tiers, self.logic)
             for name, count in needs.items():
                 self.set_card_rule(name, items, count)
             self.set_card_rule(champion_event(hero), items, needs[win_location(hero)])
@@ -298,10 +312,11 @@ class BazaarWorld(World):
         lines = [f"The Bazaar ({self.player_name})",
                  f"  Starting hero: {self.starting_hero}   Goal: 10 wins with {self.goal_count} heroes"]
         lines += [f"  {hero}: {len(self.lock_items.get(hero, []))} locked cards/packs" for hero in self.heroes]
-        lines.append(f"  Common: {len(self.lock_items.get('Common', []))} locked cards")
+        if "Common" in self.lock_items:
+            lines.append(f"  Common: {len(self.lock_items['Common'])} locked cards")
         if self.group_items:
             lines.append(f"  Group unlocks: {', '.join(self.group_items)}")
-        for group, starters in sorted(getattr(self, "starters", {}).items()):
+        for group, starters in sorted(self.starters.items()):
             lines.append(f"  Starter cards ({group}, never locked): {', '.join(starters)}")
         days = [f"day {d}: {' / '.join(self.monster_tiers(d))}" for d in range(1, self.options.max_day.value + 1)
                 if self.monster_tiers(d)]
@@ -322,8 +337,6 @@ class BazaarWorld(World):
             "death_link": bool(self.options.death_link.value),
             "death_link_amnesty": self.options.death_link_amnesty.value,
             "sell_trap_days": self.options.sell_trap_days.value,
-            "logic": {"day_10": self.options.logic_day_10_cards.value,
-                      "diamond": self.options.logic_diamond_cards.value,
-                      "legendary": self.options.logic_legendary_cards.value},
+            "logic": self.logic,
             "death_link_on_concede": bool(self.options.death_link_on_concede.value),
         }

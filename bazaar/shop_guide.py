@@ -6,6 +6,7 @@ follows the strip right of the board. Runs in the overlay's Tk thread and only r
 Needs Pillow for the pictures (they're AVIF); Archipelago's Windows installer leaves Pillow out, so there
 ShopGuide.create() returns None and the locked-card list is all you get.
 """
+import importlib.util
 import json
 from typing import Callable, Dict, List, Optional
 
@@ -38,9 +39,7 @@ class ShopGuide:
         """(guide or None, Pillow missing?). None also when the guide is turned off (no art_cache_dir)."""
         if not art_cache_dir:
             return None, False
-        try:
-            from PIL import ImageDraw, ImageEnhance, ImageOps, ImageTk  # noqa: F401 (checks they're there)
-        except ImportError:
+        if importlib.util.find_spec("PIL") is None:
             return None, True
         return cls(tk, root, art_cache_dir, guide_file, area, on_art, on_closed), False
 

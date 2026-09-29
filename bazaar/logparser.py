@@ -32,7 +32,7 @@ STATE_RE = re.compile(r"\[AppState\] State changed from \[(\w+)\] to \[(\w+)\]")
 GAIN_RE = re.compile(r"Card Purchased: InstanceId: (itm_\S+) - TemplateId([0-9a-fA-F-]{36}) - Target:\S+ - "
                      r"Section(Player|Storage)")
 ENCOUNTER_RE = re.compile(r"Card Purchased: InstanceId: (enc|ste|com|pvp|ped)_\S+ - TemplateId([0-9a-fA-F-]{36})")
-# Candidate PvP-win signal, under investigation (see docs): seen once, only after a won PvP fight.
+# A won PvP fight (mid-run the log doesn't say who won): matched 10 of 10 answers in a full run (2026-09-28).
 EXIT_TASKS_RE = re.compile(r"\[AppState\] Waiting for \d+ exit tasks")
 VERSION_RE = re.compile(r"\[VersionShow\]\s+Version: (\d+\.\d+\.\d+)")
 CONCEDE_RE = re.compile(r"type=AbandonRunCommand|Sending AbandonRunCommand")
@@ -99,8 +99,7 @@ class MonsterFought:
 @dataclass(frozen=True)
 class PvPFought:
     day: int
-    won: Optional[bool]  # None: the log doesn't say (only a fight that ends the run tells us)
-    exit_tasks: bool = False  # the candidate win signal was seen during this fight
+    won: bool  # the end screen says so for the run's last fight; mid-run the "exit tasks" line does
 
 
 @dataclass(frozen=True)
@@ -181,14 +180,14 @@ class LogParser:
             if new in ("EndRunVictoryState", "EndRunDefeatState"):
                 if self.in_run:
                     if self.in_pvp:
-                        yield PvPFought(self.day, new == "EndRunVictoryState", self.pvp_exit_tasks)
+                        yield PvPFought(self.day, new == "EndRunVictoryState")
                     yield RunEnded(new == "EndRunVictoryState", self.day, self.conceded)
                 self.in_run = self.in_pvp = False
             elif old == "ReplayState" and self.in_pvp:
                 # the replay of the day's PvP fight finished and the run goes on
                 self.in_pvp = False
                 if self.in_run:
-                    yield PvPFought(self.day, None, self.pvp_exit_tasks)
+                    yield PvPFought(self.day, self.pvp_exit_tasks)
                     self.day += 1
                     yield DayReached(self.day)
             return

@@ -251,6 +251,26 @@ class TestExcludeHeroSwitches(BazaarTestBase):
         self.assertEqual(set(self.world.heroes), {"Vanessa", "Pygmalien"})
 
 
+class TestOnlyDayChecks(BazaarTestBase):
+    """PvP and monster checks both off leaves each hero 7 checks that need no cards; logic used to expect 8 of its
+    cards before day 8 and generation failed on some seeds (review 2026-09-29). The world lowers logic to fit."""
+    options = {"pvp_win_checks": False, "monster_checks": False}
+
+    def test_logic_fits_the_free_checks(self) -> None:
+        self.assertLessEqual(-(-self.world.logic["day_10"] // 2), 7 - 2)
+
+
+class TestNoLegendaryItemsUnlock(BazaarTestBase):
+    """legendary_items: 0 means Legendary items are never locked - also not one by one (review 2026-09-29)."""
+    options = {"legendary_items": 0}
+
+    def test_no_legendary_card_is_locked(self) -> None:
+        from ..data import CARDS_BY_NAME
+        locked = [name for names in self.world.lock_items.values() for name in names if name in CARDS_BY_NAME]
+        self.assertFalse([name for name in locked if CARDS_BY_NAME[name].tier == "Legendary"])
+        self.assertNotIn("Legendary Items", self.world.group_items)
+
+
 class TestUniversalTrackerRebuild(BazaarTestBase):
     """Universal Tracker rebuilds the world from slot_data with default options; it must match the real seed."""
     options = {"owned_dlc_heroes": ["Mak", "Karnok"], "max_day": 12, "max_monster_tier": "diamond",
