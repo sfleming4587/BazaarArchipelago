@@ -184,6 +184,18 @@ class BazaarContext(CommonContext):
             self.check_goal()
             self.update_status()
 
+    def on_print_json(self, args: dict) -> None:
+        super().on_print_json(args)
+        if self.overlay and args.get("type") == "ItemSend" and args["item"].player == self.slot:
+            # one of your checks found an item: say what and for whom (unlocks you get yourself already pop up
+            # as UNLOCKED, and Sell Traps have their own pop-up)
+            item, receiver = args["item"], args["receiving"]
+            name = self.item_names.lookup_in_slot(item.item, receiver)
+            if receiver != self.slot:
+                self.overlay.toast(f"SENT: {name} to {self.player_names.get(receiver, 'another player')}")
+            elif item.item not in LOCK_ITEM_GUIDS and not name.startswith("Hero: ") and name != SELL_TRAP:
+                self.overlay.toast(f"FOUND: {name}")
+
     async def disconnect(self, allow_autoreconnect: bool = False) -> None:
         self.slot_data = {}
         await super().disconnect(allow_autoreconnect)

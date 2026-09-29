@@ -4,11 +4,11 @@ import tempfile
 import unittest
 from unittest import mock
 
-from NetUtils import NetworkItem
+from NetUtils import NetworkItem, NetworkSlot, SlotType
 
 from ..client import BazaarContext, catch_up, dispatch
 from ..data import CARDS
-from ..items import BASE_ID, item_name_to_id
+from ..items import BASE_ID, GAME, item_name_to_id
 from ..locations import day_location, location_name_to_id, monster_location, win_location
 from ..logparser import (CardGained, CardSold, DayReached, HeroSelected, LogParser, MonsterFought, PvPFought,
                          RunEnded, RunStarted)
@@ -200,6 +200,29 @@ class TestStatusLine(ClientTestBase):
         self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", False), DayReached(2))
         texts = [c.args[0] for c in self.ctx.overlay.toast.call_args_list if c.kwargs.get("warning")]
         self.assertEqual(texts, [f"CHECK NOT SENT: {day_location('Vanessa', 2)}"])
+
+
+class TestItemPopUps(ClientTestBase):
+    def send(self, receiving: int, item_id: int) -> list:
+        self.ctx.overlay = mock.Mock()
+        self.ctx.slot = 1
+        self.ctx.player_names = {1: "Me", 2: "Friend"}
+        self.ctx.slot_info = {1: NetworkSlot("Me", GAME, SlotType.player),
+                              2: NetworkSlot("Friend", "Other", SlotType.player)}
+        self.ctx.on_print_json({"type": "ItemSend", "receiving": receiving, "data": [{"text": "x"}],
+                                "item": NetworkItem(item_id, 1, 1, 0)})
+        return [c.args[0] for c in self.ctx.overlay.toast.call_args_list]
+
+    def test_item_sent_to_another_player_pops_up(self) -> None:
+        texts = self.send(2, 123)
+        self.assertEqual(len(texts), 1)
+        self.assertTrue(texts[0].startswith("SENT: ") and texts[0].endswith(" to Friend"))
+
+    def test_own_unlock_is_not_announced_twice(self) -> None:
+        self.assertEqual(self.send(1, BASE_ID + LOCKED.ap_id), [])  # the UNLOCKED pop-up covers it
+
+    def test_own_filler_pops_up(self) -> None:
+        self.assertEqual(self.send(1, item_name_to_id["Spare Change"]), ["FOUND: Spare Change"])
 
 
 class TestNewRunIsACleanSlate(ClientTestBase):

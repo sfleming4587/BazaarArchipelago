@@ -28,7 +28,9 @@ SEVERITY = {"critical": "#5a0f14",  # checks blocked, DeathLink
             "ok": "#173d24"}  # nothing locked here, an unlock arrived
 # see-through enough to read the game's tooltips behind (the list lets the mouse through, so they do show)
 ALERT_ALPHA = 0.8
-LIST_ALPHA = 0.6
+# The locked-card list: only its background is see-through (a backdrop window at this opacity under it); its
+# text stays fully solid (user 2026-09-28: at 60% for the whole window the names were hard to read).
+LIST_ALPHA = 0.55
 
 
 # Where the overlay may draw: the strips left and right of the board, measured on a 1920x1080 shop screenshot
@@ -262,9 +264,18 @@ class Overlay:
             panel.withdraw()
             panel.overrideredirect(True)
             panel.attributes("-topmost", True)
-            panel.attributes("-alpha", LIST_ALPHA if panel in (shop_first, shop_second) else ALERT_ALPHA)
+            panel.attributes("-alpha", 1.0 if panel in (shop_first, shop_second) else ALERT_ALPHA)
             panel.configure(bg=SEVERITY["info"], highlightthickness=2, highlightbackground=ACCENT)
             never_focus(panel)
+        # the list's see-through background: a plain window right under each list window, same size
+        backdrops = {}
+        for panel in (shop_first, shop_second):
+            backdrop = backdrops[panel] = tk.Toplevel(root)
+            backdrop.withdraw()
+            backdrop.overrideredirect(True)
+            backdrop.attributes("-topmost", True)
+            backdrop.attributes("-alpha", LIST_ALPHA)
+            never_focus(backdrop)
 
         g: dict = {}  # the strips for where the game window is now (see relayout)
 
@@ -277,7 +288,8 @@ class Overlay:
             return ("Segoe UI", -max(MIN_FONT, round(size * 4 / 3 * g["k"])), weight)
 
         relayout((0, 0, root.winfo_screenwidth(), root.winfo_screenheight()))  # until the game is seen
-        state = {"locked": None, "deathlink": None, "shop": None, "pvp": {}, "toasts": [], "status": None}
+        state = {"locked": None, "deathlink": None, "shop": None, "pvp": {}, "toasts": [], "status": None,
+                 "list_hidden": False}  # the player hid the locked-card list (until they show it again)
         # what each window shows now, to skip redraws that change nothing
         drawn: dict = {"alerts": None, "shop": None, "toasts": None, "alerts_height": 0, "toasts_height": 0}
         wanted: set = set()  # windows that have something to show (shown only while the game is in front)
@@ -291,6 +303,9 @@ class Overlay:
             old = [child for child in panel.winfo_children() if type(child) is tk.Frame]  # not other windows
             new = tk.Frame(panel, bg=bg, padx=PAD, pady=PAD)
             panel.configure(bg=bg)
+            if panel in backdrops:  # the colour goes on the backdrop; in the list window it turns see-through
+                backdrops[panel].configure(bg=bg)
+                panel.attributes("-transparentcolor", bg)
             return new, lambda: (new.pack(fill="both", expand=True), [child.destroy() for child in old])
 
         def place(moves: list, panel, x: int, y: int, width: int, max_height: int) -> int:
@@ -306,13 +321,16 @@ class Overlay:
             guide = board.get("win")
             for window in panels + ([guide] if guide else []):
                 show = front["game"] and (board["hidden"] is False if window is guide else window in wanted)
+                layers = [backdrops[window], window] if window in backdrops else [window]  # bottom to top
                 if show and window.state() != "normal":
-                    window.deiconify()
-                    window.lift()
-                    if window in (shop_first, shop_second, toast_box):
-                        click_through(window)  # nothing to click in these: never catch the game's clicks
+                    for layer in layers:
+                        layer.deiconify()
+                        layer.lift()
+                        if window in (shop_first, shop_second, toast_box):
+                            click_through(layer)  # nothing to click in these: never catch the game's clicks
                 elif not show and window.state() == "normal":
-                    window.withdraw()
+                    for layer in layers:
+                        layer.withdraw()
 
         def render() -> None:
             # Windows are laid out first and all moved together at the end, so one never sits on another while
@@ -325,11 +343,11 @@ class Overlay:
             right_height = g["right"][3] - (drawn["toasts_height"] + 4 if drawn["toasts_height"] else 0)
             board["fit"](*g["right"][:3], right_height)
             alerts = (state["deathlink"], state["locked"], tuple(state["pvp"].items()), state["status"],
-                      pictures_button())
+                      tuple(label for label, _ in shop_buttons()))
             if alerts != drawn["alerts"]:
                 drawn["alerts"] = alerts
                 drawn["alerts_height"] = render_alerts(moves)
-            shop = (state["shop"], drawn["alerts_height"], board["hidden"], right_height)
+            shop = (state["shop"], drawn["alerts_height"], board["hidden"], right_height, state["list_hidden"])
             if shop != drawn["shop"]:
                 drawn["shop"] = shop
                 render_shop(moves, drawn["alerts_height"], right_height)
@@ -340,12 +358,22 @@ class Overlay:
                     wanted.add(panel)
                     if panel.geometry() != geometry:  # leave an unchanged window alone
                         panel.geometry(geometry)
+                        if panel in backdrops:
+                            backdrops[panel].geometry(geometry)
             sync_visibility()
 
-        def pictures_button() -> bool:
-            """The Shop Guide is closed and you're at a merchant: offer to open it (in the alert box, since the
-            list lets clicks through)."""
-            return bool(state["shop"] and state["shop"][2] == "sell" and board["hidden"])
+        def shop_buttons() -> list:
+            """(label, action) for the buttons shown while at a shop. They live in the alert box, since the list
+            lets clicks through: open the Shop Guide when it's closed, and hide or show the locked-card list."""
+            buttons = []
+            if state["shop"] and state["shop"][2] == "sell" and board["hidden"]:
+                buttons.append(("Pictures", board["show"]))  # opens the Shop Guide
+            if state["shop"] and state["shop"][1]:
+                buttons.append(("Show list" if state["list_hidden"] else "Hide list", toggle_list))
+            return buttons
+
+        def toggle_list() -> None:
+            state["list_hidden"] = not state["list_hidden"]
 
         def alert_severity() -> str:
             if state["deathlink"] or (state["locked"] and state["locked"][0].startswith("CHECKS ARE BLOCKED")):
@@ -372,7 +400,7 @@ class Overlay:
 
         def render_alerts(moves: list) -> int:
             """Draws the alert box; returns its height (0 when hidden)."""
-            if not (state["deathlink"] or state["locked"] or state["pvp"] or state["status"] or pictures_button()):
+            if not (state["deathlink"] or state["locked"] or state["pvp"] or state["status"] or shop_buttons()):
                 moves.append((alert_box, None))
                 return 0
             bg = SEVERITY[alert_severity()]
@@ -402,19 +430,30 @@ class Overlay:
                              justify="left").pack(side="left")
                     tk.Button(row, text="Lost", command=lambda k=key: answer(k, False)).pack(side="right", padx=(6, 0))
                     tk.Button(row, text="Won", command=lambda k=key: answer(k, True)).pack(side="right", padx=(12, 0))
-            if pictures_button():
-                tk.Button(frame, text="Show pictures", command=lambda: (board["show"](), render())).pack(
-                    anchor="w", pady=(4, 0))
+            # last line: the status text with the shop buttons on its right; the buttons get a row of their own
+            # only when that would squeeze the text below half the width
+            row = tk.Frame(frame, bg=bg)
+            if state["status"] or shop_buttons():
+                row.pack(fill="x", pady=(4, 0) if frame.winfo_children()[:-1] else 0)
+            buttons = tk.Frame(row, bg=bg)
+            for label, action in shop_buttons():
+                tk.Button(buttons, text=label, font=f(8), padx=3, pady=0,
+                          command=lambda a=action: (a(), render())).pack(side="left", padx=(4, 0))
+            buttons.update_idletasks()
+            room = g["inner_w"] - (buttons.winfo_reqwidth() + 8 if shop_buttons() else 0)
+            own_row = bool(state["status"]) and room < g["inner_w"] // 2
+            if shop_buttons():
+                buttons.pack(side="bottom" if own_row else "right", anchor="e", pady=(4, 0) if own_row else 0)
             if state["status"]:
                 text, warning = state["status"]
-                tk.Label(frame, text=text, fg=WARN if warning else MUTED, bg=bg,
+                tk.Label(row, text=text, fg=WARN if warning else MUTED, bg=bg,
                          font=f(11 if warning else 10, "bold" if warning else "normal"),
-                         wraplength=g["inner_w"], justify="left").pack(anchor="w", pady=(4, 0))
+                         wraplength=g["inner_w"] if own_row else room, justify="left").pack(side="left", anchor="w")
             show()
             return place(moves, alert_box, g["left"][0], g["left"][1], g["left"][2], g["left"][3] // 2)  # bottom half: the shop list
 
         def render_shop(moves: list, alerts_height: int, right_height: int) -> None:
-            if not state["shop"]:
+            if not state["shop"] or (state["list_hidden"] and state["shop"][1]):
                 moves += [(shop_first, None), (shop_second, None)]
                 return
             merchant, names, verb = state["shop"]
@@ -484,7 +523,7 @@ class Overlay:
 
         def own_windows() -> Set[int]:
             guide = board.get("win")
-            return {window_handle(w) for w in panels + ([guide] if guide else [])}
+            return {window_handle(w) for w in panels + list(backdrops.values()) + ([guide] if guide else [])}
 
         def poll() -> None:
             changed = False
@@ -533,7 +572,8 @@ class Overlay:
             else:
                 for panel in panels:  # games sometimes steal topmost; keep reasserting
                     if panel.state() == "normal":
-                        panel.attributes("-topmost", True)
+                        for layer in ([backdrops[panel]] if panel in backdrops else []) + [panel]:  # text on top
+                            layer.attributes("-topmost", True)
             root.after(250, poll)
 
         sync_visibility()  # an open Shop Guide shows from the start (while the game is in front)

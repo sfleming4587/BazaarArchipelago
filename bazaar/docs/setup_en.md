@@ -49,7 +49,8 @@ Alerts appear in a small window at the top left of your screen, above the game:
 
 - **Shopping:** when you open a merchant it lists the locked cards that merchant could sell, grouped by first
   letter, so you know what not to buy (or shows a green tick when nothing there is locked). Clicks go straight
-  through this list to the game, so it never gets in your way.
+  through this list to the game, so it never gets in your way; its text is solid and only its background is
+  see-through. **Hide list** / **Show list** in the alert window hides it until you show it again.
 - **Item choices:** when an event or level-up deals several items and you pick one (e.g. "Shiny!"), it lists the
   locked cards it could offer. Random rewards you can't choose (Make a Wish, single-item events) get no warning;
   if one hands you a locked card, sell it like any other.
@@ -57,7 +58,8 @@ Alerts appear in a small window at the top left of your screen, above the game:
   by itself when you sell the card; a locked hero or DeathLink blocks the rest of the run.
 - **PvP result:** after each PvP fight, press **Won** or **Lost**.
 - **DeathLink:** abandon your run.
-- **Unlocks and notices:** short pop-ups in the bottom right when you receive an unlock (and from whom), a Sell
+- **Unlocks and notices:** short pop-ups in the bottom right when you receive an unlock (and from whom), one of
+  your checks sends an item to another player (**SENT**) or finds filler for you (**FOUND**), a Sell
   Trap arrives, or the game was updated since the apworld was made. A red **CHECK NOT SENT** pop-up names any
   check the moment it is blocked.
 - **Status line:** during a run, your hero, day, next check and goal progress. On the hero-select screen, which
@@ -78,7 +80,7 @@ pictures need, so there the shop warning above is what you get): a second window
 the merchant you're visiting could stock, locked ones greyed out with a red X (the shorter list goes on top). It sits in
 the strip right of the board (the locked-card list then stays on the left; if it doesn't fit, it says how many
 more are in the Shop Guide). After you leave a shop it keeps showing the last one. Closing it with **X** keeps it
-closed (also next time) and lets a long list use the right strip, until you press **Show pictures** in the alert
+closed (also next time) and lets a long list use the right strip, until you press **Pictures** in the alert
 window while at a merchant. All card pictures are downloaded once in the background when the client starts.
 Start the client with `--no-shop-guide` to turn it off completely.
 
