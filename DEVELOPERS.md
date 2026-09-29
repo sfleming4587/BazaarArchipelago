@@ -1,16 +1,20 @@
 # BazaarArchipelago - developer guide
 
-Players: see [README.md](README.md). This file is for working on the apworld and client.
+Thanks for wanting to help! This page is for working on the apworld and the client. If you just want to play,
+[README.md](README.md) is the place to start.
 
-The client only **reads** the game's own `Player.log`. Keep it that way: no game-memory reading, no automated
-input, no calls to Tempo's servers, no changes to game files. Those are what Tempo's modding policy bans.
+## The one big rule
 
-## Layout
+The client only ever **reads** the game's own `Player.log`. Please keep it that way: no reading game memory, no
+automated input, no calls to Tempo's servers, no changes to game files. Those are exactly what Tempo's modding
+policy bans, and nobody should risk their account to play a randomizer.
+
+## Finding your way around
 
 | Path | What it is |
 |---|---|
-| `bazaar/` | the world; packaged as `bazaar.apworld`. Player docs for the website are in `bazaar/docs/` |
-| `bazaar/logparser.py` | `Player.log` parsing (no Archipelago imports, testable on its own) |
+| `bazaar/` | the world, packaged as `bazaar.apworld`. The player docs for the website are in `bazaar/docs/` |
+| `bazaar/logparser.py` | `Player.log` parsing (no Archipelago imports, so it's easy to test on its own) |
 | `bazaar/client.py` | the CommonClient-based client ("The Bazaar Client" in the Launcher); every run check goes through `send_run_checks` |
 | `bazaar/overlay.py` | the overlay: `Overlay` is the client's handle (a command queue), `_Screen` the Tk thread (alert box, locked-card list, pop-ups) |
 | `bazaar/shop_guide.py` | the Shop Guide window (card pictures, or "no picture" boxes) |
@@ -23,12 +27,12 @@ input, no calls to Tempo's servers, no changes to game files. Those are what Tem
 | `bazaar/locations.py` | location names and ids, and `hero_checks` / `card_requirements`: the one definition of each hero's checks and what logic needs for them (world rules, client and tracker all use it) |
 | `tools/make_hero_cards.py` | cuts the tracker's hero cards (`bazaar/data/heroes/`) from `tools/art/Characters.png` |
 | `tools/build_apworld.py` | builds `bazaar.apworld` (repo root + `releases/`) without opening a window |
-| `tools/quick_run.ps1` | solo test game: generate, host locally, open the client |
+| `tools/quick_run.ps1` | a solo test game: generate, host locally, open the client |
 | `docs/UPDATING-GAME-DATA.md` | what to do after a Bazaar patch |
-| `Archipelago/` (not in git) | Archipelago 0.6.7 source checkout; `worlds/bazaar` is a junction to `bazaar/` |
-| `.venv/` (not in git) | Python 3.13 (Archipelago doesn't support 3.14) |
+| `Archipelago/` (not in git) | an Archipelago 0.6.7 source checkout; `worlds/bazaar` is a junction to `bazaar/` |
+| `.venv/` (not in git) | Python 3.13 (Archipelago doesn't support 3.14 yet) |
 
-## Setup
+## Getting set up
 
 ```sh
 git clone --depth 1 --branch 0.6.7 https://github.com/ArchipelagoMW/Archipelago.git
@@ -37,10 +41,12 @@ py -3.13 -m venv .venv   # or: uv venv --python 3.13 .venv
 # PowerShell: New-Item -ItemType Junction -Path Archipelago/worlds/bazaar -Target bazaar
 ```
 
-## Common tasks
+(Pillow is only for the tools in `tools/`; the client itself must never need it - see below.)
+
+## Everyday commands
 
 ```sh
-# run all tests (world generation, log parser, client rules, overlay layout)
+# run all the tests (world generation, log parser, client rules, overlay layout, Shop Guide)
 cd Archipelago && ../.venv/Scripts/python.exe -m pytest worlds/bazaar
 
 # unused imports / names (keep it clean)
@@ -49,7 +55,7 @@ cd Archipelago && ../.venv/Scripts/python.exe -m pytest worlds/bazaar
 # build bazaar.apworld (repo root and releases/) - never use the Launcher's "Build APWorlds", it opens Explorer
 .venv/Scripts/python.exe tools/build_apworld.py
 
-# solo test game with the local build
+# a solo test game with your local build
 powershell -ExecutionPolicy Bypass -File tools\quick_run.ps1 -StartingHero vanessa
 ```
 
@@ -76,3 +82,5 @@ the apworld (the client says so when it meets one) and can't be locked.
 - Card pictures come from one place, `ART_URL` in `bazaar/cardart.py` (howbazaar.gg, frozen at game v6.0.0 since
   Feb 2026). Never read them from the game's files (EULA, see "Card data is frozen"); to switch source, change
   `ART_URL` once that source has given permission.
+
+Happy hacking, and thanks again for pitching in!
