@@ -151,6 +151,8 @@ class BazaarContext(CommonContext):
         self.shop_guide = True  # the picture window next to the game; --no-shop-guide turns it off
         self.notices_shown: Set[str] = set()  # patch warnings are shown once per session
         self.traps_seen = 0
+        self.watched: Dict[str, Any] = {}  # {"log": game session, "runs": runs of that log already seen}
+        self.quiet = False  # replaying runs that ended while the client wasn't watching: no alerts, no DeathLinks
         self.menu_hero: Optional[str] = None  # hero picked on the hero-select screen, while not in a run
         self.room_seed = ""  # CommonClient never sets seed_name, so the saved state is keyed on this instead
         self.log_session: Optional[str] = None  # which game session the log being read is from (see log_session)
@@ -239,6 +241,9 @@ class BazaarContext(CommonContext):
         self.run = saved.get("run", {})
         self.defeats_since_death = saved.get("defeats_since_death", 0)
         self.traps_seen = saved.get("traps_seen", 0)  # Sell Traps already handled (items_received is resent)
+        # state saved before "watched" existed: the tracked run is the last one seen
+        self.watched = saved.get("watched") or ({"log": self.run["log"], "runs": self.run["run_index"] + 1}
+                                                if self.run.get("log") else {})
 
     def save_state(self) -> None:
         path = Utils.user_path(STATE_FILE)
@@ -248,7 +253,7 @@ class BazaarContext(CommonContext):
         except (FileNotFoundError, ValueError):
             everything = {}
         everything[self.state_key()] = {"run": self.run, "defeats_since_death": self.defeats_since_death,
-                                        "traps_seen": self.traps_seen}
+                                        "traps_seen": self.traps_seen, "watched": self.watched}
         with open(path + ".tmp", "w", encoding="utf-8") as f:
             json.dump(everything, f, indent=1)
         os.replace(path + ".tmp", path)  # a crash mid-write can't corrupt it (that would re-fire every Sell Trap)
@@ -325,13 +330,14 @@ class BazaarContext(CommonContext):
             counting = False
         elif not self.hero_unlocked(event.hero):
             self.event(f"CHECKS ARE BLOCKED: {event.hero} IS LOCKED. Abandon this run.", warning=True)
-            beep()
+            self.beep()
             counting = False
         else:
             self.event(f"Started a run with {event.hero}. Good luck!")
         # "legal" = a hero you're allowed to play. Only legal runs send DeathLinks when lost; losing a
         # run you were told to abandon shouldn't kill your friends.
         # A new run is a clean slate: nothing from an earlier run (held cards, DeathLink, PvP questions) carries over.
+        self.watched = {"log": self.log_session, "runs": event.index + 1}
         self.run = {"active": True, "hero": event.hero, "day": 1, "counting": counting, "legal": counting,
                     "deathlink_owed": False, "held": {}, "inventory": {}, "traps": [],
                     "log": self.log_session, "run_index": event.index, "day_offset": 0}
@@ -348,7 +354,7 @@ class BazaarContext(CommonContext):
         self.save_state()
         self.update_status()
         if any(t["deadline"] == event.day for t in self.run.get("traps", [])):
-            beep()
+            self.beep()
             self.update_block_banner()
 
     def held_text(self, guid: str) -> str:
@@ -380,8 +386,7 @@ class BazaarContext(CommonContext):
         choices = [i for i in self.run.get("inventory", {}) if i not in targeted] if self.run.get("active") else []
         if not choices:  # not in a run, or holding nothing it can target: the trap misses
             self.event("Sell Trap DODGED - you had nothing it could make you sell.")
-            if self.overlay:
-                self.overlay.toast(f"Sell Trap from {sender} DODGED!")
+            self.toast(f"Sell Trap from {sender} DODGED!")
             return
         instance = random.choice(choices)
         guid = self.run["inventory"][instance]
@@ -389,9 +394,8 @@ class BazaarContext(CommonContext):
         self.run.setdefault("traps", []).append({"instance": instance, "guid": guid, "deadline": deadline})
         name = self.card_name(guid)
         self.event(f"SELL TRAP! Sell {name} before day {deadline} starts, or checks get blocked.", warning=True)
-        beep()
-        if self.overlay:
-            self.overlay.toast(f"SELL TRAP from {sender}! Sell {name} before day {deadline} starts.", seconds=15)
+        self.beep()
+        self.toast(f"SELL TRAP from {sender}! Sell {name} before day {deadline} starts.", seconds=15)
         self.update_block_banner()
 
     def card_name(self, guid: str) -> str:
@@ -406,8 +410,7 @@ class BazaarContext(CommonContext):
             return
         self.notices_shown.add(key)
         self.event(text, warning=True)
-        if self.overlay:
-            self.overlay.toast(text, seconds=12)
+        self.toast(text, seconds=12)
 
     def handle_version(self, event: GameVersion) -> None:
         if GAME_VERSION != "unknown" and event.version != GAME_VERSION:
@@ -459,9 +462,8 @@ class BazaarContext(CommonContext):
         reason = self.blocked_reason()
         if reason:
             self.event(f"CHECKS ARE BLOCKED {reason}. Not sent: {', '.join(names)}", warning=True)
-            beep()
-            if self.overlay:
-                self.overlay.toast(f"CHECK NOT SENT: {', '.join(names)}", seconds=10, warning=True)
+            self.beep()
+            self.toast(f"CHECK NOT SENT: {', '.join(names)}", seconds=10, warning=True)
             return
         await self.send_checks(names)
 
@@ -477,9 +479,8 @@ class BazaarContext(CommonContext):
         how = "bought" if event.bought else "got"
         self.event(f"You {how} {self.held_text(event.guid)}, which is still locked! "
                    "CHECKS ARE BLOCKED until you sell it.", warning=True)
-        beep()
-        if self.overlay:
-            self.overlay.toast(f"SELL IT NOW: {CARDS_BY_GUID[event.guid].name} is locked", seconds=12, warning=True)
+        self.beep()
+        self.toast(f"SELL IT NOW: {CARDS_BY_GUID[event.guid].name} is locked", seconds=12, warning=True)
         self.refresh_held()
 
     def handle_sold(self, event: CardSold) -> None:
@@ -488,8 +489,7 @@ class BazaarContext(CommonContext):
         if any(t["instance"] == event.instance for t in traps):
             self.run["traps"] = [t for t in traps if t["instance"] != event.instance]
             self.event("Sell Trap done.")
-            if self.overlay:
-                self.overlay.toast("Sell Trap done!")
+            self.toast("Sell Trap done!")
             self.update_block_banner()
             self.save_state()
         guid = self.run.get("held", {}).pop(event.instance, None)
@@ -502,7 +502,7 @@ class BazaarContext(CommonContext):
         if not self.run.get("active") or not held:
             return
         names = ", ".join(CARDS_BY_GUID[g].name for g in held.values())
-        beep()
+        self.beep()
         self.event(f"You went into a fight holding locked cards ({names}). Nothing from this fight counts.",
                    warning=True)
 
@@ -589,6 +589,10 @@ class BazaarContext(CommonContext):
         legal = self.run.get("legal", True) and not self.run.get("deathlink_owed")
         if "DeathLink" not in self.tags or not legal:
             return
+        if self.quiet:  # hours late, it would kill your friends for nothing they can see
+            self.event(f"Your {self.run.get('hero', 'hero')} run {what} while the client wasn't connected: "
+                       f"no DeathLink sent.")
+            return
         self.defeats_since_death += 1
         amnesty = self.setting("death_link_amnesty")
         if self.defeats_since_death > amnesty:
@@ -621,6 +625,14 @@ class BazaarContext(CommonContext):
         self.locations_checked |= ids
         await self.check_locations(ids)
         self.check_goal()
+
+    def beep(self) -> None:
+        if not self.quiet:
+            beep()
+
+    def toast(self, text: str, **kwargs) -> None:
+        if self.overlay and not self.quiet:
+            self.overlay.toast(text, **kwargs)
 
     def event(self, text: str, warning: bool = False) -> None:
         """A game event. The client window keeps strictly item history (user, 2026-09-28) since the overlay shows
@@ -778,36 +790,74 @@ async def dispatch(ctx: BazaarContext, event) -> None:
         ctx.handle_unrecognized_run()
 
 
+def read_events(path: str) -> list:
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            return LogParser(MERCHANT_DATA.keys()).feed_all(f)
+    except OSError:
+        return []
+
+
 def run_left_open(path: str, saved: dict) -> bool:
     """Does the log at `path` (a previous game session) show the saved run started and never finished?"""
     if log_session(path) != saved.get("log"):
         return False
-    try:
-        with open(path, encoding="utf-8", errors="replace") as f:
-            events = LogParser(MERCHANT_DATA.keys()).feed_all(f)
-    except OSError:
-        return False
+    events = read_events(path)
     started = [i for i, e in enumerate(events) if isinstance(e, RunStarted) and e.index == saved.get("run_index")]
     return bool(started) and not any(isinstance(e, (RunStarted, RunEnded)) for e in events[started[0] + 1:])
 
 
+def from_run(events: list, index: int) -> list:
+    """The events from run number `index` of a log on (nothing if the log has no such run)."""
+    return next((events[i:] for i, e in enumerate(events) if isinstance(e, RunStarted) and e.index >= index), [])
+
+
+def missed(ctx: BazaarContext, past: list) -> list:
+    """
+    What the game logged while the client wasn't watching, as (game session, events) oldest first: the rest of the
+    previous game session (if the game restarted meanwhile and Unity still keeps that log), then this one.
+    On a seed's first connection that's nothing: runs from before could predate the seed.
+    """
+    seen = ctx.watched
+    if not seen or not ctx.log_session:
+        return []
+    first = ctx.run["run_index"] if ctx.run.get("active") else seen["runs"]  # an open run is replayed, it resumes
+    if seen["log"] == ctx.log_session:
+        return [(ctx.log_session, from_run(past, first))]
+    earlier = []
+    prev = os.path.join(os.path.dirname(ctx.log_path), PREV_LOG)
+    if log_session(prev) == seen["log"]:
+        earlier = [(seen["log"], from_run(read_events(prev), first))]
+    else:
+        ctx.event("The game restarted more than once while the client was closed: runs from the older game "
+                  "session can't be read any more.", warning=True)
+    return earlier + [(ctx.log_session, from_run(past, 0))]
+
+
 async def catch_up(ctx: BazaarContext, parser: LogParser, past: list) -> None:
     """
-    Replays the run in progress (if any) in log order, so blocks and checks come out exactly as if the client had
-    been watching. Earlier, finished runs are skipped - but if the run we were tracking is among them, it's over.
+    Replays what the game logged while the client wasn't watching, in log order, so checks and blocks come out
+    exactly as if it had been: runs that ended meanwhile (quietly: no alerts, no late DeathLinks), then the run
+    in progress.
     """
-    saved = ctx.run
-    if saved.get("active") and saved.get("log") == ctx.log_session:
-        start = next((i for i, e in enumerate(past) if isinstance(e, RunStarted) and e.index == saved.get("run_index")),
-                     None)
-        if start is not None and any(isinstance(e, RunEnded) for e in past[start:]):
-            ctx.event(f"Your previous {saved['hero']} run ended while the client wasn't watching.")
-            ctx.run = {**saved, "active": False, "held": {}}
-            ctx.save_state()
+    session = ctx.log_session
+    for ctx.log_session, events in missed(ctx, past):
+        if ctx.log_session == session and parser.in_run:  # the run in progress is replayed below, out loud
+            events = events[:max(i for i, e in enumerate(events) if isinstance(e, RunStarted))]
+        ctx.quiet = True
+        try:
+            for event in events:
+                await dispatch(ctx, event)
+        finally:
+            ctx.quiet = False
+    ctx.log_session = session
+    if session and ctx.watched.get("log") != session:  # nothing from before counts, but it's been seen now
+        ctx.watched = {"log": session, "runs": parser.runs_started - parser.in_run}
     if not parser.in_run:
         picked = [e for e in past if isinstance(e, HeroSelected)]
         if picked:
             ctx.handle_hero_selected(picked[-1])
+        ctx.save_state()
         return
     run_start = max(i for i, e in enumerate(past) if isinstance(e, RunStarted))
     resumed = ctx.resumes(past[run_start])

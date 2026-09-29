@@ -103,5 +103,7 @@ click again to close. Heroes not in your seed are dimmed. It's a normal window y
 
 Every overlay window stays fully on a monitor, whatever the game's resolution or window size.
 
-If you close the game mid-run, the client picks the run back up when you resume it.
+If you close the game mid-run, the client picks the run back up when you resume it. If the client was closed or
+lost its connection while you played, it sends what you earned meanwhile when it reconnects (runs that ended
+meanwhile count, but send no DeathLink). It reads back as far as the previous game session only.
 Start the client before the game if possible, so it sees the start of every run.

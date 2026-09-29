@@ -484,3 +484,79 @@ class TestSessionHygiene(ClientTestBase):
         folder = self.tmp.name
         self.assertTrue(os.path.exists(os.path.join(folder, "bazaar_client_state.json")))
         self.assertFalse(any(name.endswith(".tmp") for name in os.listdir(folder)))
+
+
+class TestMissedRuns(ClientTestBase):
+    """The client wasn't watching for a while (wifi out, client closed): what the game logged meanwhile still
+    counts, as if it had been watching - but runs that ended meanwhile send no late DeathLink."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.ctx.log_path = os.path.join(self.tmp.name, "Player.log")
+        self.ctx.log_session = "10:00:00.000"
+        self.ctx.slot = 1
+        self.ctx.room_seed = "seed"
+        self.ctx.tags = self.ctx.tags | {"DeathLink"}
+        self.ctx.send_death = mock.AsyncMock()
+
+    def reconnect(self, past, in_run: bool) -> None:
+        self.sent.clear()
+        self.ctx.send_death.reset_mock()  # only what the reconnect itself sends
+        self.parser = LogParser()
+        self.parser.in_run, self.parser.runs_started = in_run, sum(isinstance(e, RunStarted) for e in past)
+        self.await_(catch_up(self.ctx, self.parser, past))
+
+    def test_run_that_ended_during_the_drop_still_counts(self) -> None:
+        self.play(RunStarted("Vanessa", 0), DayReached(1))
+        self.reconnect([RunStarted("Vanessa", 0), DayReached(1), DayReached(2), PvPFought(2, True), DayReached(3),
+                        RunEnded(False, 3)], in_run=False)
+        self.assertTrue(self.was_sent(day_location("Vanessa", 3)))
+        self.assertTrue(self.was_sent("Vanessa - Day 2 PvP Win"))
+        self.assertFalse(self.ctx.run["active"])
+        self.ctx.send_death.assert_not_called()  # hours late: no DeathLink
+
+    def test_later_runs_count_and_blocks_still_apply(self) -> None:
+        self.play(RunStarted("Vanessa", 0), DayReached(1), RunEnded(False, 1))
+        self.reconnect([RunStarted("Vanessa", 0), DayReached(1), RunEnded(False, 1),
+                        RunStarted("Vanessa", 1), DayReached(1), CardGained(LOCKED.guid, "itm_x", False),
+                        DayReached(2), RunEnded(False, 2),
+                        RunStarted("Vanessa", 2), DayReached(1)], in_run=True)
+        self.assertTrue(self.was_sent(day_location("Vanessa", 1)))
+        self.assertFalse(self.was_sent(day_location("Vanessa", 2)))  # held a locked card
+        self.assertTrue(self.ctx.run["active"])
+        self.assertEqual(self.ctx.run["run_index"], 2)
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def test_first_connection_counts_only_the_run_in_progress(self) -> None:
+        """Runs from before the seed's first connection could predate the seed."""
+        past = [RunStarted("Vanessa", 0), DayReached(1), DayReached(2), RunEnded(False, 2),
+                RunStarted("Vanessa", 1), DayReached(1)]
+        self.reconnect(past, in_run=True)
+        self.assertFalse(self.was_sent(day_location("Vanessa", 2)))
+        self.assertTrue(self.was_sent(day_location("Vanessa", 1)))
+        self.reconnect(past + [RunEnded(False, 1)], in_run=False)  # and they stay uncounted later
+        self.assertFalse(self.was_sent(day_location("Vanessa", 2)))
+
+    def test_game_restarted_during_the_drop(self) -> None:
+        self.play(RunStarted("Vanessa", 0), DayReached(1))
+        with open(os.path.join(self.tmp.name, "Player-prev.log"), "w", encoding="utf-8") as f:
+            f.write("\n".join(["[10:00:00.000] [Boot] start",
+                               "[10:00:00.500] Changing EHero to Vanessa",
+                               "[10:00:01.000] [StartRunAppState] Run initialization finalized.",
+                               "[10:00:02.000] [AppState] State changed from [ChoiceState] to [PVPCombatState]",
+                               "[10:00:03.000] [AppState] State changed from [PVPCombatState] to [ReplayState]",
+                               "[10:00:04.000] [AppState] State changed from [ReplayState] to [ChoiceState]",
+                               "[10:00:05.000] [AppState] State changed from [ChoiceState] to [EndRunDefeatState]"])
+                    + "\n")
+        self.ctx.log_session = "11:00:00.000"
+        self.reconnect([RunStarted("Vanessa", 0), DayReached(1), DayReached(2)], in_run=True)
+        self.assertTrue(self.was_sent(day_location("Vanessa", 2)))  # from the older log and the new run
+        self.assertEqual(self.ctx.run["day"], 2)  # a new run, not the old one resumed
+        self.ctx.send_death.assert_not_called()
+
+    def test_missed_run_with_a_locked_hero_still_blocks(self) -> None:
+        self.play(RunStarted("Vanessa", 0), DayReached(1), RunEnded(False, 1))
+        self.reconnect([RunStarted("Vanessa", 0), DayReached(1), RunEnded(False, 1),
+                        RunStarted("Dooley", 1), DayReached(1), DayReached(2), RunEnded(False, 2)], in_run=False)
+        self.assertFalse(self.was_sent(day_location("Dooley", 2)))
+        self.ctx.send_death.assert_not_called()

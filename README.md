@@ -129,6 +129,10 @@ replies to your commands.
 - **A check didn't count.** Look for the red **CHECKS ARE BLOCKED** box and the **CHECK NOT SENT** pop-ups (locked
   hero, locked card, DeathLink, Sell Trap), or type `/unblock` to see what's blocking.
 - **Closed the game mid-run?** Just continue the run; the client picks it back up.
+- **Wifi dropped, or the client was closed?** Keep playing. When the client reconnects it reads the game's log and
+  sends what you earned meanwhile, with the usual blocks, even for runs that already ended (those send no
+  DeathLink). It can read back as far as the previous game session; runs from before a seed's first connection
+  don't count.
 
 ## Updating
 Download `bazaar.apworld` from the [latest release](https://github.com/sfleming4587/BazaarArchipelago/releases/latest) and install it the same way (step 3).
