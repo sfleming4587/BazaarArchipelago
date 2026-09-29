@@ -59,7 +59,8 @@ Alerts appear in a small window at the top left of your screen, above the game:
 - **PvP result:** after each PvP fight, press **Won** or **Lost**.
 - **DeathLink:** abandon your run.
 - **Unlocks and notices:** short pop-ups in the bottom right when you receive an unlock (and from whom), one of
-  your checks sends an item to another player (**SENT**) or finds filler for you (**FOUND**), a Sell
+  your checks sends an item to another player (**SENT**) or finds filler for you (**FOUND**), you buy or get a
+  locked card (**SELL IT NOW**), a Sell
   Trap arrives, or the game was updated since the apworld was made. A red **CHECK NOT SENT** pop-up names any
   check the moment it is blocked.
 - **Status line:** during a run, your hero, day, next check and goal progress. On the hero-select screen, which
@@ -79,7 +80,9 @@ Start the client with `--no-overlay` to turn it off.
 pictures need, so there the shop warning above is what you get): a second window with card pictures (from [howbazaar.gg](https://www.howbazaar.gg)) of everything
 the merchant you're visiting could stock, locked ones greyed out with a red X (the shorter list goes on top). It sits in
 the strip right of the board (the locked-card list then stays on the left; if it doesn't fit, it says how many
-more are in the Shop Guide). After you leave a shop it keeps showing the last one. Closing it with **X** keeps it
+more are in the Shop Guide). **Locked only** (top of the guide) shows just the cards you
+may not buy, so you learn their pictures; **Show all** brings the rest back. After you leave a shop it keeps
+showing the last one. Closing it with **X** keeps it
 closed (also next time) and lets a long list use the right strip, until you press **Pictures** in the alert
 window while at a merchant. All card pictures are downloaded once in the background when the client starts.
 Start the client with `--no-shop-guide` to turn it off completely.

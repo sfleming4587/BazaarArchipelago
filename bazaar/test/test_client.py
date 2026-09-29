@@ -195,10 +195,16 @@ class TestStatusLine(ClientTestBase):
         self.play(HeroSelected("Vanessa"))
         self.assertFalse(self.ctx.status_line()[1])
 
+    def test_buying_a_locked_card_says_sell_it_now(self) -> None:
+        self.ctx.overlay = mock.Mock()
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True))
+        texts = [c.args[0] for c in self.ctx.overlay.toast.call_args_list if c.kwargs.get("warning")]
+        self.assertEqual(texts, [f"SELL IT NOW: {LOCKED.name} is locked"])
+
     def test_blocked_check_pops_up_at_once(self) -> None:
         self.ctx.overlay = mock.Mock()
         self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", False), DayReached(2))
-        texts = [c.args[0] for c in self.ctx.overlay.toast.call_args_list if c.kwargs.get("warning")]
+        texts = [c.args[0] for c in self.ctx.overlay.toast.call_args_list if c.args[0].startswith("CHECK NOT SENT")]
         self.assertEqual(texts, [f"CHECK NOT SENT: {day_location('Vanessa', 2)}"])
 
 

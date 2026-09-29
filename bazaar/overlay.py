@@ -608,6 +608,10 @@ class Overlay:
 
         saved = self._load_guide()
         info["hidden"] = bool(saved.get("hidden"))
+        info["locked_only"] = bool(saved.get("locked_only"))  # show only the cards you may not buy
+
+        def persist() -> None:
+            self._save_guide({"hidden": info["hidden"], "locked_only": info["locked_only"]})
         win = tk.Toplevel(root)
         win.title("Shop Guide - The Bazaar")
         win.overrideredirect(True)  # no title bar or border, which would reach past the strip
@@ -626,16 +630,26 @@ class Overlay:
 
         def close() -> None:
             info["hidden"] = True
-            self._save_guide({"hidden": True})
+            persist()
             self.commands.put(("redraw", None))  # hides it, and the shop list may use the right strip now
 
         def show() -> None:
             info["hidden"] = False
-            self._save_guide({"hidden": False})
+            persist()
 
         top = tk.Frame(win, bg=BOARD_BG)
         top.pack(fill="x")
         tk.Button(top, text="X", command=close, bg=BOARD_BG, fg=ACCENT, relief="flat", padx=6).pack(side="right")
+
+        def toggle_locked_only() -> None:
+            info["locked_only"] = not info["locked_only"]
+            persist()
+            only.configure(text="Show all" if info["locked_only"] else "Locked only")
+            if info["shown"]:
+                render(info["shown"])
+        only = tk.Button(top, text="Show all" if info["locked_only"] else "Locked only", command=toggle_locked_only,
+                         bg=BOARD_BG, fg=ACCENT, relief="flat", padx=6)
+        only.pack(side="right")
         header = tk.Label(top, bg=BOARD_BG, fg=ACCENT, font=("Segoe UI", 12, "bold"), anchor="w", padx=10, pady=6,
                           justify="left", wraplength=area[2] - 60,
                           text="Shop Guide: open a merchant to see what it can sell")
@@ -718,6 +732,8 @@ class Overlay:
             locked_first = len(locked) < len(allowed)  # put the shorter list on top so it's seen without scrolling
             if not locked:
                 note = "nothing locked here"
+            elif info["locked_only"]:
+                note = f"{len(locked)} locked"
             elif locked_first:
                 note = f"{len(locked)} locked (top)"
             else:
@@ -725,7 +741,9 @@ class Overlay:
             header.configure(text=f"{title}  |  {note}")
             sections = [(f"You can buy ({len(allowed)})", "#9be39b", allowed, False),
                         (f"LOCKED - don't buy ({len(locked)})", "#ff6b6b", locked, True)]
-            if locked_first:
+            if info["locked_only"]:  # just the cards to recognise and avoid
+                sections = sections[1:]
+            elif locked_first:
                 sections.reverse()
             row = 0
             for label, color, cards, is_locked in sections:

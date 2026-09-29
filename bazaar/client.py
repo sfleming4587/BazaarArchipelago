@@ -446,6 +446,8 @@ class BazaarContext(CommonContext):
         logger.warning(f"You {how} {self.held_text(event.guid)}, which is still locked! "
                        "CHECKS ARE BLOCKED until you sell it.")
         beep()
+        if self.overlay:
+            self.overlay.toast(f"SELL IT NOW: {CARDS_BY_GUID[event.guid].name} is locked", seconds=12, warning=True)
         self.refresh_held()
 
     def handle_sold(self, event: CardSold) -> None:
