@@ -22,13 +22,22 @@ USER_AGENT = "BazaarArchipelago-client (+https://github.com/sfleming4587/BazaarA
 TIER_COLORS = {"Bronze": "#cd7f32", "Silver": "#c0c0c0", "Gold": "#ffd700", "Diamond": "#7fe7ff",
                "Legendary": "#c77dff"}
 URGENT, PRELOAD = 0, 1
+# Board slots a card takes: in game every card is the same height, and 1 / 2 / 3 slots wide (user 2026-09-29: show
+# them at their real size so they're easier to find). The CDN art is a square painting; the game shows a crop of it.
+SLOTS = {"Small": 1, "Medium": 2, "Large": 3}
+
+
+def card_shape(card: Card, height: int) -> tuple:
+    """(width, height) of a card at this height: half a card height per slot, like the board."""
+    return height * SLOTS.get(card.size, 2) // 2, height
 PRELOAD_PAUSE = 0.15  # seconds between background downloads, so preloading never competes with the game
 
 
 class CardArt:
-    def __init__(self, cache_dir: str, size: int, on_ready: Callable[[str], None]) -> None:
+    def __init__(self, cache_dir: str, height: int, on_ready: Callable[[str], None]) -> None:
         self.cache_dir = cache_dir
-        self.size = size
+        self.height = height  # every card's height in the guide
+        self.size = height * 3 // 2  # the square kept on disk: enough for the widest (3-slot) card
         self.on_ready = on_ready  # called from the worker thread with the card guid once its thumbnail is on disk
         self.jobs: "queue.PriorityQueue" = queue.PriorityQueue()
         self.order = itertools.count()
@@ -40,7 +49,7 @@ class CardArt:
         threading.Thread(target=self._work, name="bazaar art", daemon=True).start()
 
     def _png(self, guid: str) -> str:
-        return os.path.join(self.cache_dir, f"{guid}_{self.size}.png")
+        return os.path.join(self.cache_dir, f"{guid}_sq{self.size}.png")
 
     def _missing(self, guid: str) -> str:
         return os.path.join(self.cache_dir, f"{guid}.missing")
@@ -54,14 +63,15 @@ class CardArt:
                 self._queue(card.guid, PRELOAD)
 
     def image(self, card: Card):
-        """A thumbnail-sized PIL image: real art if cached, otherwise a name tile (and fetch the art first)."""
-        from PIL import Image
+        """The card at its in-game shape (1/2/3 slots wide): its art cropped from the middle, never stretched - or,
+        until the art is downloaded, a name tile of that shape (and fetch the art first)."""
+        from PIL import Image, ImageOps
         if card.guid in self.memory:
             return self.memory[card.guid]
         path = self._png(card.guid)
         if os.path.exists(path):
             try:
-                img = Image.open(path).convert("RGB")
+                img = ImageOps.fit(Image.open(path).convert("RGB"), card_shape(card, self.height), Image.LANCZOS)
                 self.memory[card.guid] = img
                 return img
             except OSError:
@@ -106,26 +116,26 @@ class CardArt:
         key = f"tile:{card.guid}"
         if key in self.memory:
             return self.memory[key]
-        size = self.size
-        img = Image.new("RGB", (size, size), "#1d1a24")
+        width, size = card_shape(card, self.height)
+        img = Image.new("RGB", (width, size), "#1d1a24")
         draw = ImageDraw.Draw(img)
-        draw.rectangle([1, 1, size - 2, size - 2], outline=TIER_COLORS.get(card.tier, "#888888"), width=3)
+        draw.rectangle([1, 1, width - 2, size - 2], outline=TIER_COLORS.get(card.tier, "#888888"), width=3)
         try:
-            font = ImageFont.truetype("segoeuib.ttf", max(9, size // 8))
+            font = ImageFont.truetype("segoeuib.ttf", max(9, size // 9))
         except OSError:
             font = ImageFont.load_default()
         lines, line = [], ""
         for word in card.name.split():
-            if line and draw.textlength(f"{line} {word}", font=font) > size - 8:
+            if line and draw.textlength(f"{line} {word}", font=font) > width - 8:
                 lines.append(line)
                 line = word
             else:
                 line = f"{line} {word}".strip()
         lines.append(line)
-        height = size // 7 + 2
+        height = size // 8 + 2
         y = (size - height * len(lines)) / 2
         for text in lines:
-            draw.text(((size - draw.textlength(text, font=font)) / 2, y), text, fill="white", font=font)
+            draw.text(((width - draw.textlength(text, font=font)) / 2, y), text, fill="white", font=font)
             y += height
         self.memory[key] = img
         return img

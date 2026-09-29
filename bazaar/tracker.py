@@ -38,11 +38,11 @@ def square_status(statuses: List[str]) -> Optional[str]:
     return "done"
 
 
-def card_image(tk, hero: str, half: bool):
+def card_image(tk, root, hero: str, half: bool):
     data = pkgutil.get_data(__name__, f"data/heroes/{hero.lower().replace(' ', '_')}.png")
     if not data:
         return None
-    image = tk.PhotoImage(data=base64.b64encode(data))
+    image = tk.PhotoImage(master=root, data=base64.b64encode(data))  # this Tk, not whichever started first
     return image.subsample(2) if half else image
 
 
@@ -125,7 +125,7 @@ class Tracker:
         self.win.protocol("WM_DELETE_WINDOW", self.close)
         size = SQUARE // 2 if self.half else SQUARE
         for index, hero in enumerate(CARD_ORDER):
-            image = self.images.setdefault(hero, card_image(tk, hero, self.half))
+            image = self.images.setdefault(hero, card_image(tk, self.root, hero, self.half))
             width, height = (image.width(), image.height()) if image else ((85, 105) if self.half else (170, 210))
             canvas = tk.Canvas(self.win, width=width, height=height, bg=BG, highlightthickness=0)
             canvas.grid(row=index // 4, column=index % 4, padx=4, pady=4)

@@ -64,3 +64,35 @@ class TestTrackerData(ClientTestBase):
         self.assertEqual(len(data), 8)
         self.assertFalse(data["Karnok"]["in_seed"])
         self.assertTrue(data["Vanessa"]["in_seed"])
+
+
+class TestShopGuideCardShapes(unittest.TestCase):
+    """User 2026-09-29: Shop Guide cards at their in-game size (1/2/3 slots), cropped, never stretched."""
+
+    def test_shapes_follow_board_slots(self) -> None:
+        from ..cardart import card_shape
+        small, medium, large = (next(c for c in CARDS if c.size == size) for size in ("Small", "Medium", "Large"))
+        self.assertEqual(card_shape(small, 96), (48, 96))
+        self.assertEqual(card_shape(medium, 96), (96, 96))
+        self.assertEqual(card_shape(large, 96), (144, 96))
+
+    def test_art_is_cropped_not_stretched(self) -> None:
+        import tempfile
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("Pillow missing")
+        from ..cardart import CardArt
+        large = next(c for c in CARDS if c.size == "Large")
+        with tempfile.TemporaryDirectory() as folder:
+            art = CardArt(folder, 96, on_ready=lambda guid: None)
+            square = Image.new("RGB", (art.size, art.size), "red")
+            for x in range(art.size):  # a diagonal line: stretching would change its angle, cropping keeps 45 degrees
+                square.putpixel((x, x), (0, 0, 255))
+            square.save(art._png(large.guid))
+            image = art.image(large)
+            art.shutdown()
+        self.assertEqual(image.size, (144, 96))
+        blue = [(x, y) for x in range(144) for y in range(96) if image.getpixel((x, y))[2] > 200]
+        slopes = {round((b[1] - a[1]) / (b[0] - a[0]), 1) for a, b in zip(blue, blue[1:]) if b[0] != a[0]}
+        self.assertEqual(slopes, {1.0})

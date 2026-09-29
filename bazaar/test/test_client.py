@@ -240,7 +240,18 @@ class TestItemPopUps(ClientTestBase):
         self.assertEqual(self.send(1, BASE_ID + LOCKED.ap_id), [])  # the UNLOCKED pop-up covers it
 
     def test_own_filler_pops_up(self) -> None:
-        self.assertEqual(self.send(1, item_name_to_id["Spare Change"]), ["FOUND: Spare Change"])
+        self.assertEqual(self.send(1, item_name_to_id["Spare Change"]), ["FOUND: Spare Change  (in your own world)"])
+
+    def test_item_received_from_another_player_names_them(self) -> None:
+        self.ctx.overlay = mock.Mock()
+        self.ctx.slot = 1
+        self.ctx.player_names = {1: "Me", 2: "Friend"}
+        self.ctx.slot_info = {1: NetworkSlot("Me", GAME, SlotType.player),
+                              2: NetworkSlot("Friend", "Other", SlotType.player)}
+        self.ctx.on_print_json({"type": "ItemSend", "receiving": 1, "data": [{"text": "x"}],
+                                "item": NetworkItem(item_name_to_id["Spare Change"], 1, 2, 0)})
+        self.assertEqual([c.args[0] for c in self.ctx.overlay.toast.call_args_list],
+                         ["RECEIVED: Spare Change  (from Friend)"])
 
 
 class TestNewRunIsACleanSlate(ClientTestBase):

@@ -62,8 +62,9 @@ Alerts appear in a small window at the top left of your screen, above the game:
 - **CHECKS ARE BLOCKED:** shown while you hold a locked card, play a locked hero or owe a DeathLink. It clears
   by itself when you sell the card; a locked hero or DeathLink blocks the rest of the run.
 - **DeathLink:** abandon your run.
-- **Unlocks and notices:** short pop-ups in the bottom right when you receive an unlock (and from whom), one of
-  your checks sends an item to another player (**SENT**) or finds filler for you (**FOUND**), you buy or get a
+- **Unlocks and notices:** short pop-ups in the bottom right, always naming the other player: an unlock you
+  receive (**UNLOCKED ... from**), an item one of your checks sends (**SENT ... to**), filler someone found for you
+  (**RECEIVED ... from**) or you found yourself (**FOUND**), a Sell Trap (**from** whom), you buy or get a
   locked card (**SELL IT NOW**), a Sell
   Trap arrives, or the game was updated since the apworld was made. A red **CHECK NOT SENT** pop-up names any
   check the moment it is blocked.
@@ -83,7 +84,8 @@ Start the client with `--no-overlay` to turn it off.
 
 **Shop Guide** (only when Archipelago runs from source - the Windows installer leaves out the image library the
 pictures need, so there the shop warning above is what you get): a second window with card pictures (from [howbazaar.gg](https://www.howbazaar.gg)) of everything
-the merchant you're visiting could stock, locked ones greyed out with a red X (the shorter list goes on top). It opens in
+the merchant you're visiting could stock, each at its in-game size (small = 1 slot wide, medium = 2, large = 3),
+locked ones greyed out with a red X (the shorter list goes on top). It opens in
 the strip right of the board (the locked-card list then stays on the left; if it doesn't fit, it says how many
 more are in the Shop Guide). It's a real window: drag it anywhere, another monitor too, and it stays there. **Locked only** (top of the guide) shows just the cards you
 may not buy, so you learn their pictures; **Show all** brings the rest back. After you leave a shop it keeps

@@ -18,8 +18,7 @@ from . import screens
 from .tracker import Tracker
 
 BOARD_BG = "#16141c"
-TILE = 76
-COLUMNS = 7
+CARD_HEIGHT = 96  # Shop Guide cards: all this tall, 1/2/3 slots wide like in game (see cardart.card_shape)
 FG = "#ffffff"
 ACCENT = "#ffcf5a"
 GOOD = "#9be39b"
@@ -607,6 +606,8 @@ class Overlay:
                     if panel.state() == "normal":
                         for layer in ([backdrops[panel]] if panel in backdrops else []) + [panel]:  # text on top
                             layer.attributes("-topmost", True)
+                if guide and guide.state() == "normal":  # the Shop Guide is always-on-top too
+                    guide.attributes("-topmost", True)
             root.after(250, poll)
 
         sync_visibility()  # an open Shop Guide shows from the start (while the game is in front)
@@ -619,9 +620,9 @@ class Overlay:
         no other overlay goes while it's open; its columns follow its width. Closing it keeps it closed, also
         next session, until "Show pictures" is pressed.
         """
-        from .cardart import CardArt
+        from .cardart import CardArt, card_shape
         from .data import CARDS
-        info: dict = {"art": None, "shown": None, "shown_guids": set(), "photos": {}, "columns": COLUMNS,
+        info: dict = {"art": None, "shown": None, "shown_guids": set(), "photos": {}, "width": 300,
                       "hidden": None, "stale": False}
         off = dict(render=lambda value, keep_scroll=False: None, refresh=lambda guid: None, show=lambda: None,
                    fit=lambda x, y, width, height, monitor: None, win=None, place_on_screen=lambda fallback: None)
@@ -636,7 +637,8 @@ class Overlay:
             self.shop_guide_unavailable = True
             info.update(off)
             return info
-        info["art"] = CardArt(self.art_cache_dir, TILE, on_ready=lambda guid: self.commands.put(("art", guid)))
+        info["art"] = CardArt(self.art_cache_dir, CARD_HEIGHT,
+                              on_ready=lambda guid: self.commands.put(("art", guid)))
         info["art"].preload(c for c in CARDS if c.shop)
 
         saved = self._load_guide()
@@ -647,6 +649,7 @@ class Overlay:
         info["moved_to"] = saved.get("moved_to")  # (x, y, width, height), or None while it follows the strip
         info["fitted"] = None  # the geometry it was last put at by the strip
         info["strip"] = None  # (rect, monitor) of the right strip it follows
+        info["placing"] = False  # True while the overlay itself moves it
 
         def persist() -> None:
             self._save_guide({"hidden": info["hidden"], "locked_only": info["locked_only"],
@@ -665,13 +668,13 @@ class Overlay:
             if info["moved_to"] or info["strip"] == ((x, y, width, height), monitor):
                 return
             info["strip"] = ((x, y, width, height), monitor)
-            header.configure(wraplength=width - 60)
+            header.configure(wraplength=width - 170)  # room for the Locked only and X buttons beside it
             if win.winfo_ismapped():
                 place_on_screen(monitor)
 
         def moved(event) -> None:
             # <Configure> also fires for child widgets and for our own placing: only a real move/resize counts
-            if event.widget is not win or win.state() != "normal" or not info["fitted"] \
+            if event.widget is not win or win.state() != "normal" or not info["fitted"] or info["placing"] \
                     or win.geometry() == info["fitted"]:
                 return
             rect = screens.visible_bounds(win)
@@ -688,7 +691,12 @@ class Overlay:
                 target, area = info["strip"]
             else:
                 return
-            screens.settle(win, target, area)
+            info["placing"] = True  # our own moves while settling are not the player dragging it
+            try:
+                screens.settle(win, target, area)
+                win.update()  # let the resulting <Configure> events arrive while still flagged
+            finally:
+                info["placing"] = False
             info["fitted"] = win.geometry()
 
         def close() -> None:
@@ -714,7 +722,7 @@ class Overlay:
                          bg=BOARD_BG, fg=ACCENT, relief="flat", padx=6)
         only.pack(side="right")
         header = tk.Label(top, bg=BOARD_BG, fg=ACCENT, font=("Segoe UI", 12, "bold"), anchor="w", padx=10, pady=6,
-                          justify="left", wraplength=area[2] - 60,
+                          justify="left", wraplength=area[2] - 170,
                           text="Shop Guide: open a merchant to see what it can sell")
         header.pack(side="left", fill="x")
         canvas = tk.Canvas(win, bg=BOARD_BG, highlightthickness=0)
@@ -728,9 +736,8 @@ class Overlay:
         win.bind("<MouseWheel>", lambda e: canvas.yview_scroll(-1 if e.delta > 0 else 1, "units"))
 
         def on_resize(event) -> None:
-            columns = max(1, (event.width - 10) // (TILE + 14))
-            if columns != info["columns"]:
-                info["columns"] = columns
+            if abs(event.width - info["width"]) > 8:  # rows are filled by width: re-flow when it really changed
+                info["width"] = event.width
                 if info["shown"]:
                     render(info["shown"], keep_scroll=True)
 
@@ -747,9 +754,11 @@ class Overlay:
             if locked:
                 img = ImageEnhance.Brightness(ImageOps.grayscale(img).convert("RGB")).enhance(0.45)
                 draw = ImageDraw.Draw(img)
-                draw.line([6, 6, TILE - 7, TILE - 7], fill="#e0303a", width=5)
-                draw.line([6, TILE - 7, TILE - 7, 6], fill="#e0303a", width=5)
-            info["photos"][key] = ImageTk.PhotoImage(img)  # cached: Tk needs the reference kept alive anyway
+                width, height = img.size
+                draw.line([6, 6, width - 7, height - 7], fill="#e0303a", width=5)
+                draw.line([6, height - 7, width - 7, 6], fill="#e0303a", width=5)
+            # cached: Tk needs the reference kept alive anyway. master: never whichever Tk happened to start first
+            info["photos"][key] = ImageTk.PhotoImage(img, master=win)
             return info["photos"][key]
 
         def refresh(guid: str) -> None:
@@ -768,19 +777,25 @@ class Overlay:
         def section(title: str, color: str, cards: list, locked: bool, row: int) -> int:
             if not cards:
                 return row
-            columns = info["columns"]
             tk.Label(inner, text=title, bg=BOARD_BG, fg=color, font=("Segoe UI", 11, "bold")).grid(
-                row=row, column=0, columnspan=columns, sticky="w", padx=6, pady=(8, 2))
+                row=row, column=0, sticky="w", padx=6, pady=(8, 2))
             row += 1
-            for i, card in enumerate(cards):
-                cell = tk.Frame(inner, bg=BOARD_BG)
-                cell.grid(row=row + i // columns, column=i % columns, padx=4, pady=3, sticky="n")
+            line, used = None, 0  # cards go left to right in rows, each as wide as its slots (like the board)
+            for card in cards:
+                width = card_shape(card, CARD_HEIGHT)[0] + 8  # the card plus its padding on both sides
+                if line is None or used + width > info["width"] - 24:  # margin: borders, and names a bit wider
+                    line, used = tk.Frame(inner, bg=BOARD_BG), 0
+                    line.grid(row=row, column=0, sticky="w", padx=2)
+                    row += 1
+                used += width
+                cell = tk.Frame(line, bg=BOARD_BG, width=width)
+                cell.pack(side="left", anchor="n", padx=4, pady=3)
                 photo = picture(card, locked)
                 if photo:
                     tk.Label(cell, image=photo, bg=BOARD_BG).pack()
                 tk.Label(cell, text=card.name, bg=BOARD_BG, fg="#777777" if locked else "#eeeeee",
-                         font=("Segoe UI", 8), wraplength=TILE + 6, justify="center").pack()
-            return row + (len(cards) + columns - 1) // columns
+                         font=("Segoe UI", 8), wraplength=max(40, width - 4), justify="center").pack()
+            return row
 
         def render(value, keep_scroll: bool = False) -> None:
             if not value:  # left the shop: keep showing it, just say it's the last one

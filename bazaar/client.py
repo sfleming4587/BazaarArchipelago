@@ -171,9 +171,7 @@ class BazaarContext(CommonContext):
                 if item.item in LOCK_ITEM_GUIDS or name.startswith("Hero: "):
                     logger.info(f"Unlocked: {name}", extra=FILE_ONLY)
                     if self.overlay and args.get("index", 0) > 0:  # index 0 = the full list resent on connect
-                        sender = self.player_names.get(item.player, "the server") if item.player != self.slot \
-                            else "your own world"
-                        self.overlay.toast(f"UNLOCKED: {name.replace('Hero: ', '')}  (from {sender})")
+                        self.overlay.toast(f"UNLOCKED: {name.replace('Hero: ', '')}  (from {self.who(item.player)})")
             self.refresh_held()
             self.receive_traps()
             self.update_status()
@@ -189,9 +187,19 @@ class BazaarContext(CommonContext):
             item, receiver = args["item"], args["receiving"]
             name = self.item_names.lookup_in_slot(item.item, receiver)
             if receiver != self.slot:
-                self.overlay.toast(f"SENT: {name} to {self.player_names.get(receiver, 'another player')}")
+                self.overlay.toast(f"SENT: {name} to {self.who(receiver)}")
             elif item.item not in LOCK_ITEM_GUIDS and not name.startswith("Hero: ") and name != SELL_TRAP:
-                self.overlay.toast(f"FOUND: {name}")
+                self.overlay.toast(f"FOUND: {name}  (in {self.who(self.slot)})")
+        elif self.overlay and args.get("type") == "ItemSend" and args["receiving"] == self.slot:
+            # someone else found something for you; unlocks and Sell Traps have their own pop-ups
+            item = args["item"]
+            name = self.item_names.lookup_in_slot(item.item, self.slot)
+            if item.item not in LOCK_ITEM_GUIDS and not name.startswith("Hero: ") and name != SELL_TRAP:
+                self.overlay.toast(f"RECEIVED: {name}  (from {self.who(item.player)})")
+
+    def who(self, slot: int) -> str:
+        """The other side of an item, from Archipelago's player list, for the pop-ups."""
+        return "your own world" if slot == self.slot else self.player_names.get(slot, "another player")
 
     async def disconnect(self, allow_autoreconnect: bool = False) -> None:
         self.slot_data = {}
@@ -328,21 +336,20 @@ class BazaarContext(CommonContext):
 
     def receive_traps(self) -> None:
         """Start every Sell Trap received since last time (the server resends all items on connect)."""
-        trap_id = item_name_to_id[SELL_TRAP]
-        total = sum(1 for item in self.items_received if item.item == trap_id)
-        while self.traps_seen < total:
+        traps = [item for item in self.items_received if item.item == item_name_to_id[SELL_TRAP]]
+        while self.traps_seen < len(traps):
             self.traps_seen += 1
-            self.start_trap()
+            self.start_trap(self.who(traps[self.traps_seen - 1].player))
         self.save_state()
 
-    def start_trap(self) -> None:
+    def start_trap(self, sender: str = "another player") -> None:
         """Pick a random item the player holds; it must be sold before the deadline day starts."""
         targeted = {t["instance"] for t in self.run.get("traps", [])}
         choices = [i for i in self.run.get("inventory", {}) if i not in targeted] if self.run.get("active") else []
         if not choices:  # not in a run, or holding nothing it can target: the trap misses
             self.event("Sell Trap DODGED - you had nothing it could make you sell.")
             if self.overlay:
-                self.overlay.toast("Sell Trap DODGED!")
+                self.overlay.toast(f"Sell Trap from {sender} DODGED!")
             return
         instance = random.choice(choices)
         guid = self.run["inventory"][instance]
@@ -352,7 +359,7 @@ class BazaarContext(CommonContext):
         self.event(f"SELL TRAP! Sell {name} before day {deadline} starts, or checks get blocked.", warning=True)
         beep()
         if self.overlay:
-            self.overlay.toast(f"SELL TRAP! Sell {name} before day {deadline} starts.", seconds=15)
+            self.overlay.toast(f"SELL TRAP from {sender}! Sell {name} before day {deadline} starts.", seconds=15)
         self.update_block_banner()
 
     def card_name(self, guid: str) -> str:
@@ -819,7 +826,7 @@ async def main(args) -> None:
     ctx.shop_guide = not args.no_shop_guide
     if not args.no_overlay:
         from .overlay import Overlay
-        ctx.overlay = Overlay(                              art_cache_dir=Utils.cache_path("bazaar_card_art") if ctx.shop_guide else None,
+        ctx.overlay = Overlay(art_cache_dir=Utils.cache_path("bazaar_card_art") if ctx.shop_guide else None,
                               guide_file=Utils.user_path("bazaar_shop_guide.json"))
     ctx.server_task = asyncio.create_task(server_loop(ctx), name="server loop")
     if ctx.overlay:
