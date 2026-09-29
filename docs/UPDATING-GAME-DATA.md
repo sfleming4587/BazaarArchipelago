@@ -1,5 +1,10 @@
 # Updating the game data after a Bazaar patch
 
+> ⚠️ **FROZEN since 2026-09-29: don't run the extractor.** Reading the game's `GameData.db` is data mining,
+> which The Bazaar's EULA forbids (section 3). The data stays at game version 1.0.12293 until a community card
+> database gives permission to use its data. See DEVELOPERS.md, "Card data is frozen". The steps below are kept
+> for reference only.
+
 **The apworld keeps working after a patch; updating only adds what the patch introduced.** The client tells you
 when it's time: it warns once that the game version is newer than the data, or that it saw a card, hero or monster
 it doesn't know (new cards are never locked, new heroes aren't in the seed, new monsters count as Bronze).

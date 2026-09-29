@@ -1,6 +1,9 @@
 """
 Build bazaar/data/bazaar_data.json from The Bazaar's local card cache.
 
+FROZEN (2026-09-29): don't run this. Reading GameData.db is data mining under the game's EULA; see
+DEVELOPERS.md "Card data is frozen". Kept for reference until a permitted data source replaces it.
+
 Run this after a game patch (launch the game once first so its cache refreshes):
     python tools/extract_data.py
 
