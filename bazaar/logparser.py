@@ -25,6 +25,8 @@ DEFAULT_LOG_PATH = os.path.join(os.path.expandvars("%USERPROFILE%"), "AppData", 
                                 "The Bazaar", "Player.log")
 
 HERO_RE = re.compile(r"Changing EHero to (\w+)")
+STAMP_RE = re.compile(rb"^\[(\d\d:\d\d:\d\d\.\d+)\]", re.MULTILINE)
+PREV_LOG = "Player-prev.log"  # where Unity moves the previous session's log when the game starts
 RUN_READY_RE = re.compile(r"\[StartRunAppState\] Run initialization finalized")
 STATE_RE = re.compile(r"\[AppState\] State changed from \[(\w+)\] to \[(\w+)\]")
 GAIN_RE = re.compile(r"Card Purchased: InstanceId: (itm_\S+) - TemplateId([0-9a-fA-F-]{36}) - Target:\S+ - "
@@ -47,6 +49,7 @@ HERO_ALIASES = {"Pyg": "Pygmalien", "Hero8": "The Dragons", "Dragon": "The Drago
 @dataclass(frozen=True)
 class RunStarted:
     hero: str
+    index: int = 0  # which run of this log (game session) it is: 0 for the first. The log has no run ids.
 
 
 @dataclass(frozen=True)
@@ -137,6 +140,7 @@ class LogParser:
         self.pvp_exit_tasks = False
         self.conceded = False
         self.warned_unrecognized = False
+        self.runs_started = 0  # runs started so far in this log
 
     def feed(self, line: str) -> Iterator[Event]:
         if match := VERSION_RE.search(line):
@@ -149,7 +153,8 @@ class LogParser:
             return
         if RUN_READY_RE.search(line):
             self.in_run, self.day, self.in_pvp, self.conceded = True, 1, False, False
-            yield RunStarted(self.hero or "Unknown")
+            self.runs_started += 1
+            yield RunStarted(self.hero or "Unknown", self.runs_started - 1)
             yield DayReached(1)
             return
         if match := STATE_RE.search(line):
@@ -222,7 +227,9 @@ class LogTailer:
         self.identity = None
 
     def _identity(self, stat: os.stat_result):
-        return getattr(stat, "st_birthtime", None) or stat.st_ctime
+        # The creation time alone can survive a restart (NTFS keeps it for a file re-created under the same name
+        # within seconds), so the session's first timestamp is part of it.
+        return getattr(stat, "st_birthtime", None) or stat.st_ctime, log_session(self.path)
 
     def read_new_lines(self) -> Optional[List[str]]:
         """Returns new complete lines, [] if nothing new, or None if the log was restarted (call again)."""
@@ -237,11 +244,26 @@ class LogTailer:
         self.identity = identity
         if stat.st_size == self.offset:
             return []
-        with open(self.path, "rb") as f:
-            f.seek(self.offset)
-            chunk = f.read(stat.st_size - self.offset)
+        try:
+            with open(self.path, "rb") as f:
+                f.seek(self.offset)
+                chunk = f.read(stat.st_size - self.offset)
+        except OSError:  # e.g. the game moving the log aside at this very moment: try again next time
+            return []
         self.offset += len(chunk)
         data = self.buffer + chunk
         lines = data.split(b"\n")
         self.buffer = lines.pop()
         return [line.decode("utf-8", errors="replace").rstrip("\r").lstrip("﻿") for line in lines]
+
+
+def log_session(path: str) -> Optional[str]:
+    """Which game session a log is from: the time on its first timestamped line (None until there is one). Used to
+    tell a resumed run from a new one, since the log has no run ids."""
+    try:
+        with open(path, "rb") as f:
+            match = STAMP_RE.search(f.read(65536))
+    except OSError:
+        return None
+    return match.group(1).decode() if match else None
+

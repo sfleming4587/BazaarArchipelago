@@ -57,7 +57,7 @@ class ClientTestBase(unittest.TestCase):
     def play(self, *events) -> None:
         async def run():
             for event in events:
-                await dispatch(self.ctx, event, self.parser, first_run_in_log=False)
+                await dispatch(self.ctx, event)
         self.await_(run())
 
     def was_sent(self, name: str) -> bool:
@@ -410,3 +410,77 @@ class TestWhereNeedsAHint(ClientTestBase):
         self.ctx.send_msgs = mock.AsyncMock(side_effect=lambda msgs: said.extend(msgs))
         BazaarCommandProcessor(self.ctx)(f"/where {LOCKED.name}")
         self.assertEqual(said, [])  # no automatic !hint
+
+
+class TestRunIdentity(ClientTestBase):
+    """Which run is which (review 2026-09-29): the log has no run ids, so a new run with the same hero must never
+    inherit the old run's blocks or day, and a run resumed after a game restart must keep its real day."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.ctx.log_path = os.path.join(self.tmp.name, "Player.log")
+        self.ctx.log_session = "10:00:00.000"
+        self.ctx.slot = 1
+        self.ctx.room_seed = "seed"
+
+    def test_new_run_after_an_unseen_loss_starts_clean(self) -> None:
+        self.play(RunStarted("Vanessa", 0), DayReached(1), DayReached(2))
+        self.ctx.on_deathlink({"time": 1.0, "source": "Friend", "cause": "Friend fell."})
+        # client closed; the run was lost; client opened again at the menu of the same game session
+        self.parser.in_run = False
+        self.await_(catch_up(self.ctx, self.parser, [RunStarted("Vanessa", 0), DayReached(1), RunEnded(False, 2)]))
+        self.assertFalse(self.ctx.run["active"])
+        self.play(RunStarted("Vanessa", 1), DayReached(1), DayReached(2))
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.assertEqual(self.ctx.run["day"], 2)  # not the old run's day
+
+    def test_same_hero_later_run_in_the_same_log_is_new(self) -> None:
+        self.play(RunStarted("Vanessa", 0), DayReached(1))
+        self.ctx.on_deathlink({"time": 1.0, "source": "Friend", "cause": "Friend fell."})
+        self.play(RunStarted("Vanessa", 1), DayReached(1))
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def write_prev_log(self, lines) -> None:
+        with open(os.path.join(self.tmp.name, "Player-prev.log"), "w", encoding="utf-8") as f:
+            f.write("\n".join(["[10:00:00.000] [Boot] start"] + lines) + "\n")
+
+    def test_resumed_after_a_game_restart_keeps_the_real_day(self) -> None:
+        self.play(RunStarted("Vanessa", 0), *[DayReached(d) for d in range(1, 7)])
+        self.write_prev_log(["[10:00:01.000] [StartRunAppState] Run initialization finalized."])  # never finished
+        self.ctx.log_session = "11:00:00.000"  # the game was restarted
+        self.sent.clear()
+        self.play(RunStarted("Vanessa", 0), DayReached(1), DayReached(2), PvPFought(2, None, exit_tasks=True))
+        self.assertEqual(self.ctx.run["day"], 7)
+        self.assertTrue(self.was_sent(day_location("Vanessa", 7)))
+        self.assertTrue(self.was_sent("Vanessa - Day 7 PvP Win"))
+        self.assertFalse(self.was_sent("Vanessa - Day 2 PvP Win"))
+
+    def test_after_a_restart_a_finished_old_run_means_a_new_run(self) -> None:
+        self.play(RunStarted("Vanessa", 0), *[DayReached(d) for d in range(1, 7)])
+        self.ctx.on_deathlink({"time": 1.0, "source": "Friend", "cause": "Friend fell."})
+        self.write_prev_log(["[10:00:01.000] [StartRunAppState] Run initialization finalized.",
+                             "[10:00:02.000] [AppState] State changed from [ChoiceState] to [EndRunDefeatState]"])
+        self.ctx.log_session = "11:00:00.000"
+        self.play(RunStarted("Vanessa", 0), DayReached(1))
+        self.assertEqual(self.ctx.run["day"], 1)
+        self.assertIsNone(self.ctx.blocked_reason())
+
+
+class TestSessionHygiene(ClientTestBase):
+    def test_a_dropped_connection_pauses_the_watcher(self) -> None:
+        self.ctx.reset_server_state()
+        self.assertEqual(self.ctx.slot_data, {})
+
+    def test_leaving_a_room_forgets_its_checks_and_goal(self) -> None:
+        self.ctx.locations_checked = {1, 2}
+        self.ctx.goal_sent = self.ctx.finished_game = True
+        self.await_(self.ctx.disconnect())
+        self.assertEqual((self.ctx.locations_checked, self.ctx.goal_sent, self.ctx.finished_game), (set(), False, False))
+
+    def test_state_file_is_replaced_whole(self) -> None:
+        self.ctx.room_seed, self.ctx.slot = "seed", 1
+        self.play(RunStarted("Vanessa"))
+        self.ctx.save_state()
+        folder = self.tmp.name
+        self.assertTrue(os.path.exists(os.path.join(folder, "bazaar_client_state.json")))
+        self.assertFalse(any(name.endswith(".tmp") for name in os.listdir(folder)))
