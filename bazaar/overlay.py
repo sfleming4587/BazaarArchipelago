@@ -32,11 +32,16 @@ LIST_ALPHA = 0.6
 
 
 # Where the overlay may draw: the strips left and right of the board, measured on a 1920x1080 shop screenshot
-# (2026-09-28) and kept as fractions of the screen (x, y, width, height). It must never cover the board: the
-# overlay takes the clicks where it sits, and a list over the board once stopped the player leaving a shop.
-LEFT_AREA = (14 / 1920, 0.0, 349 / 1920, 1056 / 1080)
-RIGHT_AREA = (1565 / 1920, 0.0, 341 / 1920, 950 / 1080)
-FONT_SIZES = range(13, 9, -1)  # pixel sizes tried for the locked-card list, never below 10 px to stay readable
+# (2026-09-28). It must never cover the board: the overlay takes the clicks where it sits, and a list over the
+# board once stopped the player leaving a shop. Measured in 1080p pixels and scaled to the game window's real
+# size, so it works at any resolution, windowed or fullscreen, on any monitor.
+MARGIN = 14  # from the window's left and right edges
+LEFT_END = 960 - 363  # the left strip ends this far left of the window's centre (the board starts there)
+RIGHT_START = 1565 - 960  # the right strip starts this far right of the centre
+LEFT_BOTTOM = 1056
+RIGHT_BOTTOM = 950  # above the settings gear in the bottom-right corner
+FONT_SIZES = range(13, 9, -1)  # 1080p pixel sizes tried for the locked-card list (scaled with the window)
+MIN_FONT = 9  # never smaller than this many real pixels, however small the window
 PAD = 10
 GAME_EXE = "thebazaar.exe"  # the overlay only shows while this is the active window
 INDENT = 8  # names sit a little right of their letter
@@ -90,9 +95,20 @@ def fit_columns(names: List[str], areas: List[tuple], column_width: Callable[[Li
     return placed, len(remaining)
 
 
-def area_pixels(area: tuple, screen_w: int, screen_h: int) -> tuple:
-    x, y, w, h = area
-    return round(x * screen_w), round(y * screen_h), round(w * screen_w), round(h * screen_h)
+def strips(x: int, y: int, w: int, h: int) -> tuple:
+    """
+    (left strip, right strip, scale) for a game window at x, y of size w x h: each strip is (x, y, width, height)
+    in screen pixels, scale is h / 1080. The board is centred and grows with the window's height; on windows
+    narrower than 16:9 it's assumed to shrink with the width instead (unverified - only 16:9 was measured).
+    """
+    k = h / 1080
+    across = min(k, w / 1920)  # how the board's width scales
+    centre = x + w / 2
+    margin = round(MARGIN * k)
+    left_x, left_end = x + margin, round(centre - LEFT_END * across)
+    right_x, right_end = round(centre + RIGHT_START * across), x + w - margin
+    return ((left_x, y, left_end - left_x, round(LEFT_BOTTOM * k)),
+            (right_x, y, right_end - right_x, round(RIGHT_BOTTOM * k)), k)
 
 
 def _add_style(window, flags: int) -> None:
@@ -123,19 +139,22 @@ def window_handle(window) -> int:
 _exe_names: Dict[int, str] = {}
 
 
-def game_in_front(own: Set[int]) -> Optional[bool]:
-    """True while The Bazaar is the active window (Windows only; elsewhere always True). None when one of our
-    own windows is: that says nothing about the game, so the caller keeps what it had."""
+def game_in_front(own: Set[int]) -> tuple:
+    """
+    (in front, window) - in front: True while The Bazaar is the active window (Windows only; elsewhere always
+    True), None when one of our own windows is (that says nothing about the game, so the caller keeps what it
+    had). window: the game's client area (x, y, width, height) on screen while it's in front, else None.
+    """
     if sys.platform != "win32":
-        return True
+        return True, None
     import ctypes
     from ctypes import wintypes
     user32, kernel32 = ctypes.windll.user32, ctypes.windll.kernel32
-    hwnd = user32.GetForegroundWindow()
+    hwnd = user32.GetAncestor(user32.GetForegroundWindow(), 2)  # GA_ROOT
     if not hwnd:
-        return False
-    if user32.GetAncestor(hwnd, 2) in own:  # GA_ROOT
-        return None
+        return False, None
+    if hwnd in own:
+        return None, None
     pid = wintypes.DWORD()
     user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
     if pid.value not in _exe_names:
@@ -147,7 +166,14 @@ def game_in_front(own: Set[int]) -> Optional[bool]:
                 name = os.path.basename(buffer.value).lower()
             kernel32.CloseHandle(process)
         _exe_names[pid.value] = name
-    return _exe_names[pid.value] == GAME_EXE
+    if _exe_names[pid.value] != GAME_EXE:
+        return False, None
+    rect, corner = wintypes.RECT(), wintypes.POINT(0, 0)
+    user32.GetClientRect(hwnd, ctypes.byref(rect))
+    user32.ClientToScreen(hwnd, ctypes.byref(corner))
+    if rect.right < 100 or rect.bottom < 100:  # minimised or not laid out yet
+        return True, None
+    return True, (corner.x, corner.y, rect.right, rect.bottom)
 
 
 def draw_columns(tk, parent, columns: List[List[str]], font, bold, column_width: Callable[[List[str]], int],
@@ -173,6 +199,7 @@ class Overlay:
     def __init__(self, art_cache_dir: Optional[str] = None, on_pvp: Optional[Callable[[str, bool], None]] = None,
                  guide_file: Optional[str] = None) -> None:
         self.only_over_game = True  # False shows the windows whatever is in front (tests)
+        self.game_window: Optional[tuple] = None  # tests: pretend the game's client area is here (x, y, w, h)
         self.guide_file = guide_file  # where the Shop Guide remembers its position, size and whether it's closed
         self.on_pvp = on_pvp  # called from the Tk thread with (question key, won)
         self.art_cache_dir = art_cache_dir
@@ -238,16 +265,25 @@ class Overlay:
             panel.attributes("-alpha", LIST_ALPHA if panel in (shop_first, shop_second) else ALERT_ALPHA)
             panel.configure(bg=SEVERITY["info"], highlightthickness=2, highlightbackground=ACCENT)
             never_focus(panel)
-        left = area_pixels(LEFT_AREA, root.winfo_screenwidth(), root.winfo_screenheight())
-        right = area_pixels(RIGHT_AREA, root.winfo_screenwidth(), root.winfo_screenheight())
-        inner_w = left[2] - 2 * PAD - 4  # minus padding and the border
+
+        g: dict = {}  # the strips for where the game window is now (see relayout)
+
+        def relayout(window: tuple) -> None:
+            left, right, k = strips(*window)
+            g.update(window=window, left=left, right=right, k=k, inner_w=left[2] - 2 * PAD - 4)
+
+        def f(size: float, weight: str = "normal") -> tuple:
+            """A font of `size` points at 1080p, scaled with the game window."""
+            return ("Segoe UI", -max(MIN_FONT, round(size * 4 / 3 * g["k"])), weight)
+
+        relayout((0, 0, root.winfo_screenwidth(), root.winfo_screenheight()))  # until the game is seen
         state = {"locked": None, "deathlink": None, "shop": None, "pvp": {}, "toasts": [], "status": None}
         # what each window shows now, to skip redraws that change nothing
         drawn: dict = {"alerts": None, "shop": None, "toasts": None, "alerts_height": 0, "toasts_height": 0}
         wanted: set = set()  # windows that have something to show (shown only while the game is in front)
         front = {"game": not self.only_over_game}
         widths: Dict[tuple, int] = {}  # (font size, text) -> pixels; measuring hundreds of names is the slow part
-        board = self._make_board(tk, root, right)
+        board = self._make_board(tk, root, g["right"])
 
         def swap(panel, bg: str):
             """A fresh content frame for the panel. The old one is destroyed only after the new one is packed, so
@@ -286,8 +322,8 @@ class Overlay:
             if toasts != drawn["toasts"]:
                 drawn["toasts"] = toasts
                 drawn["toasts_height"] = render_toasts(moves)
-            right_height = right[3] - (drawn["toasts_height"] + 4 if drawn["toasts_height"] else 0)
-            board["fit"](right_height)
+            right_height = g["right"][3] - (drawn["toasts_height"] + 4 if drawn["toasts_height"] else 0)
+            board["fit"](*g["right"][:3], right_height)
             alerts = (state["deathlink"], state["locked"], tuple(state["pvp"].items()), state["status"],
                       pictures_button())
             if alerts != drawn["alerts"]:
@@ -326,12 +362,12 @@ class Overlay:
             frame, show = swap(toast_box, SEVERITY["info"])
             for text, _, warning in state["toasts"]:
                 bg = SEVERITY["critical" if warning else "ok"]
-                tk.Label(frame, text=text, fg=FG, bg=bg, font=("Segoe UI", 11, "bold"), wraplength=right[2] - 40,
+                tk.Label(frame, text=text, fg=FG, bg=bg, font=f(11, "bold"), wraplength=g["right"][2] - 40,
                          justify="left", padx=8, pady=4).pack(fill="x", pady=2)
             show()
             toast_box.update_idletasks()
-            height = min(toast_box.winfo_reqheight(), right[3] // 3)
-            moves.append((toast_box, f"{right[2]}x{height}+{right[0]}+{right[1] + right[3] - height}"))
+            height = min(toast_box.winfo_reqheight(), g["right"][3] // 3)
+            moves.append((toast_box, f"{g["right"][2]}x{height}+{g["right"][0]}+{g["right"][1] + g["right"][3] - height}"))
             return height
 
         def render_alerts(moves: list) -> int:
@@ -342,27 +378,27 @@ class Overlay:
             bg = SEVERITY[alert_severity()]
             frame, show = swap(alert_box, bg)
             if state["deathlink"]:
-                tk.Label(frame, text="DEATHLINK", fg=ACCENT, bg=bg, font=("Segoe UI", 16, "bold")).pack(anchor="w")
-                tk.Label(frame, text=state["deathlink"], fg=FG, bg=bg, font=("Segoe UI", 11),
-                         wraplength=inner_w, justify="left").pack(anchor="w")
+                tk.Label(frame, text="DEATHLINK", fg=ACCENT, bg=bg, font=f(16, "bold")).pack(anchor="w")
+                tk.Label(frame, text=state["deathlink"], fg=FG, bg=bg, font=f(11),
+                         wraplength=g["inner_w"], justify="left").pack(anchor="w")
                 tk.Label(frame, text="Abandon your current run (Settings > Abandon Run).", fg=FG, bg=bg,
-                         font=("Segoe UI", 11, "bold"), wraplength=inner_w, justify="left").pack(anchor="w",
+                         font=f(11, "bold"), wraplength=g["inner_w"], justify="left").pack(anchor="w",
                                                                                                 pady=(2, 6))
                 tk.Button(frame, text="Done", command=lambda: dismiss_deathlink()).pack(anchor="e")
             if state["locked"]:
                 title, cards = state["locked"]
-                tk.Label(frame, text=title, fg=ACCENT, bg=bg, font=("Segoe UI", 14, "bold"), wraplength=inner_w,
+                tk.Label(frame, text=title, fg=ACCENT, bg=bg, font=f(14, "bold"), wraplength=g["inner_w"],
                          justify="left").pack(anchor="w", pady=(6 if state["deathlink"] else 0, 2 if cards else 0))
                 for text in cards:  # cleared automatically when the log says it was sold
-                    tk.Label(frame, text=text, fg=FG, bg=bg, font=("Segoe UI", 11), wraplength=inner_w,
+                    tk.Label(frame, text=text, fg=FG, bg=bg, font=f(11), wraplength=g["inner_w"],
                              justify="left").pack(anchor="w")
             if state["pvp"]:
                 tk.Label(frame, text="Did you win the PvP fight?", fg=ACCENT, bg=bg,
-                         font=("Segoe UI", 13, "bold")).pack(anchor="w", pady=(6 if frame.winfo_children() else 0, 2))
+                         font=f(13, "bold")).pack(anchor="w", pady=(6 if frame.winfo_children() else 0, 2))
                 for key, text in state["pvp"].items():
                     row = tk.Frame(frame, bg=bg)
                     row.pack(fill="x", pady=1)
-                    tk.Label(row, text=text, fg=FG, bg=bg, font=("Segoe UI", 11), wraplength=inner_w - 110,
+                    tk.Label(row, text=text, fg=FG, bg=bg, font=f(11), wraplength=g["inner_w"] - 110,
                              justify="left").pack(side="left")
                     tk.Button(row, text="Lost", command=lambda k=key: answer(k, False)).pack(side="right", padx=(6, 0))
                     tk.Button(row, text="Won", command=lambda k=key: answer(k, True)).pack(side="right", padx=(12, 0))
@@ -372,10 +408,10 @@ class Overlay:
             if state["status"]:
                 text, warning = state["status"]
                 tk.Label(frame, text=text, fg=WARN if warning else MUTED, bg=bg,
-                         font=("Segoe UI", 11 if warning else 10, "bold" if warning else "normal"),
-                         wraplength=inner_w, justify="left").pack(anchor="w", pady=(4, 0))
+                         font=f(11 if warning else 10, "bold" if warning else "normal"),
+                         wraplength=g["inner_w"], justify="left").pack(anchor="w", pady=(4, 0))
             show()
-            return place(moves, alert_box, left[0], left[1], left[2], left[3] // 2)  # bottom half: the shop list
+            return place(moves, alert_box, g["left"][0], g["left"][1], g["left"][2], g["left"][3] // 2)  # bottom half: the shop list
 
         def render_shop(moves: list, alerts_height: int, right_height: int) -> None:
             if not state["shop"]:
@@ -384,25 +420,26 @@ class Overlay:
             merchant, names, verb = state["shop"]
             bg = SEVERITY["warning" if names else "ok"]
             # the left strip under the alerts first, then the right strip
-            first_top = left[1] + alerts_height + 4 if alerts_height else left[1]
-            first = (left[0], first_top, left[2], left[3] - first_top)
+            first_top = g["left"][1] + alerts_height + 4 if alerts_height else g["left"][1]
+            first = (g["left"][0], first_top, g["left"][2], g["left"][3] - first_top)
             first_frame, show_first = swap(shop_first, bg)
             if names:
                 advice = "don't buy them" if verb == "sell" else "pick something else"
                 tk.Label(first_frame, text=f"{merchant} may {verb} these LOCKED cards - {advice}:", fg=ACCENT, bg=bg,
-                         font=("Segoe UI", 11, "bold"), wraplength=inner_w, justify="left").pack(anchor="w",
+                         font=f(11, "bold"), wraplength=g["inner_w"], justify="left").pack(anchor="w",
                                                                                                 pady=(0, 4))
             else:  # nothing locked: just a small tick
                 tk.Label(first_frame, text=f"✔  {merchant}: buy freely", fg=GOOD, bg=bg,
-                         font=("Segoe UI", 11, "bold"), wraplength=inner_w, justify="left").pack(anchor="w")
+                         font=f(11, "bold"), wraplength=g["inner_w"], justify="left").pack(anchor="w")
             first_frame.update_idletasks()
             header_height = first_frame.winfo_reqheight() + 4
             guide_open = board["hidden"] is False  # the right strip is the Shop Guide's while it's open
-            areas = [(inner_w, first[3] - header_height)]
+            areas = [(g["inner_w"], first[3] - header_height)]
             if not guide_open:
-                areas.append((right[2] - 2 * PAD - 4, right_height - 2 * PAD - 4))
+                areas.append((g["right"][2] - 2 * PAD - 4, right_height - 2 * PAD - 4))
             placed, missing, font, bold = [[] for _ in areas], 0, None, None
-            for size in FONT_SIZES:  # the biggest text that fits; else the smallest, saying what's left out
+            sizes = sorted({max(MIN_FONT, round(size * g["k"])) for size in FONT_SIZES}, reverse=True)
+            for size in sizes:  # the biggest text that fits; else the smallest, saying what's left out
                 font = tkfont.Font(root=root, family="Segoe UI", size=-size)
                 bold = tkfont.Font(root=root, family="Segoe UI", size=-size, weight="bold")
 
@@ -421,7 +458,7 @@ class Overlay:
             draw_columns(tk, first_frame, placed[0], font, bold, width, line_height, bg)
             if missing and guide_open:
                 tk.Label(first_frame, text=f"+{missing} more locked cards - see the Shop Guide", fg=ACCENT, bg=bg,
-                         font=bold, wraplength=inner_w, justify="left").pack(anchor="w")
+                         font=bold, wraplength=g["inner_w"], justify="left").pack(anchor="w")
             show_first()
             place(moves, shop_first, *first)
             if len(placed) > 1 and (placed[1] or missing):
@@ -429,9 +466,9 @@ class Overlay:
                 draw_columns(tk, second_frame, placed[1], font, bold, width, line_height, bg)
                 if missing:
                     tk.Label(second_frame, text=f"+{missing} more locked cards (no room to show them)", fg=ACCENT,
-                             bg=bg, font=bold, wraplength=right[2] - 2 * PAD - 4, justify="left").pack(anchor="w")
+                             bg=bg, font=bold, wraplength=g["right"][2] - 2 * PAD - 4, justify="left").pack(anchor="w")
                 show_second()
-                place(moves, shop_second, right[0], right[1], right[2], right_height)
+                place(moves, shop_second, g["right"][0], g["right"][1], g["right"][2], right_height)
             else:
                 moves.append((shop_second, None))
 
@@ -480,7 +517,14 @@ class Overlay:
             if any(expires <= now for _, expires, _ in state["toasts"]):
                 state["toasts"] = [t for t in state["toasts"] if t[1] > now]
                 changed = True
-            game = True if not self.only_over_game else game_in_front(own_windows())
+            if self.only_over_game:
+                game, window = game_in_front(own_windows())
+            else:
+                game, window = True, self.game_window
+            if window and window != g["window"]:  # the game window moved, was resized or changed resolution
+                relayout(window)
+                drawn.update(alerts=None, shop=None, toasts=None)  # everything is laid out again
+                changed = True
             if game is not None and game != front["game"]:
                 front["game"] = game
                 sync_visibility()
@@ -507,7 +551,7 @@ class Overlay:
         info: dict = {"art": None, "shown": None, "shown_guids": set(), "photos": {}, "columns": COLUMNS,
                       "hidden": None, "stale": False}
         off = dict(render=lambda value, keep_scroll=False: None, refresh=lambda guid: None, show=lambda: None,
-                   fit=lambda height: None, win=None)
+                   fit=lambda x, y, width, height: None, win=None)
         if not self.art_cache_dir:  # Shop Guide turned off
             info.update(off)
             return info
@@ -533,11 +577,12 @@ class Overlay:
         win.withdraw()  # shown by the overlay's render, only while the game is in front
         never_focus(win)
 
-        def fit(height: int) -> None:
+        def fit(x: int, y: int, width: int, height: int) -> None:
             """The right strip minus any pop-ups below it."""
-            geometry = f"{area[2]}x{height}+{area[0]}+{area[1]}"
+            geometry = f"{width}x{height}+{x}+{y}"
             if win.geometry() != geometry:
                 win.geometry(geometry)
+                header.configure(wraplength=width - 60)
 
         def close() -> None:
             info["hidden"] = True

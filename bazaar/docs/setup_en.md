@@ -68,7 +68,8 @@ window: alerts at the top left, a shop's locked cards under them, pop-ups at the
 how urgent it is: red = checks are blocked or a DeathLink, amber = something to act on (locked cards on sale, a
 PvP question, a Sell Trap, a locked hero picked), dark = just information, green = all good. It's see-through, so
 item tooltips behind it stay readable, it only shows while The Bazaar is the active window, and it never takes
-the keyboard focus from the game. It's a separate window, not part of the game,
+the keyboard focus from the game. It follows the game window, so it fits any resolution (1080p, 1440p, 4K,
+ultrawide), fullscreen or windowed, on any monitor. It's a separate window, not part of the game,
 so it only shows over The Bazaar when the game's display mode is **Fullscreen Window** (the default) or windowed.
 Start the client with `--no-overlay` to turn it off.
 

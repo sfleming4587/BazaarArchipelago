@@ -1,6 +1,6 @@
 import unittest
 
-from ..overlay import fit_columns, letter_columns
+from ..overlay import fit_columns, letter_columns, strips
 
 
 class TestLetterColumns(unittest.TestCase):
@@ -53,7 +53,7 @@ class TestFitColumns(unittest.TestCase):
         from ..client import HEROES, MERCHANT_DATA
         from ..data import CARDS
         from ..merchants import possible_stock
-        from ..overlay import GAP, INDENT, LEFT_AREA, RIGHT_AREA, area_pixels
+        from ..overlay import GAP, INDENT, strips
         shop = [c for c in CARDS if c.shop]
         names = max(({c.name for c in possible_stock(m["stock"], h, shop)}
                      for m in MERCHANT_DATA.values() for h in HEROES), key=len)
@@ -66,11 +66,46 @@ class TestFitColumns(unittest.TestCase):
         bold = tkfont.Font(root=root, family="Segoe UI", size=-10, weight="bold")
         width = lambda column: max(bold.measure(line) if len(line) == 1 else font.measure(line) + INDENT
                                    for line in column) + GAP
-        right, left = area_pixels(RIGHT_AREA, 1920, 1080), area_pixels(LEFT_AREA, 1920, 1080)
+        left, right, _ = strips(0, 0, 1920, 1080)
         _, missing = fit_columns(sorted(names), [(left[2] - 24, left[3] - 80), (right[2] - 24, right[3] - 24)],
                                  width, font.metrics("linespace"))
         self.assertGreater(len(names), 250)
         self.assertEqual(missing, 0)
+
+
+class TestStrips(unittest.TestCase):
+    """The overlay's strips follow the game window: any resolution, windowed or fullscreen, never on the board."""
+    BOARD_1080 = (378, 1550)  # the board's left and right edge in the 1080p screenshot
+
+    def board(self, x, y, w, h) -> tuple:
+        k = min(h / 1080, w / 1920)
+        centre = x + w / 2
+        return centre - (960 - self.BOARD_1080[0]) * k, centre + (self.BOARD_1080[1] - 960) * k
+
+    def check(self, x, y, w, h) -> tuple:
+        left, right, _ = strips(x, y, w, h)
+        board_left, board_right = self.board(x, y, w, h)
+        for strip in (left, right):
+            self.assertGreater(strip[2], 0)
+            self.assertGreaterEqual(strip[0], x)  # inside the game window
+            self.assertLessEqual(strip[0] + strip[2], x + w)
+            self.assertLessEqual(strip[1] + strip[3], y + h)
+        self.assertLessEqual(left[0] + left[2], board_left)  # never on the board
+        self.assertGreaterEqual(right[0], board_right)
+        return left, right
+
+    def test_1080p_matches_the_screenshot(self) -> None:
+        self.assertEqual(self.check(0, 0, 1920, 1080), ((14, 0, 349, 1056), (1565, 0, 341, 950)))
+
+    def test_4k_is_1080p_doubled(self) -> None:
+        self.assertEqual(self.check(0, 0, 3840, 2160), ((28, 0, 698, 2112), (3130, 0, 682, 1900)))
+
+    def test_other_sizes_and_windows(self) -> None:
+        for window in [(0, 0, 1280, 720), (0, 0, 2560, 1440), (0, 0, 3440, 1440), (0, 0, 5120, 1440),
+                       (0, 0, 1920, 1200), (0, 0, 1600, 1200), (300, 200, 1280, 720), (-1920, 0, 1920, 1080),
+                       (1920, 0, 2560, 1080)]:
+            with self.subTest(window=window):
+                self.check(*window)
 
 
 class TestShopGuideWithoutPillow(unittest.TestCase):
