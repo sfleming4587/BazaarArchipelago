@@ -667,22 +667,15 @@ class BazaarContext(CommonContext):
             logger.info("Goal complete! Congratulations, champion of the Bazaar.")
 
     def status_line(self) -> tuple:
-        """The overlay's status line: (text or None, is it a warning). In a run: progress and the next check.
+        """The overlay's status line: (text or None, is it a warning). In a run: hero, day and goal (what's still to
+        check is PopTracker's job - user, 2026-09-28).
         On the hero-select screen: which heroes may be played, and a warning if the picked one may not."""
         if not self.slot_data:
             return None, False
         goal = f"Goal {len(self.heroes_won())}/{self.slot_data.get('heroes_required', 1)}"
         if self.run.get("active"):
             hero, day, max_day = self.run["hero"], self.run.get("day", 1), self.slot_data.get("max_day", 15)
-            next_day = next((d for d in range(day + 1, max_day + 1)
-                             if location_name_to_id[day_location(hero, d)] not in self.done()), None)
-            if next_day:
-                upcoming = f"next: reach day {next_day}"
-            elif location_name_to_id[win_location(hero)] not in self.done():
-                upcoming = "next: 10 wins"
-            else:
-                upcoming = "all day checks done"
-            return f"{hero}: day {day}/{max_day} · {upcoming} · {goal}", False
+            return f"{hero}: day {day}/{max_day} · {goal}", False
         if self.menu_hero:
             playable = [h for h in self.slot_data.get("heroes", []) if self.hero_unlocked(h)]
             can_play = f"You can play: {', '.join(playable) or 'nobody yet'}"

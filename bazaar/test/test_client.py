@@ -178,12 +178,12 @@ class TestSavedState(ClientTestBase):
 
 
 class TestStatusLine(ClientTestBase):
-    def test_run_shows_progress_and_next_check(self) -> None:
+    def test_run_shows_hero_day_and_goal(self) -> None:
         self.play(RunStarted("Vanessa"), DayReached(2))
         text, warning = self.ctx.status_line()
         self.assertFalse(warning)
         self.assertIn("Vanessa: day 2/15", text)
-        self.assertIn("next: reach day 3", text)
+        self.assertNotIn("next", text)  # what's left to check is PopTracker's job
         self.assertIn("Goal 0/2", text)
 
     def test_picking_a_locked_hero_warns(self) -> None:

@@ -67,7 +67,7 @@ Alerts appear in a small window at the top left of your screen, above the game:
   locked card (**SELL IT NOW**), a Sell
   Trap arrives, or the game was updated since the apworld was made. A red **CHECK NOT SENT** pop-up names any
   check the moment it is blocked.
-- **Status line:** during a run, your hero, day, next check and goal progress. On the hero-select screen, which
+- **Status line:** during a run, your hero, day and goal progress (what's left to check: use a tracker). On the hero-select screen, which
   heroes you may play - and a warning if the hero you picked is locked.
 
 The overlay sits in the strips left and right of the board, never over the board itself or over another overlay
