@@ -55,9 +55,9 @@ Alerts appear in a small window at the top left of your screen, above the game:
   letter, so you know what not to buy (or shows a green tick when nothing there is locked). Clicks go straight
   through this list to the game, so it never gets in your way; its text is solid and only its background is
   see-through. **Hide list** / **Show list** in the alert window hides it until you show it again.
-- **Item choices:** when an event or level-up deals several items and you pick one (e.g. "Shiny!"), it lists the
-  locked cards it could offer. Random rewards you can't choose (Make a Wish, single-item events) get no warning;
-  if one hands you a locked card, sell it like any other.
+- **Item choices:** whenever an event, an event option (e.g. Hidden Lake's "Fight the Beast") or a level-up lays
+  items out for you to take, it lists the locked cards it could offer - or, when it could be almost any item
+  (Make a Wish), says so. Items handed to you with no choice get no warning; if one is locked, sell it.
 - **CHECKS ARE BLOCKED:** shown while you hold a locked card, play a locked hero or owe a DeathLink. It clears
   by itself when you sell the card; a locked hero or DeathLink blocks the rest of the run.
 - **PvP result:** after each PvP fight, press **Won** or **Lost**.

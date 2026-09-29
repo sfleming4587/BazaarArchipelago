@@ -56,7 +56,8 @@ class TestFitColumns(unittest.TestCase):
         from ..overlay import GAP, INDENT, strips
         shop = [c for c in CARDS if c.shop]
         names = max(({c.name for c in possible_stock(m["stock"], h, shop)}
-                     for m in MERCHANT_DATA.values() for h in HEROES), key=len)
+                     for m in MERCHANT_DATA.values() if not m["name"].startswith("[DEBUG]")  # never in real play
+                     for h in HEROES), key=len)
         try:
             root = tk.Tk()
         except tk.TclError:

@@ -31,6 +31,7 @@ POLL_SECONDS = 0.5
 STATE_FILE = "bazaar_client_state.json"
 
 SHOP_CARDS = [c for c in CARDS if c.shop]
+GUIDE_MAX = 300  # the Shop Guide skips deals that could be almost anything (hundreds of pictures)
 FILE_ONLY = {"NoStream": True, "skip_gui": True}  # to the log file only: not the console or the client window
 LOCK_ITEM_GUIDS: Dict[int, Set[str]] = {BASE_ID + c.ap_id: {c.guid} for c in CARDS}
 LOCK_ITEM_GUIDS.update({BASE_ID + p.ap_id: set(p.cards) for p in PACKS})
@@ -488,8 +489,8 @@ class BazaarContext(CommonContext):
             logger.info(f"{merchant['name']} may {verb} these locked cards: {', '.join(names)}", extra=FILE_ONLY)
         if self.overlay and (names or verb == "sell"):  # free choices only warn when something is locked
             self.overlay.show_shop(merchant["name"], names, verb)
-        if self.overlay and self.shop_guide:
-            everything = possible_stock(merchant["stock"], self.run["hero"], SHOP_CARDS)
+        everything = possible_stock(merchant["stock"], self.run["hero"], SHOP_CARDS)
+        if self.overlay and self.shop_guide and len(everything) <= GUIDE_MAX:
             allowed = [c for c in everything if c.guid not in locked]
             self.overlay.show_board(f"{merchant['name']} can stock {len(everything)} cards for {self.run['hero']}",
                                     allowed, stock)

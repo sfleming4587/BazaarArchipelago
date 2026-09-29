@@ -45,6 +45,18 @@ CARD_ID_START = 1000
 PACK_ID_START = 100
 
 
+def item_deals(node):
+    """Every TActionGameDealCards anywhere inside a card's data (abilities, nested actions, auras...)."""
+    if isinstance(node, dict):
+        if node.get("$type") == "TActionGameDealCards" and node.get("SpawnContext"):
+            yield node
+        for value in node.values():
+            yield from item_deals(value)
+    elif isinstance(node, list):
+        for value in node:
+            yield from item_deals(value)
+
+
 def card_name(card: dict) -> str:
     title = ((card.get("Localization") or {}).get("Title") or {}).get("Text")
     return (title or card["InternalName"]).strip()
@@ -88,20 +100,16 @@ def main() -> None:
             merchants.append({"guid": card["Id"].lower(), "name": card_name(card),
                               "stock": (card.get("SelectionContext") or {}).get("SpawnContext")})
         elif card.get("Type") in ("EventEncounter", "EncounterStep", "PedestalEncounter"):
-            # Only real choices ("pick one"): skip "take everything" deals like Make a Wish (you can't choose, so
-            # a warning can't help - the held-card alert covers it) and direct grants (TActionGameSpawnCards).
-            def is_choice(rules, spawn) -> bool:
-                dealt = ((spawn or {}).get("Limit") or {}).get("Value")
-                return not (rules or {}).get("CanSelectMultiple") and (dealt is None or dealt > 1)
-            groups = []
-            selection = card.get("SelectionContext") or {}
-            if selection.get("SpawnContext") and is_choice(selection.get("Rules"), selection["SpawnContext"]):
-                groups += selection["SpawnContext"].get("Groups") or []
-            for ability in (card.get("Abilities") or {}).values():
-                action = (ability or {}).get("Action") or {}
-                if action.get("$type") == "TActionGameDealCards" and action.get("SpawnContext") \
-                        and is_choice(action.get("SelectionContextRules"), action["SpawnContext"]):
-                    groups += action["SpawnContext"].get("Groups") or []
+            # Every deal that lays items out for you to take (pick one, pick several or leave them): the warning
+            # lets you skip a locked one. Deals can sit anywhere - in an ability, nested in a TActionAnd (Hidden
+            # Lake's "Fight the Beast"), and so on - so the whole card is searched. Direct grants
+            # (TActionGameSpawnCards) give no choice; the "SELL IT NOW" alert covers those.
+            contexts = [(card.get("SelectionContext") or {}).get("SpawnContext") or {}]
+            contexts += [deal["SpawnContext"] for deal in item_deals({k: v for k, v in card.items()
+                                                                       if k != "SelectionContext"})]
+            # each group keeps its deal's behaviours (e.g. TSpawnBehaviorIgnoreHero: other heroes' cards too)
+            groups = [{**group, "Behaviors": (group.get("Behaviors") or []) + (context.get("Behaviors") or [])}
+                      for context in contexts for group in context.get("Groups") or []]
             if groups:
                 offers.append({"guid": card["Id"].lower(), "name": card_name(card), "stock": {"Groups": groups}})
 

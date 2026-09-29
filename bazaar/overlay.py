@@ -6,6 +6,7 @@ It shows up over the game when The Bazaar runs borderless (the default "Fullscre
 not over exclusive fullscreen. Tk runs in its own thread; the client talks to it through thread-safe calls.
 """
 import json
+import logging
 import os
 import queue
 import sys
@@ -132,6 +133,19 @@ def never_focus(window) -> None:
     work). Windows only; elsewhere a no-op."""
     window.update_idletasks()
     _add_style(window, 0x08000000)  # WS_EX_NOACTIVATE
+
+
+def dpi_awareness() -> str:
+    """How Windows scales this process's coordinates (a mismatch here puts windows in the wrong place)."""
+    if sys.platform != "win32":
+        return "n/a"
+    import ctypes
+    try:
+        context = ctypes.windll.user32.GetThreadDpiAwarenessContext()
+        return {0: "unaware", 1: "system", 2: "per-monitor"}.get(
+            ctypes.windll.user32.GetAwarenessFromDpiAwarenessContext(context), "unknown")
+    except (AttributeError, OSError):
+        return "unknown"
 
 
 def window_handle(window) -> int:
@@ -282,6 +296,11 @@ class Overlay:
         def relayout(window: tuple) -> None:
             left, right, k = strips(*window)
             g.update(window=window, left=left, right=right, k=k, inner_w=left[2] - 2 * PAD - 4)
+            # to the log file only: where the overlay thinks the game is (for placement bugs on other screens)
+            logging.getLogger("Client").info(
+                f"Overlay layout: game window {window}, screen {root.winfo_screenwidth()}x{root.winfo_screenheight()}"
+                f", Tk scaling {root.tk.call('tk', 'scaling'):.2f}, DPI awareness {dpi_awareness()}, left strip {left}"
+                f", right strip {right}", extra={"NoStream": True, "skip_gui": True})
 
         def f(size: float, weight: str = "normal") -> tuple:
             """A font of `size` points at 1080p, scaled with the game window."""
@@ -496,18 +515,18 @@ class Overlay:
                     break
             state["fonts"] = (font, bold)  # Tk drops a font once Python lets go of it
             line_height = font.metrics("linespace")
-            draw_columns(tk, first_frame, placed[0], font, bold, width, line_height, bg)
-            if missing and guide_open:
-                tk.Label(first_frame, text=f"+{missing} more locked cards - see the Shop Guide", fg=ACCENT, bg=bg,
-                         font=bold, wraplength=g["inner_w"], justify="left").pack(anchor="w")
+            if missing:  # e.g. Make a Wish, which can deal almost any item: a partial A-to-D list would mislead
+                placed = [[] for _ in areas]
+                tk.Label(first_frame, text=f"Could be any of {len(names)} locked cards - too many to list. If you "
+                                           f"take a locked one, sell it before your next fight.", fg=FG, bg=bg,
+                         font=f(10), wraplength=g["inner_w"], justify="left").pack(anchor="w")
+            else:
+                draw_columns(tk, first_frame, placed[0], font, bold, width, line_height, bg)
             show_first()
             place(moves, shop_first, *first)
-            if len(placed) > 1 and (placed[1] or missing):
+            if len(placed) > 1 and placed[1]:
                 second_frame, show_second = swap(shop_second, bg)
                 draw_columns(tk, second_frame, placed[1], font, bold, width, line_height, bg)
-                if missing:
-                    tk.Label(second_frame, text=f"+{missing} more locked cards (no room to show them)", fg=ACCENT,
-                             bg=bg, font=bold, wraplength=g["right"][2] - 2 * PAD - 4, justify="left").pack(anchor="w")
                 show_second()
                 place(moves, shop_second, g["right"][0], g["right"][1], g["right"][2], right_height)
             else:

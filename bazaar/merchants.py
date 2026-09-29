@@ -47,15 +47,22 @@ def _filter_allows(spawn_filter: dict, card: Card) -> bool:
     return True
 
 
-def can_stock(stock: dict, card: Card) -> bool:
+def _ignores_hero(behaviors) -> bool:
+    return any((b or {}).get("$type") == "TSpawnBehaviorIgnoreHero" for b in behaviors or [])
+
+
+def can_stock(stock: dict, card: Card, hero: str = "") -> bool:
+    """Could this stock deal the card? With `hero`, only your hero's pool plus Common count, unless the deal
+    ignores heroes (TSpawnBehaviorIgnoreHero, on the whole stock or on one group)."""
     if not stock:
-        return True
-    groups = stock.get("Groups") or []
-    if not groups:
-        return True
-    return any(all(_filter_allows(f, card) for f in group.get("Filters") or []) for group in groups)
+        return not hero or card.hero in (hero, "Common")
+    groups = stock.get("Groups") or [{}]
+    any_hero = _ignores_hero(stock.get("Behaviors"))
+    return any((not hero or card.hero in (hero, "Common") or any_hero or _ignores_hero(group.get("Behaviors")))
+               and all(_filter_allows(f, card) for f in group.get("Filters") or [])
+               for group in groups)
 
 
 def possible_stock(stock: dict, hero: str, cards: Iterable[Card]) -> List[Card]:
-    """Cards from `cards` this merchant could offer while playing `hero` (your hero's pool plus Common)."""
-    return [c for c in cards if c.hero in (hero, "Common") and can_stock(stock, c)]
+    """Cards from `cards` this merchant or item choice could offer while playing `hero`."""
+    return [c for c in cards if can_stock(stock, c, hero)]
