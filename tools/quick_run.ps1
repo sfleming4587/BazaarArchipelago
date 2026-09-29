@@ -24,7 +24,6 @@ The Bazaar:
   starting_hero: $StartingHero
   heroes_required: 1
   max_day: 15
-  locked_cards: 90
   legacy_card_packs: true
   death_link: false
 "@ | Set-Content -Encoding utf8 (Join-Path $players "$Name.yaml")

@@ -72,7 +72,7 @@ The client refuses to send **any** check (days, PvP, monsters, 10 wins) while:
 - you're holding a locked card - until the game's log shows you sold it (or you receive it as an item);
 - you've received a DeathLink - for the rest of that run, including the fight you're in.
 
-A banner at the top of the screen says "CHECKS ARE BLOCKED ..." and why. Checks you miss this way can still be
+A banner in the top-left corner says "CHECKS ARE BLOCKED ..." and why. Checks you miss this way can still be
 earned in a later run.
 
 ## Sell Traps (optional, off by default)

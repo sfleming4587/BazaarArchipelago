@@ -149,6 +149,7 @@ class BazaarContext(CommonContext):
         self.pvp_blocked: Dict[str, Optional[str]] = {}  # "hero|day" -> why checks were blocked during that fight
         self.notices_shown: Set[str] = set()  # patch warnings are shown once per session
         self.traps_seen = 0
+        self.room_seed = ""  # CommonClient never sets seed_name, so the saved state is keyed on this instead
 
     # --- connection ---------------------------------------------------------------------------------------------
 
@@ -159,7 +160,9 @@ class BazaarContext(CommonContext):
         await self.send_connect()
 
     def on_package(self, cmd: str, args: dict) -> None:
-        if cmd == "Connected":
+        if cmd == "RoomInfo":
+            self.room_seed = args.get("seed_name", "")
+        elif cmd == "Connected":
             self.slot_data = args.get("slot_data") or {}
             self.load_state()
             Utils.async_start(self.update_death_link(bool(self.slot_data.get("death_link"))))
@@ -190,7 +193,7 @@ class BazaarContext(CommonContext):
     # --- persistence --------------------------------------------------------------------------------------------
 
     def state_key(self) -> str:
-        return f"{self.seed_name}:{self.slot}"
+        return f"{self.room_seed}:{self.slot}"
 
     def load_state(self) -> None:
         try:
@@ -374,6 +377,8 @@ class BazaarContext(CommonContext):
             return None
         if self.run.get("deathlink_owed"):
             return "- DEATHLINK: ABANDON THIS RUN"
+        if self.run.get("concede_reason"):
+            return self.run["concede_reason"]
         if not self.run.get("counting"):
             return f"- {self.run.get('hero', 'this hero').upper()} IS LOCKED: ABANDON THIS RUN"
         names = sorted({CARDS_BY_GUID[g].name.upper() for g in self.run.get("held", {}).values()}
@@ -385,7 +390,7 @@ class BazaarContext(CommonContext):
     def clear_blocks(self) -> None:
         """/unblock confirm: an escape hatch if tracking breaks. Logged so it's never silent."""
         logger.warning(f"Blocks cleared by hand (/unblock): {self.blocked_reason()}")
-        self.run.update(held={}, traps=[], deathlink_owed=False, counting=True, legal=True)
+        self.run.update(held={}, traps=[], deathlink_owed=False, counting=True, legal=True, concede_reason=None)
         self.save_state()
         self.update_block_banner()
 
@@ -685,6 +690,17 @@ async def catch_up(ctx: BazaarContext, parser: LogParser, past: list) -> int:
             event = dataclasses.replace(event, day=event.day + offset)
         await dispatch(ctx, event, parser, first_run_in_log=False)
     parser.day += offset
+    reason = ctx.blocked_reason()
+    if not resuming and reason:
+        # The run was already going when the client started and is outside logic (locked hero or locked cards):
+        # selling can't fix that, only conceding. Not a legal run, so ending it never sends a DeathLink.
+        ctx.run.update(counting=False, legal=False,
+                       concede_reason="- THIS RUN WAS OUTSIDE LOGIC WHEN THE CLIENT STARTED: CONCEDE IT")
+        logger.warning(f"Your {parser.hero} run was already outside logic when the client started ({reason}). "
+                       f"Concede it; no DeathLink will be sent.")
+        beep()
+        ctx.save_state()
+        ctx.update_block_banner()
     return 1
 
 

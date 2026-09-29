@@ -142,6 +142,40 @@ class TestCatchUp(ClientTestBase):
         self.assertTrue(self.was_sent(day_location("Vanessa", 1)))
         self.assertFalse(self.was_sent(day_location("Vanessa", 2)))
 
+    def test_run_outside_logic_at_start_needs_a_concede(self) -> None:
+        """A run already holding a locked card when the client starts can't be fixed by selling, only conceded,
+        and conceding it sends no DeathLink."""
+        self.ctx.tags = self.ctx.tags | {"DeathLink"}
+        self.ctx.slot_data["death_link_on_concede"] = True
+        self.ctx.send_death = mock.AsyncMock()
+        past = [RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", False)]
+        self.parser.in_run, self.parser.hero, self.parser.day = True, "Vanessa", 1
+        self.await_(catch_up(self.ctx, self.parser, past))
+        self.play(CardSold("itm_x"), DayReached(2))
+        self.assertIn("CONCEDE", self.ctx.blocked_reason())
+        self.assertFalse(self.was_sent(day_location("Vanessa", 2)))
+        self.play(RunEnded(False, 2, conceded=True), RunStarted("Vanessa"), DayReached(1))
+        self.ctx.send_death.assert_not_called()
+        self.assertTrue(self.was_sent(day_location("Vanessa", 1)))
+
+    def test_clean_run_at_start_keeps_counting(self) -> None:
+        past = [RunStarted("Vanessa"), DayReached(1)]
+        self.parser.in_run, self.parser.hero, self.parser.day = True, "Vanessa", 1
+        self.await_(catch_up(self.ctx, self.parser, past))
+        self.assertIsNone(self.ctx.blocked_reason())
+
+
+class TestSavedState(ClientTestBase):
+    def test_a_new_seed_does_not_inherit_the_old_seeds_run(self) -> None:
+        """The free-Dragons-check bug: saved state was keyed on seed_name, which CommonClient never sets."""
+        self.ctx.slot = 1
+        self.ctx.on_package("RoomInfo", {"seed_name": "old"})
+        self.play(RunStarted("Vanessa"))
+        self.ctx.save_state()
+        self.ctx.on_package("RoomInfo", {"seed_name": "new"})
+        self.ctx.load_state()
+        self.assertEqual(self.ctx.run, {})
+
 
 class TestNewRunIsACleanSlate(ClientTestBase):
     def test_nothing_carries_over_after_a_lost_run(self) -> None:

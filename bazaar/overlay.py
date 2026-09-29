@@ -19,38 +19,81 @@ FG = "#ffffff"
 ACCENT = "#ffcf5a"
 
 
-LETTER_ROWS = 7  # a column holds at most this many lines before the next letter starts a new column
+# Where the overlay may draw: the strips left and right of the board, measured on a 1920x1080 shop screenshot
+# (2026-09-28) and kept as fractions of the screen (x, y, width, height). It must never cover the board: the
+# overlay takes the clicks where it sits, and a list over the board once stopped the player leaving a shop.
+LEFT_AREA = (14 / 1920, 0.0, 349 / 1920, 1056 / 1080)
+RIGHT_AREA = (1565 / 1920, 0.0, 341 / 1920, 950 / 1080)
+FONT_SIZES = range(13, 7, -1)  # pixel sizes tried for the locked-card list; the biggest that fits wins
+PAD = 10
+INDENT = 8  # names sit a little right of their letter
+GAP = 12  # between columns
 
 
-def letter_columns(names: List[str], rows: int = LETTER_ROWS) -> List[List[str]]:
+def letter_columns(names: List[str], rows: int) -> List[List[str]]:
     """
-    Names grouped under their first letter; each letter starts a heading line. Letters stack in one column
-    while they fit in `rows` lines, otherwise the letter starts the next column (a big letter may run longer).
+    Names grouped under their first letter; each letter starts a heading line. Letters stack in a column while
+    they fit in `rows` lines, otherwise the letter starts the next column. A letter longer than a whole column
+    carries on in the next one under its heading again.
     """
     groups: Dict[str, List[str]] = {}
     for name in sorted(names, key=str.lower):
         groups.setdefault(name[0].upper(), []).append(name)
+    rows = max(rows, 2)  # a heading and at least one name
     columns: List[List[str]] = [[]]
     for letter, members in groups.items():
-        block = [letter] + members
-        if columns[-1] and len(columns[-1]) + len(block) > rows:
+        if columns[-1] and len(columns[-1]) + 1 + len(members) > rows:
             columns.append([])
-        columns[-1] += block
+        while members:
+            if len(columns[-1]) >= rows - 1:
+                columns.append([])
+            room = rows - len(columns[-1]) - 1
+            columns[-1] += [letter] + members[:room]
+            members = members[room:]
     return columns
 
 
-def alphabet_columns(tk, parent, names: List[str]) -> None:
-    columns = letter_columns(names)
+def fit_columns(names: List[str], areas: List[tuple], column_width: Callable[[List[str]], int],
+                line_height: int) -> tuple:
+    """
+    Lays the names out as letter columns over the areas ((width, height) in pixels), filling the first area
+    before the next. Returns (columns per area, how many names didn't fit).
+    """
+    remaining = sorted(names, key=str.lower)
+    placed: List[List[List[str]]] = []
+    for width, height in areas:
+        placed.append([])
+        rows = height // line_height
+        if rows < 2 or not remaining:
+            continue
+        used = 0
+        for column in letter_columns(remaining, rows):
+            used += column_width(column)
+            if used > width:
+                break
+            placed[-1].append(column)
+        taken = sum(1 for column in placed[-1] for line in column if len(line) > 1)
+        remaining = remaining[taken:]
+    return placed, len(remaining)
+
+
+def area_pixels(area: tuple, screen_w: int, screen_h: int) -> tuple:
+    x, y, w, h = area
+    return round(x * screen_w), round(y * screen_h), round(w * screen_w), round(h * screen_h)
+
+
+def draw_columns(tk, parent, columns: List[List[str]], font, bold) -> None:
     grid = tk.Frame(parent, bg=BG)
     grid.pack(anchor="w")
     for x, column in enumerate(columns):
         cell = tk.Frame(grid, bg=BG)
-        cell.grid(row=0, column=x, sticky="n", padx=(0, 18))
+        cell.grid(row=0, column=x, sticky="n", padx=(0, GAP))
         for line in column:
             if len(line) == 1:  # a letter heading
-                tk.Label(cell, text=line, fg=ACCENT, bg=BG, font=("Segoe UI", 11, "bold")).pack(anchor="w")
+                tk.Label(cell, text=line, fg=ACCENT, bg=BG, font=bold, bd=0, padx=0, pady=0).pack(anchor="w")
             else:
-                tk.Label(cell, text=line, fg=FG, bg=BG, font=("Segoe UI", 11)).pack(anchor="w", padx=(10, 0))
+                tk.Label(cell, text=line, fg=FG, bg=BG, font=font, bd=0, padx=0, pady=0).pack(
+                    anchor="w", padx=(INDENT, 0))
 
 
 class Overlay:
@@ -101,16 +144,35 @@ class Overlay:
         except ImportError:
             self.available = False
             return
+        import tkinter.font as tkfont
         root = tk.Tk()
         root.withdraw()
-        root.overrideredirect(True)
-        root.attributes("-topmost", True)
-        root.attributes("-alpha", 0.93)
-        root.configure(bg=BG, highlightthickness=2, highlightbackground=ACCENT)
-        frame = tk.Frame(root, bg=BG, padx=14, pady=10)
-        frame.pack()
+        # the alert box (root) at the top of the left strip; the locked-card list under it, carrying on in the
+        # right strip when it's long
+        panels = [root, tk.Toplevel(root), tk.Toplevel(root)]
+        for panel in panels:
+            panel.withdraw()
+            panel.overrideredirect(True)
+            panel.attributes("-topmost", True)
+            panel.attributes("-alpha", 0.93)
+            panel.configure(bg=BG, highlightthickness=2, highlightbackground=ACCENT)
+        shop_first, shop_second = panels[1], panels[2]
+        left = area_pixels(LEFT_AREA, root.winfo_screenwidth(), root.winfo_screenheight())
+        right = area_pixels(RIGHT_AREA, root.winfo_screenwidth(), root.winfo_screenheight())
+        inner_w = left[2] - 2 * PAD - 4  # minus padding and the border
+        frame = tk.Frame(root, bg=BG, padx=PAD, pady=PAD)
+        frame.pack(fill="both", expand=True)
         state = {"locked": None, "deathlink": None, "shop": None, "pvp": {}, "toasts": []}
         board = self._make_board(tk, root)
+
+        def place(panel, x: int, y: int, width: int, max_height: int) -> int:
+            """Fixed width, height as needed but never past the strip: a panel can't spill onto the board."""
+            panel.update_idletasks()
+            height = min(panel.winfo_reqheight(), max_height)
+            panel.geometry(f"{width}x{height}+{x}+{y}")
+            panel.deiconify()
+            panel.lift()
+            return height
 
         def render() -> None:
             for child in frame.winfo_children():
@@ -118,53 +180,89 @@ class Overlay:
             if state["deathlink"]:
                 tk.Label(frame, text="DEATHLINK", fg=ACCENT, bg=BG, font=("Segoe UI", 16, "bold")).pack(anchor="w")
                 tk.Label(frame, text=state["deathlink"], fg=FG, bg=BG, font=("Segoe UI", 11),
-                         wraplength=520, justify="left").pack(anchor="w")
+                         wraplength=inner_w, justify="left").pack(anchor="w")
                 tk.Label(frame, text="Abandon your current run (Settings > Abandon Run).", fg=FG, bg=BG,
-                         font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(2, 6))
+                         font=("Segoe UI", 11, "bold"), wraplength=inner_w, justify="left").pack(anchor="w",
+                                                                                                pady=(2, 6))
                 tk.Button(frame, text="Done", command=lambda: dismiss_deathlink()).pack(anchor="e")
             if state["locked"]:
                 title, cards = state["locked"]
-                tk.Label(frame, text=title, fg=ACCENT, bg=BG, font=("Segoe UI", 14, "bold"), wraplength=900,
+                tk.Label(frame, text=title, fg=ACCENT, bg=BG, font=("Segoe UI", 14, "bold"), wraplength=inner_w,
                          justify="left").pack(anchor="w", pady=(6 if state["deathlink"] else 0, 2 if cards else 0))
                 for text in cards:  # cleared automatically when the log says it was sold
-                    tk.Label(frame, text=text, fg=FG, bg=BG, font=("Segoe UI", 11)).pack(anchor="w")
+                    tk.Label(frame, text=text, fg=FG, bg=BG, font=("Segoe UI", 11), wraplength=inner_w,
+                             justify="left").pack(anchor="w")
             if state["pvp"]:
                 tk.Label(frame, text="Did you win the PvP fight?", fg=ACCENT, bg=BG,
                          font=("Segoe UI", 13, "bold")).pack(anchor="w", pady=(6 if frame.winfo_children() else 0, 2))
                 for key, text in state["pvp"].items():
                     row = tk.Frame(frame, bg=BG)
                     row.pack(fill="x", pady=1)
-                    tk.Label(row, text=text, fg=FG, bg=BG, font=("Segoe UI", 11)).pack(side="left")
+                    tk.Label(row, text=text, fg=FG, bg=BG, font=("Segoe UI", 11), wraplength=inner_w - 110,
+                             justify="left").pack(side="left")
                     tk.Button(row, text="Lost", command=lambda k=key: answer(k, False)).pack(side="right", padx=(6, 0))
                     tk.Button(row, text="Won", command=lambda k=key: answer(k, True)).pack(side="right", padx=(12, 0))
-            if state["shop"]:
-                merchant, names, verb = state["shop"]
-                top = 6 if (state["deathlink"] or state["locked"]) else 0
-                header = tk.Frame(frame, bg=BG)
-                header.pack(fill="x", pady=(top, 4 if names else 0))
-                if names:
-                    advice = "don't buy them" if verb == "sell" else "pick something else"
-                    tk.Label(header, text=f"{merchant} may {verb} these LOCKED cards - {advice}:", fg=ACCENT,
-                             bg=BG, font=("Segoe UI", 12, "bold")).pack(side="left")
-                else:
-                    tk.Label(header, text=f"{merchant}: nothing here is locked for you. Shop freely!", fg="#9be39b",
-                             bg=BG, font=("Segoe UI", 12, "bold")).pack(side="left")
-                if verb == "sell" and board["hidden"] is not None and board["hidden"]:
-                    tk.Button(header, text="Show pictures", command=lambda: (board["show"](), render())).pack(
-                        side="right", padx=(12, 0))
-                if names:
-                    alphabet_columns(tk, frame, names)
             for text, _ in state["toasts"]:
-                tk.Label(frame, text=text, fg="#9be39b", bg=BG, font=("Segoe UI", 11, "bold"), wraplength=900,
+                tk.Label(frame, text=text, fg="#9be39b", bg=BG, font=("Segoe UI", 11, "bold"), wraplength=inner_w,
                          justify="left").pack(anchor="w", pady=(4, 0))
-            if state["deathlink"] or state["locked"] or state["shop"] or state["pvp"] or state["toasts"]:
-                root.update_idletasks()
-                x = (root.winfo_screenwidth() - root.winfo_reqwidth()) // 2
-                root.geometry(f"+{x}+60")
-                root.deiconify()
-                root.lift()
+            alerts_height = 0
+            if state["deathlink"] or state["locked"] or state["pvp"] or state["toasts"]:
+                alerts_height = place(root, left[0], left[1], left[2], left[3])
             else:
                 root.withdraw()
+            render_shop(alerts_height)
+
+        def render_shop(alerts_height: int) -> None:
+            for panel in (shop_first, shop_second):
+                for child in panel.winfo_children():
+                    child.destroy()
+            if not state["shop"]:
+                shop_first.withdraw()
+                shop_second.withdraw()
+                return
+            merchant, names, verb = state["shop"]
+            # the left strip under the alerts first, then the right strip
+            first_top = left[1] + alerts_height + 4 if alerts_height else left[1]
+            first = (left[0], first_top, left[2], left[3] - first_top)
+            first_frame = tk.Frame(shop_first, bg=BG, padx=PAD, pady=PAD)
+            first_frame.pack(fill="both", expand=True)
+            if names:
+                advice = "don't buy them" if verb == "sell" else "pick something else"
+                text, color = f"{merchant} may {verb} these LOCKED cards - {advice}:", ACCENT
+            else:
+                text, color = f"{merchant}: nothing here is locked for you. Shop freely!", "#9be39b"
+            tk.Label(first_frame, text=text, fg=color, bg=BG, font=("Segoe UI", 11, "bold"), wraplength=inner_w,
+                     justify="left").pack(anchor="w", pady=(0, 4))
+            if verb == "sell" and board["hidden"] is not None and board["hidden"]:
+                tk.Button(first_frame, text="Show pictures", command=lambda: (board["show"](), render())).pack(
+                    anchor="w", pady=(0, 4))
+            shop_first.update_idletasks()
+            header_height = shop_first.winfo_reqheight()
+            areas = [(inner_w, first[3] - header_height), (right[2] - 2 * PAD - 4, right[3] - 2 * PAD - 4)]
+            placed, missing, font, bold = [[], []], 0, None, None
+            for size in FONT_SIZES:  # the biggest text that fits; else the smallest, saying what's left out
+                font = tkfont.Font(family="Segoe UI", size=-size)
+                bold = tkfont.Font(family="Segoe UI", size=-size, weight="bold")
+
+                def width(column: List[str], font=font, bold=bold) -> int:
+                    return max(bold.measure(line) if len(line) == 1 else font.measure(line) + INDENT
+                               for line in column) + GAP
+                placed, missing = fit_columns(names, areas, width, font.metrics("linespace"))
+                if not missing:
+                    break
+            state["fonts"] = (font, bold)  # Tk drops a font once Python lets go of it
+            draw_columns(tk, first_frame, placed[0], font, bold)
+            place(shop_first, *first)
+            if placed[1] or missing:
+                second_frame = tk.Frame(shop_second, bg=BG, padx=PAD, pady=PAD)
+                second_frame.pack(fill="both", expand=True)
+                draw_columns(tk, second_frame, placed[1], font, bold)
+                if missing:
+                    tk.Label(second_frame, text=f"+{missing} more locked cards (no room to show them)", fg=ACCENT,
+                             bg=BG, font=bold, wraplength=right[2] - 2 * PAD - 4, justify="left").pack(anchor="w")
+                place(shop_second, *right)
+            else:
+                shop_second.withdraw()
 
         def answer(key: str, won: bool) -> None:
             state["pvp"].pop(key, None)
@@ -206,8 +304,10 @@ class Overlay:
                 changed = True
             if changed:
                 render()
-            elif root.state() == "normal":
-                root.attributes("-topmost", True)  # games sometimes steal topmost; keep reasserting
+            else:
+                for panel in panels:  # games sometimes steal topmost; keep reasserting
+                    if panel.state() == "normal":
+                        panel.attributes("-topmost", True)
             root.after(250, poll)
 
         root.after(250, poll)

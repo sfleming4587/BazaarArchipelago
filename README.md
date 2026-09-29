@@ -69,7 +69,7 @@ Pick one:
 
 ## Rules while you play
 
-The client enforces these by blocking checks - a banner at the top of the screen says **CHECKS ARE BLOCKED** and
+The client enforces these by blocking checks - a banner in the top-left corner says **CHECKS ARE BLOCKED** and
 why:
 
 - **Only play heroes you've received.** A run with a locked hero sends nothing.
