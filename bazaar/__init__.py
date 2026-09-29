@@ -111,9 +111,6 @@ class BazaarWorld(World):
         if self.goal_count < self.options.heroes_required.value:
             logging.warning(f"{self.player_name} (The Bazaar): heroes_required lowered to {self.goal_count}, "
                             f"the number of heroes available (owned DLC heroes minus excluded ones).")
-        if self.options.duplicate_all_cards:
-            logging.warning(f"{self.player_name} (The Bazaar): duplicate_all_cards is on. Not intended - half the "
-                            f"item slots hold duplicates, so only about half as many cards start locked.")
         self.starters = {}
         self.logic = {"day_10": self.options.logic_day_10_cards.value,
                       "diamond": self.options.logic_diamond_cards.value,

@@ -94,7 +94,7 @@ class MaxDay(Range):
     display_name = "Max Day Check"
     range_start = 5
     range_end = MAX_DAY
-    default = 15
+    default = 16
 
 
 class PvPWinChecks(DefaultOnToggle):
@@ -177,10 +177,11 @@ class ExpeditionTickets(Range):
 
 class DuplicateAllCards(Toggle):
     """
-    Not intended for normal play: every locked card gets a second copy in the multiworld (either copy unlocks it).
-    Half of the item slots then hold duplicates, so only about half as many different cards can be locked.
+    Casual mode: the same number of checks, but only about half as many locked cards. Every locked card gets a
+    second copy in the multiworld (either copy unlocks it), so half of the item slots hold duplicates - fewer cards
+    to avoid, and each one turns up sooner.
     """
-    display_name = "Duplicate All Cards"
+    display_name = "Duplicate All Cards (casual)"
 
 
 class DuplicateCards(ItemSet):
@@ -218,7 +219,7 @@ class LogicDay10Cards(Range):
     display_name = "Logic: Cards Before Day 10"
     range_start = 0
     range_end = 30  # lowered for a seed with too few checks that need no cards (see BazaarWorld.fit_logic)
-    default = 15
+    default = 16
 
 
 class LogicDiamondCards(Range):

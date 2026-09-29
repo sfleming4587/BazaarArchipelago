@@ -11,7 +11,7 @@ so this integration only reads the log file the game writes on your PC. Locks ar
 
 ## What are the checks?
 
-Per hero, for each day from 1 up to `max_day` (default 15):
+Per hero, for each day from 1 up to `max_day` (default 16):
 
 - **Reach Day N**.
 - **Day N PvP Win** (`pvp_win_checks`): win the PvP fight at the end of the day.

@@ -14,8 +14,8 @@ class TestDefaults(BazaarTestBase):
 
     def test_location_count(self) -> None:
         real = [loc for loc in self.multiworld.get_locations(self.player) if loc.address is not None]
-        # per day: reach + PvP + monster rarities (d1 2, d2 3, d3-5 4 each, d6-15 5 each) = 15 + 15 + 67, + 10 wins
-        self.assertEqual(len(real), 3 * (15 + 15 + 67 + 1))
+        # per day: reach + PvP + monster rarities (d1 2, d2 3, d3-5 4 each, d6-16 5 each) = 16 + 16 + 72, + 10 wins
+        self.assertEqual(len(real), 3 * (16 + 16 + 72 + 1))
 
     def test_monster_tiers_by_day(self) -> None:
         hero = self.world.starting_hero
@@ -101,7 +101,7 @@ class TestNoLocks(BazaarTestBase):
 
     def test_duplicates_before_filler(self) -> None:
         names = [i.name for i in self.multiworld.itempool if i.player == self.player]
-        self.assertEqual(len(names), 48)
+        self.assertEqual(len(names), 51)
         self.assertEqual(sum(n.startswith("Hero: ") for n in names), 2 * 3)  # two heroes to find, 3 copies each
         self.assertEqual(names.count("Legendary Items"), 3)
         self.assertEqual(names.count("Expedition Tickets"), 3)
