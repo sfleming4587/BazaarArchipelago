@@ -46,8 +46,8 @@ class TestFitColumns(unittest.TestCase):
         self.assertGreater(missing, 0)
 
     def test_every_shop_fits_the_side_strips_at_1080p(self) -> None:
-        """The biggest shop (269 locked cards) fits beside the board on a 1920x1080 screen at 9 px text or
-        bigger, measured with the real font, leaving room for the shop header and an alert box."""
+        """The biggest shop (269 locked cards) fits beside the board on a 1920x1080 screen at 10 px text (the
+        smallest the overlay uses), measured with the real font, with the Shop Guide closed and no alert box."""
         import tkinter as tk
         import tkinter.font as tkfont
         from ..client import HEROES, MERCHANT_DATA
@@ -62,12 +62,12 @@ class TestFitColumns(unittest.TestCase):
         except tk.TclError:
             self.skipTest("no display")
         self.addCleanup(root.destroy)
-        font = tkfont.Font(root=root, family="Segoe UI", size=-9)
-        bold = tkfont.Font(root=root, family="Segoe UI", size=-9, weight="bold")
+        font = tkfont.Font(root=root, family="Segoe UI", size=-10)
+        bold = tkfont.Font(root=root, family="Segoe UI", size=-10, weight="bold")
         width = lambda column: max(bold.measure(line) if len(line) == 1 else font.measure(line) + INDENT
                                    for line in column) + GAP
         right, left = area_pixels(RIGHT_AREA, 1920, 1080), area_pixels(LEFT_AREA, 1920, 1080)
-        _, missing = fit_columns(sorted(names), [(left[2] - 24, left[3] - 250 - 80), (right[2] - 24, right[3] - 24)],
+        _, missing = fit_columns(sorted(names), [(left[2] - 24, left[3] - 80), (right[2] - 24, right[3] - 24)],
                                  width, font.metrics("linespace"))
         self.assertGreater(len(names), 250)
         self.assertEqual(missing, 0)

@@ -59,15 +59,18 @@ Alerts appear in a small window at the top of your screen, above the game:
 - **Unlocks and notices:** short pop-ups when you receive an unlock (and from whom), a Sell Trap arrives, or
   the game was updated since the apworld was made.
 
-It's a separate window, not part of the game, so it only shows over The Bazaar when the game's display mode is
-**Fullscreen Window** (the default) or windowed. Start the client with `--no-overlay` to turn it off.
+The overlay sits in the strips left and right of the board, never over the board itself or over another overlay
+window: alerts at the top left, a shop's locked cards under them. It's a separate window, not part of the game,
+so it only shows over The Bazaar when the game's display mode is **Fullscreen Window** (the default) or windowed.
+Start the client with `--no-overlay` to turn it off.
 
 **Shop Guide** (only when Archipelago runs from source - the Windows installer leaves out the image library the
 pictures need, so there the shop warning above is what you get): a second window with card pictures (from [howbazaar.gg](https://www.howbazaar.gg)) of everything
-the merchant you're visiting could stock, locked ones greyed out with a red X (the shorter list goes on top). It stays
-open, remembers where you put it and how big it is, and its columns follow the window's width. After you leave a
-shop it keeps showing the last one. Closing it keeps it closed (also next time) until you press **Show pictures**
-next to the shop warning. All card pictures are downloaded once in the background when the client starts.
+the merchant you're visiting could stock, locked ones greyed out with a red X (the shorter list goes on top). It sits in
+the strip right of the board (the locked-card list then stays on the left; if it doesn't fit, it says how many
+more are in the Shop Guide). After you leave a shop it keeps showing the last one. Closing it with **X** keeps it
+closed (also next time) and lets a long list use the right strip, until you press **Show pictures** next to the
+shop warning. All card pictures are downloaded once in the background when the client starts.
 Start the client with `--no-shop-guide` to turn it off completely.
 
 If you close the game mid-run, the client picks the run back up when you resume it.
