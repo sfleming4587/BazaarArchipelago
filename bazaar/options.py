@@ -105,7 +105,8 @@ class MaxDay(Range):
 
 
 class PvPWinChecks(DefaultOnToggle):
-    """Each hero gets a check for winning the PvP fight at the end of each day (up to max_day)."""
+    """Each hero gets a check for winning the PvP fight at the end of each day (up to max_day). The client counts
+    wins by itself from the game's log."""
     display_name = "PvP Win Checks"
 
 
@@ -274,6 +275,7 @@ class LockEnforcement(Removed):
 class BazaarDeathLink(DeathLink):
     """
     When you lose a run (your last PvP fight takes the last of your prestige), everyone else with DeathLink dies.
+    Conceding a run doesn't send one unless death_link_on_concede is on.
     When someone else dies, you must abandon your current run (Settings > Abandon Run).
     The client can't do this for you: automating game input is against Tempo's modding policy.
     """

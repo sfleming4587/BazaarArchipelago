@@ -835,7 +835,7 @@ async def main(args) -> None:
             logger.warning("The alert window can't open on this PC (tkinter is missing). Warnings still show here.")
         elif ctx.shop_guide and ctx.overlay.shop_guide_unavailable:
             logger.info("Shop Guide card pictures need Pillow, which this Archipelago install doesn't include. "
-                        "The shop warning at the top of the screen still lists locked cards.")
+                        "The locked-card list in the top-left corner still works.")
     watcher = asyncio.create_task(watch_log(ctx), name="log watcher")
     if gui_enabled:
         ctx.run_gui()

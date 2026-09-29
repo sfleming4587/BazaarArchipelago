@@ -62,7 +62,8 @@ Pick one:
 1. In the Launcher, open **The Bazaar Client**.
 2. At the top, type the room address (e.g. `archipelago.gg:38281`) and click **Connect**, then enter your player
    name.
-3. Start The Bazaar and start a run with a hero you've unlocked (type `/status` in the client to see which).
+3. Start The Bazaar. On the hero-select screen, the box in the top-left corner lists the heroes you may play
+   (with how many of their checks are done and in logic). Start a run with one of them.
 4. Play normally. Checks are sent automatically as you reach days, win fights and win runs.
 
 ---
@@ -78,9 +79,30 @@ why:
   game's log shows you sold it. Items the game creates for you by itself (from another item, a Shovel, a
   transformation) are always allowed.
 - **DeathLink** (if on): when someone else dies, abandon your current run (Settings > Abandon Run). No checks
-  count for the rest of that run. Losing a run, or conceding one, sends a DeathLink to everyone else.
+  count for the rest of that run. Losing a run sends a DeathLink to everyone else (conceding does too, only if
+  `death_link_on_concede` is on). DeathLink is off unless you turn it on.
 - **Sell Traps** (if on): sell the named item before the day shown, or checks are blocked until you do.
 - PvP wins are counted automatically.
+
+## On screen while you play
+
+- **Top-left box:** your hero, day and goal during a run; on the hero-select screen, the heroes you may play. It
+  turns red when checks are blocked or a DeathLink arrives, amber when something needs your attention. Its
+  **Tracker** button opens the tracker.
+- **Locked-card list:** under that box while you're at a merchant or an item choice - the locked cards it could
+  offer, so you know what not to take. **Hide list** hides it.
+- **Pop-ups (bottom right):** items you receive, send or find, always with the other player's name; Sell Traps;
+  **SELL IT NOW** when you get a locked card; **CHECK NOT SENT** when a check is blocked.
+- **Shop Guide** (only when Archipelago runs from source - the Windows installer leaves out the image library it
+  needs): pictures of what a merchant can stock, at their in-game sizes, locked ones crossed out.
+- **Tracker:** a card per hero with four squares - reach day N, PvP win on day N, monster checks, 10 wins. Green =
+  in logic, yellow = out of logic, red = hero locked, grey = done. Hover a square for its checks, click to keep
+  the list open.
+
+All of it sits beside the board (never on it), shows only while The Bazaar is the active window, never takes the
+keyboard from the game and always stays fully on your screen. The tracker and the Shop Guide are normal windows
+you can move anywhere, a second monitor too. The Archipelago client window itself keeps to item history and the
+replies to your commands.
 
 ## Client commands
 
@@ -98,11 +120,13 @@ why:
 - **The client doesn't react to the game.** Type `/logpath`. It should show
   `C:\Users\<you>\AppData\LocalLow\Tempo Storm\The Bazaar\Player.log`. If your game writes its log elsewhere, set
   it with `/logpath <full path>`.
-- **I don't see the alert window.** Check the game is on **Fullscreen Window** or windowed. If the client says
-  the alert window can't open on this PC, warnings still appear in the client window.
+- **I don't see the overlay.** It only shows while The Bazaar is the active window, and the game has to be on
+  **Fullscreen Window** or windowed. If the client says the alert window can't open on this PC, warnings appear
+  in the client window instead.
 - **The client says The Bazaar was updated.** That's fine - everything keeps working. Cards, heroes or monsters
   added by the patch just aren't part of your seed until a newer `bazaar.apworld` is released.
-- **A run didn't count.** Check the client for a "CHECKS ARE BLOCKED" message (locked hero, locked card, DeathLink).
+- **A check didn't count.** Look for the red **CHECKS ARE BLOCKED** box and the **CHECK NOT SENT** pop-ups (locked
+  hero, locked card, DeathLink, Sell Trap), or type `/unblock` to see what's blocking.
 - **Closed the game mid-run?** Just continue the run; the client picks it back up.
 
 ## Updating
@@ -110,5 +134,5 @@ Download `bazaar.apworld` from the [latest release](https://github.com/sfleming4
 Games that are already running keep working with the version they were generated with.
 
 ## Credits
-Card pictures (when available) come from [howbazaar.gg](https://www.howbazaar.gg). The Bazaar is made by Tempo; this
-project isn't affiliated with or endorsed by them.
+Card pictures (when available) come from [howbazaar.gg](https://www.howbazaar.gg); the tracker's hero pictures are
+from The Bazaar. The Bazaar is made by Tempo; this project isn't affiliated with or endorsed by them.
