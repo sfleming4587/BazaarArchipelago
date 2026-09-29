@@ -1,6 +1,7 @@
 import unittest
 
 from ..overlay import below, fit_columns, fit_names, letter_columns, strips
+from ..data import CARDS
 
 
 class TestLetterColumns(unittest.TestCase):
@@ -110,23 +111,53 @@ class TestStrips(unittest.TestCase):
 
 
 class TestShopGuideWithoutPillow(unittest.TestCase):
-    def test_guide_turns_itself_off(self) -> None:
-        """Archipelago's Windows installer leaves Pillow out: no pictures means no Shop Guide, alerts still work."""
+    """Archipelago's Windows installer leaves Pillow out (the v0.6.0 logs showed the guide never opening)."""
+
+    def test_guide_opens_with_placeholders_then_swaps_pictures_in(self) -> None:
         import sys
         import tempfile
-        import time
+        import tkinter
         from unittest import mock
-        from ..overlay import Overlay
-        with mock.patch.dict(sys.modules, {"PIL": None}), tempfile.TemporaryDirectory() as tmp:
-            overlay = Overlay(art_cache_dir=tmp)
-            for _ in range(40):
-                if overlay.shop_guide_unavailable:
-                    break
-                time.sleep(0.05)
-            self.assertTrue(overlay.available)
-            self.assertTrue(overlay.shop_guide_unavailable)
-            overlay.close()
-            overlay.thread.join(timeout=5)
+        from .. import cardart
+        from ..shop_guide import ShopGuide
+        small, large = (next(c for c in CARDS if c.shop and c.size == size) for size in ("Small", "Large"))
+        with mock.patch.dict(sys.modules, {"PIL": None}), tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(cardart, "Decoder", side_effect=OSError("no SDL2 in this test")):
+            root = tkinter.Tk()
+            try:
+                guide = ShopGuide.create(tkinter, root, tmp, None, (0, 0, 300, 600), on_art=lambda guid: None,
+                                         on_closed=lambda: None)
+                self.assertIsNotNone(guide)
+                guide.render(("Test merchant", [small], [large]))
+                root.update()
+                self.assertEqual(sorted((f.winfo_reqwidth(), f.winfo_reqheight()) for f in _placeholders(guide)),
+                                 [(48, 96), (144, 96)])  # the cards' in-game shapes, border included
+                names = {w.cget("text") for w in _all_widgets(guide.inner) if isinstance(w, tkinter.Label)}
+                self.assertLessEqual({small.name, large.name}, names)
+
+                # the Small card's pictures arrive: only its cell changes, the Large card keeps its placeholder
+                for is_locked in (False, True):
+                    with open(guide.art.path(small, is_locked), "wb") as f:
+                        f.write(cardart.png((48, 96, bytes(48 * 96 * 3))))
+                untouched = guide.cells[(large.guid, True)].winfo_children()
+                guide.refresh(small.guid)
+                root.update()
+                self.assertEqual([(f.winfo_reqwidth(), f.winfo_reqheight()) for f in _placeholders(guide)],
+                                 [(144, 96)])
+                self.assertEqual(guide.cells[(large.guid, True)].winfo_children(), untouched)
+                guide.shutdown()
+            finally:
+                root.destroy()
+
+
+def _all_widgets(widget):
+    for child in widget.winfo_children():
+        yield child
+        yield from _all_widgets(child)
+
+
+def _placeholders(guide) -> list:
+    return [w for w in _all_widgets(guide.inner) if w.winfo_class() == "Frame" and w.cget("highlightthickness") == 3]
 
 
 class TestPanelsStack(unittest.TestCase):

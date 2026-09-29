@@ -221,7 +221,6 @@ class Overlay:
         self.art_cache_dir = art_cache_dir
         self.commands: "queue.Queue" = queue.Queue()
         self.available = True  # False if the windows can't open (no tkinter, or Tk can't start)
-        self.shop_guide_unavailable = False  # True if Pillow is missing: no card pictures
         self.ready = threading.Event()  # set once the windows are up (or failed to come up)
         self.thread = threading.Thread(target=self._run, name="bazaar overlay", daemon=True)
         self.thread.start()
@@ -319,7 +318,7 @@ class _Screen:
         self.widths: Dict[tuple, int] = {}  # (font size, text) -> pixels; measuring hundreds of names is slow
         self.fonts: tuple = ()  # Tk drops a font once Python lets go of it
         self.rendering = self.render_again = False
-        self.guide, overlay.shop_guide_unavailable = ShopGuide.create(
+        self.guide = ShopGuide.create(
             tk, root, overlay.art_cache_dir, overlay.guide_file, self.layout["right"],
             on_art=lambda guid: overlay.commands.put(("art", guid)),
             on_closed=lambda: overlay.commands.put(("redraw", None)))

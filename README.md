@@ -94,8 +94,8 @@ why:
   offer, so you know what not to take. **Hide list** hides it.
 - **Pop-ups (bottom right):** items you receive, send or find, always with the other player's name; Sell Traps;
   **SELL IT NOW** when you get a locked card; **CHECK NOT SENT** when a check is blocked.
-- **Shop Guide** (only when Archipelago runs from source - the Windows installer leaves out the image library it
-  needs): pictures of what a merchant can stock, at their in-game sizes, locked ones crossed out.
+- **Shop Guide:** pictures of what a merchant can stock, at their in-game sizes, locked ones crossed out. Cards
+  newer than the picture source (all of Karnok and The Dragons) show a "no picture" box with their name.
 - **Tracker:** a card per hero with four squares - reach day N, PvP win on day N, monster checks, 10 wins. Green =
   in logic, yellow = out of logic, red = hero locked, grey = done. Hover a square for its checks, click to keep
   the list open.
@@ -139,5 +139,5 @@ Download `bazaar.apworld` from the [latest release](https://github.com/sfleming4
 Games that are already running keep working with the version they were generated with.
 
 ## Credits
-Card pictures (when available) come from [howbazaar.gg](https://www.howbazaar.gg); the tracker's hero pictures are
+Card pictures come from [howbazaar.gg](https://www.howbazaar.gg), which stopped updating at game v6.0.0; the tracker's hero pictures are
 from The Bazaar. The Bazaar is made by Tempo; this project isn't affiliated with or endorsed by them.

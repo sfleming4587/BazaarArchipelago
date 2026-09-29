@@ -82,8 +82,7 @@ ultrawide), fullscreen or windowed, on any monitor. It's a separate window, not 
 so it only shows over The Bazaar when the game's display mode is **Fullscreen Window** (the default) or windowed.
 Start the client with `--no-overlay` to turn it off.
 
-**Shop Guide** (only when Archipelago runs from source - the Windows installer leaves out the image library the
-pictures need, so there the shop warning above is what you get): a second window with card pictures (from [howbazaar.gg](https://www.howbazaar.gg)) of everything
+**Shop Guide:** a second window with card pictures (from [howbazaar.gg](https://www.howbazaar.gg)) of everything
 the merchant you're visiting could stock, each at its in-game size (small = 1 slot wide, medium = 2, large = 3),
 locked ones greyed out with a red X (the shorter list goes on top). It opens in
 the strip right of the board (the locked-card list then stays on the left; if it doesn't fit, it says how many
@@ -91,7 +90,9 @@ more are in the Shop Guide). It's a real window: drag it anywhere, another monit
 may not buy, so you learn their pictures; **Show all** brings the rest back. After you leave a shop it keeps
 showing the last one. Closing it with **X** keeps it
 closed (also next time) and lets a long list use the right strip, until you press **Pictures** in the alert
-window while at a merchant. All card pictures are downloaded once in the background when the client starts.
+window while at a merchant. All card pictures are downloaded once in the background when the client starts; until
+a card's picture is in, and for cards newer than howbazaar.gg (it stopped updating at game v6.0.0, so all of Karnok
+and The Dragons), it shows a "no picture" box of the card's size with its name under it.
 Start the client with `--no-shop-guide` to turn it off completely.
 
 **Tracker:** press **Tracker** in the alert window (top left) or type `/tracker`. A window with a card for every

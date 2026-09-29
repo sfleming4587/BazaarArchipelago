@@ -3,23 +3,22 @@ The Shop Guide: pictures of everything the merchant you're at could stock, at th
 greyed out with a red cross. A real window you can drag anywhere (other monitors too); until you move it, it
 follows the strip right of the board. Runs in the overlay's Tk thread and only renders what it's given.
 
-Needs Pillow for the pictures (they're AVIF); Archipelago's Windows installer leaves Pillow out, so there
-ShopGuide.create() returns None and the locked-card list is all you get.
+Pictures come from cardart (no Pillow needed); a card without one yet shows a "no picture" box of the same shape.
 """
-import importlib.util
 import json
 from typing import Callable, Dict, List, Optional
 
 from . import screens
-from .cardart import CardArt, card_shape
-from .data import CARDS
+from .cardart import TIER_COLORS, CardArt, card_shape
+from .data import CARDS, CARDS_BY_GUID
 from .theme import ACCENT, DIM, FONT, GOOD, LOCKED_X, WARN, WINDOW_BG
+
+TILE_BG = "#1d1a24"  # a card with no picture
 
 CARD_HEIGHT = 96  # every card this tall, 1/2/3 slots wide like in game (see cardart.card_shape)
 CARD_PAD = 4  # around each card
 HEADER_RESERVE = 170  # header text width left for the Locked only and X buttons beside it
 ROW_MARGIN = 24  # a row is closed this far before the edge (borders, names a bit wider than their card)
-ART_BATCH_MS = 300  # pictures arriving within this time are drawn in one go
 SAVE_DELAY_MS = 500  # while you drag it, its position is saved once you stop, not on every move
 REFLOW_PX = 8  # re-flow the rows only when the width changed by more than this
 DEFAULT_WIDTH = 300
@@ -35,13 +34,11 @@ def _saved_rect(value) -> Optional[tuple]:
 class ShopGuide:
     @classmethod
     def create(cls, tk, root, art_cache_dir: Optional[str], guide_file: Optional[str], area: tuple,
-               on_art: Callable[[str], None], on_closed: Callable[[], None]) -> tuple:
-        """(guide or None, Pillow missing?). None also when the guide is turned off (no art_cache_dir)."""
+               on_art: Callable[[str], None], on_closed: Callable[[], None]) -> Optional["ShopGuide"]:
+        """The guide, or None when it's turned off (no art_cache_dir)."""
         if not art_cache_dir:
-            return None, False
-        if importlib.util.find_spec("PIL") is None:
-            return None, True
-        return cls(tk, root, art_cache_dir, guide_file, area, on_art, on_closed), False
+            return None
+        return cls(tk, root, art_cache_dir, guide_file, area, on_art, on_closed)
 
     def __init__(self, tk, root, art_cache_dir: str, guide_file: Optional[str], area: tuple,
                  on_art: Callable[[str], None], on_closed: Callable[[], None]) -> None:
@@ -59,10 +56,9 @@ class ShopGuide:
         self.placing = False  # True while we move it ourselves (those moves aren't the player dragging it)
         self.pending_save = None
         self.shown = None  # (title, allowed, locked) on screen
-        self.shown_guids: set = set()
+        self.cells: Dict[tuple, object] = {}  # (guid, locked) -> the frame showing that card right now
         self.photos: Dict[tuple, object] = {}
         self.width = DEFAULT_WIDTH
-        self.stale = False
 
         win = self.win = tk.Toplevel(root)
         win.title("Shop Guide - The Bazaar")
@@ -161,32 +157,38 @@ class ShopGuide:
     # --- pictures ---------------------------------------------------------------------------------------------
 
     def picture(self, card, locked: bool):
-        from PIL import ImageDraw, ImageEnhance, ImageOps, ImageTk
+        """The card's picture, or None if it has none (yet)."""
         key = (card.guid, locked)
         if key not in self.photos:
-            img = self.art.image(card)
-            if locked:
-                img = ImageEnhance.Brightness(ImageOps.grayscale(img).convert("RGB")).enhance(0.45)
-                draw = ImageDraw.Draw(img)
-                width, height = img.size
-                draw.line([6, 6, width - 7, height - 7], fill=LOCKED_X, width=5)
-                draw.line([6, height - 7, width - 7, 6], fill=LOCKED_X, width=5)
-            # master: this window's Tk, never whichever Tk happened to start first in the process
-            self.photos[key] = ImageTk.PhotoImage(img, master=self.win)
+            path = self.art.picture(card, locked)
+            if not path:
+                return None
+            try:  # master: this window's Tk, never whichever Tk happened to start first in the process
+                self.photos[key] = self.tk.PhotoImage(file=path, master=self.win)
+            except self.tk.TclError:  # an unreadable file: the placeholder
+                return None
         return self.photos[key]
 
-    def refresh(self, guid: str) -> None:
-        """Real art arrived for a card: redraw only if that card is on screen right now."""
-        self.photos.pop((guid, False), None)
-        self.photos.pop((guid, True), None)
-        if guid in self.shown_guids and not self.stale:
-            self.stale = True
-            self.win.after(ART_BATCH_MS, self.redraw_if_stale)
+    def placeholder(self, parent, card, locked: bool):
+        """In place of a missing picture: a box of the card's in-game shape in its tier colour (red if locked).
+        Its name goes under it like a picture's; a 1-slot box is too narrow for many names (measured)."""
+        width, height = card_shape(card, CARD_HEIGHT)
+        box = self.tk.Frame(parent, width=width, height=height, bg=TILE_BG, highlightthickness=3,
+                            highlightbackground=LOCKED_X if locked else TIER_COLORS.get(card.tier, DIM))
+        box.pack_propagate(False)
+        self.tk.Label(box, text="no\npicture", bg=TILE_BG, fg=DIM, font=(FONT, 7)).pack(expand=True)
+        return box
 
-    def redraw_if_stale(self) -> None:
-        if self.stale and self.shown:
-            self.stale = False
-            self.render(self.shown, keep_scroll=True)
+    def refresh(self, guid: str) -> None:
+        """A card's picture arrived: swap it in where that card is shown, touching nothing else (rebuilding the
+        whole guide for every picture kept Tk from painting while a first shop's pictures streamed in)."""
+        for locked in (False, True):
+            self.photos.pop((guid, locked), None)
+            cell = self.cells.get((guid, locked))
+            if cell is not None and cell.winfo_exists():
+                for child in cell.winfo_children():
+                    child.destroy()
+                self.fill(cell, CARDS_BY_GUID[guid], locked)
 
     def on_resize(self, event) -> None:
         if abs(event.width - self.width) > REFLOW_PX:  # rows are filled by width: re-flow when it really changed
@@ -213,10 +215,20 @@ class ShopGuide:
             used += width
             cell = tk.Frame(line, bg=WINDOW_BG, width=width)
             cell.pack(side="left", anchor="n", padx=CARD_PAD, pady=3)
-            tk.Label(cell, image=self.picture(card, locked), bg=WINDOW_BG).pack()
-            tk.Label(cell, text=card.name, bg=WINDOW_BG, fg=DIM if locked else "#eeeeee", font=(FONT, 8),
-                     wraplength=max(40, width - 4), justify="center").pack()
+            self.cells[(card.guid, locked)] = cell
+            self.fill(cell, card, locked)
         return row
+
+    def fill(self, cell, card, locked: bool) -> None:
+        """A card's picture (or a placeholder until it has one) and its name."""
+        photo = self.picture(card, locked)
+        if photo is None:
+            self.placeholder(cell, card, locked).pack()
+        else:
+            self.tk.Label(cell, image=photo, bg=WINDOW_BG).pack()
+        width = card_shape(card, CARD_HEIGHT)[0] + 2 * CARD_PAD
+        self.tk.Label(cell, text=card.name, bg=WINDOW_BG, fg=DIM if locked else "#eeeeee", font=(FONT, 8),
+                      wraplength=max(40, width - 4), justify="center").pack()
 
     def render(self, value, keep_scroll: bool = False) -> None:
         """value: (title, allowed cards, locked cards), or None when you left the shop (the last one stays)."""
@@ -226,7 +238,6 @@ class ShopGuide:
             return
         self.shown = value
         title, allowed, locked = value
-        self.shown_guids = {c.guid for c in allowed} | {c.guid for c in locked}
         locked_first = len(locked) < len(allowed)  # the shorter list on top, so it's seen without scrolling
         if not locked:
             note = "nothing locked here"
@@ -246,6 +257,7 @@ class ShopGuide:
         # built in a new frame, then swapped in: the window never shows up empty in between (no flicker)
         old = self.inner.winfo_children()
         frame = self.tk.Frame(self.inner, bg=WINDOW_BG)
+        self.cells = {}
         row = 0
         for label, color, cards, is_locked in sections:
             row = self.section(frame, label, color, sorted(cards, key=lambda c: c.name), is_locked, row)
