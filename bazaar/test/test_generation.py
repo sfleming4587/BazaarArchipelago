@@ -233,9 +233,22 @@ class TestOwnHeroSwitches(BazaarTestBase):
     def test_switched_on_heroes_are_in(self) -> None:
         self.assertEqual(set(self.world.heroes), {"Vanessa", "Pygmalien", "Dooley", "Karnok", "The Dragons"})
 
+    def test_starting_hero_values_never_move(self) -> None:
+        from ..options import StartingHero
+        self.assertEqual(StartingHero.options, {"any": 0, "vanessa": 1, "pygmalien": 2, "dooley": 3, "mak": 4,
+                                                "stelle": 5, "jules": 6, "karnok": 7, "the_dragons": 8})
+
     def test_deathlink_options_default_off(self) -> None:
         self.assertFalse(self.world.options.death_link)
         self.assertFalse(self.world.options.death_link_on_concede)
+
+
+class TestExcludeHeroSwitches(BazaarTestBase):
+    """Heroes are left out with on/off switches too (user 2026-09-29); the old excluded_heroes list still works."""
+    options = {"own_karnok": True, "exclude_karnok": True, "exclude_dooley": True, "starting_hero": "vanessa"}
+
+    def test_switched_off_heroes_are_out(self) -> None:
+        self.assertEqual(set(self.world.heroes), {"Vanessa", "Pygmalien"})
 
 
 class TestUniversalTrackerRebuild(BazaarTestBase):

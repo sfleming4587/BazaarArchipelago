@@ -12,7 +12,7 @@ from .items import (EXPEDITION_TICKETS, FILLER_ITEMS, GAME, GROUP_ITEMS, LEGENDA
                     hero_item, item_name_groups, item_name_to_id, lock_items_by_hero, pack_item)
 from .locations import (BazaarLocation, card_requirements, champion_event, day_location, location_name_groups,
                         location_name_to_id, monster_location, pvp_location, win_location)
-from .options import OWN_HERO_OPTIONS, BazaarOptions, option_groups, option_presets
+from .options import EXCLUDE_HERO_OPTIONS, OWN_HERO_OPTIONS, BazaarOptions, option_groups, option_presets
 
 
 def run_client(*args: str) -> None:
@@ -88,7 +88,9 @@ class BazaarWorld(World):
             return
         owned = set(BASE_HEROES) | set(self.options.owned_dlc_heroes.value) \
             | {hero for option, hero in OWN_HERO_OPTIONS.items() if getattr(self.options, option)}
-        self.heroes = [h for h in HEROES if h in owned and h not in self.options.excluded_heroes.value]
+        excluded = set(self.options.excluded_heroes.value) \
+            | {hero for option, hero in EXCLUDE_HERO_OPTIONS.items() if getattr(self.options, option)}
+        self.heroes = [h for h in HEROES if h in owned and h not in excluded]
         if not self.heroes:
             raise OptionError(f"{self.player_name}: every hero is excluded, at least one is needed.")
 

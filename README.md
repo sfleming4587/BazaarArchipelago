@@ -41,6 +41,7 @@ types for you.
    - `name:` - your player name (no spaces is easiest), e.g. `name: YourName`
    - `own_mak:`, `own_stelle:`, `own_jules:`, `own_karnok:`, `own_the_dragons:` - set `true` for each DLC hero
      you own (Vanessa, Pygmalien and Dooley are always included)
+   - `exclude_<hero>:` (e.g. `exclude_dooley: true`) - optional, to leave a hero you own out of this game
    - `heroes_required:` - how many heroes need a 10-win run to finish (default 3)
 3. Every other option has a description in the file; the defaults are a good start.
 

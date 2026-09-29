@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+import types
+from dataclasses import dataclass, make_dataclass
 
 from Options import (Choice, DeathLink, DefaultOnToggle, ItemSet, OptionGroup, OptionSet, PerGameCommonOptions,
                      Range, Removed, StartInventoryPool, Toggle, Visibility)
@@ -17,59 +18,55 @@ class OwnedDLCHeroes(OptionSet):
     visibility = Visibility.none  # hidden from the website, the Options Creator and new templates
 
 
-class OwnMak(Toggle):
-    """You own Mak (DLC hero). Vanessa, Pygmalien and Dooley come with the base game and are always in."""
-    display_name = "Own Mak"
+def hero_key(hero: str) -> str:
+    """How a hero appears in option names and values: "The Dragons" -> "the_dragons"."""
+    return hero.lower().replace(" ", "_")
 
 
-class OwnStelle(Toggle):
-    """You own Stelle (DLC hero)."""
-    display_name = "Own Stelle"
+def _switch(class_name: str, display_name: str, doc: str) -> type:
+    """An on/off option made from data, so a new hero needs no new class."""
+    def body(namespace: dict) -> None:
+        namespace.update(__doc__=doc, display_name=display_name, __module__=__name__)
+    return types.new_class(class_name, (Toggle,), exec_body=body)
 
 
-class OwnJules(Toggle):
-    """You own Jules (DLC hero)."""
-    display_name = "Own Jules"
-
-
-class OwnKarnok(Toggle):
-    """You own Karnok (DLC hero)."""
-    display_name = "Own Karnok"
-
-
-class OwnTheDragons(Toggle):
-    """You own The Dragons (DLC hero)."""
-    display_name = "Own The Dragons"
-
-
-# option name -> DLC hero it owns (user 2026-09-29: pick DLC heroes by ticking, not by typing names)
-OWN_HERO_OPTIONS = {"own_mak": "Mak", "own_stelle": "Stelle", "own_jules": "Jules", "own_karnok": "Karnok",
-                    "own_the_dragons": "The Dragons"}
+# Heroes are picked by ticking, never by typing names (user 2026-09-29). Built from data.HEROES, so a hero added
+# by a patch gets its switches automatically. option name -> hero.
+OWN_HERO_OPTIONS = {f"own_{hero_key(h)}": h for h in DLC_HEROES}
+EXCLUDE_HERO_OPTIONS = {f"exclude_{hero_key(h)}": h for h in HEROES}
+OWN_SWITCHES = {name: _switch(f"Own{hero.replace(' ', '')}", f"Own {hero}",
+                              f"You own {hero} (DLC hero). Vanessa, Pygmalien and Dooley come with the base game "
+                              f"and are always in.")
+                for name, hero in OWN_HERO_OPTIONS.items()}
+EXCLUDE_SWITCHES = {name: _switch(f"Exclude{hero.replace(' ', '')}", f"Exclude {hero}",
+                                  f"Leave {hero} out of this multiworld even if you own them: no {hero} checks, "
+                                  f"cards or unlock.")
+                    for name, hero in EXCLUDE_HERO_OPTIONS.items()}
 
 
 class ExcludedHeroes(OptionSet):
-    """Heroes you own but don't want in this multiworld. Their checks and cards are left out."""
-    display_name = "Excluded Heroes"
+    """
+    Old way to list heroes to leave out (still accepted, so older YAMLs keep working). Use the "Exclude ..."
+    options instead: they're simple on/off switches.
+    """
+    display_name = "Excluded Heroes (old)"
     valid_keys = frozenset(HEROES)
     default = frozenset()
+    visibility = Visibility.none  # hidden from the website, the Options Creator and new templates
 
 
-class StartingHero(Choice):
-    """
+def _starting_hero_body(namespace: dict) -> None:
+    namespace.update(
+        __doc__="""
     The hero you start with. Every other hero has to be found as an item.
     If the chosen hero isn't available (not owned or excluded), a random available hero is used instead.
-    """
-    display_name = "Starting Hero"
-    option_any = 0
-    option_vanessa = 1
-    option_pygmalien = 2
-    option_dooley = 3
-    option_mak = 4
-    option_stelle = 5
-    option_jules = 6
-    option_karnok = 7
-    option_the_dragons = 8
-    default = 0
+    """,
+        display_name="Starting Hero", default=0, __module__=__name__, option_any=0,
+        # values follow data.HEROES, which is append-only, so a saved choice never changes meaning
+        **{f"option_{hero_key(h)}": number for number, h in enumerate(HEROES, start=1)})
+
+
+StartingHero = types.new_class("StartingHero", (Choice,), exec_body=_starting_hero_body)
 
 
 class EarlyHeroUnlock(Toggle):
@@ -301,12 +298,7 @@ class DeathLinkAmnesty(Range):
 
 
 @dataclass
-class BazaarOptions(PerGameCommonOptions):
-    own_mak: OwnMak
-    own_stelle: OwnStelle
-    own_jules: OwnJules
-    own_karnok: OwnKarnok
-    own_the_dragons: OwnTheDragons
+class _BazaarOptions(PerGameCommonOptions):
     owned_dlc_heroes: OwnedDLCHeroes
     excluded_heroes: ExcludedHeroes
     starting_hero: StartingHero
@@ -339,6 +331,12 @@ class BazaarOptions(PerGameCommonOptions):
     start_inventory_from_pool: StartInventoryPool
 
 
+# the hero switches are generated (see above), so they're added to the options here
+BazaarOptions = make_dataclass("BazaarOptions", [(name, option) for name, option in {**OWN_SWITCHES,
+                                                                                     **EXCLUDE_SWITCHES}.items()],
+                               bases=(_BazaarOptions,))
+
+
 # One-click setups on the website's options page. Owned DLC heroes are never set by a preset.
 option_presets = {
     "Casual": {
@@ -356,8 +354,8 @@ option_presets = {
 }
 
 option_groups = [
-    OptionGroup("Heroes", [OwnMak, OwnStelle, OwnJules, OwnKarnok, OwnTheDragons, ExcludedHeroes, StartingHero,
-                           HeroesRequired, EarlyHeroUnlock]),
+    OptionGroup("Heroes", [*OWN_SWITCHES.values(), StartingHero, HeroesRequired, EarlyHeroUnlock]),
+    OptionGroup("Excluded Heroes", list(EXCLUDE_SWITCHES.values())),
     OptionGroup("Checks", [MaxDay, PvPWinChecks, MonsterChecks, MaxMonsterTier]),
     OptionGroup("Card Locks", [LockedCardsPercent, LockCommonCards, LockLootItems, StarterCards, LegacyCardPacks,
                                LegendaryItems, ExpeditionTickets, DuplicateAllCards, DuplicateCards]),
