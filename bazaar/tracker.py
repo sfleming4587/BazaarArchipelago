@@ -143,8 +143,6 @@ class Tracker:
             for square, (x, y) in spots.items():
                 rect = canvas.create_rectangle(x, y, x + size, y + size, width=2, outline="black",
                                                tags=f"square{square}")
-                canvas.create_text(x + size // 2, y + size // 2, text=str(square), fill="black",
-                                   font=("Segoe UI", 8 if self.half else 13, "bold"), tags=f"square{square}")
                 self.squares[hero, square] = rect
                 canvas.tag_bind(f"square{square}", "<Enter>", lambda e, h=hero, s=square: self.hover(h, s, e))
                 canvas.tag_bind(f"square{square}", "<Leave>", lambda e: self.unhover())
