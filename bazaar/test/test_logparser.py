@@ -2,11 +2,17 @@ import os
 import tempfile
 import unittest
 
-from ..logparser import (CardGained, CardSold, DayReached, EncounterEntered, EncounterLeft, FightStarted, LogParser,
+from ..logparser import (CardGained, CardSold, DayReached, EncounterEntered, EncounterLeft, FightStarted, HeroSelected,
+                         LogParser,
                          MonsterFought, PvPFought, GameVersion, UnrecognizedRun,
                          LogTailer, RunEnded, RunStarted)
 
 GUID = "d4c0cf1e-7856-4e40-877f-c77b34f596ed"
+
+
+def run_events(lines):
+    """Events without the hero-select screen's picks (tested on their own)."""
+    return [e for e in LogParser().feed_all(lines) if not isinstance(e, HeroSelected)]
 
 
 def state(old: str, new: str) -> str:
@@ -30,7 +36,7 @@ RUN_START = [
 class TestLogParser(unittest.TestCase):
     def test_full_losing_run(self) -> None:
         lines = RUN_START + pvp_day() + pvp_day() + pvp_day("EndRunDefeatState")
-        events = [e for e in LogParser().feed_all(lines) if not isinstance(e, FightStarted)]
+        events = [e for e in run_events(lines) if not isinstance(e, FightStarted)]
         self.assertEqual(events, [RunStarted("Dooley"), DayReached(1), PvPFought(1, None), DayReached(2),
                                   PvPFought(2, None), DayReached(3), PvPFought(3, False),
                                   RunEnded(victory=False, day=3)])
@@ -56,7 +62,7 @@ class TestLogParser(unittest.TestCase):
     def test_pve_fight_does_not_advance_day(self) -> None:
         lines = RUN_START + [state("ChoiceState", "CombatState"), state("CombatState", "ReplayState"),
                              state("ReplayState", "LootState")]
-        self.assertEqual(LogParser().feed_all(lines), [RunStarted("Dooley"), DayReached(1), FightStarted(pvp=False)])
+        self.assertEqual(run_events(lines), [RunStarted("Dooley"), DayReached(1), FightStarted(pvp=False)])
 
     def test_gains_bought_vs_reward(self) -> None:
         merchant, event = "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"
@@ -112,15 +118,22 @@ class TestLogParser(unittest.TestCase):
         self.assertEqual(events[0], GameVersion("1.0.12293"))
         self.assertEqual(events[-1], RunEnded(victory=False, day=1, conceded=True))
 
+    def test_hero_picks_outside_a_run_only(self) -> None:
+        pick = "[x] [RunConfigurationCache] RunConfigurationCache: Changing EHero to {}"
+        lines = [pick.format("Vanessa"), pick.format("Hero8"), "[x] [StartRunAppState] Run initialization finalized.",
+                 pick.format("Dooley")]
+        picks = [e for e in LogParser().feed_all(lines) if isinstance(e, HeroSelected)]
+        self.assertEqual(picks, [HeroSelected("Vanessa"), HeroSelected("The Dragons")])
+
     def test_dragons(self) -> None:
         lines = ["[x] [RunConfigurationCache] RunConfigurationCache: Changing EHero to Hero8",
                  "[x] [StartRunAppState] Run initialization finalized."]
-        self.assertEqual(LogParser().feed_all(lines)[0], RunStarted("The Dragons"))
+        self.assertEqual(run_events(lines)[0], RunStarted("The Dragons"))
 
     def test_hero_alias(self) -> None:
         lines = ["[x] [RunConfigurationCache] RunConfigurationCache: Changing EHero to Pyg",
                  "[x] [StartRunAppState] Run initialization finalized."]
-        self.assertEqual(LogParser().feed_all(lines)[0], RunStarted("Pygmalien"))
+        self.assertEqual(run_events(lines)[0], RunStarted("Pygmalien"))
 
 
 class TestLogTailer(unittest.TestCase):

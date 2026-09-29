@@ -10,8 +10,8 @@ from ..client import BazaarContext, catch_up, dispatch
 from ..data import CARDS
 from ..items import BASE_ID, item_name_to_id
 from ..locations import day_location, location_name_to_id, monster_location, win_location
-from ..logparser import (CardGained, CardSold, DayReached, LogParser, MonsterFought, PvPFought, RunEnded,
-                         RunStarted)
+from ..logparser import (CardGained, CardSold, DayReached, HeroSelected, LogParser, MonsterFought, PvPFought,
+                         RunEnded, RunStarted)
 
 LOCKED = next(c for c in CARDS if c.shop and c.hero == "Vanessa")
 BRONZE_MONSTER = "bb1e3506-3735-4669-be90-915a55a7ee05"  # Fanged Inglet
@@ -175,6 +175,31 @@ class TestSavedState(ClientTestBase):
         self.ctx.on_package("RoomInfo", {"seed_name": "new"})
         self.ctx.load_state()
         self.assertEqual(self.ctx.run, {})
+
+
+class TestStatusLine(ClientTestBase):
+    def test_run_shows_progress_and_next_check(self) -> None:
+        self.play(RunStarted("Vanessa"), DayReached(2))
+        text, warning = self.ctx.status_line()
+        self.assertFalse(warning)
+        self.assertIn("Vanessa: day 2/15", text)
+        self.assertIn("next: reach day 3", text)
+        self.assertIn("Goal 0/2", text)
+
+    def test_picking_a_locked_hero_warns(self) -> None:
+        self.play(HeroSelected("Dooley"))
+        text, warning = self.ctx.status_line()
+        self.assertTrue(warning)
+        self.assertIn("DOOLEY IS LOCKED", text)
+        self.assertIn("You can play: Vanessa", text)
+        self.play(HeroSelected("Vanessa"))
+        self.assertFalse(self.ctx.status_line()[1])
+
+    def test_blocked_check_pops_up_at_once(self) -> None:
+        self.ctx.overlay = mock.Mock()
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", False), DayReached(2))
+        texts = [c.args[0] for c in self.ctx.overlay.toast.call_args_list if c.kwargs.get("warning")]
+        self.assertEqual(texts, [f"CHECK NOT SENT: {day_location('Vanessa', 2)}"])
 
 
 class TestNewRunIsACleanSlate(ClientTestBase):

@@ -50,6 +50,11 @@ class RunStarted:
 
 
 @dataclass(frozen=True)
+class HeroSelected:
+    hero: str  # picked on the hero-select screen (outside a run)
+
+
+@dataclass(frozen=True)
 class DayReached:
     day: int
 
@@ -112,7 +117,7 @@ class UnrecognizedRun:
     """A fight happened but no run start was recognised: the log format probably changed in a patch."""
 
 
-Event = Union[RunStarted, DayReached, CardGained, CardSold, FightStarted, EncounterEntered, EncounterLeft,
+Event = Union[RunStarted, HeroSelected, DayReached, CardGained, CardSold, FightStarted, EncounterEntered, EncounterLeft,
               MonsterFought, PvPFought, RunEnded, GameVersion, UnrecognizedRun]
 
 
@@ -139,6 +144,8 @@ class LogParser:
             return
         if match := HERO_RE.search(line):
             self.hero = HERO_ALIASES.get(match[1], match[1])
+            if not self.in_run:
+                yield HeroSelected(self.hero)
             return
         if RUN_READY_RE.search(line):
             self.in_run, self.day, self.in_pvp, self.conceded = True, 1, False, False

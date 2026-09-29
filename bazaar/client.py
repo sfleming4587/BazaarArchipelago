@@ -22,7 +22,7 @@ from .data import (CARDS, CARDS_BY_GUID, GAME_VERSION, HEROES, MERCHANT_DATA, ME
                    TIERS)
 from .items import BASE_ID, GAME, GROUP_ITEMS, SELL_TRAP, hero_item, item_name_to_id
 from .locations import day_location, location_name_to_id, monster_location, pvp_location, win_location
-from .logparser import (DEFAULT_LOG_PATH, CardGained, CardSold, DayReached, EncounterEntered, EncounterLeft,
+from .logparser import (DEFAULT_LOG_PATH, HeroSelected, CardGained, CardSold, DayReached, EncounterEntered, EncounterLeft,
                         FightStarted, GameVersion, LogParser, LogTailer, MonsterFought, PvPFought, RunEnded,
                         RunStarted, UnrecognizedRun)
 from .merchants import possible_stock
@@ -149,6 +149,7 @@ class BazaarContext(CommonContext):
         self.pvp_blocked: Dict[str, Optional[str]] = {}  # "hero|day" -> why checks were blocked during that fight
         self.notices_shown: Set[str] = set()  # patch warnings are shown once per session
         self.traps_seen = 0
+        self.menu_hero: Optional[str] = None  # hero picked on the hero-select screen, while not in a run
         self.room_seed = ""  # CommonClient never sets seed_name, so the saved state is keyed on this instead
 
     # --- connection ---------------------------------------------------------------------------------------------
@@ -178,8 +179,10 @@ class BazaarContext(CommonContext):
                         self.overlay.toast(f"UNLOCKED: {name.replace('Hero: ', '')}  (from {sender})")
             self.refresh_held()
             self.receive_traps()
+            self.update_status()
         elif cmd == "RoomUpdate" and "checked_locations" in args:
             self.check_goal()
+            self.update_status()
 
     async def disconnect(self, allow_autoreconnect: bool = False) -> None:
         self.slot_data = {}
@@ -289,6 +292,7 @@ class BazaarContext(CommonContext):
         if self.overlay:
             self.overlay.ask_pvp({})
         self.refresh_held()
+        self.update_status()
 
     async def handle_day(self, event: DayReached) -> None:
         if not self.run.get("active"):
@@ -298,6 +302,7 @@ class BazaarContext(CommonContext):
             await self.send_run_checks([day_location(self.run["hero"], event.day)])
         self.run["day"] = event.day
         self.save_state()
+        self.update_status()
         if any(t["deadline"] == event.day for t in self.run.get("traps", [])):
             beep()
             self.update_block_banner()
@@ -412,6 +417,8 @@ class BazaarContext(CommonContext):
         if reason:
             logger.warning(f"CHECKS ARE BLOCKED {reason}. Not sent: {', '.join(names)}")
             beep()
+            if self.overlay:
+                self.overlay.toast(f"CHECK NOT SENT: {', '.join(names)}", seconds=10, warning=True)
             return
         await self.send_checks(names)
 
@@ -494,6 +501,9 @@ class BazaarContext(CommonContext):
                 blocked = self.pvp_blocked.pop(key, None) or self.blocked_reason()
                 if won and blocked:
                     logger.warning(f"Day {day} PvP win not sent: checks were blocked {blocked} during that fight.")
+                    if self.overlay:
+                        self.overlay.toast(f"CHECK NOT SENT: {pvp_location(hero, int(day))}", seconds=10,
+                                           warning=True)
                 elif won:
                     await self.send_checks([pvp_location(hero, int(day))])
         if changed:
@@ -561,6 +571,7 @@ class BazaarContext(CommonContext):
         self.run = {**self.run, "active": False, "held": {}}
         self.refresh_held()
         self.handle_encounter_left()
+        self.update_status()
         if event.victory:
             pass  # a won run never sends a DeathLink
         elif deathlink_owed:
@@ -613,30 +624,67 @@ class BazaarContext(CommonContext):
         await self.check_locations(ids)
         self.check_goal()
 
+    def done(self) -> Set[int]:
+        return self.checked_locations | self.locations_checked
+
+    def heroes_won(self) -> list:
+        """Heroes whose 10-win check is done: the goal counts these (/status and the overlay show the same)."""
+        return [h for h in self.slot_data.get("heroes", []) if location_name_to_id[win_location(h)] in self.done()]
+
     def check_goal(self) -> None:
         if self.goal_sent or not self.slot_data:
             return
-        done = self.checked_locations | self.locations_checked
-        won = [h for h in self.slot_data.get("heroes", []) if location_name_to_id[win_location(h)] in done]
-        if len(won) >= self.slot_data.get("heroes_required", 1):
+        if len(self.heroes_won()) >= self.slot_data.get("heroes_required", 1):
             self.goal_sent = True
             self.finished_game = True
             Utils.async_start(self.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}]))
             logger.info("Goal complete! Congratulations, champion of the Bazaar.")
 
+    def status_line(self) -> tuple:
+        """The overlay's status line: (text or None, is it a warning). In a run: progress and the next check.
+        On the hero-select screen: which heroes may be played, and a warning if the picked one may not."""
+        if not self.slot_data:
+            return None, False
+        goal = f"Goal {len(self.heroes_won())}/{self.slot_data.get('heroes_required', 1)}"
+        if self.run.get("active"):
+            hero, day, max_day = self.run["hero"], self.run.get("day", 1), self.slot_data.get("max_day", 15)
+            next_day = next((d for d in range(day + 1, max_day + 1)
+                             if location_name_to_id[day_location(hero, d)] not in self.done()), None)
+            if next_day:
+                upcoming = f"next: reach day {next_day}"
+            elif location_name_to_id[win_location(hero)] not in self.done():
+                upcoming = "next: 10 wins"
+            else:
+                upcoming = "all day checks done"
+            return f"{hero}: day {day}/{max_day} · {upcoming} · {goal}", False
+        if self.menu_hero:
+            playable = [h for h in self.slot_data.get("heroes", []) if self.hero_unlocked(h)]
+            can_play = f"You can play: {', '.join(playable) or 'nobody yet'}"
+            if self.menu_hero not in playable:
+                return f"{self.menu_hero.upper()} IS LOCKED - pick another hero. {can_play}", True
+            return f"{can_play} · {goal}", False
+        return None, False
+
+    def update_status(self) -> None:
+        if self.overlay:
+            self.overlay.show_status(*self.status_line())
+
+    def handle_hero_selected(self, event: HeroSelected) -> None:
+        self.menu_hero = event.hero
+        self.update_status()
+
     def print_status(self) -> None:
         if not self.slot_data:
             logger.info("Not connected.")
             return
-        done = self.checked_locations | self.locations_checked
+        done = self.done()
         max_day = self.slot_data["max_day"]
         for hero in self.slot_data["heroes"]:
             days = sum(location_name_to_id[day_location(hero, d)] in done for d in range(1, max_day + 1))
             won = location_name_to_id[win_location(hero)] in done
             lock = "unlocked" if self.hero_unlocked(hero) else "LOCKED"
             logger.info(f"{hero:12} {lock:9} days {days}/{max_day}  10 wins: {'yes' if won else 'no'}")
-        won = sum(location_name_to_id[win_location(h)] in done for h in self.slot_data["heroes"])
-        logger.info(f"Goal: {won}/{self.slot_data['heroes_required']} heroes with 10 wins")
+        logger.info(f"Goal: {len(self.heroes_won())}/{self.slot_data['heroes_required']} heroes with 10 wins")
         if self.run.get("active"):
             reason = self.blocked_reason()
             note = f" - CHECKS ARE BLOCKED {reason}" if reason else ""
@@ -646,6 +694,8 @@ class BazaarContext(CommonContext):
 async def dispatch(ctx: BazaarContext, event, parser: LogParser, first_run_in_log: bool) -> None:
     if isinstance(event, RunStarted):
         ctx.handle_run_started(event, parser, first_run_in_log)
+    elif isinstance(event, HeroSelected):
+        ctx.handle_hero_selected(event)
     elif isinstance(event, DayReached):
         await ctx.handle_day(event)
     elif isinstance(event, CardGained):
@@ -676,6 +726,9 @@ async def catch_up(ctx: BazaarContext, parser: LogParser, past: list) -> int:
     client had been watching. Finished runs earlier in the log are ignored. Returns how many runs were seen.
     """
     if not parser.in_run:
+        picked = [e for e in past if isinstance(e, HeroSelected)]
+        if picked:
+            ctx.handle_hero_selected(picked[-1])
         return 0
     run_start = max(i for i, e in enumerate(past) if isinstance(e, RunStarted))
     resuming = ctx.run.get("active") and ctx.run.get("hero") == past[run_start].hero

@@ -7,6 +7,7 @@ not over exclusive fullscreen. Tk runs in its own thread; the client talks to it
 """
 import json
 import queue
+import sys
 import threading
 import time
 from typing import Callable, Dict, List, Optional
@@ -17,6 +18,9 @@ COLUMNS = 7
 BG = "#5a0f14"
 FG = "#ffffff"
 ACCENT = "#ffcf5a"
+GOOD = "#9be39b"
+WARN = "#ff8a8a"
+MUTED = "#e6d5b8"
 
 
 # Where the overlay may draw: the strips left and right of the board, measured on a 1920x1080 shop screenshot
@@ -82,6 +86,18 @@ def area_pixels(area: tuple, screen_w: int, screen_h: int) -> tuple:
     return round(x * screen_w), round(y * screen_h), round(w * screen_w), round(h * screen_h)
 
 
+def click_through(panel) -> None:
+    """Mouse clicks pass through the window to the game underneath (Windows only; elsewhere a no-op)."""
+    if sys.platform != "win32":
+        return
+    import ctypes
+    gwl_exstyle, ws_ex_layered, ws_ex_transparent = -20, 0x80000, 0x20
+    user32 = ctypes.windll.user32
+    hwnd = int(panel.wm_frame(), 16)
+    user32.SetWindowLongW(hwnd, gwl_exstyle,
+                          user32.GetWindowLongW(hwnd, gwl_exstyle) | ws_ex_layered | ws_ex_transparent)
+
+
 def draw_columns(tk, parent, columns: List[List[str]], font, bold, column_width: Callable[[List[str]], int],
                  line_height: int) -> None:
     """One canvas of positioned text: hundreds of separate label widgets took Tk seconds to lay out."""
@@ -131,9 +147,13 @@ class Overlay:
         """questions: key -> text such as "Vanessa day 3". Each gets Won / Lost buttons. Empty dict hides them."""
         self.commands.put(("pvp", dict(questions)))
 
-    def toast(self, text: str, seconds: float = 6) -> None:
+    def toast(self, text: str, seconds: float = 6, warning: bool = False) -> None:
         """A short message at the bottom of the alert box that disappears by itself."""
-        self.commands.put(("toast", (text, time.monotonic() + seconds)))
+        self.commands.put(("toast", (text, time.monotonic() + seconds, warning)))
+
+    def show_status(self, text: Optional[str], warning: bool = False) -> None:
+        """One line at the bottom of the alert box: run progress, or which heroes you may pick. None hides it."""
+        self.commands.put(("status", (text, warning) if text else None))
 
     def show_deathlink(self, text: Optional[str]) -> None:
         self.commands.put(("deathlink", text))
@@ -166,7 +186,7 @@ class Overlay:
         left = area_pixels(LEFT_AREA, root.winfo_screenwidth(), root.winfo_screenheight())
         right = area_pixels(RIGHT_AREA, root.winfo_screenwidth(), root.winfo_screenheight())
         inner_w = left[2] - 2 * PAD - 4  # minus padding and the border
-        state = {"locked": None, "deathlink": None, "shop": None, "pvp": {}, "toasts": []}
+        state = {"locked": None, "deathlink": None, "shop": None, "pvp": {}, "toasts": [], "status": None}
         # what each window shows now, to skip redraws that change nothing
         drawn = {"alerts": None, "shop": None, "alerts_height": 0}
         widths: Dict[tuple, int] = {}  # (font size, text) -> pixels; measuring hundreds of names is the slow part
@@ -192,7 +212,8 @@ class Overlay:
             # the next is still being worked out.
             moves: list = []
             alerts = (state["deathlink"], state["locked"], tuple(state["pvp"].items()),
-                      tuple(text for text, _ in state["toasts"]))
+                      tuple((text, warning) for text, _, warning in state["toasts"]), state["status"],
+                      pictures_button())
             if alerts != drawn["alerts"]:
                 drawn["alerts"] = alerts
                 drawn["alerts_height"] = render_alerts(moves)
@@ -207,10 +228,18 @@ class Overlay:
                     panel.geometry(geometry)
                     panel.deiconify()
                     panel.lift()
+                    if panel is not root:
+                        click_through(panel)  # the list has nothing to click: never catch the game's clicks
+
+        def pictures_button() -> bool:
+            """The Shop Guide is closed and you're at a merchant: offer to open it (in the alert box, since the
+            list lets clicks through)."""
+            return bool(state["shop"] and state["shop"][2] == "sell" and board["hidden"])
 
         def render_alerts(moves: list) -> int:
             """Draws the alert box; returns its height (0 when hidden)."""
-            if not (state["deathlink"] or state["locked"] or state["pvp"] or state["toasts"]):
+            if not (state["deathlink"] or state["locked"] or state["pvp"] or state["toasts"] or state["status"]
+                    or pictures_button()):
                 moves.append((root, None))
                 return 0
             frame, show = swap(root)
@@ -239,9 +268,17 @@ class Overlay:
                              justify="left").pack(side="left")
                     tk.Button(row, text="Lost", command=lambda k=key: answer(k, False)).pack(side="right", padx=(6, 0))
                     tk.Button(row, text="Won", command=lambda k=key: answer(k, True)).pack(side="right", padx=(12, 0))
-            for text, _ in state["toasts"]:
-                tk.Label(frame, text=text, fg="#9be39b", bg=BG, font=("Segoe UI", 11, "bold"), wraplength=inner_w,
-                         justify="left").pack(anchor="w", pady=(4, 0))
+            for text, _, warning in state["toasts"]:
+                tk.Label(frame, text=text, fg=WARN if warning else GOOD, bg=BG, font=("Segoe UI", 11, "bold"),
+                         wraplength=inner_w, justify="left").pack(anchor="w", pady=(4, 0))
+            if pictures_button():
+                tk.Button(frame, text="Show pictures", command=lambda: (board["show"](), render())).pack(
+                    anchor="w", pady=(4, 0))
+            if state["status"]:
+                text, warning = state["status"]
+                tk.Label(frame, text=text, fg=WARN if warning else MUTED, bg=BG,
+                         font=("Segoe UI", 11 if warning else 10, "bold" if warning else "normal"),
+                         wraplength=inner_w, justify="left").pack(anchor="w", pady=(4, 0))
             show()
             return place(moves, root, left[0], left[1], left[2], left[3] // 2)  # bottom half: the shop list
 
@@ -256,14 +293,12 @@ class Overlay:
             first_frame, show_first = swap(shop_first)
             if names:
                 advice = "don't buy them" if verb == "sell" else "pick something else"
-                text, color = f"{merchant} may {verb} these LOCKED cards - {advice}:", ACCENT
-            else:
-                text, color = f"{merchant}: nothing here is locked for you. Shop freely!", "#9be39b"
-            tk.Label(first_frame, text=text, fg=color, bg=BG, font=("Segoe UI", 11, "bold"), wraplength=inner_w,
-                     justify="left").pack(anchor="w", pady=(0, 4))
-            if verb == "sell" and board["hidden"] is not None and board["hidden"]:
-                tk.Button(first_frame, text="Show pictures", command=lambda: (board["show"](), render())).pack(
-                    anchor="w", pady=(0, 4))
+                tk.Label(first_frame, text=f"{merchant} may {verb} these LOCKED cards - {advice}:", fg=ACCENT, bg=BG,
+                         font=("Segoe UI", 11, "bold"), wraplength=inner_w, justify="left").pack(anchor="w",
+                                                                                                pady=(0, 4))
+            else:  # nothing locked: just a small tick
+                tk.Label(first_frame, text=f"\u2714  {merchant}: buy freely", fg=GOOD, bg=BG,
+                         font=("Segoe UI", 11, "bold"), wraplength=inner_w, justify="left").pack(anchor="w")
             first_frame.update_idletasks()
             header_height = first_frame.winfo_reqheight() + 4
             guide_open = board["hidden"] is False  # the right strip is the Shop Guide's while it's open
@@ -335,14 +370,14 @@ class Overlay:
                 if kind == "redraw":
                     changed = True
                     continue
-                if kind == "toast":
+                if kind == "toast":  # (text, expires, warning)
                     state["toasts"] = (state["toasts"] + [value])[-4:]  # at most 4 at a time
                     changed = True
                     continue
                 state[kind] = value
                 changed = True
             now = time.monotonic()
-            if any(expires <= now for _, expires in state["toasts"]):
+            if any(expires <= now for _, expires, _ in state["toasts"]):
                 state["toasts"] = [t for t in state["toasts"] if t[1] > now]
                 changed = True
             if changed:
