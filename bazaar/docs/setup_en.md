@@ -57,14 +57,18 @@ Alerts appear in a small window at the top left of your screen, above the game:
   by itself when you sell the card; a locked hero or DeathLink blocks the rest of the run.
 - **PvP result:** after each PvP fight, press **Won** or **Lost**.
 - **DeathLink:** abandon your run.
-- **Unlocks and notices:** short pop-ups when you receive an unlock (and from whom), a Sell Trap arrives, or
-  the game was updated since the apworld was made. A red **CHECK NOT SENT** pop-up names any check the moment it
-  is blocked.
+- **Unlocks and notices:** short pop-ups in the bottom right when you receive an unlock (and from whom), a Sell
+  Trap arrives, or the game was updated since the apworld was made. A red **CHECK NOT SENT** pop-up names any
+  check the moment it is blocked.
 - **Status line:** during a run, your hero, day, next check and goal progress. On the hero-select screen, which
   heroes you may play - and a warning if the hero you picked is locked.
 
 The overlay sits in the strips left and right of the board, never over the board itself or over another overlay
-window: alerts at the top left, a shop's locked cards under them. It's a separate window, not part of the game,
+window: alerts at the top left, a shop's locked cards under them, pop-ups at the bottom right. Its colour tells you
+how urgent it is: red = checks are blocked or a DeathLink, amber = something to act on (locked cards on sale, a
+PvP question, a Sell Trap, a locked hero picked), dark = just information, green = all good. It's see-through, so
+item tooltips behind it stay readable, it only shows while The Bazaar is the active window, and it never takes
+the keyboard focus from the game. It's a separate window, not part of the game,
 so it only shows over The Bazaar when the game's display mode is **Fullscreen Window** (the default) or windowed.
 Start the client with `--no-overlay` to turn it off.
 
