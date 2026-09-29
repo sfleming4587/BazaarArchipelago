@@ -31,6 +31,7 @@ POLL_SECONDS = 0.5
 STATE_FILE = "bazaar_client_state.json"
 
 SHOP_CARDS = [c for c in CARDS if c.shop]
+FILE_ONLY = {"NoStream": True, "skip_gui": True}  # to the log file only: not the console or the client window
 LOCK_ITEM_GUIDS: Dict[int, Set[str]] = {BASE_ID + c.ap_id: {c.guid} for c in CARDS}
 LOCK_ITEM_GUIDS.update({BASE_ID + p.ap_id: set(p.cards) for p in PACKS})
 LOCK_ITEM_GUIDS.update({item_name_to_id[name]: set(guids) for name, guids in GROUP_ITEMS.items()})
@@ -167,12 +168,12 @@ class BazaarContext(CommonContext):
             self.slot_data = args.get("slot_data") or {}
             self.load_state()
             Utils.async_start(self.update_death_link(bool(self.slot_data.get("death_link"))))
-            logger.info(f"Watching {self.log_path}")
+            logger.info(f"Watching {self.log_path}", extra=FILE_ONLY)
         elif cmd == "ReceivedItems":
             for item in args["items"]:
                 name = self.item_names.lookup_in_game(item.item)
                 if item.item in LOCK_ITEM_GUIDS or name.startswith("Hero: "):
-                    logger.info(f"Unlocked: {name}")
+                    logger.info(f"Unlocked: {name}", extra=FILE_ONLY)
                     if self.overlay and args.get("index", 0) > 0:  # index 0 = the full list resent on connect
                         sender = self.player_names.get(item.player, "the server") if item.player != self.slot \
                             else "your own world"
@@ -277,22 +278,22 @@ class BazaarContext(CommonContext):
         if first_run_in_log and self.run.get("hero") == event.hero and self.run.get("active"):
             # The game was restarted and put us back into the run we were already tracking.
             parser.day = max(parser.day, self.run.get("day", 1))
-            logger.info(f"Resumed your {event.hero} run on day {parser.day}.")
+            self.event(f"Resumed your {event.hero} run on day {parser.day}.")
             return
         if self.run.get("active"):
-            logger.info(f"Your previous {self.run['hero']} run ended while the client wasn't watching.")
+            self.event(f"Your previous {self.run['hero']} run ended while the client wasn't watching.")
         counting = True
         if event.hero not in HEROES:
             self.notice("hero", f"{event.hero} is newer than this apworld, so it isn't part of this seed.")
         if event.hero not in self.slot_data.get("heroes", []):
-            logger.warning(f"CHECKS ARE BLOCKED: {event.hero} isn't part of this multiworld.")
+            self.event(f"CHECKS ARE BLOCKED: {event.hero} isn't part of this multiworld.", warning=True)
             counting = False
         elif not self.hero_unlocked(event.hero):
-            logger.warning(f"CHECKS ARE BLOCKED: {event.hero} IS LOCKED. Abandon this run.")
+            self.event(f"CHECKS ARE BLOCKED: {event.hero} IS LOCKED. Abandon this run.", warning=True)
             beep()
             counting = False
         else:
-            logger.info(f"Started a run with {event.hero}. Good luck!")
+            self.event(f"Started a run with {event.hero}. Good luck!")
         # "legal" = a hero you're allowed to play. Only legal runs send DeathLinks when lost; losing a
         # run you were told to abandon shouldn't kill your friends.
         # A new run is a clean slate: nothing from an earlier run (held cards, DeathLink, PvP questions) carries over.
@@ -329,7 +330,7 @@ class BazaarContext(CommonContext):
         for instance, guid in list(held.items()):
             if guid not in locked:
                 del held[instance]
-                logger.info(f"{CARDS_BY_GUID[guid].name} is unlocked now, you can keep it.")
+                self.event(f"{CARDS_BY_GUID[guid].name} is unlocked now, you can keep it.")
         self.update_block_banner()
         if self.run:
             self.save_state()
@@ -348,7 +349,7 @@ class BazaarContext(CommonContext):
         targeted = {t["instance"] for t in self.run.get("traps", [])}
         choices = [i for i in self.run.get("inventory", {}) if i not in targeted] if self.run.get("active") else []
         if not choices:  # not in a run, or holding nothing it can target: the trap misses
-            logger.info("Sell Trap DODGED - you had nothing it could make you sell.")
+            self.event("Sell Trap DODGED - you had nothing it could make you sell.")
             if self.overlay:
                 self.overlay.toast("Sell Trap DODGED!")
             return
@@ -357,7 +358,7 @@ class BazaarContext(CommonContext):
         deadline = self.run.get("day", 1) + self.slot_data.get("sell_trap_days", 2)
         self.run.setdefault("traps", []).append({"instance": instance, "guid": guid, "deadline": deadline})
         name = self.card_name(guid)
-        logger.warning(f"SELL TRAP! Sell {name} before day {deadline} starts, or checks get blocked.")
+        self.event(f"SELL TRAP! Sell {name} before day {deadline} starts, or checks get blocked.", warning=True)
         beep()
         if self.overlay:
             self.overlay.toast(f"SELL TRAP! Sell {name} before day {deadline} starts.", seconds=15)
@@ -374,7 +375,7 @@ class BazaarContext(CommonContext):
         if key in self.notices_shown:
             return
         self.notices_shown.add(key)
-        logger.warning(text)
+        self.event(text, warning=True)
         if self.overlay:
             self.overlay.toast(text, seconds=12)
 
@@ -427,7 +428,7 @@ class BazaarContext(CommonContext):
         """The only way checks earned in a run are sent: refused while cheating (locked hero or locked card)."""
         reason = self.blocked_reason()
         if reason:
-            logger.warning(f"CHECKS ARE BLOCKED {reason}. Not sent: {', '.join(names)}")
+            self.event(f"CHECKS ARE BLOCKED {reason}. Not sent: {', '.join(names)}", warning=True)
             beep()
             if self.overlay:
                 self.overlay.toast(f"CHECK NOT SENT: {', '.join(names)}", seconds=10, warning=True)
@@ -443,8 +444,8 @@ class BazaarContext(CommonContext):
             return
         self.run.setdefault("held", {})[event.instance] = event.guid
         how = "bought" if event.bought else "got"
-        logger.warning(f"You {how} {self.held_text(event.guid)}, which is still locked! "
-                       "CHECKS ARE BLOCKED until you sell it.")
+        self.event(f"You {how} {self.held_text(event.guid)}, which is still locked! "
+                   "CHECKS ARE BLOCKED until you sell it.", warning=True)
         beep()
         if self.overlay:
             self.overlay.toast(f"SELL IT NOW: {CARDS_BY_GUID[event.guid].name} is locked", seconds=12, warning=True)
@@ -455,14 +456,14 @@ class BazaarContext(CommonContext):
         traps = self.run.get("traps", [])
         if any(t["instance"] == event.instance for t in traps):
             self.run["traps"] = [t for t in traps if t["instance"] != event.instance]
-            logger.info("Sell Trap done.")
+            self.event("Sell Trap done.")
             if self.overlay:
                 self.overlay.toast("Sell Trap done!")
             self.update_block_banner()
             self.save_state()
         guid = self.run.get("held", {}).pop(event.instance, None)
         if guid:
-            logger.info(f"Sold {CARDS_BY_GUID[guid].name}." + ("" if self.run.get("held") else " Checks unblocked."))
+            self.event(f"Sold {CARDS_BY_GUID[guid].name}." + ("" if self.run.get("held") else " Checks unblocked."))
             self.refresh_held()
 
     def handle_fight(self, event: FightStarted) -> None:
@@ -471,7 +472,8 @@ class BazaarContext(CommonContext):
             return
         names = ", ".join(CARDS_BY_GUID[g].name for g in held.values())
         beep()
-        logger.warning(f"You went into a fight holding locked cards ({names}). Nothing from this fight counts.")
+        self.event(f"You went into a fight holding locked cards ({names}). Nothing from this fight counts.",
+                   warning=True)
 
     def handle_encounter(self, event: EncounterEntered) -> None:
         merchant = MERCHANT_DATA.get(event.guid) or OFFER_DATA.get(event.guid)
@@ -483,7 +485,7 @@ class BazaarContext(CommonContext):
                                                                      if g in CARDS_BY_GUID))
         names = sorted(c.name for c in stock)
         if names:
-            logger.info(f"{merchant['name']} may {verb} these locked cards: {', '.join(names)}")
+            logger.info(f"{merchant['name']} may {verb} these locked cards: {', '.join(names)}", extra=FILE_ONLY)
         if self.overlay and (names or verb == "sell"):  # free choices only warn when something is locked
             self.overlay.show_shop(merchant["name"], names, verb)
         if self.overlay and self.shop_guide:
@@ -514,7 +516,8 @@ class BazaarContext(CommonContext):
                 # blocked during the fight, or since (a DeathLink arriving before the answer also counts)
                 blocked = self.pvp_blocked.pop(key, None) or self.blocked_reason()
                 if won and blocked:
-                    logger.warning(f"Day {day} PvP win not sent: checks were blocked {blocked} during that fight.")
+                    self.event(f"Day {day} PvP win not sent: checks were blocked {blocked} during that fight.",
+                               warning=True)
                     if self.overlay:
                         self.overlay.toast(f"CHECK NOT SENT: {pvp_location(hero, int(day))}", seconds=10,
                                            warning=True)
@@ -543,7 +546,7 @@ class BazaarContext(CommonContext):
             monster = {"name": "a new monster", "tier": "Bronze"}
         tiers = self.slot_data.get("monster_tiers", {}).get(str(event.day), [])
         beaten = [t for t in tiers if TIERS.index(t) <= TIERS.index(monster["tier"])]
-        logger.info(f"Beat {monster['name']} ({monster['tier']}) on day {event.day}.")
+        self.event(f"Beat {monster['name']} ({monster['tier']}) on day {event.day}.")
         if beaten:
             await self.send_run_checks([monster_location(self.run["hero"], event.day, t) for t in beaten])
 
@@ -570,7 +573,7 @@ class BazaarContext(CommonContext):
             if self.overlay:
                 self.overlay.ask_pvp(self.pvp_questions)
             else:
-                logger.info(f"Did you win day {event.day}'s PvP fight? Type /pvpwin {event.day} if you did.")
+                self.event(f"Did you win day {event.day}'s PvP fight? Type /pvpwin {event.day} if you did.")
 
     async def handle_run_end(self, event: RunEnded) -> None:
         if not self.run.get("active"):
@@ -579,7 +582,7 @@ class BazaarContext(CommonContext):
         deathlink_owed = self.run.get("deathlink_owed")
         if event.victory:
             max_day = self.slot_data.get("max_day", 15)
-            logger.info(f"10 wins with {hero}!")
+            self.event(f"10 wins with {hero}!")
             await self.send_run_checks([day_location(hero, d) for d in range(1, max_day + 1)] + [win_location(hero)]
                                        + self.day_checks_after(hero, event.day))
         self.run = {**self.run, "active": False, "held": {}}
@@ -589,12 +592,12 @@ class BazaarContext(CommonContext):
         if event.victory:
             pass  # a won run never sends a DeathLink
         elif deathlink_owed:
-            logger.info("Run over. DeathLink paid off.")
+            self.event("Run over. DeathLink paid off.")
         elif event.conceded:
             if self.slot_data.get("death_link_on_concede"):
                 await self.maybe_send_death(f"conceded on day {event.day}", legal=self.run.get("legal", True))
             else:
-                logger.info("Run conceded. Conceding doesn't send a DeathLink.")
+                self.event("Run conceded. Conceding doesn't send a DeathLink.")
         else:
             await self.maybe_send_death(f"ran out of prestige on day {event.day}", legal=self.run.get("legal", True))
         self.save_state()
@@ -611,9 +614,9 @@ class BazaarContext(CommonContext):
             self.defeats_since_death = 0
             player = self.player_names.get(self.slot, "A Bazaar player")
             await self.send_death(f"{player}'s {self.run.get('hero', 'hero')} {what}.")
-            logger.info("DeathLink sent.")
+            self.event("DeathLink sent.")
         else:
-            logger.info(f"Forgiven by DeathLink amnesty ({self.defeats_since_death}/{amnesty}).")
+            self.event(f"Forgiven by DeathLink amnesty ({self.defeats_since_death}/{amnesty}).")
         self.save_state()
 
     def on_deathlink(self, data: Dict[str, Any]) -> None:
@@ -623,12 +626,12 @@ class BazaarContext(CommonContext):
             self.run["deathlink_owed"] = True
             self.save_state()
             self.update_block_banner()
-            logger.warning("DEATHLINK! Abandon your current run now (Settings > Abandon Run). "
-                           "No more checks count from this run.")
+            self.event("DEATHLINK! Abandon your current run now (Settings > Abandon Run). "
+                       "No more checks count from this run.", warning=True)
             if self.overlay:
                 self.overlay.show_deathlink(data.get("cause") or f"{data.get('source', 'Someone')} died.")
         else:
-            logger.info("DeathLink received while you weren't in a run. You're safe this time.")
+            self.event("DeathLink received while you weren't in a run. You're safe this time.")
 
     # --- checks & goal ------------------------------------------------------------------------------------------
 
@@ -637,6 +640,14 @@ class BazaarContext(CommonContext):
         self.locations_checked |= ids
         await self.check_locations(ids)
         self.check_goal()
+
+    def event(self, text: str, warning: bool = False) -> None:
+        """A game event. The client window keeps strictly item history (user, 2026-09-28) since the overlay shows
+        these; without an overlay they still show here."""
+        if self.overlay and self.overlay.available:
+            logger.info(text, extra=FILE_ONLY)
+        else:
+            (logger.warning if warning else logger.info)(text)
 
     def done(self) -> Set[int]:
         return self.checked_locations | self.locations_checked
@@ -749,7 +760,7 @@ async def catch_up(ctx: BazaarContext, parser: LogParser, past: list) -> int:
     # A resumed run's log starts counting days at 1 again; shift them onto the real day.
     offset = max(0, ctx.run.get("day", 1) - 1) if resuming and run_start == 0 else 0
     if resuming:
-        logger.info(f"Continuing your {parser.hero} run on day {parser.day + offset}.")
+        ctx.event(f"Continuing your {parser.hero} run on day {parser.day + offset}.")
     else:
         ctx.handle_run_started(past[run_start], parser, first_run_in_log=False)
     for event in past[run_start + 1:]:
@@ -763,8 +774,8 @@ async def catch_up(ctx: BazaarContext, parser: LogParser, past: list) -> int:
         # selling can't fix that, only conceding. Not a legal run, so ending it never sends a DeathLink.
         ctx.run.update(counting=False, legal=False,
                        concede_reason="- THIS RUN WAS OUTSIDE LOGIC WHEN THE CLIENT STARTED: CONCEDE IT")
-        logger.warning(f"Your {parser.hero} run was already outside logic when the client started ({reason}). "
-                       f"Concede it; no DeathLink will be sent.")
+        ctx.event(f"Your {parser.hero} run was already outside logic when the client started ({reason}). "
+                  f"Concede it; no DeathLink will be sent.", warning=True)
         beep()
         ctx.save_state()
         ctx.update_block_banner()
@@ -787,7 +798,7 @@ async def watch_log(ctx: BazaarContext) -> None:
             await ctx.drain_ui_events()
             if lines is None:  # the game restarted and began a fresh log
                 parser, runs_seen = LogParser(MERCHANTS), 0
-                logger.info("The Bazaar restarted, following the new log.")
+                ctx.event("The Bazaar restarted, following the new log.")
                 continue
             for line in lines:
                 for event in parser.feed(line):

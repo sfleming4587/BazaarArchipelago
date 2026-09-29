@@ -45,6 +45,10 @@ a locked card; only hints you already got through Archipelago), `/pvpwin <day>` 
 
 ### The alert window
 
+The Archipelago client window keeps to item history (what your checks found, sent and received) and the replies
+to your commands; everything about your run shows in the overlay instead (and goes to the client's log file). If
+the overlay can't open, those messages show in the client window as before.
+
 Alerts appear in a small window at the top left of your screen, above the game:
 
 - **Shopping:** when you open a merchant it lists the locked cards that merchant could sell, grouped by first

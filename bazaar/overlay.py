@@ -395,7 +395,8 @@ class Overlay:
             show()
             toast_box.update_idletasks()
             height = min(toast_box.winfo_reqheight(), g["right"][3] // 3)
-            moves.append((toast_box, f"{g["right"][2]}x{height}+{g["right"][0]}+{g["right"][1] + g["right"][3] - height}"))
+            x, y, width, strip_height = g["right"]
+            moves.append((toast_box, f"{width}x{height}+{x}+{y + strip_height - height}"))
             return height
 
         def render_alerts(moves: list) -> int:
@@ -450,7 +451,8 @@ class Overlay:
                          font=f(11 if warning else 10, "bold" if warning else "normal"),
                          wraplength=g["inner_w"] if own_row else room, justify="left").pack(side="left", anchor="w")
             show()
-            return place(moves, alert_box, g["left"][0], g["left"][1], g["left"][2], g["left"][3] // 2)  # bottom half: the shop list
+            x, y, width, strip_height = g["left"]
+            return place(moves, alert_box, x, y, width, strip_height // 2)  # bottom half: the shop list
 
         def render_shop(moves: list, alerts_height: int, right_height: int) -> None:
             if not state["shop"] or (state["list_hidden"] and state["shop"][1]):
