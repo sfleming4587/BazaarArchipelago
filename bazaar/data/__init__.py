@@ -41,6 +41,11 @@ HEROES: List[str] = _raw["heroes"]
 BASE_HEROES = ("Vanessa", "Pygmalien", "Dooley")
 DLC_HEROES = tuple(h for h in HEROES if h not in BASE_HEROES)
 
+
+def hero_key(hero: str) -> str:
+    """How a hero appears in option names/values and file names: "The Dragons" -> "the_dragons"."""
+    return hero.lower().replace(" ", "_")
+
 CARDS: List[Card] = [Card(c["guid"], c["ap_id"], c["name"], c["hero"], c["tier"], c["size"], tuple(c["tags"]),
                           c["shop"], tuple(c.get("hidden_tags", ())), tuple(c.get("enchants", ())),
                           tuple(c.get("tiers", ())), c.get("ticket", False)) for c in _raw["cards"]]

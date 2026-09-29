@@ -1,6 +1,6 @@
 import unittest
 
-from ..overlay import fit_columns, letter_columns, strips
+from ..overlay import below, fit_columns, fit_names, letter_columns, strips
 
 
 class TestLetterColumns(unittest.TestCase):
@@ -127,3 +127,31 @@ class TestShopGuideWithoutPillow(unittest.TestCase):
             self.assertTrue(overlay.shop_guide_unavailable)
             overlay.close()
             overlay.thread.join(timeout=5)
+
+
+class TestPanelsStack(unittest.TestCase):
+    """The locked-card list sits right under the alert box (review 2026-09-29: its height used to subtract a screen
+    position from a height, so it was wrong whenever the game window didn't start at the top of the screen)."""
+
+    def test_list_fills_the_strip_under_the_alerts_wherever_the_window_is(self) -> None:
+        for window in [(0, 0, 1920, 1080), (300, 200, 1280, 720), (0, -1080, 1920, 1080)]:
+            with self.subTest(window=window):
+                left = strips(*window)[0]
+                x, y, width, height = below(left, 150)
+                self.assertEqual(y, left[1] + 154)  # under the alert box and the gap
+                self.assertEqual(y + height, left[1] + left[3])  # down to the strip's bottom, not past or short
+
+    def test_nothing_above_means_the_whole_strip(self) -> None:
+        self.assertEqual(below((10, 20, 300, 900), 0), (10, 20, 300, 900))
+
+
+class TestFitNames(unittest.TestCase):
+    def test_biggest_size_that_fits_else_the_smallest(self) -> None:
+        names = [f"Card{i:02}" for i in range(40)]
+        measurer = lambda size: ((lambda line: size * len(line)), size + 2)  # noqa: E731
+        size, placed, missing, _, _ = fit_names(names, [(400, 400)], [13, 11, 10], measurer)
+        self.assertEqual((size, missing), (13, 0))  # fits at the biggest size already
+        size, _, missing, _, _ = fit_names(names, [(50, 40)], [13, 10], measurer)
+        self.assertEqual(size, 10)
+        self.assertGreater(missing, 0)
+

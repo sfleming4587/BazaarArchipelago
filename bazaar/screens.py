@@ -10,6 +10,11 @@ from typing import List, Optional, Tuple
 Rect = Tuple[int, int, int, int]  # x, y, width, height
 
 
+def window_handle(window) -> int:
+    """The Windows handle of a Tk window (its outer frame)."""
+    return int(window.wm_frame(), 16)
+
+
 def monitors() -> List[Rect]:
     """Every monitor's full area (Windows only; elsewhere an empty list)."""
     if sys.platform != "win32":
@@ -73,7 +78,7 @@ def visible_bounds(window) -> Optional[Rect]:
     import ctypes
     from ctypes import wintypes
     rect = wintypes.RECT()
-    hwnd = int(window.wm_frame(), 16)
+    hwnd = window_handle(window)
     try:
         if ctypes.windll.dwmapi.DwmGetWindowAttribute(hwnd, 9, ctypes.byref(rect), ctypes.sizeof(rect)):  # 9: frame
             return None
@@ -96,3 +101,25 @@ def settle(window, target: Rect, area: Rect) -> None:
         asked = (asked[0] + target[0] - seen[0], asked[1] + target[1] - seen[1],
                  max(1, asked[2] + target[2] - seen[2]), max(1, asked[3] + target[3] - seen[3]))
         window.geometry(geometry(asked))
+
+
+def _add_style(window, flags: int) -> None:
+    if sys.platform != "win32":
+        return
+    import ctypes
+    user32 = ctypes.windll.user32
+    hwnd = window_handle(window)
+    user32.SetWindowLongW(hwnd, -20, user32.GetWindowLongW(hwnd, -20) | flags)  # GWL_EXSTYLE
+
+
+def click_through(window) -> None:
+    """Mouse clicks pass through the window to whatever is underneath (Windows only; elsewhere a no-op)."""
+    _add_style(window, 0x80000 | 0x20)  # WS_EX_LAYERED | WS_EX_TRANSPARENT
+
+
+def never_focus(window) -> None:
+    """The window never takes the keyboard focus from the game, even when shown or clicked (its buttons and title
+    bar still work). Windows only; elsewhere a no-op."""
+    window.update_idletasks()
+    _add_style(window, 0x08000000)  # WS_EX_NOACTIVATE
+

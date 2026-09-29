@@ -26,6 +26,7 @@ from .logparser import (DEFAULT_LOG_PATH, PREV_LOG, HeroSelected, CardGained, Ca
                         EncounterLeft, FightStarted, GameVersion, LogParser, LogTailer, MonsterFought, PvPFought,
                         RunEnded, RunStarted, UnrecognizedRun, log_session)
 from .merchants import possible_stock
+from .overlay import FILE_ONLY  # to the log file only: not the console or the client window
 
 POLL_SECONDS = 0.5
 STATE_FILE = "bazaar_client_state.json"
@@ -33,7 +34,6 @@ STATE_FILE = "bazaar_client_state.json"
 SHOP_CARDS = [c for c in CARDS if c.shop]
 GUIDE_MAX = 300  # the Shop Guide skips deals that could be almost anything (hundreds of pictures)
 ITEM_NAMES = {item_id: name for name, item_id in item_name_to_id.items()}
-FILE_ONLY = {"NoStream": True, "skip_gui": True}  # to the log file only: not the console or the client window
 LOCK_ITEM_GUIDS: Dict[int, Set[str]] = {BASE_ID + c.ap_id: {c.guid} for c in CARDS}
 LOCK_ITEM_GUIDS.update({BASE_ID + p.ap_id: set(p.cards) for p in PACKS})
 LOCK_ITEM_GUIDS.update({item_name_to_id[name]: set(guids) for name, guids in GROUP_ITEMS.items()})
@@ -447,7 +447,7 @@ class BazaarContext(CommonContext):
             lines += [f"Sell Trap: sell {self.card_name(t['guid'])} before day {t['deadline']} starts"
                       for t in upcoming]
             title = f"CHECKS ARE BLOCKED {reason}" if reason else ("SELL TRAP" if upcoming else None)
-            self.overlay.show_locked(title, lines)
+            self.overlay.show_locked(title, lines, blocked=bool(reason))
 
     async def send_run_checks(self, names) -> None:
         """The only way checks earned in a run are sent: refused while cheating (locked hero or locked card)."""
@@ -874,7 +874,8 @@ async def main(args) -> None:
                               guide_file=Utils.user_path("bazaar_shop_guide.json"))
     ctx.server_task = asyncio.create_task(server_loop(ctx), name="server loop")
     if ctx.overlay:
-        await asyncio.sleep(1)  # the overlay starts in its own thread
+        # the windows start in their own thread; wait until they're up (or known not to come up)
+        await asyncio.get_running_loop().run_in_executor(None, ctx.overlay.ready.wait, 10)
         if not ctx.overlay.available:
             logger.warning("The alert window can't open on this PC (tkinter is missing). Warnings still show here.")
         elif ctx.shop_guide and ctx.overlay.shop_guide_unavailable:

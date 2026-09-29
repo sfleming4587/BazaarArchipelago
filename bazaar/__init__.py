@@ -7,7 +7,8 @@ from Options import OptionError
 from worlds.AutoWorld import WebWorld, World
 from worlds.LauncherComponents import Component, Type, components, launch
 
-from .data import BASE_HEROES, CARDS, CARDS_BY_NAME, HEROES, LEGENDARY_GUIDS, PACKS, TIERS, max_monster_tier_by_day
+from .data import (BASE_HEROES, CARDS, CARDS_BY_NAME, HEROES, LEGENDARY_GUIDS, PACKS, TIERS, hero_key,
+                   max_monster_tier_by_day)
 from .items import (EXPEDITION_TICKETS, FILLER_ITEMS, GAME, GROUP_ITEMS, LEGENDARY_ITEMS, SELL_TRAP, BazaarItem,
                     hero_item, item_name_groups, item_name_to_id, lock_items_by_hero, pack_item)
 from .locations import (BazaarLocation, card_requirements, champion_event, day_location, location_name_groups,
@@ -94,8 +95,7 @@ class BazaarWorld(World):
         if not self.heroes:
             raise OptionError(f"{self.player_name}: every hero is excluded, at least one is needed.")
 
-        wanted = self.options.starting_hero.current_key.replace("_", " ")
-        matches = [h for h in self.heroes if h.lower() == wanted]
+        matches = [h for h in self.heroes if hero_key(h) == self.options.starting_hero.current_key]
         self.starting_hero = matches[0] if matches else self.random.choice(self.heroes)
         self.multiworld.push_precollected(self.create_item(hero_item(self.starting_hero)))
 

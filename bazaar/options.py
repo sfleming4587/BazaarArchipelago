@@ -4,7 +4,7 @@ from dataclasses import dataclass, make_dataclass
 from Options import (Choice, DeathLink, DefaultOnToggle, ItemSet, OptionGroup, OptionSet, PerGameCommonOptions,
                      Range, Removed, StartInventoryPool, Toggle, Visibility)
 
-from .data import CARDS, DLC_HEROES, HEROES
+from .data import CARDS, DLC_HEROES, HEROES, hero_key
 
 
 class OwnedDLCHeroes(OptionSet):
@@ -16,11 +16,6 @@ class OwnedDLCHeroes(OptionSet):
     valid_keys = frozenset(DLC_HEROES)
     default = frozenset()
     visibility = Visibility.none  # hidden from the website, the Options Creator and new templates
-
-
-def hero_key(hero: str) -> str:
-    """How a hero appears in option names and values: "The Dragons" -> "the_dragons"."""
-    return hero.lower().replace(" ", "_")
 
 
 def _switch(class_name: str, display_name: str, doc: str) -> type:
