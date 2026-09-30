@@ -368,3 +368,38 @@ class TestUniversalTrackerRebuild(BazaarTestBase):
             reach_a = {loc.name for loc in self.multiworld.get_locations(self.player) if loc.can_reach(state_a)}
             reach_b = {loc.name for loc in rebuilt.get_locations(1) if loc.can_reach(state_b)}
             self.assertEqual(reach_a, reach_b)
+
+
+class TestOneUnlockPerCard(unittest.TestCase):
+    """User, 2026-09-30: e.g. a Mysteries of the Deep card must never be locked both by its pack and on its own.
+    Across many option mixes, no card may be unlocked by two different items (it would need both), and every
+    unlock item in the pool must unlock something."""
+    MIXES = [
+        {},
+        {"legacy_card_packs": True},
+        {"legacy_card_packs": True, "pack_vanessa_the_gang": False, "pack_dooley_primal_dooley": False},
+        {"legacy_card_packs": True, "duplicate_all_cards": True, "locked_cards_percent": 50},
+        {"legendary_items": 0, "expedition_tickets": 0},
+        {"legendary_items": 3, "expedition_tickets": 3, "locked_cards_percent": 100, "lock_common_cards": True,
+         "lock_loot_items": True, "starter_cards": 0},
+        {"owned_dlc_heroes": ALL_DLC, "legacy_card_packs": True, "heroes_required": 8, "locked_cards_percent": 100,
+         "duplicate_cards": ["Cutlass", "Dooltron"]},
+    ]
+
+    def test_no_card_has_two_unlocks(self) -> None:
+        from ..items import UNLOCKS, item_name_to_id
+        for options in self.MIXES:
+            with self.subTest(**{k: str(v) for k, v in options.items()}):
+                mix = type("Mix", (BazaarTestBase,), {"options": options, "build": lambda self: None})
+                base = mix("build")  # a method of its own: the test base skips set-up for its own test names
+                base.setUp()
+                names = {i.name for i in base.multiworld.itempool if i.player == base.player}
+                unlocks = {n: UNLOCKS[item_name_to_id[n]] for n in names if item_name_to_id[n] in UNLOCKS}
+                owners: dict = {}
+                for name, guids in unlocks.items():
+                    self.assertTrue(guids, f"{name} unlocks nothing")
+                    for guid in guids:
+                        owners.setdefault(guid, set()).add(name)
+                self.assertFalse({g: o for g, o in owners.items() if len(o) > 1})
+                in_seed = {base.world.create_item(n).code for ns in base.world.lock_items.values() for n in ns}
+                self.assertLessEqual(in_seed, {item_name_to_id[n] for n in names})  # slot_data locks are all real
