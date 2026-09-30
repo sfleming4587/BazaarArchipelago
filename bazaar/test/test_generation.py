@@ -403,3 +403,49 @@ class TestOneUnlockPerCard(unittest.TestCase):
                 self.assertFalse({g: o for g, o in owners.items() if len(o) > 1})
                 in_seed = {base.world.create_item(n).code for ns in base.world.lock_items.values() for n in ns}
                 self.assertLessEqual(in_seed, {item_name_to_id[n] for n in names})  # slot_data locks are all real
+
+
+class TestLogicClimbsAfterDay10(unittest.TestCase):
+    """User, 2026-09-30: a late day on the day-10 minimum is much harder, so logic climbs to the last-day amount."""
+
+    @staticmethod
+    def needs(max_day: int, logic: dict, lock_count: int = 100) -> dict:
+        from ..locations import card_requirements
+        return card_requirements("Vanessa", lock_count, max_day, True, lambda day: [], logic)
+
+    def test_standard_and_hardcore_climb(self) -> None:
+        standard = self.needs(13, {"day_10": 16, "last_day": 28, "diamond": 10, "legendary": 20})
+        self.assertEqual([standard[day_location("Vanessa", d)] for d in (7, 8, 9, 10, 11, 12, 13)],
+                         [0, 8, 8, 16, 20, 24, 28])
+        hardcore = self.needs(16, {"day_10": 25, "last_day": 50, "diamond": 20, "legendary": 30})
+        self.assertEqual([hardcore[day_location("Vanessa", d)] for d in range(10, 17)], [25, 29, 33, 38, 42, 46, 50])
+
+    def test_ten_wins_and_the_last_pvp_need_the_last_day_amount(self) -> None:
+        needs = self.needs(13, {"day_10": 16, "last_day": 28, "diamond": 10, "legendary": 20})
+        self.assertEqual(needs[win_location("Vanessa")], 28)
+        self.assertEqual(needs[pvp_location("Vanessa", 12)], 28)  # PvP day N expects day N+1
+        self.assertEqual(needs[pvp_location("Vanessa", 13)], 28)  # never past the last day
+
+    def test_never_more_than_the_hero_has(self) -> None:
+        needs = self.needs(13, {"day_10": 16, "last_day": 28, "diamond": 10, "legendary": 20}, lock_count=20)
+        self.assertEqual(needs[win_location("Vanessa")], 20)
+
+    def test_seeds_from_before_the_climb_keep_their_flat_logic(self) -> None:
+        needs = self.needs(13, {"day_10": 15, "diamond": 10, "legendary": 20})
+        self.assertEqual({needs[day_location("Vanessa", d)] for d in range(10, 14)}, {15})
+        self.assertEqual(needs[win_location("Vanessa")], 15)
+
+
+class TestHardcoreLogicGenerates(BazaarTestBase):
+    options = {"max_day": 16, "locked_cards_percent": 100, "logic_day_10_cards": 25, "logic_last_day_cards": 50,
+               "max_monster_tier": "legendary"}
+
+    def test_last_day_needs_more_than_day_10(self) -> None:
+        hero = self.world.starting_hero
+        items = self.world.lock_items[hero]
+        self.collect_by_name([hero_item(h) for h in self.world.heroes])
+        self.collect_by_name(items[:25])
+        self.assertTrue(self.can_reach_location(day_location(hero, 10)))
+        self.assertFalse(self.can_reach_location(day_location(hero, 16)))
+        self.collect_by_name(items[25:50])
+        self.assertTrue(self.can_reach_location(day_location(hero, 16)))

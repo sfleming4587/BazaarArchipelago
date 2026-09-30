@@ -35,9 +35,10 @@ impossible); you can always try anything. It keeps important items off hard chec
   hero's unlock among the checks you can do right away.
 - Each hero (and the Common pool) keeps `starter_cards` Bronze cards (default 20) that are never locked.
 - Days 1-7 only need the hero: every run reaches day 7, even with zero wins.
-- Days 8-9 expect half of `logic_day_10_cards` (default 15) of that hero's own locked cards; day 10+ and the
-  10-win check expect all of them. A day's PvP win is treated like the next day (winning is harder than
-  just reaching it). Locked Common cards never count toward logic.
+- Day 10 expects `logic_day_10_cards` (default 16) of that hero's own locked cards, and days 8-9 half as many.
+  After day 10 the number climbs evenly up to `logic_last_day_cards` (default 28) on your last day (`max_day`),
+  since late days are much harder. The 10-win check expects the last day's amount too. A day's PvP win is
+  treated like the next day (winning is harder than just reaching it). Locked Common cards never count.
 - Bronze, Silver and Gold monsters follow their day. Diamond and Legendary monsters also expect
   `logic_diamond_cards` / `logic_legendary_cards` (defaults 10 / 20) of the hero's locked cards.
 

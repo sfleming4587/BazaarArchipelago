@@ -232,14 +232,27 @@ class LockBypasses(Range):
 
 class LogicDay10Cards(Range):
     """
-    Logic: how many of a hero's own locked cards should be unlocked before reaching day 10 or later (and the
-    10-win check) is expected. Days 8-9 expect half as many. Days 1-7 only need the hero (every run reaches day 7).
+    Logic: how many of a hero's own locked cards should be unlocked before reaching day 10 is expected. Later days
+    climb from here to Logic: Cards Before The Last Day. Days 8-9 expect half as many. Days 1-7 only need the hero
+    (every run reaches day 7).
     This only decides where other players' items can be placed; you can always try anything.
     """
     display_name = "Logic: Cards Before Day 10"
     range_start = 0
     range_end = 30  # lowered for a seed with too few checks that need no cards (see BazaarWorld.fit_logic)
     default = 16
+
+
+class LogicLastDayCards(Range):
+    """
+    Logic: how many of a hero's own locked cards should be unlocked before the last day (max_day) and the 10-win
+    check. From day 10 the expected amount climbs evenly from Logic: Cards Before Day 10 up to this, so later days
+    expect more cards. This only decides where other players' items can be placed; you can always try anything.
+    """
+    display_name = "Logic: Cards Before The Last Day"
+    range_start = 0
+    range_end = 80  # lowered for a seed with too few checks that need no cards (see BazaarWorld.fit_logic)
+    default = 28
 
 
 class LogicDiamondCards(Range):
@@ -340,6 +353,7 @@ class _BazaarOptions(PerGameCommonOptions):
     sell_trap_days: SellTrapDays
     lock_bypasses: LockBypasses
     logic_day_10_cards: LogicDay10Cards
+    logic_last_day_cards: LogicLastDayCards
     logic_diamond_cards: LogicDiamondCards
     logic_legendary_cards: LogicLegendaryCards
     legacy_card_packs: LegacyCardPacks
@@ -366,14 +380,15 @@ option_presets = {
         "heroes_required": 1, "early_hero_unlock": True, "max_day": 12, "max_monster_tier": "gold",
         "locked_cards_percent": 60, "starter_cards": 30, "legendary_items": 3, "expedition_tickets": 3,
         "sell_traps": 0, "lock_bypasses": 10,
-        "logic_day_10_cards": 8, "logic_diamond_cards": 5, "logic_legendary_cards": 10, "death_link": False,
+        "logic_day_10_cards": 8, "logic_last_day_cards": 12, "logic_diamond_cards": 5, "logic_legendary_cards": 10,
+        "death_link": False,
     },
     "Standard": {},
     "Hardcore": {
         "heroes_required": 6, "max_day": 16, "max_monster_tier": "legendary", "locked_cards_percent": 100,
         "starter_cards": 10, "legendary_items": 1, "expedition_tickets": 1, "legacy_card_packs": True,
         "sell_traps": 10, "sell_trap_days": 1, "lock_bypasses": 0,
-        "logic_day_10_cards": 25, "logic_diamond_cards": 20, "logic_legendary_cards": 30,
+        "logic_day_10_cards": 25, "logic_last_day_cards": 50, "logic_diamond_cards": 20, "logic_legendary_cards": 30,
         "death_link": True, "death_link_on_concede": True,
     },
 }
@@ -386,6 +401,6 @@ option_groups = [
                                LegendaryItems, ExpeditionTickets, DuplicateAllCards, DuplicateCards]),
     OptionGroup("Legacy Card Packs", [LegacyCardPacks, *PACK_SWITCHES.values()]),
     OptionGroup("Traps and Buffs", [SellTraps, SellTrapDays, LockBypasses]),
-    OptionGroup("Logic", [LogicDay10Cards, LogicDiamondCards, LogicLegendaryCards]),
+    OptionGroup("Logic", [LogicDay10Cards, LogicLastDayCards, LogicDiamondCards, LogicLegendaryCards]),
     OptionGroup("DeathLink", [BazaarDeathLink, DeathLinkOnConcede, DeathLinkAmnesty]),
 ]

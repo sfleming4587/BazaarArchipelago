@@ -114,6 +114,7 @@ class BazaarWorld(World):
                             f"the number of heroes available (owned DLC heroes minus excluded ones).")
         self.starters = {}
         self.logic = {"day_10": self.options.logic_day_10_cards.value,
+                      "last_day": self.options.logic_last_day_cards.value,
                       "diamond": self.options.logic_diamond_cards.value,
                       "legendary": self.options.logic_legendary_cards.value}
         self.fit_logic()
@@ -127,8 +128,8 @@ class BazaarWorld(World):
                                                           bool(self.options.pvp_win_checks), self.monster_tiers,
                                                           huge).values())
         room = max(0, free - FREE_MARGIN)
-        fitted = {"day_10": min(self.logic["day_10"], 2 * room), "diamond": min(self.logic["diamond"], room),
-                  "legendary": min(self.logic["legendary"], room)}
+        fitted = {"day_10": min(self.logic["day_10"], 2 * room), "last_day": min(self.logic["last_day"], 2 * room),
+                  "diamond": min(self.logic["diamond"], room), "legendary": min(self.logic["legendary"], room)}
         if fitted != self.logic:
             logging.warning(f"{self.player_name} (The Bazaar): logic card counts lowered to {fitted} - each hero "
                             f"only has {free} checks that need no cards.")

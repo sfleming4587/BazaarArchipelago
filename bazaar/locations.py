@@ -30,13 +30,18 @@ def win_location(hero: str) -> str:
     return f"{hero} - 10 Wins"
 
 
-def days_card_requirement(day: int, lock_count: int, day_10_cards: int) -> int:
+def days_card_requirement(day: int, lock_count: int, day_10_cards: int, last_day_cards: int, max_day: int) -> int:
     """How many of a hero's own locked items logic expects before a day: none on days 1-7 (every run, even with
-    zero wins, reaches day 7), half the day-10 amount on days 8-9, the full amount from day 10 on."""
+    zero wins, reaches day 7), half the day-10 amount on days 8-9, then an even climb from the day-10 amount on day 10
+    to the last-day amount on max_day (user 2026-09-30: a late day on the day-10 minimum is much harder)."""
     if day <= 7:
         return 0
-    wanted = day_10_cards if day >= 10 else math.ceil(day_10_cards / 2)
-    return min(wanted, lock_count)
+    if day <= 9:
+        return min(math.ceil(day_10_cards / 2), lock_count)
+    last = max(last_day_cards, day_10_cards)  # never easier later on
+    steps = max(max_day - 10, 1)
+    wanted = day_10_cards + (last - day_10_cards) * (min(day, max_day) - 10) / steps
+    return min(math.floor(wanted + 0.5), lock_count)
 
 
 @dataclass(frozen=True)
@@ -65,20 +70,22 @@ def card_requirements(hero: str, lock_count: int, max_day: int, pvp_win_checks: 
                       monster_tiers: Callable[[int], List[str]], logic: Dict[str, int]) -> Dict[str, int]:
     """
     Every check of a hero -> how many of that hero's locked items logic wants received first. The one definition:
-    the world's rules, the client's "checks in logic" count and its tracker all use it. logic: day_10 / diamond /
-    legendary.
+    the world's rules, the client's "checks in logic" count and its tracker all use it. logic: day_10 / last_day /
+    diamond / legendary (seeds from before last_day existed climb nowhere: last_day = day_10, as they were made).
     """
-    day_10 = logic["day_10"]
+    def by_day(day: int) -> int:
+        return days_card_requirement(day, lock_count, logic["day_10"], logic.get("last_day", logic["day_10"]), max_day)
     tier_cards = {"Diamond": logic["diamond"], "Legendary": logic["legendary"]}
     needs: Dict[str, int] = {}
     for check in hero_checks(hero, max_day, pvp_win_checks, monster_tiers):
         if check.kind == "pvp":  # winning the day's fight is harder than just reaching the day
-            needs[check.name] = days_card_requirement(check.day + 1, lock_count, day_10)
+            needs[check.name] = by_day(check.day + 1)
         elif check.kind == "monster":  # Bronze/Silver/Gold only follow the day's requirement
-            needs[check.name] = max(days_card_requirement(check.day, lock_count, day_10),
-                                    min(lock_count, tier_cards.get(check.tier, 0)))
-        else:  # reaching a day; 10 wins counts as reaching day 10
-            needs[check.name] = days_card_requirement(check.day, lock_count, day_10)
+            needs[check.name] = max(by_day(check.day), min(lock_count, tier_cards.get(check.tier, 0)))
+        elif check.kind == "win":  # the hardest thing a run does: the last day's amount (user 2026-09-30)
+            needs[check.name] = by_day(max_day)
+        else:  # reaching a day
+            needs[check.name] = by_day(check.day)
     return needs
 
 
