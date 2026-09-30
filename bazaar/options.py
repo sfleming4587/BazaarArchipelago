@@ -4,7 +4,7 @@ from dataclasses import dataclass, make_dataclass
 from Options import (Choice, DeathLink, DefaultOnToggle, ItemSet, OptionGroup, OptionSet, PerGameCommonOptions,
                      Range, Removed, StartInventoryPool, Toggle, Visibility)
 
-from .data import CARDS, DLC_HEROES, HEROES, TIERS, hero_key
+from .data import CARDS, DLC_HEROES, HEROES, PACKS, TIERS, hero_key
 
 
 class OwnedDLCHeroes(OptionSet):
@@ -18,11 +18,11 @@ class OwnedDLCHeroes(OptionSet):
     visibility = Visibility.none  # hidden from the website, the Options Creator and new templates
 
 
-def _switch(class_name: str, display_name: str, doc: str) -> type:
-    """An on/off option made from data, so a new hero needs no new class."""
+def _switch(class_name: str, display_name: str, doc: str, on: bool = False) -> type:
+    """An on/off option made from data, so a new hero or pack needs no new class."""
     def body(namespace: dict) -> None:
         namespace.update(__doc__=doc, display_name=display_name, __module__=__name__)
-    return types.new_class(class_name, (Toggle,), exec_body=body)
+    return types.new_class(class_name, (DefaultOnToggle if on else Toggle,), exec_body=body)
 
 
 # Heroes are picked by ticking, never by typing names (user 2026-09-29). Built from data.HEROES, so a hero added
@@ -37,6 +37,13 @@ EXCLUDE_SWITCHES = {name: _switch(f"Exclude{hero.replace(' ', '')}", f"Exclude {
                                   f"Leave {hero} out of this multiworld even if you own them: no {hero} checks, "
                                   f"cards or unlock.")
                     for name, hero in EXCLUDE_HERO_OPTIONS.items()}
+# One switch per legacy pack (user 2026-09-30: "doesn't have to be all or none"), named from the pack's data key so a
+# renamed pack keeps its option. On by default: legacy_card_packs alone still means every pack. option name -> key.
+PACK_OPTIONS = {f"pack_{p.key.lower()}": p.key for p in PACKS}
+PACK_SWITCHES = {name: _switch(f"Pack{p.key.replace('_', '')}", f"{p.hero}: {p.name}",
+                               f"With legacy_card_packs on, lock {p.name} ({p.hero}) as one item. Off: its cards are "
+                               f"locked one by one like any other card.", on=True)
+                 for name, p in zip(PACK_OPTIONS, PACKS)}
 
 
 class ExcludedHeroes(OptionSet):
@@ -266,9 +273,12 @@ class LockLootItems(Toggle):
 
 class LegacyCardPacks(Toggle):
     """
-    Lock the ten original hero expansion packs (e.g. Mysteries of the Deep, Dooltron, Pigglestorm) as single items.
+    Lock the original hero expansion packs (e.g. Mysteries of the Deep, Dooltron, Pigglestorm) as single items.
     Receiving a pack unlocks all 10 of its cards at once. Only applies to heroes you have available.
-    Pack cards are never picked as individual locks.
+    Pack cards are never picked as individual locks. Untick any pack below to leave it out.
+    Recommended: also turn on Duplicate All Cards (casual). Each pack locks 10 cards with a single check, so packs lock
+    far more cards in total (a Standard seed with the base heroes: about 200 without packs, 275 with all of them;
+    with Duplicate All Cards too, about 190).
     """
     display_name = "Legacy Card Packs"
 
@@ -341,9 +351,10 @@ class _BazaarOptions(PerGameCommonOptions):
     start_inventory_from_pool: StartInventoryPool
 
 
-# the hero switches are generated (see above), so they're added to the options here
+# the hero and pack switches are generated (see above), so they're added to the options here
 BazaarOptions = make_dataclass("BazaarOptions", [(name, option) for name, option in {**OWN_SWITCHES,
-                                                                                     **EXCLUDE_SWITCHES}.items()],
+                                                                                     **EXCLUDE_SWITCHES,
+                                                                                     **PACK_SWITCHES}.items()],
                                bases=(_BazaarOptions,))
 
 
@@ -371,8 +382,9 @@ option_groups = [
     OptionGroup("Heroes", [*OWN_SWITCHES.values(), StartingHero, HeroesRequired, EarlyHeroUnlock]),
     OptionGroup("Excluded Heroes", list(EXCLUDE_SWITCHES.values())),
     OptionGroup("Checks", [MaxDay, PvPWinChecks, MonsterChecks, MaxMonsterTier]),
-    OptionGroup("Card Locks", [LockedCardsPercent, LockCommonCards, LockLootItems, StarterCards, LegacyCardPacks,
+    OptionGroup("Card Locks", [LockedCardsPercent, LockCommonCards, LockLootItems, StarterCards,
                                LegendaryItems, ExpeditionTickets, DuplicateAllCards, DuplicateCards]),
+    OptionGroup("Legacy Card Packs", [LegacyCardPacks, *PACK_SWITCHES.values()]),
     OptionGroup("Traps and Buffs", [SellTraps, SellTrapDays, LockBypasses]),
     OptionGroup("Logic", [LogicDay10Cards, LogicDiamondCards, LogicLegendaryCards]),
     OptionGroup("DeathLink", [BazaarDeathLink, DeathLinkOnConcede, DeathLinkAmnesty]),

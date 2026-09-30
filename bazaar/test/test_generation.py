@@ -1,3 +1,6 @@
+import unittest
+
+from ..data import CARDS
 from ..items import hero_item
 from ..locations import day_location, monster_location, pvp_location, win_location
 from BaseClasses import CollectionState
@@ -60,6 +63,30 @@ class TestLegendaryMonsters(BazaarTestBase):
             self.assertFalse(self.can_reach_location(win_location(hero)))
             self.collect_by_name(self.world.lock_items[hero])
             self.assertTrue(self.can_reach_location(win_location(hero)))
+
+
+class TestSomePacks(BazaarTestBase):
+    """User, 2026-09-30: packs don't have to be all or none."""
+    options = {"legacy_card_packs": True, "pack_dooley_dooltron": False, "pack_vanessa_the_gang": False}
+
+    def test_unticked_packs_are_left_out(self) -> None:
+        from ..data import PACKS
+        names = [i.name for i in self.multiworld.itempool if i.player == self.player]
+        packs = {n for n in names if n.startswith("Pack: ")}
+        self.assertNotIn("Pack: Dooltron", packs)
+        self.assertNotIn("Pack: The Gang", packs)
+        self.assertIn("Pack: Mysteries of the Deep", packs)
+        self.assertEqual(len(packs), 6)  # 8 packs for the base heroes, 2 unticked
+        ticked = {guid for p in PACKS if f"Pack: {p.name}" in packs for guid in p.cards}
+        self.assertFalse(ticked & {c.guid for c in CARDS if c.name in names})  # a pack's cards never also lock singly
+
+
+class TestPackSwitchesMatchTheData(unittest.TestCase):
+    def test_one_switch_per_pack_on_by_default(self) -> None:
+        from ..data import PACKS
+        from ..options import PACK_SWITCHES
+        self.assertEqual(len(PACK_SWITCHES), len(PACKS))
+        self.assertTrue(all(option.default for option in PACK_SWITCHES.values()))
 
 
 class TestEverything(BazaarTestBase):

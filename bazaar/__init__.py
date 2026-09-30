@@ -12,7 +12,8 @@ from .items import (EXPEDITION_TICKETS, FILLER_ITEMS, GAME, GROUP_ITEMS, LEGENDA
                     BazaarItem, hero_item, item_name_groups, item_name_to_id, lock_items_by_hero, pack_item)
 from .locations import (BazaarLocation, card_requirements, champion_event, hero_checks, location_name_groups,
                         location_name_to_id, win_location)
-from .options import EXCLUDE_HERO_OPTIONS, OWN_HERO_OPTIONS, BazaarOptions, option_groups, option_presets
+from .options import (EXCLUDE_HERO_OPTIONS, OWN_HERO_OPTIONS, PACK_OPTIONS, BazaarOptions, option_groups,
+                      option_presets)
 
 
 def run_client(*args: str) -> None:
@@ -194,7 +195,8 @@ class BazaarWorld(World):
 
         packs = []
         if self.options.legacy_card_packs:
-            packs = [p for p in PACKS if p.hero in self.heroes]
+            wanted = {key for option, key in PACK_OPTIONS.items() if getattr(self.options, option)}
+            packs = [p for p in PACKS if p.hero in self.heroes and p.key in wanted]
             self.random.shuffle(packs)
             packs = packs[:max(0, slots - len(pool))]
         excluded = {guid for p in packs for guid in p.cards}

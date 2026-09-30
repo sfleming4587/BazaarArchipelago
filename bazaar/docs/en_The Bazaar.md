@@ -63,7 +63,9 @@ you have enabled).
   unlocks them; the other copy is a spare.
 - **Expedition Tickets** (`expedition_tickets`, default 2 copies) - unlocks the expedition ticket cards.
 - **Pack: X** (optional, `legacy_card_packs`) - one of the ten original hero expansions, such as Mysteries of the
-  Deep or Dooltron. Unlocks all of its cards at once.
+  Deep or Dooltron. Unlocks all of its cards at once. Every pack has its own switch (`pack_dooley_dooltron` and so
+  on), all on by default, so you can keep just the packs you like. Packs lock a lot more cards in total (10 per
+  check), so turning on **Duplicate All Cards (casual)** as well is a good idea.
 - Filler items with no effect.
 
 ## Checks are blocked while you break a rule
