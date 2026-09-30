@@ -103,7 +103,7 @@ class TestShopGuideCardShapes(unittest.TestCase):
         self.assertEqual(rgb[(2 * 96 + 48) * 3:(2 * 96 + 48) * 3 + 3], bytes([int(255 * 0.45)] * 3))
 
     def test_png_reads_back_through_sdl2(self) -> None:
-        """Our PNG writer and the SDL2 decoder agree (the decoder is what reads the downloaded AVIF pictures)."""
+        """Our PNG writer and the SDL2 decoder agree (the decoder is what reads the downloaded WebP pictures)."""
         from ..cardart import Decoder, png
         try:
             decoder = Decoder()
@@ -114,19 +114,33 @@ class TestShopGuideCardShapes(unittest.TestCase):
 
 
 class TestCardArtWorker(unittest.TestCase):
-    """The download worker, with the network and decoder faked."""
+    """The picture worker, with the download and the decoder faked: one zip of <guid>.webp for every card."""
 
-    def run_worker(self, respond, decoder) -> tuple:
+    @staticmethod
+    def picture_set(guids) -> bytes:
+        import io
+        import zipfile
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, "w") as z:
+            for guid in guids:
+                z.writestr(f"{guid}.webp", b"webp bytes")
+        return data.getvalue()
+
+    def run_worker(self, respond, decoder, old_files=()) -> tuple:
         import tempfile
         import threading
         from unittest import mock
         from .. import cardart
         card = next(c for c in CARDS if c.shop and c.size == "Medium")
         ready = threading.Event()
+        downloads = []
 
         def fake_urlopen(request, timeout):
-            return respond()
+            downloads.append(request.full_url)
+            return respond(card)
         with tempfile.TemporaryDirectory() as folder, mock.patch.object(cardart, "Decoder", decoder),                 mock.patch.object(cardart.urllib.request, "urlopen", fake_urlopen):
+            for name in old_files:
+                open(os.path.join(folder, name), "w").close()
             art = cardart.CardArt(folder, 96, on_ready=lambda guid: ready.set())
             art.picture(card, False)
             ready.wait(3)
@@ -135,31 +149,53 @@ class TestCardArtWorker(unittest.TestCase):
                     break
                 ready.wait(0.05)
             result = (ready.is_set(), art.working, art.picture(card, False), art.picture(card, True),
-                      os.path.exists(art._missing(card.guid)))
+                      os.path.exists(art._missing(card.guid)), downloads, sorted(os.listdir(folder)))
             art.shutdown()
         return result
 
-    def test_downloaded_picture_is_saved_in_both_versions(self) -> None:
+    def response(self, data: bytes):
         from unittest import mock
         response = mock.MagicMock()
-        response.__enter__.return_value.read.return_value = b"avif bytes"
+        response.__enter__.return_value.read.return_value = data
+        return response
+
+    def test_picture_from_the_set_is_saved_in_both_versions(self) -> None:
+        from unittest import mock
         decoder = mock.MagicMock(return_value=mock.MagicMock(decode=lambda data: (8, 8, bytes([16]) * 192)))
-        ready, working, normal, locked_path, missing = self.run_worker(lambda: response, decoder)
+        ready, working, normal, locked_path, _, downloads, _ = self.run_worker(
+            lambda card: self.response(self.picture_set([card.guid])), decoder)
         self.assertTrue(ready and working)
         self.assertTrue(normal.endswith("_96x96.png") and locked_path.endswith("_96x96_locked.png"))
+        self.assertEqual(len(downloads), 1)  # the whole set, once
 
-    def test_card_the_source_lacks_is_remembered(self) -> None:
-        import urllib.error
+    def test_card_the_set_lacks_is_remembered(self) -> None:
         from unittest import mock
-
-        def not_found():
-            raise urllib.error.HTTPError("url", 404, "Not Found", None, None)
-        ready, working, normal, _, missing = self.run_worker(not_found, mock.MagicMock())
+        _, working, normal, _, missing, _, _ = self.run_worker(
+            lambda card: self.response(self.picture_set(["someone-else"])), mock.MagicMock())
         self.assertTrue(missing and working)
         self.assertIsNone(normal)
 
+    def test_failed_download_means_name_tiles_this_session(self) -> None:
+        from unittest import mock
+
+        def offline(card):
+            raise OSError("offline")
+        _, working, normal, _, missing, _, _ = self.run_worker(offline, mock.MagicMock())
+        self.assertFalse(working)
+        self.assertFalse(missing)  # asked again next session
+        self.assertIsNone(normal)
+
+    def test_pictures_from_older_sources_are_cleared(self) -> None:
+        from unittest import mock
+        from ..cardart import ART_SET
+        *_, left = self.run_worker(lambda card: self.response(self.picture_set([])), mock.MagicMock(),
+                                   old_files=("abc_48x96.png", "abc.missing"))
+        self.assertEqual(left, [ART_SET])
+
     def test_no_sdl2_means_name_tiles(self) -> None:
         from unittest import mock
-        ready, working, normal, _, _ = self.run_worker(mock.MagicMock(), mock.MagicMock(side_effect=OSError("x")))
+        _, working, normal, _, _, downloads, _ = self.run_worker(mock.MagicMock(),
+                                                                 mock.MagicMock(side_effect=OSError("x")))
+        self.assertEqual(downloads, [])  # nothing downloaded that couldn't be shown
         self.assertFalse(working)
         self.assertIsNone(normal)

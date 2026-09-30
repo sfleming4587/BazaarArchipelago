@@ -105,8 +105,8 @@ your checks and the top-left box turns red and tells you **CHECKS ARE BLOCKED** 
 - **Pop-ups (bottom right):** everything you receive, send or find, always with the other player's name; Sell
   Traps; **SELL IT NOW** if you pick up a locked card; **CHECK NOT SENT** the moment a check is blocked.
 - **Shop Guide:** a window with pictures of everything the merchant could stock, at their real in-game sizes,
-  with the locked ones greyed out and crossed. Great for learning what the locked cards look like! Cards newer than
-  our picture source (all of Karnok and The Dragons, for now) show a "no picture" box with their name.
+  with the locked ones greyed out and crossed. Great for learning what the locked cards look like! Every card has
+  a picture, Karnok and The Dragons included.
 - **Tracker:** a card for every hero, PopTracker-style, with four squares - reach day N, PvP win on day N, monster
   checks, and 10 wins. Green = in logic, yellow = out of logic, red = hero still locked, grey = all done. Hover a
   square to see its checks, click to keep the list open.
@@ -151,6 +151,6 @@ and install it the same way as in step 3. Games already in progress keep working
 generated with.
 
 ## Credits
-Card pictures come from [howbazaar.gg](https://www.howbazaar.gg) (it stopped updating at game v6.0.0); the
-tracker's hero pictures are from The Bazaar. The Bazaar is made by Tempo; this project isn't affiliated with or
+Card pictures are courtesy of [Bazaar DB](https://bazaardb.gg) - thank you! The card art and the tracker's hero
+pictures belong to The Bazaar. The Bazaar is made by Tempo; this project isn't affiliated with or
 endorsed by them. Thanks for playing, and good luck at the Bazaar!

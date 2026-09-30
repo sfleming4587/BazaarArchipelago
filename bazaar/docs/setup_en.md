@@ -93,7 +93,7 @@ since the apworld was made. A red **CHECK NOT SENT** pop-up names any check the 
 
 ### Shop Guide
 
-A second window with pictures (from [howbazaar.gg](https://www.howbazaar.gg)) of everything the merchant you're
+A second window with pictures (courtesy of [Bazaar DB](https://bazaardb.gg)) of everything the merchant you're
 visiting could stock, each at its in-game size (small = 1 slot wide, medium = 2, large = 3), with the locked ones
 greyed out behind a red X. The shorter list goes on top.
 
@@ -105,9 +105,8 @@ greyed out behind a red X. The shorter list goes on top.
 - After you leave a shop, it keeps showing the last one.
 - Closing it with **X** keeps it closed (next time too) and gives a long list the right strip, until you press
   **Pictures** in the alert window while at a merchant.
-- Pictures download once in the background when the client starts. Until a card's picture is in - and for cards
-  newer than howbazaar.gg, which stopped updating at game v6.0.0 (so all of Karnok and The Dragons) - you'll see a
-  "no picture" box of the card's size with its name under it.
+- The pictures download once (about 3 MB) the first time the client starts. Until they're in, or if you're
+  offline, you'll see a "no picture" box of the card's size with its name under it.
 
 Start the client with `--no-shop-guide` to turn it off completely.
 

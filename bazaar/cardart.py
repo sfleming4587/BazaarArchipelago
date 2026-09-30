@@ -1,17 +1,17 @@
 """
 Card pictures for the Shop Guide, made without Pillow (Archipelago's Windows installer leaves Pillow out).
 
-ART_URL is the one picture source: howbazaar.gg's public image CDN (same card ids as the game). It stopped
-updating at game v6.0.0 (Feb 2026), so newer cards - all of Karnok and The Dragons - have no picture there and
-the Shop Guide shows them as name tiles. When a current source gives permission, change ART_URL (any format SDL2
-reads works). The game's own files are never read for art: its EULA forbids data mining (see DEVELOPERS.md,
-"Card data is frozen").
+The pictures come from Bazaar DB (bazaardb.gg), whose developer gave them to this project (2026-09-30). They're
+shrunk by tools/make_card_art.py into one zip of <card guid>.webp files, attached to this repo's GitHub release
+ART_SET; the client downloads that zip ONCE (one request, not one per card) into its cache and reads pictures from
+it. A new picture set = a new release tag in ART_SET (its own cache folder, so nothing old is reused). The game's own
+files are never read for art: its EULA forbids data mining (see DEVELOPERS.md, "Card data is frozen").
 
-Each download is decoded by SDL2_image, which Archipelago ships for its GUI (it reads AVIF, WebP, PNG), called
+Each picture is decoded by SDL2_image, which Archipelago ships for its GUI (it reads AVIF, WebP, PNG), called
 through ctypes - never by importing Kivy, which must be set up by Archipelago's GUI first. The picture is cropped
 to the card's in-game shape, scaled, and kept on this PC as two small PNGs (normal, and locked: greyed with a red
 cross) that Tk shows by itself. It's Tempo's art, so it is never bundled with the apworld. All shop cards are
-preloaded in the background by ONE low-priority worker, so opening a shop never triggers a burst of downloads.
+preloaded in the background by ONE low-priority worker, so opening a shop never stalls the game.
 """
 import ctypes
 import ctypes.util
@@ -19,23 +19,26 @@ import itertools
 import logging
 import os
 import queue
+import shutil
 import struct
 import sys
 import threading
 import time
 import urllib.request
+import zipfile
 import zlib
 from typing import Callable, Dict, Iterable, Optional, Tuple
 
 from .data import Card
 from .theme import LOCKED_X
 
-ART_URL = "https://howbazaar-images.b-cdn.net/images/items/{guid}.avif"
+ART_SET = "card-art-1"  # the GitHub release holding the pictures; also this set's cache folder
+ART_URL = f"https://github.com/sfleming4587/BazaarArchipelago/releases/download/{ART_SET}/card-art.zip"
 USER_AGENT = "BazaarArchipelago-client (+https://github.com/sfleming4587/BazaarArchipelago)"
 TIER_COLORS = {"Bronze": "#cd7f32", "Silver": "#c0c0c0", "Gold": "#ffd700", "Diamond": "#7fe7ff",
                "Legendary": "#c77dff"}
 URGENT, PRELOAD = 0, 1
-PRELOAD_PAUSE = 0.15  # seconds between background downloads, so preloading never competes with the game
+PRELOAD_PAUSE = 0.15  # seconds between background pictures, so preloading never competes with the game
 LOCKED_DIM = 0.45  # a locked card's picture: grey at this brightness
 CROSS_HALF_WIDTH = 2.5  # the red cross's half thickness, in pixels
 CROSS_INSET = 6  # its ends stay this far from the corners
@@ -174,7 +177,7 @@ class Decoder:
 
 class CardArt:
     def __init__(self, cache_dir: str, height: int, on_ready: Callable[[str], None]) -> None:
-        self.cache_dir = cache_dir
+        self.cache_dir = os.path.join(cache_dir, ART_SET)
         self.height = height  # every card's height in the guide
         self.on_ready = on_ready  # called from the worker thread with the card guid once its pictures are on disk
         self.working = True  # False once decoding turned out impossible on this PC: name tiles only from then on
@@ -183,7 +186,18 @@ class CardArt:
         self.queued: Dict[str, Card] = {}
         self.lock = threading.Lock()
         self.stopped = False
-        os.makedirs(cache_dir, exist_ok=True)
+        os.makedirs(self.cache_dir, exist_ok=True)
+        for old in os.listdir(cache_dir):  # pictures from earlier sets or sources (the folder is ours alone)
+            path = os.path.join(cache_dir, old)
+            if old == ART_SET:
+                continue
+            if os.path.isdir(path):
+                shutil.rmtree(path, ignore_errors=True)
+            else:
+                try:
+                    os.remove(path)
+                except OSError:  # in use somewhere: it's only a stale picture, try again next time
+                    pass
         threading.Thread(target=self._work, name="bazaar art", daemon=True).start()
 
     def path(self, card: Card, is_locked: bool) -> str:
@@ -230,11 +244,35 @@ class CardArt:
         self.working = False
         logger.info(f"Shop Guide: {why}; cards show as name tiles.", extra=FILE_ONLY)
 
+    def _pictures(self) -> Optional[zipfile.ZipFile]:
+        """The picture set, downloaded once and kept (None if that failed: name tiles, tried again next session)."""
+        path = os.path.join(self.cache_dir, "card-art.zip")
+        if not os.path.exists(path):
+            try:
+                request = urllib.request.Request(ART_URL, headers={"User-Agent": USER_AGENT})
+                with urllib.request.urlopen(request, timeout=60) as response:
+                    data = response.read()
+                with open(path + ".part", "wb") as f:
+                    f.write(data)
+                os.replace(path + ".part", path)  # atomic: a cut-off download is never taken for the set
+            except Exception as error:
+                self._give_up(f"card pictures couldn't be downloaded ({error})")
+                return None
+        try:
+            return zipfile.ZipFile(path)
+        except zipfile.BadZipFile:
+            os.remove(path)  # damaged: downloaded again next session
+            self._give_up("the card picture download was damaged")
+            return None
+
     def _work(self) -> None:
         try:
             decoder = Decoder()
         except OSError as error:
             self._give_up(f"no card pictures on this PC ({error})")
+            return
+        pictures = self._pictures()
+        if pictures is None:
             return
         decoded_any = False
         while not self.stopped:
@@ -245,20 +283,17 @@ class CardArt:
             if self._have(card):
                 continue
             try:
-                request = urllib.request.Request(ART_URL.format(guid=guid), headers={"User-Agent": USER_AGENT})
-                with urllib.request.urlopen(request, timeout=15) as response:
-                    data = response.read()
-            except Exception as error:
-                if getattr(error, "code", None) == 404:  # the source doesn't have this card; don't ask again
-                    open(self._missing(guid), "w").close()
-                continue  # offline or a hiccup: a name tile this time, asked again next session
+                data = pictures.read(f"{guid}.webp")
+            except KeyError:  # the set has no picture of this card; don't look again
+                open(self._missing(guid), "w").close()
+                continue
             try:
                 self._save(card, decoder.decode(data))
             except OSError as error:
                 if not decoded_any:  # none ever worked: this PC's SDL2 can't read the format, so stop trying
                     self._give_up(f"card pictures can't be decoded here ({error})")
                     return
-                continue  # one bad download: a name tile this time
+                continue  # one bad picture: a name tile this time
             decoded_any = True
             self.on_ready(guid)
             if priority == PRELOAD:
