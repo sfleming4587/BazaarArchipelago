@@ -210,6 +210,18 @@ class SellTrapDays(Range):
     default = 2
 
 
+class LockBypasses(Range):
+    """
+    Number of Lock Bypasses in the multiworld (0 = off). A buff: the next locked card you get after receiving one is
+    allowed for the rest of that run, including more copies of it (upgrades). Unused ones carry over to later runs.
+    Each bypass takes the place of one locked card.
+    """
+    display_name = "Lock Bypasses"
+    range_start = 0
+    range_end = 20
+    default = 0
+
+
 class LogicDay10Cards(Range):
     """
     Logic: how many of a hero's own locked cards should be unlocked before reaching day 10 or later (and the
@@ -315,6 +327,7 @@ class _BazaarOptions(PerGameCommonOptions):
     duplicate_cards: DuplicateCards
     sell_traps: SellTraps
     sell_trap_days: SellTrapDays
+    lock_bypasses: LockBypasses
     logic_day_10_cards: LogicDay10Cards
     logic_diamond_cards: LogicDiamondCards
     logic_legendary_cards: LogicLegendaryCards
@@ -355,7 +368,7 @@ option_groups = [
     OptionGroup("Checks", [MaxDay, PvPWinChecks, MonsterChecks, MaxMonsterTier]),
     OptionGroup("Card Locks", [LockedCardsPercent, LockCommonCards, LockLootItems, StarterCards, LegacyCardPacks,
                                LegendaryItems, ExpeditionTickets, DuplicateAllCards, DuplicateCards]),
-    OptionGroup("Traps", [SellTraps, SellTrapDays]),
+    OptionGroup("Traps and Buffs", [SellTraps, SellTrapDays, LockBypasses]),
     OptionGroup("Logic", [LogicDay10Cards, LogicDiamondCards, LogicLegendaryCards]),
     OptionGroup("DeathLink", [BazaarDeathLink, DeathLinkOnConcede, DeathLinkAmnesty]),
 ]

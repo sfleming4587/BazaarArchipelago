@@ -226,6 +226,15 @@ class TestSellTrapsInPool(BazaarTestBase):
         self.assertEqual(names.count("Sell Trap"), 5)
 
 
+class TestLockBypassesInPool(BazaarTestBase):
+    options = {"sell_traps": 2, "lock_bypasses": 3}
+
+    def test_bypasses_are_placed_next_to_traps(self) -> None:
+        names = [i.name for i in self.multiworld.itempool if i.player == self.player]
+        self.assertEqual(names.count("Lock Bypass"), 3)
+        self.assertEqual(names.count("Sell Trap"), 2)
+
+
 class TestOwnHeroSwitches(BazaarTestBase):
     """DLC heroes are picked with on/off switches (user 2026-09-29); the old owned_dlc_heroes list still works."""
     options = {"own_karnok": True, "own_the_dragons": True, "starting_hero": "karnok"}

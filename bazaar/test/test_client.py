@@ -374,6 +374,65 @@ class TestSellTraps(ClientTestBase):
         self.assertIsNone(self.ctx.blocked_reason())
 
 
+class TestLockBypass(ClientTestBase):
+    OTHER = next(c for c in CARDS if c.shop and c.hero == "Vanessa" and c.guid != LOCKED.guid)
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.ctx.slot_data["lock_items"].append(BASE_ID + self.OTHER.ap_id)
+
+    def receive_bypass(self) -> None:
+        self.ctx.items_received.append(NetworkItem(item_name_to_id["Lock Bypass"], 0, 0, 0))
+
+    def test_next_locked_card_and_its_copies_are_allowed_for_the_run(self) -> None:
+        self.receive_bypass()  # between runs: it waits for the next locked card
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True), CardGained(LOCKED.guid, "itm_y", True),
+                  DayReached(2))
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.assertTrue(self.was_sent(day_location("Vanessa", 2)))
+        self.assertEqual(self.ctx.bypasses_ready(), 0)
+        self.play(CardSold("itm_x"), CardSold("itm_y"), CardGained(LOCKED.guid, "itm_z", True))  # sold and bought back
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def test_one_bypass_covers_one_card(self) -> None:
+        self.receive_bypass()
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True),
+                  CardGained(self.OTHER.guid, "itm_o", True))
+        self.assertIn(self.OTHER.name.upper(), self.ctx.blocked_reason())
+        self.assertNotIn(LOCKED.name.upper(), self.ctx.blocked_reason())
+
+    def test_new_run_locks_the_card_again_and_keeps_unused_bypasses(self) -> None:
+        self.receive_bypass()
+        self.receive_bypass()
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True), RunEnded(False, 3),
+                  RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_y", True))
+        self.assertIsNone(self.ctx.blocked_reason())  # the second bypass covers it again
+        self.assertEqual(self.ctx.bypasses_ready(), 0)
+        self.play(CardGained(self.OTHER.guid, "itm_o", True))
+        self.assertIsNotNone(self.ctx.blocked_reason())
+
+    def test_a_card_judged_before_the_bypass_arrived_never_spends_it(self) -> None:
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True), CardSold("itm_x"))
+        self.receive_bypass()
+        self.play(CardGained(LOCKED.guid, "itm_x", True))  # the same log lines again, e.g. replayed on reconnect
+        self.assertEqual(self.ctx.bypasses_ready(), 1)
+        self.assertIsNotNone(self.ctx.blocked_reason())
+
+    def test_runs_the_client_missed_never_spend_a_bypass(self) -> None:
+        self.receive_bypass()
+        self.ctx.quiet = True
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True))
+        self.ctx.quiet = False
+        self.assertEqual(self.ctx.bypasses_ready(), 1)
+
+    def test_spent_bypasses_survive_a_restart(self) -> None:
+        self.receive_bypass()
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True))
+        self.ctx.load_state()
+        self.assertEqual(self.ctx.bypasses_ready(), 0)
+        self.assertEqual(self.ctx.run["bypassed"], [LOCKED.guid])
+
+
 class TestUnblockCommand(ClientTestBase):
     def test_unblock_needs_confirm_and_then_clears_everything(self) -> None:
         from ..client import BazaarCommandProcessor

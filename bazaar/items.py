@@ -9,6 +9,7 @@ BASE_ID = 0xBA20000
 
 FILLER_ITEMS = ["Spare Change", "Pile of Trinkets", "Merchant's Gossip"]
 SELL_TRAP = "Sell Trap"  # sell a random item you hold within a few days, or checks get blocked
+LOCK_BYPASS = "Lock Bypass"  # the next locked card you get is allowed for the rest of that run
 LEGENDARY_ITEMS = "Legendary Items"  # unlocks every Legendary item
 EXPEDITION_TICKETS = "Expedition Tickets"  # unlocks the expedition ticket cards
 GROUP_ITEMS = {LEGENDARY_ITEMS: LEGENDARY_GUIDS, EXPEDITION_TICKETS: TICKET_GUIDS}
@@ -29,7 +30,7 @@ def pack_item(pack_name: str) -> str:
 # Id layout (never reorder, only append):
 #   BASE + 1..      hero unlocks, in data.HEROES order
 #   BASE + 100..    legacy card packs (ap_id from the data file)
-#   BASE + 200..    filler (BASE + 250 = Sell Trap)
+#   BASE + 200..    filler (BASE + 250 = Sell Trap, BASE + 260 = Lock Bypass)
 #   BASE + 300..    group unlocks (Legendary Items, Expedition Tickets)
 #   BASE + 1000..   individual cards (ap_id from the data file)
 item_name_to_id: Dict[str, int] = {}
@@ -41,6 +42,7 @@ for name, pack in PACKS_BY_ITEM.items():
 for i, name in enumerate(FILLER_ITEMS):
     item_name_to_id[name] = BASE_ID + 200 + i
 item_name_to_id[SELL_TRAP] = BASE_ID + 250
+item_name_to_id[LOCK_BYPASS] = BASE_ID + 260
 for i, name in enumerate(GROUP_ITEMS):
     item_name_to_id[name] = BASE_ID + 300 + i
 for card in CARDS:
@@ -60,6 +62,7 @@ item_name_groups = {
 item_id_to_name: Dict[int, str] = {item_id: name for name, item_id in item_name_to_id.items()}
 HERO_ITEM_IDS: Dict[int, str] = {item_name_to_id[hero_item(h)]: h for h in HEROES}
 SELL_TRAP_ID = item_name_to_id[SELL_TRAP]
+LOCK_BYPASS_ID = item_name_to_id[LOCK_BYPASS]
 # item id -> the cards it unlocks (a card, a pack's cards, or a group's cards)
 UNLOCKS: Dict[int, Set[str]] = {BASE_ID + c.ap_id: {c.guid} for c in CARDS if not c.ticket}
 UNLOCKS.update({item_name_to_id[name]: set(p.cards) for name, p in PACKS_BY_ITEM.items()})

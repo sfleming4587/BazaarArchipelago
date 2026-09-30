@@ -92,6 +92,8 @@ your checks and the top-left box turns red and tells you **CHECKS ARE BLOCKED** 
   only if you turn on `death_link_on_concede`.
 - **Sell Traps** (off unless you turn them on): sell the item it names before the day shown, or checks pause until
   you do.
+- **Lock Bypasses** (off unless you turn them on): the next locked card you get is yours for the rest of that run,
+  upgrades included.
 - PvP wins count automatically - nothing to answer.
 
 ## Your helpers on screen

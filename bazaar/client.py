@@ -19,7 +19,7 @@ from NetUtils import ClientStatus
 
 from .data import (CARDS, CARDS_BY_GUID, GAME_VERSION, HEROES, MERCHANT_DATA, MONSTERS, OFFER_DATA,
                    TIERS)
-from .items import (GAME, HERO_ITEM_IDS, SELL_TRAP, SELL_TRAP_ID, UNLOCKS, hero_item,
+from .items import (GAME, HERO_ITEM_IDS, LOCK_BYPASS_ID, SELL_TRAP, SELL_TRAP_ID, UNLOCKS, hero_item,
                     item_id_to_name, item_name_to_id, lock_items_by_hero)
 from .locations import (card_requirements, day_location, hero_checks, location_name_to_id, monster_location,
                         pvp_location, win_location)
@@ -41,8 +41,8 @@ SLOT_DEFAULTS = {"heroes": [], "max_day": 15, "pvp_win_checks": False, "monster_
 
 
 def own_popup(item_id: int) -> bool:
-    """Items announced by their own pop-up (UNLOCKED, a Sell Trap) rather than the generic item pop-ups."""
-    return item_id in UNLOCKS or item_id in HERO_ITEM_IDS or item_id == SELL_TRAP_ID
+    """Items announced by their own pop-up (UNLOCKED, a Sell Trap, a Lock Bypass) rather than the generic ones."""
+    return item_id in UNLOCKS or item_id in HERO_ITEM_IDS or item_id in (SELL_TRAP_ID, LOCK_BYPASS_ID)
 
 
 def default_log_path() -> str:
@@ -151,6 +151,7 @@ class BazaarContext(CommonContext):
         self.shop_guide = True  # the picture window next to the game; --no-shop-guide turns it off
         self.notices_shown: Set[str] = set()  # patch warnings are shown once per session
         self.traps_seen = 0
+        self.bypasses_used = 0  # Lock Bypasses spent; the rest of those received are ready
         self.watched: Dict[str, Any] = {}  # {"log": game session, "runs": runs of that log already seen}
         self.quiet = False  # replaying runs that ended while the client wasn't watching: no alerts, no DeathLinks
         self.menu_hero: Optional[str] = None  # hero picked on the hero-select screen, while not in a run
@@ -180,6 +181,9 @@ class BazaarContext(CommonContext):
                     logger.info(f"Unlocked: {name}", extra=FILE_ONLY)
                     if self.overlay and args.get("index", 0) > 0:  # index 0 = the full list resent on connect
                         self.overlay.toast(f"UNLOCKED: {HERO_ITEM_IDS.get(item.item, name)}  (from {self.who(item.player)})")
+                elif item.item == LOCK_BYPASS_ID and args.get("index", 0) > 0:
+                    self.event("Lock Bypass received: your next locked card is allowed for the rest of that run.")
+                    self.toast(f"LOCK BYPASS from {self.who(item.player)}! Your next locked card is allowed.", seconds=12)
             self.refresh_held()
             self.receive_traps()
             self.update_status()
@@ -241,6 +245,7 @@ class BazaarContext(CommonContext):
         self.run = saved.get("run", {})
         self.defeats_since_death = saved.get("defeats_since_death", 0)
         self.traps_seen = saved.get("traps_seen", 0)  # Sell Traps already handled (items_received is resent)
+        self.bypasses_used = saved.get("bypasses_used", 0)
         # state saved before "watched" existed: the tracked run is the last one seen
         self.watched = saved.get("watched") or ({"log": self.run["log"], "runs": self.run["run_index"] + 1}
                                                 if self.run.get("log") else {})
@@ -253,7 +258,8 @@ class BazaarContext(CommonContext):
         except (FileNotFoundError, ValueError):
             everything = {}
         everything[self.state_key()] = {"run": self.run, "defeats_since_death": self.defeats_since_death,
-                                        "traps_seen": self.traps_seen, "watched": self.watched}
+                                        "traps_seen": self.traps_seen, "bypasses_used": self.bypasses_used,
+                                        "watched": self.watched}
         with open(path + ".tmp", "w", encoding="utf-8") as f:
             json.dump(everything, f, indent=1)
         os.replace(path + ".tmp", path)  # a crash mid-write can't corrupt it (that would re-fire every Sell Trap)
@@ -296,6 +302,13 @@ class BazaarContext(CommonContext):
             if item_id not in received:
                 locked |= UNLOCKS.get(item_id, set())
         return locked
+
+    def bypasses_ready(self) -> int:
+        return sum(item.item == LOCK_BYPASS_ID for item in self.items_received) - self.bypasses_used
+
+    def run_locked_guids(self) -> Set[str]:
+        """Cards you may not hold in this run: the locked ones, minus those a Lock Bypass allowed for this run."""
+        return self.locked_guids() - set(self.run.get("bypassed", []))
 
     # --- game events --------------------------------------------------------------------------------------------
 
@@ -363,7 +376,7 @@ class BazaarContext(CommonContext):
     def refresh_held(self) -> None:
         """Drop held cards that got unlocked in the meantime, then update the overlay and save."""
         held = self.run.get("held", {})
-        locked = self.locked_guids()
+        locked = self.run_locked_guids()
         for instance, guid in list(held.items()):
             if guid not in locked:
                 del held[instance]
@@ -473,7 +486,23 @@ class BazaarContext(CommonContext):
         if event.guid not in CARDS_BY_GUID:
             self.notice("card", "You got a card this apworld doesn't track (a special item like Midsworth's Package, "
                                 "or one added by a patch). It's never locked.")
-        if not self.run.get("active") or event.guid not in self.locked_guids():
+        if not self.run.get("active") or event.guid not in self.run_locked_guids():
+            return
+        # A Lock Bypass is spent on the first locked card you get, and allows that card (its copies and upgrades
+        # too) for the rest of the run. Never on a card already judged (the open run is replayed after a reconnect,
+        # and a bypass received since would land on a card bought before it), nor in runs the client missed: those
+        # ended already.
+        judged = self.run.setdefault("judged", [])
+        fresh = event.instance not in judged
+        if fresh:
+            judged.append(event.instance)
+        if fresh and self.bypasses_ready() > 0 and not self.quiet:
+            self.bypasses_used += 1
+            self.run.setdefault("bypassed", []).append(event.guid)
+            self.event(f"Lock Bypass used: {self.held_text(event.guid)} is allowed for the rest of this run.")
+            self.toast(f"LOCK BYPASS USED: {CARDS_BY_GUID[event.guid].name} is yours for this run", seconds=12)
+            self.save_state()
+            self.update_status()
             return
         self.run.setdefault("held", {})[event.instance] = event.guid
         how = "bought" if event.bought else "got"
@@ -511,7 +540,7 @@ class BazaarContext(CommonContext):
         if not merchant or not self.run.get("active"):
             return
         verb = "sell" if event.guid in MERCHANT_DATA else "offer"
-        locked = self.locked_guids()
+        locked = self.run_locked_guids()
         stock = possible_stock(merchant["stock"], self.run["hero"], (CARDS_BY_GUID[g] for g in locked))
         names = sorted(c.name for c in stock)
         if names:
@@ -718,7 +747,9 @@ class BazaarContext(CommonContext):
         goal = f"Goal {len(self.heroes_won())}/{self.setting('heroes_required')}"
         if self.run.get("active"):
             hero, day, max_day = self.run["hero"], self.run.get("day", 1), self.setting("max_day")
-            return f"{hero}: day {day}/{max_day} · {goal}", False, False
+            ready = self.bypasses_ready()
+            bypass = f" · Lock Bypass ready ({ready})" if ready else ""
+            return f"{hero}: day {day}/{max_day} · {goal}{bypass}", False, False
         if self.menu_hero:
             playable = [h for h in self.setting("heroes") if self.hero_unlocked(h)]
             lines = ["HEROES YOU CAN PLAY  (checks done / in logic)"] if playable else ["No hero unlocked yet"]

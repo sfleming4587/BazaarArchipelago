@@ -8,8 +8,8 @@ from worlds.AutoWorld import WebWorld, World
 from worlds.LauncherComponents import Component, Type, components, launch
 
 from .data import BASE_HEROES, CARDS, CARDS_BY_NAME, HEROES, LEGENDARY_GUIDS, PACKS, TIERS, hero_key, tiers_on_day
-from .items import (EXPEDITION_TICKETS, FILLER_ITEMS, GAME, GROUP_ITEMS, LEGENDARY_ITEMS, SELL_TRAP, BazaarItem,
-                    hero_item, item_name_groups, item_name_to_id, lock_items_by_hero, pack_item)
+from .items import (EXPEDITION_TICKETS, FILLER_ITEMS, GAME, GROUP_ITEMS, LEGENDARY_ITEMS, LOCK_BYPASS, SELL_TRAP,
+                    BazaarItem, hero_item, item_name_groups, item_name_to_id, lock_items_by_hero, pack_item)
 from .locations import (BazaarLocation, card_requirements, champion_event, hero_checks, location_name_groups,
                         location_name_to_id, win_location)
 from .options import EXCLUDE_HERO_OPTIONS, OWN_HERO_OPTIONS, BazaarOptions, option_groups, option_presets
@@ -174,6 +174,8 @@ class BazaarWorld(World):
             classification = ItemClassification.filler
         elif name == SELL_TRAP:
             classification = ItemClassification.trap
+        elif name == LOCK_BYPASS:
+            classification = ItemClassification.useful  # a buff, never required by logic
         elif name in GROUP_ITEMS or (name in CARDS_BY_NAME and CARDS_BY_NAME[name].hero == "Common"):
             classification = ItemClassification.useful  # never required by logic
         else:
@@ -209,6 +211,7 @@ class BazaarWorld(World):
         excluded |= LEGENDARY_GUIDS
         pool += groups
         pool += [SELL_TRAP] * min(self.options.sell_traps.value, max(0, slots - len(pool)))
+        pool += [LOCK_BYPASS] * min(self.options.lock_bypasses.value, max(0, slots - len(pool)))
 
         budget = (slots - len(pool)) * self.options.locked_cards_percent.value // 100
         duplicated = self.options.duplicate_cards.value

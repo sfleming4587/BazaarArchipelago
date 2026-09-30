@@ -83,8 +83,9 @@ act on (locked cards for sale, a Sell Trap, a locked hero picked), **dark** = ju
 
 Short pop-ups that always name the other player: an unlock you receive (**UNLOCKED ... from**), an item one of your
 checks sends (**SENT ... to**), filler someone found for you (**RECEIVED ... from**) or you found yourself
-(**FOUND**), a Sell Trap and who sent it, **SELL IT NOW** if you buy or get a locked card, and a note when the game
-was updated since the apworld was made. A red **CHECK NOT SENT** pop-up names any check the moment it's blocked.
+(**FOUND**), a Sell Trap or Lock Bypass and who sent it, **LOCK BYPASS USED** naming the card it let you keep,
+**SELL IT NOW** if you buy or get a locked card, and a note when the game was updated since the apworld was made. A
+red **CHECK NOT SENT** pop-up names any check the moment it's blocked.
 
 ### Shop Guide
 
