@@ -186,3 +186,33 @@ class TestFitNames(unittest.TestCase):
         self.assertEqual(size, 10)
         self.assertGreater(missing, 0)
 
+
+
+class TestAlertBoxWithManyHeldCards(unittest.TestCase):
+    """Review 2026-09-30: 8+ held locked cards pushed the alert box past its share, cutting off its buttons; and on
+    a 720p game window text went down to 9 px (user rule: never under 10)."""
+
+    def test_rows_are_capped_and_text_stays_readable(self) -> None:
+        import queue
+        import tkinter
+        import types
+        from ..overlay import MAX_ALERT_LINES, _Screen
+        root = tkinter.Tk()
+        try:
+            fake = types.SimpleNamespace(only_over_game=False, game_window=(0, 0, 1280, 720), art_cache_dir=None,
+                                         guide_file=None, commands=queue.Queue(), on_bypass=None)
+            screen = _Screen(fake, tkinter, root)
+            screen.relayout((0, 0, 1280, 720))
+            lines = [(f"Card {i} (Vanessa) - SELL OR USE BYPASS", f"g{i}") for i in range(12)]
+            screen.state["locked"] = ("CHECKS ARE BLOCKED", lines, True)
+            screen.state["status"] = ("Vanessa: day 4/13", False, False)
+            screen.render()
+            root.update()
+            buttons = [w for w in _all_widgets(screen.alert_box) if isinstance(w, tkinter.Button)]
+            labels = [w.cget("text") for w in _all_widgets(screen.alert_box) if isinstance(w, tkinter.Label)]
+            self.assertEqual(sum(b.cget("text") == "Use Bypass" for b in buttons), MAX_ALERT_LINES - 1)
+            self.assertIn("+ 7 more", labels)
+            self.assertLessEqual(screen.alert_box.winfo_reqheight(), screen.layout["left"][3] // 2)
+            self.assertGreaterEqual(-screen.font(8)[1], 10)  # the smallest font the overlay asks for
+        finally:
+            root.destroy()

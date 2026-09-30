@@ -3,7 +3,7 @@ import unittest
 
 from ..screens import clamp, monitor_for
 from ..tracker import square_status
-from .test_client import LOCKED, ClientTestBase
+from .test_client import ClientTestBase
 from ..data import CARDS
 from ..items import BASE_ID
 from ..locations import day_location, location_name_to_id
@@ -184,6 +184,27 @@ class TestCardArtWorker(unittest.TestCase):
         self.assertFalse(working)
         self.assertFalse(missing)  # asked again next session
         self.assertIsNone(normal)
+
+    def test_damaged_download_is_thrown_away_not_fatal(self) -> None:
+        """Review 2026-09-30: a damaged picture killed the worker for good and the zip stayed on disk."""
+        import tempfile
+        import time
+        from unittest import mock
+        from .. import cardart
+        card = next(c for c in CARDS if c.shop)
+        data = bytearray(self.picture_set([card.guid]))
+        data[data.find(b"webp bytes")] ^= 1  # one flipped bit: Bad CRC
+        decoder = mock.MagicMock(return_value=mock.MagicMock(decode=lambda d: (8, 8, bytes(192))))
+        with tempfile.TemporaryDirectory() as folder, mock.patch.object(cardart, "Decoder", decoder),                 mock.patch.object(cardart.urllib.request, "urlopen", lambda r, timeout: self.response(bytes(data))):
+            art = cardart.CardArt(folder, 96, on_ready=lambda guid: None)
+            art.picture(card, False)
+            for _ in range(60):
+                if not art.working:
+                    break
+                time.sleep(0.05)
+            self.assertFalse(art.working)  # name tiles this session, and it says so in the log file
+            self.assertFalse(os.path.exists(os.path.join(folder, cardart.ART_SET, "card-art.zip")))  # fetched again
+            art.shutdown()
 
     def test_pictures_from_older_sources_are_cleared(self) -> None:
         from unittest import mock

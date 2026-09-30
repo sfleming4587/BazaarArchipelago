@@ -32,6 +32,7 @@ class ClientTestBase(unittest.TestCase):
         async def make() -> BazaarContext:
             return BazaarContext()
         self.ctx = self.loop.run_until_complete(make())
+        self.ctx.caught_up = True  # as after watch_log's catch-up: tests feed events straight in
         self.ctx.slot_data = {"heroes": ["Vanessa", "Dooley"], "max_day": 15, "heroes_required": 2,
                               "pvp_win_checks": True, "lock_items": [BASE_ID + LOCKED.ap_id],
                               "monster_tiers": {str(d): ["Bronze", "Silver"] for d in range(1, 16)}}
@@ -642,3 +643,139 @@ class TestMissedRuns(ClientTestBase):
                         RunStarted("Dooley", 1), DayReached(1), DayReached(2), RunEnded(False, 2)], in_run=False)
         self.assertFalse(self.was_sent(day_location("Dooley", 2)))
         self.ctx.send_death.assert_not_called()
+
+
+class TestReconnectCarriesOn(ClientTestBase):
+    """Review 2026-09-30: a reconnect used to judge the whole run again with today's unlocks and alerts. The client
+    now carries on from exactly where it stopped (ctx.position)."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.ctx.log_path = os.path.join(self.tmp.name, "Player.log")
+        self.ctx.log_session = "10:00:00.000"
+        self.ctx.slot = 1
+        self.ctx.room_seed = "seed"
+        self.ctx.tags = self.ctx.tags | {"DeathLink"}
+        self.ctx.send_death = mock.AsyncMock()
+        self.log: list = []  # every event of the current game session, as the log holds them
+
+    def live(self, *events) -> None:
+        """Events the client sees while watching (as watch_log feeds them)."""
+        from ..client import count_event
+
+        async def run():
+            for event in events:
+                self.log.append(event)
+                count_event(self.ctx)
+                await dispatch(self.ctx, event)
+        self.await_(run())
+
+    def reconnect(self, *unseen) -> None:
+        """The connection dropped, the game logged `unseen`, and the client reads the whole log again."""
+        self.log.extend(unseen)
+        self.sent.clear()
+        self.ctx.caught_up = False
+        self.parser = LogParser()
+        starts = [e for e in self.log if isinstance(e, RunStarted)]
+        ends = [i for i, e in enumerate(self.log) if isinstance(e, RunEnded)]
+        last_start = max(i for i, e in enumerate(self.log) if isinstance(e, RunStarted)) if starts else -1
+        self.parser.in_run = bool(starts) and not any(i > last_start for i in ends)
+        self.parser.runs_started = len(starts)
+        self.await_(catch_up(self.ctx, self.parser, list(self.log)))
+        self.ctx.caught_up = True
+        self.ctx.receive_traps()
+
+    def bypass(self) -> None:
+        self.ctx.items_received.append(NetworkItem(item_name_to_id["Lock Bypass"], 0, 0, 0))
+
+    def test_a_bypass_never_unblocks_the_days_before_it(self) -> None:
+        self.bypass()
+        self.live(RunStarted("Vanessa", 0), DayReached(1), CardGained(LOCKED.guid, "itm_x", True), DayReached(2),
+                  DayReached(3))
+        self.ctx.use_bypass(LOCKED.guid)
+        self.live(DayReached(4))
+        self.reconnect(DayReached(5))
+        self.assertFalse(self.was_sent(day_location("Vanessa", 2)))
+        self.assertFalse(self.was_sent(day_location("Vanessa", 3)))
+        self.assertTrue(self.was_sent(day_location("Vanessa", 5)))
+
+    def test_unblock_by_hand_survives_a_reconnect(self) -> None:
+        self.live(RunStarted("Vanessa", 0), DayReached(1), CardGained(LOCKED.guid, "itm_x", True))
+        self.ctx.clear_blocks()
+        self.reconnect(DayReached(2))
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.assertTrue(self.was_sent(day_location("Vanessa", 2)))
+
+    def test_no_old_alerts_again(self) -> None:
+        self.live(RunStarted("Vanessa", 0), DayReached(1), CardGained(LOCKED.guid, "itm_x", True), CardSold("itm_x"))
+        self.ctx.overlay = mock.Mock()
+        self.reconnect()
+        toasts = [c.args[0] for c in self.ctx.overlay.toast.call_args_list]
+        self.assertFalse([t for t in toasts if "SELL" in t or "NOT SENT" in t])
+
+    def test_game_restart_then_reconnect_keeps_the_run(self) -> None:
+        self.live(RunStarted("Vanessa", 0), *[DayReached(d) for d in range(1, 7)])
+        with open(os.path.join(self.tmp.name, "Player-prev.log"), "w", encoding="utf-8") as f:
+            f.write("[10:00:00.000] [Boot] start\n[10:00:01.000] [StartRunAppState] Run initialization finalized.\n")
+        self.ctx.log_session, self.log = "11:00:00.000", []  # the game restarted: a new log
+        self.live(RunStarted("Vanessa", 0), DayReached(1))  # the run resumed: log day 1 = its real day 6
+        self.ctx.on_deathlink({"time": 1.0, "source": "Friend", "cause": "Friend fell."})
+        self.reconnect(DayReached(2), PvPFought(2, True))
+        self.assertTrue(self.ctx.run["deathlink_owed"])
+        self.assertEqual(self.ctx.run["day"], 7)
+        self.assertFalse(self.was_sent("Vanessa - Day 2 PvP Win"))
+
+    def test_trap_received_during_a_drop_uses_todays_day(self) -> None:
+        item = next(c for c in CARDS if c.shop and c.hero == "Common" and c.guid != LOCKED.guid)
+        self.live(RunStarted("Vanessa", 0), DayReached(1), CardGained(item.guid, "itm_a", True))
+        self.ctx.caught_up = False  # dropped: the trap arrives with the reconnect, before the log is read
+        self.ctx.items_received.append(NetworkItem(item_name_to_id["Sell Trap"], 0, 0, 0))
+        self.ctx.receive_traps()
+        self.reconnect(*[DayReached(d) for d in range(2, 9)])
+        self.assertEqual(self.ctx.run["traps"][0]["deadline"], 10)  # day 8 + 2
+        self.assertTrue(self.was_sent(day_location("Vanessa", 8)))
+
+    def test_run_started_during_a_drop_with_a_locked_card_is_conceded_without_a_deathlink(self) -> None:
+        """User, 2026-09-30: "2 a, however dont count that as a deathlink"."""
+        self.ctx.slot_data["death_link_on_concede"] = True
+        self.live(RunStarted("Vanessa", 0), DayReached(1), RunEnded(False, 1))
+        self.reconnect(RunStarted("Vanessa", 1), DayReached(1), CardGained(LOCKED.guid, "itm_x", True))
+        self.ctx.send_death.reset_mock()  # run 0 was lost while watched: its DeathLink was right
+        self.assertIn("CONCEDE", self.ctx.blocked_reason())
+        self.live(CardSold("itm_x"), DayReached(2))
+        self.assertFalse(self.was_sent(day_location("Vanessa", 2)))  # selling doesn't fix it
+        self.live(RunEnded(False, 2, conceded=True))
+        self.ctx.send_death.assert_not_called()
+
+
+class TestUnknownHeroUnblock(ClientTestBase):
+    def test_unblock_never_counts_a_hero_outside_the_seed(self) -> None:
+        """Review 2026-09-30: this crashed the client (unknown check name) and kept crashing on every re-read."""
+        self.play(RunStarted("Mak", 0))
+        self.ctx.clear_blocks()
+        self.play(DayReached(2), RunEnded(True, 10))
+        self.assertEqual(self.sent, set())
+
+
+class TestCommandsTakeTextAsTyped(ClientTestBase):
+    def test_locked_with_a_two_word_hero(self) -> None:
+        from ..client import BazaarCommandProcessor
+        out = []
+        commands = BazaarCommandProcessor(self.ctx)
+        commands.output = out.append
+        commands("/locked The Dragons")
+        self.assertTrue(out)
+
+    def test_logpath_keeps_backslashes_and_spaces_and_checks_the_file(self) -> None:
+        from ..client import BazaarCommandProcessor
+        folder = os.path.join(self.tmp.name, "Tempo Storm", "The Bazaar")
+        os.makedirs(folder)
+        path = os.path.join(folder, "Player.log")
+        open(path, "w").close()
+        commands = BazaarCommandProcessor(self.ctx)
+        commands.output = lambda text: None
+        before = self.ctx.log_path
+        commands(r"/logpath C:\no\such folder\Player.log")
+        self.assertEqual(self.ctx.log_path, before)
+        commands(f"/logpath {path}")
+        self.assertEqual(self.ctx.log_path, path)

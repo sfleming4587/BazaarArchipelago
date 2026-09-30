@@ -99,7 +99,8 @@ your checks and the top-left box turns red and tells you **CHECKS ARE BLOCKED** 
 
 - **The top-left box:** your hero, day and goal during a run; on the hero-select screen, the heroes you may play.
   It turns red when checks are blocked or a DeathLink arrives, amber when something needs you. Its **Tracker**
-  button opens the tracker, and **Lock Bypass** (while you have one ready) lets you pick the card it goes to.
+  button opens the tracker, and a locked card you're holding gets a **Use Bypass** button while you have a Lock
+  Bypass.
 - **Locked-card list:** right under that box whenever you're at a merchant or an item choice - the locked cards on
   offer, so you know what not to take. **Hide list** tucks it away.
 - **Pop-ups (bottom right):** everything you receive, send or find, always with the other player's name; Sell

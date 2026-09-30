@@ -15,6 +15,7 @@ from typing import Any, Dict, Optional, Set
 import Utils
 from CommonClient import (ClientCommandProcessor, CommonContext, get_base_parser, gui_enabled, handle_url_arg,
                           logger, server_loop)
+from MultiServer import mark_raw
 from NetUtils import ClientStatus
 
 from .data import (CARDS, CARDS_BY_GUID, GAME_VERSION, HEROES, MERCHANT_DATA, MONSTERS, OFFER_DATA,
@@ -73,8 +74,10 @@ class BazaarCommandProcessor(ClientCommandProcessor):
         self.ctx.print_status()
         return True
 
+    @mark_raw  # the whole text as typed: hero names can have spaces ("The Dragons")
     def _cmd_locked(self, hero: str = "") -> bool:
         """List cards that are still locked (and where they are, if you have a hint). E.g. /locked Vanessa"""
+        hero = hero.strip()
         hints = self.ctx.locked_card_hints()
         names = sorted(CARDS_BY_GUID[g].name + f" ({CARDS_BY_GUID[g].hero})" + (f"  -> {hints[g]}" if g in hints else "")
                        for g in self.ctx.locked_guids()
@@ -124,8 +127,13 @@ class BazaarCommandProcessor(ClientCommandProcessor):
         self.ctx.overlay.toggle_tracker()
         return True
 
+    @mark_raw  # the whole text as typed: Windows paths have backslashes and spaces (review 2026-09-30)
     def _cmd_logpath(self, path: str = "") -> bool:
         """Show or change the path of The Bazaar's Player.log."""
+        path = path.strip().strip('"')
+        if path and not os.path.isfile(path):
+            self.output(f"No file at {path} - still watching {self.ctx.log_path}")
+            return False
         if path:
             self.ctx.log_path = path
             self.ctx.restart_watcher = True
@@ -153,6 +161,10 @@ class BazaarContext(CommonContext):
         self.traps_seen = 0
         self.bypasses_used = 0  # Lock Bypasses spent; the rest of those received are ready
         self.watched: Dict[str, Any] = {}  # {"log": game session, "runs": runs of that log already seen}
+        # {"log": game session, "events": how many of its events were handled}: a reconnect carries on from here
+        # instead of judging the run again with today's unlocks (review 2026-09-30)
+        self.position: Dict[str, Any] = {}
+        self.caught_up = False  # the log has been read up to now since connecting: received Sell Traps can start
         self.quiet = False  # replaying runs that ended while the client wasn't watching: no alerts, no DeathLinks
         self.encounter: Optional[EncounterEntered] = None  # the merchant or event you're at, if any
         self.menu_hero: Optional[str] = None  # hero picked on the hero-select screen, while not in a run
@@ -220,6 +232,7 @@ class BazaarContext(CommonContext):
         disconnected, so nothing could be judged), then replays the log once connected again."""
         super().reset_server_state()
         self.slot_data = {}
+        self.caught_up = False
 
     async def disconnect(self, allow_autoreconnect: bool = False) -> None:
         # a different room may follow: nothing from this one (checks, goal, the hero on the menu) may leak into it
@@ -249,6 +262,7 @@ class BazaarContext(CommonContext):
         self.traps_seen = saved.get("traps_seen", 0)  # Sell Traps already handled (items_received is resent)
         self.bypasses_used = saved.get("bypasses_used", 0)
         # state saved before "watched" existed: the tracked run is the last one seen
+        self.position = saved.get("position", {})
         self.watched = saved.get("watched") or ({"log": self.run["log"], "runs": self.run["run_index"] + 1}
                                                 if self.run.get("log") else {})
 
@@ -261,7 +275,7 @@ class BazaarContext(CommonContext):
             everything = {}
         everything[self.state_key()] = {"run": self.run, "defeats_since_death": self.defeats_since_death,
                                         "traps_seen": self.traps_seen, "bypasses_used": self.bypasses_used,
-                                        "watched": self.watched}
+                                        "watched": self.watched, "position": self.position}
         with open(path + ".tmp", "w", encoding="utf-8") as f:
             json.dump(everything, f, indent=1)
         os.replace(path + ".tmp", path)  # a crash mid-write can't corrupt it (that would re-fire every Sell Trap)
@@ -347,6 +361,7 @@ class BazaarContext(CommonContext):
         if self.resumes(event):
             if self.run["log"] != self.log_session:  # a restarted game: the new log counts days from 1 again
                 self.run.update(log=self.log_session, run_index=event.index, day_offset=self.run["day"] - 1)
+                self.watched = {"log": self.log_session, "runs": event.index + 1}
             self.event(f"Resumed your {event.hero} run on day {self.run['day']}.")
             return
         if self.run.get("active"):
@@ -405,7 +420,10 @@ class BazaarContext(CommonContext):
             self.save_state()
 
     def receive_traps(self) -> None:
-        """Start every Sell Trap received since last time (the server resends all items on connect)."""
+        """Start every Sell Trap received since last time (the server resends all items on connect). Not before the
+        log is read up to now: a trap that arrived while disconnected gets today's day and today's items."""
+        if not self.caught_up:
+            return
         traps = [item for item in self.items_received if item.item == item_name_to_id[SELL_TRAP]]
         while self.traps_seen < len(traps):
             self.traps_seen += 1
@@ -473,7 +491,8 @@ class BazaarContext(CommonContext):
     def clear_blocks(self) -> None:
         """/unblock confirm: an escape hatch if tracking breaks. Logged so it's never silent."""
         logger.warning(f"Blocks cleared by hand (/unblock): {self.blocked_reason()}")
-        self.run.update(held={}, traps=[], deathlink_owed=False, counting=True, legal=True, concede_reason=None)
+        allowed = self.run.get("hero") in self.setting("heroes")  # a hero outside the seed never counts
+        self.run.update(held={}, traps=[], deathlink_owed=False, counting=allowed, legal=allowed, concede_reason=None)
         self.save_state()
         self.update_block_banner()
 
@@ -658,7 +677,7 @@ class BazaarContext(CommonContext):
     # --- checks & goal ------------------------------------------------------------------------------------------
 
     async def send_checks(self, names) -> None:
-        ids = {location_name_to_id[n] for n in names}
+        ids = {location_name_to_id[n] for n in names if n in location_name_to_id}
         self.locations_checked |= ids
         await self.check_locations(ids)
         self.check_goal()
@@ -859,64 +878,86 @@ def missed(ctx: BazaarContext, past: list) -> list:
     """
     What the game logged while the client wasn't watching, as (game session, events) oldest first: the rest of the
     previous game session (if the game restarted meanwhile and Unity still keeps that log), then this one.
+    It starts exactly where the client stopped (ctx.position), so nothing already judged is judged again.
     On a seed's first connection that's nothing: runs from before could predate the seed.
     """
-    seen = ctx.watched
-    if not seen or not ctx.log_session:
+    seen, where = ctx.watched, ctx.position
+    if not (seen or where) or not ctx.log_session:
         return []
-    first = ctx.run["run_index"] if ctx.run.get("active") else seen["runs"]  # an open run is replayed, it resumes
-    if seen["log"] == ctx.log_session:
-        return [(ctx.log_session, from_run(past, first))]
+    if where:
+        stopped_log, since = where["log"], (lambda events: events[where["events"]:])
+    else:  # saved by a client from before positions were kept: from the tracked run on
+        first = ctx.run["run_index"] if ctx.run.get("active") else seen["runs"]
+        stopped_log, since = seen["log"], (lambda events: from_run(events, first))
+    if stopped_log == ctx.log_session:
+        return [(ctx.log_session, since(past))]
     earlier = []
     prev = os.path.join(os.path.dirname(ctx.log_path), PREV_LOG)
-    if log_session(prev) == seen["log"]:
-        earlier = [(seen["log"], from_run(read_events(prev), first))]
+    if log_session(prev) == stopped_log:
+        earlier = [(stopped_log, since(read_events(prev)))]
     else:
         ctx.event("The game restarted more than once while the client was closed: runs from the older game "
                   "session can't be read any more.", warning=True)
-    return earlier + [(ctx.log_session, from_run(past, 0))]
+    return earlier + [(ctx.log_session, past)]
 
 
 async def catch_up(ctx: BazaarContext, parser: LogParser, past: list) -> None:
     """
-    Replays what the game logged while the client wasn't watching, in log order, so checks and blocks come out
-    exactly as if it had been: runs that ended meanwhile (quietly: no alerts, no late DeathLinks), then the run
-    in progress.
+    Plays what the game logged while the client wasn't watching, in log order, so checks and blocks come out
+    exactly as if it had been: runs that ended meanwhile quietly (no alerts, no late DeathLinks), the run in
+    progress out loud. Events handled before (up to ctx.position) are never handled again.
     """
     session = ctx.log_session
-    for ctx.log_session, events in missed(ctx, past):
-        if ctx.log_session == session and parser.in_run:  # the run in progress is replayed below, out loud
-            events = events[:max(i for i, e in enumerate(events) if isinstance(e, RunStarted))]
-        ctx.quiet = True
-        try:
+    segments = missed(ctx, past)
+    unseen = next((len(past) - len(events) for log, events in segments if log == session), len(past))
+    run_start = max((i for i, e in enumerate(past) if isinstance(e, RunStarted)), default=None)         if parser.in_run else None
+    if run_start is None:
+        loud = len(past)  # no run going: everything missed is quiet
+    elif not segments or run_start >= unseen:
+        loud = run_start  # a run the client never saw start (or its first connection): the whole run, out loud
+    else:
+        loud = unseen  # the run the client was already following: just what it missed
+    ctx.quiet = True
+    try:
+        for ctx.log_session, events in segments:
+            if ctx.log_session == session:
+                events = past[unseen:loud]
             for event in events:
                 await dispatch(ctx, event)
-        finally:
-            ctx.quiet = False
+    finally:
+        ctx.quiet = False
     ctx.log_session = session
     if session and ctx.watched.get("log") != session:  # nothing from before counts, but it's been seen now
         ctx.watched = {"log": session, "runs": parser.runs_started - parser.in_run}
-    if not parser.in_run:
+    if run_start is None:
         picked = [e for e in past if isinstance(e, HeroSelected)]
         if picked:
             ctx.handle_hero_selected(picked[-1])
-        ctx.save_state()
-        return
-    run_start = max(i for i, e in enumerate(past) if isinstance(e, RunStarted))
-    resumed = ctx.resumes(past[run_start])
-    for event in past[run_start:]:
-        await dispatch(ctx, event)
-    reason = ctx.blocked_reason()
-    if not resumed and reason:
-        # The run was already going when the client started and is outside logic (locked hero or locked cards):
-        # selling can't fix that, only conceding. Not a legal run, so ending it never sends a DeathLink.
-        ctx.run.update(counting=False, legal=False,
-                       concede_reason="- THIS RUN WAS OUTSIDE LOGIC WHEN THE CLIENT STARTED: CONCEDE IT")
-        ctx.event(f"Your {parser.hero} run was already outside logic when the client started ({reason}). "
-                  f"Concede it; no DeathLink will be sent.", warning=True)
-        beep()
-        ctx.save_state()
-        ctx.update_block_banner()
+    else:
+        resumed = loud > run_start or ctx.resumes(past[run_start])
+        for event in past[loud:]:
+            await dispatch(ctx, event)
+        reason = ctx.blocked_reason()
+        if not resumed and reason:
+            # A run the client didn't see start (it was closed or disconnected) that is outside logic (locked hero
+            # or locked cards) needs conceding - selling doesn't fix it (user 2026-09-30: "2 a"). Not a legal run,
+            # so ending it never sends a DeathLink.
+            ctx.run.update(counting=False, legal=False,
+                           concede_reason="- THIS RUN WAS OUTSIDE LOGIC WHEN THE CLIENT STARTED: CONCEDE IT")
+            ctx.event(f"Your {parser.hero} run was already outside logic when the client started ({reason}). "
+                      f"Concede it; no DeathLink will be sent.", warning=True)
+            beep()
+            ctx.update_block_banner()
+    if session:
+        ctx.position = {"log": session, "events": len(past)}
+    ctx.save_state()
+
+
+def count_event(ctx: BazaarContext) -> None:
+    """One more event of the current game session handled (counted before it's handled, so its save includes it)."""
+    if ctx.position.get("log") != ctx.log_session:
+        ctx.position = {"log": ctx.log_session, "events": 0}
+    ctx.position["events"] += 1
 
 
 async def watch_log(ctx: BazaarContext) -> None:
@@ -932,7 +973,10 @@ async def watch_log(ctx: BazaarContext) -> None:
             tailer, parser = LogTailer(ctx.log_path), LogParser(MERCHANT_DATA.keys())
             lines = tailer.read_new_lines() or []
             ctx.log_session = log_session(ctx.log_path)
+            ctx.caught_up = False
             await catch_up(ctx, parser, parser.feed_all(lines))
+            ctx.caught_up = True
+            ctx.receive_traps()  # the ones that arrived while the log was being read
             while not ctx.exit_event.is_set() and ctx.slot_data and not ctx.restart_watcher:
                 lines = tailer.read_new_lines()
                 if lines is None:  # the game restarted and began a fresh log
@@ -941,9 +985,14 @@ async def watch_log(ctx: BazaarContext) -> None:
                     continue
                 if lines and not ctx.log_session:
                     ctx.log_session = log_session(ctx.log_path)
+                handled = False
                 for line in lines:
                     for event in parser.feed(line):
+                        count_event(ctx)
                         await dispatch(ctx, event)
+                        handled = True
+                if handled:
+                    ctx.save_state()  # the position too, even for events that changed nothing else
                 await asyncio.sleep(POLL_SECONDS)
         except Exception:
             logger.exception("Error while following the game's log; reading it again")

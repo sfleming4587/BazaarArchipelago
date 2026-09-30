@@ -43,7 +43,7 @@ LOCKED_DIM = 0.45  # a locked card's picture: grey at this brightness
 CROSS_HALF_WIDTH = 2.5  # the red cross's half thickness, in pixels
 CROSS_INSET = 6  # its ends stay this far from the corners
 # Board slots a card takes: in game every card is the same height, and 1 / 2 / 3 slots wide (user 2026-09-29: show
-# them at their real size so they're easier to find). The CDN art is a square painting; the game shows a crop of it.
+# them at their real size so they're easier to find). tools/make_card_art.py already cuts each picture to its shape.
 SLOTS = {"Small": 1, "Medium": 2, "Large": 3}
 SDL_PIXELFORMAT_RGB24 = 0x17101803
 
@@ -246,7 +246,7 @@ class CardArt:
 
     def _pictures(self) -> Optional[zipfile.ZipFile]:
         """The picture set, downloaded once and kept (None if that failed: name tiles, tried again next session)."""
-        path = os.path.join(self.cache_dir, "card-art.zip")
+        path = self.zip_path = os.path.join(self.cache_dir, "card-art.zip")
         if not os.path.exists(path):
             try:
                 request = urllib.request.Request(ART_URL, headers={"User-Agent": USER_AGENT})
@@ -266,6 +266,14 @@ class CardArt:
             return None
 
     def _work(self) -> None:
+        """The worker thread. Nothing may kill it silently (review 2026-09-30): any error ends in name tiles and a
+        line in the client's log file."""
+        try:
+            self._make_pictures()
+        except Exception as error:
+            self._give_up(f"card pictures stopped ({error!r})")
+
+    def _make_pictures(self) -> None:
         try:
             decoder = Decoder()
         except OSError as error:
@@ -287,6 +295,14 @@ class CardArt:
             except KeyError:  # the set has no picture of this card; don't look again
                 open(self._missing(guid), "w").close()
                 continue
+            except (zipfile.BadZipFile, zlib.error, OSError) as error:  # the download is damaged: fetch it again
+                pictures.close()
+                try:
+                    os.remove(self.zip_path)
+                except OSError:
+                    pass
+                self._give_up(f"the card picture download is damaged ({error}); it's fetched again next time")
+                return
             try:
                 self._save(card, decoder.decode(data))
             except OSError as error:

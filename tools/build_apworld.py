@@ -1,10 +1,11 @@
 """
-Build bazaar.apworld into the repo root, the same way Archipelago's "Build APWorlds" launcher command does,
-but without opening a file explorer window afterwards.
+Build bazaar.apworld into the repo root and releases/, the same way Archipelago's "Build APWorlds" launcher
+command does, but without opening a file explorer window afterwards.
 
 Run from the repo root with the dev venv:
     .venv/Scripts/python.exe tools/build_apworld.py
 """
+import importlib
 import json
 import os
 import pathlib
@@ -19,7 +20,7 @@ WORLD = "bazaar"
 def main() -> None:
     os.chdir(AP)
     sys.path.insert(0, str(AP))
-    import ModuleUpdate  # noqa: F401  (same environment checks the launcher does)
+    importlib.import_module("ModuleUpdate")  # same environment checks the launcher does
     from Utils import local_path, read_apignore
     from worlds.Files import APWorldContainer
 

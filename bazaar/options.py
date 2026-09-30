@@ -22,7 +22,9 @@ def _switch(class_name: str, display_name: str, doc: str, on: bool = False) -> t
     """An on/off option made from data, so a new hero or pack needs no new class."""
     def body(namespace: dict) -> None:
         namespace.update(__doc__=doc, display_name=display_name, __module__=__name__)
-    return types.new_class(class_name, (DefaultOnToggle if on else Toggle,), exec_body=body)
+    option = types.new_class(class_name, (DefaultOnToggle if on else Toggle,), exec_body=body)
+    globals()[class_name] = option  # findable by name, so it can be pickled (the website pickles option values)
+    return option
 
 
 # Heroes are picked by ticking, never by typing names (user 2026-09-29). Built from data.HEROES, so a hero added
@@ -74,7 +76,7 @@ StartingHero = types.new_class("StartingHero", (Choice,), exec_body=_starting_he
 class EarlyHeroUnlock(Toggle):
     """
     Puts a second hero's unlock among the checks you can do right away, so you get another hero early.
-    Off by default: hero unlocks already have duplicate copies in the pool (up to 3 each), which usually
+    Off by default: when there are spare checks, hero unlocks get duplicate copies (up to 3 each), which usually
     makes them turn up early anyway.
     """
     display_name = "Early Hero Unlock"
@@ -137,12 +139,14 @@ class LockedCards(Removed):
 
 class LockedCardsPercent(Range):
     """
-    Percent of the checks left over (after hero, pack and group unlocks) that hold a different locked card.
+    Percent of the checks left over (after hero, pack and group unlocks, Sell Traps and Lock Bypasses) that hold a
+    different locked card.
     Locked cards may not be bought or kept until you receive them. They're spread evenly over your heroes
     (and the Common pool, if enabled).
     Below 100, the other checks hold duplicates instead: first extra hero unlocks (up to 3 of each), then extra
     copies of locked cards (up to 3 of each). Copy counts you set yourself never change: Legendary Items and
-    Expedition Tickets unlocks, and cards in duplicate_cards (or every card, with duplicate_all_cards).
+    Expedition Tickets unlocks, and cards in duplicate_cards. With duplicate_all_cards on, this percent doesn't
+    apply: every spare check holds a locked card, as pairs.
     """
     display_name = "Locked Cards Percent"
     range_start = 0
@@ -186,8 +190,8 @@ class ExpeditionTickets(Range):
 class DuplicateAllCards(Toggle):
     """
     Casual mode: the same number of checks, but only about half as many locked cards. Every locked card gets a
-    second copy in the multiworld (either copy unlocks it), so half of the item slots hold duplicates - fewer cards
-    to avoid, and each one turns up sooner.
+    second copy in the multiworld (either copy unlocks it), and every spare check holds such a pair (Locked Cards
+    Percent doesn't apply) - fewer cards to avoid, and each one turns up sooner.
     """
     display_name = "Duplicate All Cards (casual)"
 
@@ -220,9 +224,10 @@ class SellTrapDays(Range):
 
 class LockBypasses(Range):
     """
-    Number of Lock Bypasses in the multiworld (0 = off). A buff: during a run, press Lock Bypass in the client's
-    overlay and pick a locked card; it's allowed for the rest of that run, including more copies of it (upgrades).
-    A bypass is never used by itself. Unused ones carry over to later runs. Each takes the place of one locked card.
+    Number of Lock Bypasses in the multiworld (0 = off). A buff: when you're holding a locked card, press Use
+    Bypass next to it in the client's alert box; that card is allowed for the rest of the run, including more
+    copies of it (upgrades). A bypass is never used by itself. Unused ones carry over to later runs. Each takes the
+    place of one locked card.
     """
     display_name = "Lock Bypasses"
     range_start = 0
@@ -247,7 +252,8 @@ class LogicLastDayCards(Range):
     """
     Logic: how many of a hero's own locked cards should be unlocked before the last day (max_day) and the 10-win
     check. From day 10 the expected amount climbs evenly from Logic: Cards Before Day 10 up to this, so later days
-    expect more cards. This only decides where other players' items can be placed; you can always try anything.
+    expect more cards. With a max_day of 10 or less there's nothing to climb: 10 wins expects the day-10 amount.
+    This only decides where other players' items can be placed; you can always try anything.
     """
     display_name = "Logic: Cards Before The Last Day"
     range_start = 0

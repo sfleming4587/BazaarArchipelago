@@ -1,6 +1,6 @@
 import unittest
 
-from ..data import CARDS
+from ..data import CARDS, CARDS_BY_NAME
 from ..items import hero_item
 from ..locations import day_location, monster_location, pvp_location, win_location
 from BaseClasses import CollectionState
@@ -430,6 +430,12 @@ class TestLogicClimbsAfterDay10(unittest.TestCase):
         needs = self.needs(13, {"day_10": 16, "last_day": 28, "diamond": 10, "legendary": 20}, lock_count=20)
         self.assertEqual(needs[win_location("Vanessa")], 20)
 
+    def test_ten_wins_never_expects_less_than_day_10_with_a_short_max_day(self) -> None:
+        """Found while double-checking (2026-09-30): max_day can be 5-9, and 10 wins then fell to 0 or half."""
+        for max_day in (5, 7, 8, 9, 10):
+            needs = self.needs(max_day, {"day_10": 16, "last_day": 28, "diamond": 10, "legendary": 20})
+            self.assertEqual(needs[win_location("Vanessa")], 16, max_day)
+
     def test_seeds_from_before_the_climb_keep_their_flat_logic(self) -> None:
         needs = self.needs(13, {"day_10": 15, "diamond": 10, "legendary": 20})
         self.assertEqual({needs[day_location("Vanessa", d)] for d in range(10, 14)}, {15})
@@ -449,3 +455,42 @@ class TestHardcoreLogicGenerates(BazaarTestBase):
         self.assertFalse(self.can_reach_location(day_location(hero, 16)))
         self.collect_by_name(items[25:50])
         self.assertTrue(self.can_reach_location(day_location(hero, 16)))
+
+
+# Review 2026-09-30: these option mixes are allowed but generation failed on every seed; fit_logic now lowers logic
+# per hero until it fits. Each class gets Archipelago's own fill/beatable tests.
+TIGHT = {"locked_cards_percent": 100, "lock_common_cards": False, "sell_traps": 0, "lock_bypasses": 0}
+ONE_HERO = {"exclude_pygmalien": True, "exclude_dooley": True, "starting_hero": "vanessa"}
+
+
+class TestTightOneHeroDaysOnly(BazaarTestBase):
+    options = {**TIGHT, **ONE_HERO, "pvp_win_checks": False, "monster_checks": False}
+
+
+class TestTightOneHeroPvPOnly(BazaarTestBase):
+    options = {**TIGHT, **ONE_HERO, "monster_checks": False, "legendary_items": 0, "expedition_tickets": 0,
+               "logic_day_10_cards": 18}
+
+
+class TestTightOneHeroShortRun(BazaarTestBase):
+    options = {**TIGHT, **ONE_HERO, "max_day": 5, "legendary_items": 0, "expedition_tickets": 0}
+
+
+class TestTightThreeHeroesShortRun(BazaarTestBase):
+    options = {**TIGHT, "max_day": 7, "pvp_win_checks": False, "monster_checks": False, "legendary_items": 0,
+               "expedition_tickets": 0}
+
+    def test_logic_was_lowered_to_fit(self) -> None:
+        self.assertLess(self.world.logic["day_10"], 16)
+
+
+class TestDuplicateAllHasNoFiller(BazaarTestBase):
+    """User, 2026-09-30 ("1 a"): with duplicate_all_cards every spare slot holds another locked card as a pair."""
+    options = {"duplicate_all_cards": True, "locked_cards_percent": 60}
+
+    def test_pairs_not_filler(self) -> None:
+        from ..items import FILLER_ITEMS
+        names = [i.name for i in self.multiworld.itempool if i.player == self.player]
+        self.assertFalse([n for n in names if n in FILLER_ITEMS])
+        cards = {n for n in names if n in CARDS_BY_NAME}
+        self.assertTrue(cards and all(names.count(n) == 2 for n in cards))

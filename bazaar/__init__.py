@@ -52,7 +52,7 @@ class BazaarWeb(WebWorld):
 
 
 MAX_COPIES = 3  # most copies of one item the duplicate filling adds up to
-FREE_MARGIN = 2  # checks per hero that need no cards and that logic never counts on (so fill always has room)
+FREE_MARGIN = 2  # spare cheaper checks each logic requirement keeps, so the fill always has room (see fit_logic)
 DEFAULT_LOGIC = {"day_10": 15, "diamond": 10, "legendary": 20}  # seeds from before slot_data carried it
 
 
@@ -116,23 +116,29 @@ class BazaarWorld(World):
         self.logic = {"day_10": self.options.logic_day_10_cards.value,
                       "last_day": self.options.logic_last_day_cards.value,
                       "diamond": self.options.logic_diamond_cards.value,
-                      "legendary": self.options.logic_legendary_cards.value}
-        self.fit_logic()
+                      "legendary": self.options.logic_legendary_cards.value}  # fitted in create_items
 
     def fit_logic(self) -> None:
-        """Logic can't expect more of a hero's cards (before day 8, a Diamond or a Legendary monster) than the
-        hero has checks that need no cards: those are where the cards have to be. With PvP and monster checks both
-        off that's only days 1-7, and generation failed (review 2026-09-29). Lowered here, with a warning."""
-        huge = {key: 10 ** 6 for key in self.logic}  # every check that needs any cards at all needs "a lot"
-        free = sum(need == 0 for need in card_requirements(self.heroes[0], 10 ** 6, self.options.max_day.value,
-                                                          bool(self.options.pvp_win_checks), self.monster_tiers,
-                                                          huge).values())
-        room = max(0, free - FREE_MARGIN)
-        fitted = {"day_10": min(self.logic["day_10"], 2 * room), "last_day": min(self.logic["last_day"], 2 * room),
-                  "diamond": min(self.logic["diamond"], room), "legendary": min(self.logic["legendary"], room)}
-        if fitted != self.logic:
-            logging.warning(f"{self.player_name} (The Bazaar): logic card counts lowered to {fitted} - each hero "
-                            f"only has {free} checks that need no cards.")
+        """Every check that expects K of a hero's cards needs at least K (+ FREE_MARGIN) of that hero's checks that
+        expect fewer - that's where the cards can go. Small seeds (one hero, PvP/monster checks off, a short max_day)
+        can't give that (review 2026-09-30: generation failed on every seed), so all logic numbers are scaled down
+        together until each hero fits. Runs once the locked items are known."""
+        def fits(logic: Dict[str, int]) -> bool:
+            for hero in self.heroes:
+                needs = sorted(card_requirements(hero, len(self.lock_items.get(hero, [])),
+                                                 self.options.max_day.value, bool(self.options.pvp_win_checks),
+                                                 self.monster_tiers, logic).values())
+                if any(need and sum(n < need for n in needs) < need + FREE_MARGIN for need in needs):
+                    return False
+            return True
+        wanted = dict(self.logic)
+        for percent in range(100, -1, -5):
+            fitted = {key: value * percent // 100 for key, value in wanted.items()}
+            if fits(fitted):
+                break
+        if fitted != wanted:
+            logging.warning(f"{self.player_name} (The Bazaar): logic card counts lowered to {fitted} - this seed "
+                            f"has too few checks to place that many cards first.")
             self.logic = fitted
 
     def rebuild_from_slot_data(self, data: Dict[str, Any]) -> None:
@@ -218,8 +224,8 @@ class BazaarWorld(World):
 
         budget = (slots - len(pool)) * self.options.locked_cards_percent.value // 100
         duplicated = self.options.duplicate_cards.value
-        if self.options.duplicate_all_cards:
-            cards = self.pick_cards(budget // 2, excluded)
+        if self.options.duplicate_all_cards:  # every spare slot holds pairs, never filler (user 2026-09-30, "1 a")
+            cards = self.pick_cards((slots - len(pool)) // 2, excluded)
             copies = list(cards)
         else:
             cards = self.pick_cards(budget, excluded)
@@ -247,6 +253,7 @@ class BazaarWorld(World):
                                      for name in copies]
         # The Bazaar has no natural filler; this only happens when there's nothing left to duplicate
         self.multiworld.itempool += [self.create_filler() for _ in range(slots - len(pool) - len(copies))]
+        self.fit_logic()
 
     def create_items_from_slot_data(self, data: Dict[str, Any]) -> None:
         """Universal Tracker only needs the same locations and rules; the item pool just has to be the right size."""

@@ -218,4 +218,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    if "--i-have-permission" not in sys.argv:  # frozen: reading GameData.db is data mining (see the docstring)
+        sys.exit("Card data is frozen (The Bazaar's EULA forbids data mining) - see docs/UPDATING-GAME-DATA.md. "
+                 "Only run this with written permission, adding --i-have-permission.")
     main()

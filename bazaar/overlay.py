@@ -41,7 +41,7 @@ LEFT_BOTTOM = 1056
 RIGHT_BOTTOM = 950  # above the settings gear in the bottom-right corner
 
 FONT_SIZES = range(13, 9, -1)  # 1080p pixel sizes tried for the locked-card list (scaled with the window)
-MIN_FONT = 9  # never smaller than this many real pixels, however small the window
+MIN_FONT = 10  # never smaller than this many real pixels, however small the window (user rule: text >= 10 px)
 POINT_TO_PX = 4 / 3  # Tk points to pixels at 96 dpi (the overlay's other text is sized in points)
 PAD = 10  # inside every panel
 BORDER = 2  # every panel's gold border
@@ -49,6 +49,7 @@ WINDOW_GAP = 4  # between two panels that sit on top of each other
 INDENT = 8  # names sit a little right of their letter
 GAP = 12  # between columns
 ALERT_SHARE = 2  # the alert box takes at most 1/2 of the left strip (the rest is the list's)
+MAX_ALERT_LINES = 6  # held cards / trap lines shown in it; more become "+ N more" (review 2026-09-30)
 TOAST_SHARE = 3  # pop-ups take at most 1/3 of the right strip
 MAX_TOASTS = 4
 POLL_MS = 250
@@ -337,7 +338,9 @@ class _Screen:
         }
 
     def run(self) -> None:
-        self.sync_visibility()  # an open Shop Guide shows from the start (while the game is in front)
+        # laid out once now: with the game exactly on the primary screen no later tick sees a "move", and an open
+        # Shop Guide showed at its unsettled size over the game's corner (review 2026-09-30)
+        self.render()
         self.root.after(POLL_MS, self.poll)
         self.root.mainloop()
 
@@ -515,6 +518,8 @@ class _Screen:
             title, cards, _ = state["locked"]
             tk.Label(frame, text=title, fg=ACCENT, bg=bg, font=f(14, "bold"), wraplength=inner_w,
                      justify="left").pack(anchor="w", pady=(6 if state["deathlink"] else 0, 2 if cards else 0))
+            if len(cards) > MAX_ALERT_LINES:  # the box would grow past its share and hide its own buttons
+                cards = cards[:MAX_ALERT_LINES - 1] + [f"+ {len(cards) - MAX_ALERT_LINES + 1} more"]
             for line in cards:  # cleared automatically when the log says it was sold
                 text, guid = line if isinstance(line, tuple) else (line, None)
                 if not guid:
@@ -634,7 +639,7 @@ class _Screen:
             if self.tick() == "quit":
                 return
         except Exception:
-            logger.exception("Overlay error (it keeps going)")
+            logger.exception("Overlay error (it keeps going)", extra=FILE_ONLY)  # never the GUI from this thread
         self.root.after(POLL_MS, self.poll)
 
     def tick(self) -> Optional[str]:

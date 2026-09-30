@@ -39,8 +39,8 @@ def days_card_requirement(day: int, lock_count: int, day_10_cards: int, last_day
     if day <= 9:
         return min(math.ceil(day_10_cards / 2), lock_count)
     last = max(last_day_cards, day_10_cards)  # never easier later on
-    steps = max(max_day - 10, 1)
-    wanted = day_10_cards + (last - day_10_cards) * (min(day, max_day) - 10) / steps
+    final = max(max_day, 10)  # a max_day under 10: nothing to climb, day 10 (10 wins) just needs the day-10 amount
+    wanted = day_10_cards + (last - day_10_cards) * (min(day, final) - 10) / max(final - 10, 1)
     return min(math.floor(wanted + 0.5), lock_count)
 
 
@@ -83,7 +83,7 @@ def card_requirements(hero: str, lock_count: int, max_day: int, pvp_win_checks: 
         elif check.kind == "monster":  # Bronze/Silver/Gold only follow the day's requirement
             needs[check.name] = max(by_day(check.day), min(lock_count, tier_cards.get(check.tier, 0)))
         elif check.kind == "win":  # the hardest thing a run does: the last day's amount (user 2026-09-30)
-            needs[check.name] = by_day(max_day)
+            needs[check.name] = by_day(max(max_day, 10))
         else:  # reaching a day
             needs[check.name] = by_day(check.day)
     return needs

@@ -48,7 +48,8 @@ impossible); you can always try anything. It keeps important items off hard chec
 traps and bypasses - that hold a different locked card. The rest hold duplicates: extra hero unlocks first (up to
 3 of each), then extra copies of locked cards. Copy counts you set yourself never change: you get exactly
 `legendary_items` Legendary Items unlocks and `expedition_tickets` Expedition Tickets unlocks, and cards in
-`duplicate_cards` keep their two copies.
+`duplicate_cards` keep their two copies. With `duplicate_all_cards` (casual mode) the percent doesn't apply: every
+spare check holds a locked card, each with a second copy somewhere in the multiworld.
 
 ## What is the goal?
 
@@ -67,15 +68,20 @@ you have enabled).
   Deep or Dooltron. Unlocks all of its cards at once. Every pack has its own switch (`pack_dooley_dooltron` and so
   on), all on by default, so you can keep just the packs you like. Packs lock a lot more cards in total (10 per
   check), so turning on **Duplicate All Cards (casual)** as well is a good idea.
-- Filler items with no effect.
+- **Sell Trap** / **Lock Bypass** (see below).
+- Filler items with no effect (only if the pool somehow runs out of anything else).
 
 ## Checks are blocked while you break a rule
 
 The client refuses to send **any** check (days, PvP, monsters, 10 wins) while:
 
 - you're playing a hero you haven't received - for the whole run;
-- you're holding a locked card - until the game's log shows you sold it (or you receive it as an item);
-- you've received a DeathLink - for the rest of that run, including the fight you're in.
+- you're holding a locked card - until the game's log shows you sold it, you receive it as an item, or you use a
+  Lock Bypass on it;
+- a Sell Trap's deadline has passed and you still hold its item - until you sell it;
+- you've received a DeathLink - for the rest of that run, including the fight you're in;
+- a run started while the client was off or disconnected was already holding a locked card when the client caught
+  up - concede that run (no DeathLink is sent for it).
 
 A banner in the top-left corner says "CHECKS ARE BLOCKED ..." and why. Checks you miss this way can still be
 earned in a later run.
