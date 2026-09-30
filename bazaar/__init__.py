@@ -234,7 +234,10 @@ class BazaarWorld(World):
             self.lock_items.setdefault(CARDS_BY_NAME[name].hero, []).append(name)
         self.group_items = sorted(set(groups))
 
-        copies += self.extra_copies(slots - len(pool) - len(copies), pool + copies, cards)
+        # copy counts the player set (group unlocks, duplicated cards) never grow: only the others get extras
+        chosen = set(copies) if self.options.duplicate_all_cards else set(duplicated)
+        copies += self.extra_copies(slots - len(pool) - len(copies), pool + copies,
+                                    [name for name in cards if name not in chosen])
         self.multiworld.itempool += [self.create_item(name) for name in pool]
         # extra copies: the same items, but logic never needs them (the first copy is the one that counts)
         self.multiworld.itempool += [BazaarItem(name, ItemClassification.useful, item_name_to_id[name], self.player)
@@ -252,12 +255,12 @@ class BazaarWorld(World):
         self.multiworld.itempool += [self.create_filler() for _ in range(slots - min(slots, len(pool)))]
 
     def extra_copies(self, free: int, placed: List[str], cards: List[str]) -> List[str]:
-        """Fill `free` slots with duplicates: hero unlocks, then group unlocks, then locked cards (max 3 each)."""
+        """Fill `free` slots with duplicates: hero unlocks, then locked cards (max 3 each). Group unlocks never get
+        extras: their copies are an option, and a player who asked for 2 must not find a 3rd (user, 2026-09-30)."""
         count = {name: placed.count(name) for name in set(placed)}
         extra: List[str] = []
         heroes = [hero_item(h) for h in self.heroes if h != self.starting_hero]
-        groups = [name for name in GROUP_ITEMS if count.get(name)]
-        for tier in (heroes, groups, self.random.sample(cards, len(cards))):
+        for tier in (heroes, self.random.sample(cards, len(cards))):
             progressing = True
             while progressing and len(extra) < free:
                 progressing = False

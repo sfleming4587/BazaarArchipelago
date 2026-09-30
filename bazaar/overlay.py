@@ -19,7 +19,6 @@ from typing import Callable, Dict, List, Optional, Set
 from . import screens
 from .shop_guide import ShopGuide
 from .theme import ACCENT, FG, FONT, GOOD, MUTED, SEVERITY, WARN
-from .card_picker import CardPicker
 from .tracker import Tracker
 
 logger = logging.getLogger("Client")
@@ -220,7 +219,7 @@ class Overlay:
         self.game_window: Optional[tuple] = None  # tests: pretend the game's client area is here (x, y, w, h)
         self.guide_file = guide_file  # where the Shop Guide remembers whether it's closed and where you put it
         self.art_cache_dir = art_cache_dir
-        self.on_bypass_pick: Optional[Callable[[str], None]] = None  # the client: spend a Lock Bypass on a card
+        self.on_bypass: Optional[Callable[[str], None]] = None  # the client: use a Lock Bypass on a held card
         self.commands: "queue.Queue" = queue.Queue()
         self.available = True  # False if the windows can't open (no tkinter, or Tk can't start)
         self.ready = threading.Event()  # set once the windows are up (or failed to come up)
@@ -229,8 +228,9 @@ class Overlay:
 
     # --- called from the client ---------------------------------------------------------------------------------
 
-    def show_locked(self, title: Optional[str], cards: List[str], blocked: bool = False) -> None:
+    def show_locked(self, title: Optional[str], cards: list, blocked: bool = False) -> None:
         """The alert box's banner and the lines under it (held locked cards, Sell Traps). title=None hides it.
+        A line is text, or (text, card guid) to give it a "Use Bypass" button (a Lock Bypass is ready).
         blocked: checks are blocked (critical, red) rather than just a warning (a Sell Trap coming up)."""
         self.commands.put(("locked", (title, list(cards), blocked) if title else None))
 
@@ -256,11 +256,6 @@ class Overlay:
 
     def toggle_tracker(self) -> None:
         self.commands.put(("tracker_toggle", None))
-
-    def show_bypass(self, ready: int, locked) -> None:
-        """Lock Bypasses ready in this run (0 = none, or not in a run) and the cards locked this run: the alert box
-        gets a Lock Bypass button that opens the card picker."""
-        self.commands.put(("bypass", (ready, frozenset(locked)) if ready else None))
 
     def show_deathlink(self, text: Optional[str]) -> None:
         self.commands.put(("deathlink", text))
@@ -316,8 +311,7 @@ class _Screen:
 
         self.layout: dict = {}  # the strips for where the game window is now (see relayout)
         self.relayout((0, 0, root.winfo_screenwidth(), root.winfo_screenheight()))  # until the game is seen
-        self.state = {"locked": None, "deathlink": None, "shop": None, "toasts": [], "status": None,
-                      "bypass": None}
+        self.state = {"locked": None, "deathlink": None, "shop": None, "toasts": [], "status": None}
         self.list_hidden = False  # the player hid the locked-card list (until they show it again)
         # what each window shows now, to skip redraws that change nothing
         self.drawn: dict = {"alerts": None, "shop": None, "toasts": None, "alerts_height": 0, "toasts_height": 0}
@@ -331,8 +325,6 @@ class _Screen:
             on_art=lambda guid: overlay.commands.put(("art", guid)),
             on_closed=lambda: overlay.commands.put(("redraw", None)))
         self.tracker = Tracker(tk, root, lambda: self.layout["screen"])
-        self.picker = CardPicker(tk, root, lambda: self.layout["screen"],
-                                 lambda guid: overlay.on_bypass_pick and overlay.on_bypass_pick(guid))
         self.handlers: Dict[str, Callable] = {
             "art": lambda guid: self.guide and self.guide.refresh(guid),
             "board": lambda value: self.guide and self.guide.render(value),
@@ -340,7 +332,6 @@ class _Screen:
             "tracker": self.new_tracker_data,
             "tracker_toggle": lambda _: self.tracker.toggle(),
             "toast": self.new_toast,
-            "bypass": self.new_bypass,
             **{kind: (lambda value, kind=kind: self.set_state(kind, value))
                for kind in ("locked", "deathlink", "shop", "status")},
         }
@@ -467,12 +458,9 @@ class _Screen:
 
     def buttons(self) -> list:
         """(label, action) for the buttons in the alert box (the list and pop-ups let clicks through): the tracker
-        (user: "on the permanent top-left overlay"), the Lock Bypass card picker while one is ready, the Shop Guide
-        when it's closed, and hiding the list."""
+        (user: "on the permanent top-left overlay"), the Shop Guide when it's closed, and hiding the list."""
         state = self.state
         buttons = [("Tracker", self.tracker.toggle)] if self.tracker.data else []
-        if state["bypass"]:
-            buttons.append(("Lock Bypass", self.picker.toggle))
         if state["shop"] and self.guide and self.guide.hidden:
             buttons.append(("Pictures", self.guide.show))
         if state["shop"] and state["shop"][1]:
@@ -527,9 +515,20 @@ class _Screen:
             title, cards, _ = state["locked"]
             tk.Label(frame, text=title, fg=ACCENT, bg=bg, font=f(14, "bold"), wraplength=inner_w,
                      justify="left").pack(anchor="w", pady=(6 if state["deathlink"] else 0, 2 if cards else 0))
-            for text in cards:  # cleared automatically when the log says it was sold
-                tk.Label(frame, text=text, fg=FG, bg=bg, font=f(11), wraplength=inner_w,
-                         justify="left").pack(anchor="w")
+            for line in cards:  # cleared automatically when the log says it was sold
+                text, guid = line if isinstance(line, tuple) else (line, None)
+                if not guid:
+                    tk.Label(frame, text=text, fg=FG, bg=bg, font=f(11), wraplength=inner_w,
+                             justify="left").pack(anchor="w")
+                    continue
+                card = tk.Frame(frame, bg=bg)
+                card.pack(fill="x")
+                use = tk.Button(card, text="Use Bypass", font=f(9, "bold"), padx=4, pady=0,
+                                command=lambda g=guid: self.overlay.on_bypass and self.overlay.on_bypass(g))
+                use.pack(side="right", anchor="n", padx=(4, 0))
+                use.update_idletasks()
+                tk.Label(card, text=text, fg=FG, bg=bg, font=f(11), wraplength=inner_w - use.winfo_reqwidth() - 8,
+                         justify="left").pack(side="left", anchor="w")
         # last line: the status text with the buttons on its right; the buttons get a row of their own only when
         # that would squeeze the text below half the width
         if state["status"] or buttons:
@@ -619,12 +618,6 @@ class _Screen:
         self.state["toasts"] = (self.state["toasts"] + [value])[-MAX_TOASTS:]
         return True
 
-    def new_bypass(self, value) -> bool:  # (ready, locked guids) or None
-        changed = value != self.state["bypass"]
-        self.state["bypass"] = value
-        self.picker.update(*(value or (0, set())))
-        return changed
-
     def new_tracker_data(self, data) -> bool:
         first = not self.tracker.data
         self.tracker.update(data)
@@ -632,7 +625,7 @@ class _Screen:
 
     def own_windows(self) -> Set[int]:
         windows = self.panels + list(self.backdrops.values()) + ([self.guide.win] if self.guide else [])
-        return {screens.window_handle(w) for w in windows} | set(self.tracker.windows()) | set(self.picker.windows())
+        return {screens.window_handle(w) for w in windows} | set(self.tracker.windows())
 
     def poll(self) -> None:
         """Runs every POLL_MS in the Tk thread. An error is logged and the loop carries on - a stopped loop would

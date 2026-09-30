@@ -116,7 +116,7 @@ class MonsterChecks(DefaultOnToggle):
 def _max_monster_tier_body(namespace: dict) -> None:
     namespace.update(
         __doc__="The highest monster rarity that has a check. Pick diamond to leave out Legendary monster checks.",
-        display_name="Maximum Monster Difficulty", default=len(TIERS) - 1, __module__=__name__,
+        display_name="Maximum Monster Difficulty", default=TIERS.index("Diamond"), __module__=__name__,
         **{f"option_{tier.lower()}": number for number, tier in enumerate(TIERS)})  # from data.TIERS
 
 
@@ -134,12 +134,13 @@ class LockedCardsPercent(Range):
     Locked cards may not be bought or kept until you receive them. They're spread evenly over your heroes
     (and the Common pool, if enabled).
     Below 100, the other checks hold duplicates instead: first extra hero unlocks (up to 3 of each), then extra
-    Legendary Items / Expedition Tickets unlocks (up to 3 of each), then extra copies of locked cards.
+    copies of locked cards (up to 3 of each). Copy counts you set yourself never change: Legendary Items and
+    Expedition Tickets unlocks, and cards in duplicate_cards (or every card, with duplicate_all_cards).
     """
     display_name = "Locked Cards Percent"
     range_start = 0
     range_end = 100
-    default = 100
+    default = 80
 
 
 class StarterCards(Range):
@@ -199,7 +200,7 @@ class SellTraps(Range):
     display_name = "Sell Traps"
     range_start = 0
     range_end = 20
-    default = 0
+    default = 3
 
 
 class SellTrapDays(Range):
@@ -219,7 +220,7 @@ class LockBypasses(Range):
     display_name = "Lock Bypasses"
     range_start = 0
     range_end = 20
-    default = 0
+    default = 5
 
 
 class LogicDay10Cards(Range):
@@ -346,19 +347,23 @@ BazaarOptions = make_dataclass("BazaarOptions", [(name, option) for name, option
                                bases=(_BazaarOptions,))
 
 
-# One-click setups on the website's options page. Owned DLC heroes are never set by a preset.
+# One-click setups: the website's options page and the Launcher's "Generate Template Options" (Players/Templates/
+# Presets). Standard is the option defaults and nothing else (user, 2026-09-30): change a default and Standard follows.
+# Owned DLC heroes are never set by a preset.
 option_presets = {
     "Casual": {
-        "heroes_required": 1, "max_day": 12, "max_monster_tier": "diamond", "locked_cards_percent": 60,
-        "starter_cards": 30, "logic_day_10_cards": 8, "logic_diamond_cards": 5, "logic_legendary_cards": 10,
-        "early_hero_unlock": True, "death_link": False,
+        "heroes_required": 1, "early_hero_unlock": True, "max_day": 12, "max_monster_tier": "gold",
+        "locked_cards_percent": 60, "starter_cards": 30, "legendary_items": 3, "expedition_tickets": 3,
+        "sell_traps": 0, "lock_bypasses": 10,
+        "logic_day_10_cards": 8, "logic_diamond_cards": 5, "logic_legendary_cards": 10, "death_link": False,
     },
-    "Standard": {
-        "heroes_required": 3,
-    },
+    "Standard": {},
     "Hardcore": {
-        "heroes_required": 5, "starter_cards": 10, "logic_day_10_cards": 25, "logic_diamond_cards": 20,
-        "logic_legendary_cards": 30, "sell_traps": 5, "death_link": True, "death_link_on_concede": True,
+        "heroes_required": 6, "max_day": 16, "max_monster_tier": "legendary", "locked_cards_percent": 100,
+        "starter_cards": 10, "legendary_items": 1, "expedition_tickets": 1, "legacy_card_packs": True,
+        "sell_traps": 10, "sell_trap_days": 1, "lock_bypasses": 0,
+        "logic_day_10_cards": 25, "logic_diamond_cards": 20, "logic_legendary_cards": 30,
+        "death_link": True, "death_link_on_concede": True,
     },
 }
 

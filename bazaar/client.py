@@ -183,8 +183,8 @@ class BazaarContext(CommonContext):
                     if self.overlay and args.get("index", 0) > 0:  # index 0 = the full list resent on connect
                         self.overlay.toast(f"UNLOCKED: {HERO_ITEM_IDS.get(item.item, name)}  (from {self.who(item.player)})")
                 elif item.item == LOCK_BYPASS_ID and args.get("index", 0) > 0:
-                    self.event("Lock Bypass received: during a run, press Lock Bypass and pick a locked card.")
-                    self.toast(f"LOCK BYPASS from {self.who(item.player)}! Press Lock Bypass in a run to pick a card.",
+                    self.event("Lock Bypass received: use it on a locked card you're holding (the button next to it).")
+                    self.toast(f"LOCK BYPASS from {self.who(item.player)}! Use it on a locked card you're holding.",
                                seconds=12)
             self.refresh_held()
             self.receive_traps()
@@ -308,19 +308,19 @@ class BazaarContext(CommonContext):
     def bypasses_ready(self) -> int:
         return sum(item.item == LOCK_BYPASS_ID for item in self.items_received) - self.bypasses_used
 
-    def pick_bypass(self, guid: str) -> None:
-        """The card picker's choice (overlay button): allow that locked card for the rest of the run, its copies and
-        upgrades too, using up one Lock Bypass. The only way a bypass is spent - never automatically, so one isn't
-        lost on a card you didn't realise was locked (user, 2026-09-30). Checked again here: the picker may be a
-        moment behind."""
-        if not self.run.get("active") or self.bypasses_ready() <= 0 or guid not in self.run_locked_guids():
-            self.event("That Lock Bypass pick doesn't apply any more (no bypass ready, no run, or not locked).")
+    def use_bypass(self, guid: str) -> None:
+        """The "Use Bypass" button next to a locked card you're holding: that card (its copies and upgrades too) is
+        allowed for the rest of the run, using up one Lock Bypass. The only way a bypass is spent, and only on a card
+        that's blocking checks (user, 2026-09-30) - never automatically, so one isn't lost on a card you didn't
+        realise was locked. Checked again here: the button may be a moment behind."""
+        if not self.run.get("active") or self.bypasses_ready() <= 0 or guid not in self.run.get("held", {}).values():
+            self.event("That Lock Bypass doesn't apply any more (no bypass ready, or the card isn't held).")
             return
         self.bypasses_used += 1
         self.run.setdefault("bypassed", []).append(guid)
         self.event(f"Lock Bypass used: {self.held_text(guid)} is allowed for the rest of this run.")
         self.toast(f"LOCK BYPASS USED: {CARDS_BY_GUID[guid].name} is yours for this run", seconds=12)
-        self.refresh_held()  # a picked card you're already holding stops blocking checks
+        self.refresh_held()  # every copy of it you hold stops blocking checks
         if self.encounter:  # the shop warning and the Shop Guide show it as allowed now
             self.handle_encounter(self.encounter)
         self.update_status()
@@ -481,7 +481,9 @@ class BazaarContext(CommonContext):
         if self.overlay:
             reason = self.blocked_reason()
             held = self.run.get("held", {}) if self.run.get("active") else {}
-            lines = [self.held_text(g) for g in held.values()]
+            bypass = self.bypasses_ready() > 0  # each held card gets a "Use Bypass" button
+            lines = [(f"{self.held_text(g)} - SELL OR USE BYPASS", g) if bypass else self.held_text(g)
+                     for g in held.values()]
             upcoming = [t for t in self.run.get("traps", []) if t not in self.overdue_traps()] \
                 if self.run.get("active") else []
             lines += [f"Sell Trap: sell {self.card_name(t['guid'])} before day {t['deadline']} starts"
@@ -512,8 +514,8 @@ class BazaarContext(CommonContext):
         self.event(f"You {how} {self.held_text(event.guid)}, which is still locked! "
                    "CHECKS ARE BLOCKED until you sell it.", warning=True)
         self.beep()
-        use = " (or use your Lock Bypass on it)" if self.bypasses_ready() > 0 else ""
-        self.toast(f"SELL IT NOW{use}: {CARDS_BY_GUID[event.guid].name} is locked", seconds=12, warning=True)
+        what = "SELL OR USE BYPASS" if self.bypasses_ready() > 0 else "SELL IT NOW"
+        self.toast(f"{what}: {CARDS_BY_GUID[event.guid].name} is locked", seconds=12, warning=True)
         self.refresh_held()
 
     def handle_sold(self, event: CardSold) -> None:
@@ -753,26 +755,28 @@ class BazaarContext(CommonContext):
         goal = f"Goal {len(self.heroes_won())}/{self.setting('heroes_required')}"
         if self.run.get("active"):
             hero, day, max_day = self.run["hero"], self.run.get("day", 1), self.setting("max_day")
-            ready = self.bypasses_ready()
-            bypass = f" · Lock Bypass ready ({ready})" if ready else ""
-            return f"{hero}: day {day}/{max_day} · {goal}{bypass}", False, False
+            return f"{hero}: day {day}/{max_day} · {goal}{self.bypass_text()}", False, False
         if self.menu_hero:
             playable = [h for h in self.setting("heroes") if self.hero_unlocked(h)]
             lines = ["HEROES YOU CAN PLAY  (checks done / in logic)"] if playable else ["No hero unlocked yet"]
             for hero in playable:
                 progress = self.hero_progress(hero)
                 lines.append(f"   {hero}   {progress[0]} / {progress[1]}" if progress else f"   {hero}")
-            lines.append(goal)
+            lines.append(goal + self.bypass_text())
             if self.menu_hero not in playable:
                 return "\n".join([f"{self.menu_hero.upper()} IS LOCKED - pick another hero."] + lines), True, True
             return "\n".join(lines), False, True
-        return goal, False, False  # connected, game not showing a hero yet: keeps the box (and its Tracker button)
+        # connected, game not showing a hero yet: keeps the box (and its Tracker button)
+        return goal + self.bypass_text(), False, False
+
+    def bypass_text(self) -> str:
+        """The Lock Bypasses you have, always on the status line while there's at least one (user, 2026-09-30)."""
+        ready = self.bypasses_ready()
+        return f" · Lock Bypass{'es' if ready != 1 else ''}: {ready}" if ready > 0 else ""
 
     def update_status(self) -> None:
         if self.overlay:
             self.overlay.show_status(*self.status_line())
-            ready = self.bypasses_ready() if self.run.get("active") else 0
-            self.overlay.show_bypass(ready, self.run_locked_guids() if ready else ())
             self.overlay.show_tracker_data(self.tracker_data())
 
     def handle_hero_selected(self, event: HeroSelected) -> None:
@@ -956,8 +960,8 @@ async def main(args) -> None:
         from .overlay import Overlay
         ctx.overlay = Overlay(art_cache_dir=Utils.cache_path("bazaar_card_art") if ctx.shop_guide else None,
                               guide_file=Utils.user_path("bazaar_shop_guide.json"))
-        loop = asyncio.get_running_loop()  # the picker runs in the overlay's thread; the choice is handled here
-        ctx.overlay.on_bypass_pick = lambda guid: loop.call_soon_threadsafe(ctx.pick_bypass, guid)
+        loop = asyncio.get_running_loop()  # the button lives in the overlay's thread; the bypass is used here
+        ctx.overlay.on_bypass = lambda guid: loop.call_soon_threadsafe(ctx.use_bypass, guid)
     ctx.server_task = asyncio.create_task(server_loop(ctx), name="server loop")
     if ctx.overlay:
         # the windows start in their own thread; wait until they're up (or known not to come up)

@@ -390,41 +390,70 @@ class TestLockBypass(ClientTestBase):
         self.assertIn(LOCKED.name.upper(), self.ctx.blocked_reason())  # held and blocking, as without a bypass
         self.assertEqual(self.ctx.bypasses_ready(), 1)
 
-    def test_picked_card_and_its_copies_are_allowed_for_the_run(self) -> None:
+    def test_held_card_and_its_copies_are_allowed_for_the_run(self) -> None:
         self.receive_bypass()
-        self.play(RunStarted("Vanessa"))
-        self.ctx.pick_bypass(LOCKED.guid)
-        self.play(CardGained(LOCKED.guid, "itm_x", True), CardGained(LOCKED.guid, "itm_y", True), DayReached(2))
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True), CardGained(LOCKED.guid, "itm_y", True))
+        self.ctx.use_bypass(LOCKED.guid)
+        self.play(DayReached(2))
         self.assertIsNone(self.ctx.blocked_reason())
         self.assertTrue(self.was_sent(day_location("Vanessa", 2)))
         self.assertEqual(self.ctx.bypasses_ready(), 0)
         self.play(CardSold("itm_x"), CardSold("itm_y"), CardGained(LOCKED.guid, "itm_z", True))  # sold and bought back
         self.assertIsNone(self.ctx.blocked_reason())
 
-    def test_one_bypass_covers_one_card(self) -> None:
+    def test_only_a_held_card_can_be_bypassed(self) -> None:
+        """User, 2026-09-30: only when an item in your inventory is blocked."""
         self.receive_bypass()
         self.play(RunStarted("Vanessa"))
-        self.ctx.pick_bypass(LOCKED.guid)
-        self.ctx.pick_bypass(self.OTHER.guid)  # none left: ignored
-        self.play(CardGained(self.OTHER.guid, "itm_o", True))
-        self.assertIn(self.OTHER.name.upper(), self.ctx.blocked_reason())
+        self.ctx.use_bypass(LOCKED.guid)  # not held
+        self.assertEqual(self.ctx.bypasses_ready(), 1)
+        self.play(CardGained(LOCKED.guid, "itm_x", True))
+        self.assertIsNotNone(self.ctx.blocked_reason())
+
+    def test_one_bypass_covers_one_card(self) -> None:
+        self.receive_bypass()
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True),
+                  CardGained(self.OTHER.guid, "itm_o", True))
+        self.ctx.use_bypass(LOCKED.guid)
+        self.ctx.use_bypass(self.OTHER.guid)  # none left: ignored
+        reason = self.ctx.blocked_reason()
+        self.assertIn(self.OTHER.name.upper(), reason)
+        self.assertNotIn(LOCKED.name.upper(), reason)
 
     def test_new_run_locks_the_card_again_and_keeps_unused_bypasses(self) -> None:
         self.receive_bypass()
         self.receive_bypass()
-        self.play(RunStarted("Vanessa"))
-        self.ctx.pick_bypass(LOCKED.guid)
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True))
+        self.ctx.use_bypass(LOCKED.guid)
         self.play(RunEnded(False, 3), RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_y", True))
         self.assertIsNotNone(self.ctx.blocked_reason())
         self.assertEqual(self.ctx.bypasses_ready(), 1)
 
     def test_spent_bypasses_survive_a_restart(self) -> None:
         self.receive_bypass()
-        self.play(RunStarted("Vanessa"))
-        self.ctx.pick_bypass(LOCKED.guid)
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True))
+        self.ctx.use_bypass(LOCKED.guid)
         self.ctx.load_state()
         self.assertEqual(self.ctx.bypasses_ready(), 0)
         self.assertEqual(self.ctx.run["bypassed"], [LOCKED.guid])
+
+    def test_held_card_gets_a_bypass_button_only_while_one_is_ready(self) -> None:
+        self.ctx.overlay = mock.Mock()
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True))
+        self.assertIsInstance(self.ctx.overlay.show_locked.call_args[0][1][0], str)  # no bypass: plain line
+        self.receive_bypass()
+        self.ctx.refresh_held()  # what receiving items does
+        text, guid = self.ctx.overlay.show_locked.call_args[0][1][0]
+        self.assertIn("SELL OR USE BYPASS", text)
+        self.assertEqual(guid, LOCKED.guid)
+
+    def test_count_shows_on_the_status_line_whenever_there_is_one(self) -> None:
+        self.assertNotIn("Bypass", self.ctx.status_line()[0])
+        self.receive_bypass()
+        self.receive_bypass()
+        self.assertIn("Lock Bypasses: 2", self.ctx.status_line()[0])  # not in a run
+        self.play(RunStarted("Vanessa"))
+        self.assertIn("Lock Bypasses: 2", self.ctx.status_line()[0])
 
 
 class TestUnblockCommand(ClientTestBase):

@@ -39,7 +39,11 @@ The Bazaar:
   heroes_required: 3
 ```
 
-On a player options page you can also start from a preset: **Casual**, **Standard** or **Hardcore**.
+Prefer a ready-made setup? The Launcher's **Generate Template Options** also writes three presets to
+`Players/Templates/Presets`: **The Bazaar - Casual**, **- Standard** and **- Hardcore**. Standard is simply the
+defaults. Casual goes easy (1 hero to win, fewer locks, Lock Bypasses instead of traps); Hardcore goes all in (6
+heroes if you have them, days up to 16, Legendary monsters, card packs locked, 10 Sell Traps with a day to sell, no
+bypasses).
 
 Looking for a relaxed game? **Duplicate All Cards (casual)** keeps the same number of checks but gives every locked
 card a second copy in the multiworld, so there are about half as many locked cards and each one turns up sooner.
@@ -84,8 +88,8 @@ act on (locked cards for sale, a Sell Trap, a locked hero picked), **dark** = ju
 Short pop-ups that always name the other player: an unlock you receive (**UNLOCKED ... from**), an item one of your
 checks sends (**SENT ... to**), filler someone found for you (**RECEIVED ... from**) or you found yourself
 (**FOUND**), a Sell Trap or Lock Bypass and who sent it, **LOCK BYPASS USED** naming the card it let you keep,
-**SELL IT NOW** if you buy or get a locked card, and a note when the game was updated since the apworld was made. A
-red **CHECK NOT SENT** pop-up names any check the moment it's blocked.
+**SELL IT NOW** (or **SELL OR USE BYPASS**) if you buy or get a locked card, and a note when the game was updated
+since the apworld was made. A red **CHECK NOT SENT** pop-up names any check the moment it's blocked.
 
 ### Shop Guide
 

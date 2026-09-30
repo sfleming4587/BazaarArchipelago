@@ -18,7 +18,7 @@ Per hero, for each day from 1 up to `max_day` (default 13, at most 16):
 - **Day N Monster (Rarity)** (`monster_checks`): one check per rarity that day's hour-3 monsters can have -
   day 1 up to Silver, day 2 up to Gold, days 3-5 up to Diamond, day 6+ up to Legendary.
   Beating a monster sends its rarity and every rarity below it for that day. Monsters from events don't count.
-  `max_monster_tier` caps the highest rarity with a check.
+  `max_monster_tier` caps the highest rarity with a check (default Diamond, so no Legendary monster checks).
 
 Plus **10 Wins** with each hero. Getting 10 wins sends all of that hero's "Reach Day" checks, plus the PvP and
 monster checks for the days that run never reached (winning fast ends a run early).
@@ -43,9 +43,11 @@ impossible); you can always try anything. It keeps important items off hard chec
 
 ## How many cards are locked?
 
-Every check that isn't a hero, pack or group unlock holds a different locked card (`locked_cards_percent`,
-default 100). Lower it and the spare checks hold duplicates instead: extra hero unlocks first (up to 3 of each),
-then extra Legendary Items / Expedition Tickets (up to 3 of each), then extra copies of locked cards.
+`locked_cards_percent` (default 80) is the share of the checks left over - after hero, pack and group unlocks,
+traps and bypasses - that hold a different locked card. The rest hold duplicates: extra hero unlocks first (up to
+3 of each), then extra copies of locked cards. Copy counts you set yourself never change: you get exactly
+`legendary_items` Legendary Items unlocks and `expedition_tickets` Expedition Tickets unlocks, and cards in
+`duplicate_cards` keep their two copies.
 
 ## What is the goal?
 
@@ -75,23 +77,23 @@ The client refuses to send **any** check (days, PvP, monsters, 10 wins) while:
 A banner in the top-left corner says "CHECKS ARE BLOCKED ..." and why. Checks you miss this way can still be
 earned in a later run.
 
-## Sell Traps (optional, off by default)
+## Sell Traps
 
-With `sell_traps` above 0, the multiworld contains Sell Traps. When you receive one, the client picks a random item
-you're holding and gives you `sell_trap_days` days (default 2) to sell it. If you still have it when that day
-starts, checks are blocked until you sell it. A trap never blocks the fight you're in. If it arrives while
-you're between runs or holding nothing it can pick, it's **dodged** and does nothing.
+The multiworld contains `sell_traps` Sell Traps (default 3; 0 turns them off). When you receive one, the client
+picks a random item you're holding and gives you `sell_trap_days` days (default 2) to sell it. If you still have it
+when that day starts, checks are blocked until you sell it. A trap never blocks the fight you're in. If it arrives
+while you're between runs or holding nothing it can pick, it's **dodged** and does nothing.
 
-## Lock Bypasses (optional, off by default)
+## Lock Bypasses
 
-The friendly opposite of a Sell Trap. With `lock_bypasses` above 0, the multiworld contains Lock Bypasses. During
-a run, press **Lock Bypass** in the top-left box. A window lists every card in the game, with a search bar and
-filters for hero (or Common), size and starting rarity. Pick a locked card and press **Use Lock Bypass**: that card
-is yours for the rest of the run - more copies of it too, so you can upgrade it, and selling it and buying it back is
-fine. If you're already holding it, checks unblock straight away. The card is locked again when the run ends.
+The friendly opposite of a Sell Trap: the multiworld contains `lock_bypasses` Lock Bypasses (default 5; 0 turns them
+off). A bypass is for the moment you're holding a locked card: next to that card, the alert says **SELL OR USE
+BYPASS** and has a **Use Bypass** button. Press it and the card is yours for the rest of the run - more copies of it
+too, so you can upgrade it, and selling it and buying it back is fine. Checks unblock straight away. The card is
+locked again when the run ends.
 
-A bypass is never used by itself, so buying a card you didn't realise was locked can't waste one. Unused bypasses
-wait for later runs, and the top-left box shows **Lock Bypass ready** while you have one. Like a trap, each bypass
+A bypass is never used by itself, so buying a card you didn't realise was locked can't waste one - you decide.
+Unused bypasses wait for later runs, and the top-left box always shows how many you have. Like a trap, each bypass
 takes the place of one locked card.
 
 **Items the game makes for you are always allowed.** Items created by other items (for example what you get from

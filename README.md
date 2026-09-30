@@ -90,10 +90,9 @@ your checks and the top-left box turns red and tells you **CHECKS ARE BLOCKED** 
 - **DeathLink** (off unless you turn it on): when someone else dies, abandon your current run (Settings > Abandon
   Run); nothing more counts in that run. Losing a run sends a DeathLink to everyone else, and conceding does too
   only if you turn on `death_link_on_concede`.
-- **Sell Traps** (off unless you turn them on): sell the item it names before the day shown, or checks pause until
-  you do.
-- **Lock Bypasses** (off unless you turn them on): press **Lock Bypass** during a run and pick a locked card; it's
-  yours for the rest of that run, upgrades included. A bypass is never used by itself.
+- **Sell Traps** (3 by default): sell the item it names before the day shown, or checks pause until you do.
+- **Lock Bypasses** (5 by default): holding a locked card? Press **Use Bypass** next to it and it's yours for the
+  rest of that run, upgrades included. A bypass is never used by itself; the top-left box shows how many you have.
 - PvP wins count automatically - nothing to answer.
 
 ## Your helpers on screen

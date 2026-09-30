@@ -14,8 +14,8 @@ class TestDefaults(BazaarTestBase):
 
     def test_location_count(self) -> None:
         real = [loc for loc in self.multiworld.get_locations(self.player) if loc.address is not None]
-        # per day: reach + PvP + monster rarities (d1 2, d2 3, d3-5 4 each, d6-13 5 each) = 13 + 13 + 57, + 10 wins
-        self.assertEqual(len(real), 3 * (13 + 13 + 57 + 1))
+        # per day: reach + PvP + monster rarities up to Diamond (d1 2, d2 3, d3-13 4 each) = 13 + 13 + 49, + 10 wins
+        self.assertEqual(len(real), 3 * (13 + 13 + 49 + 1))
 
     def test_monster_tiers_by_day(self) -> None:
         hero = self.world.starting_hero
@@ -25,9 +25,18 @@ class TestDefaults(BazaarTestBase):
         self.assertIn(monster_location(hero, 2, "Gold"), names)
         self.assertNotIn(monster_location(hero, 2, "Diamond"), names)
         self.assertIn(monster_location(hero, 3, "Diamond"), names)
+        self.assertNotIn(monster_location(hero, 6, "Legendary"), names)  # Standard stops at Diamond
+        self.assertIn(pvp_location(hero, 13), names)
+
+
+class TestLegendaryMonsters(BazaarTestBase):
+    options = {"max_monster_tier": "legendary"}
+
+    def test_legendary_from_day_6(self) -> None:
+        hero = self.world.starting_hero
+        names = {loc.name for loc in self.multiworld.get_locations(self.player)}
         self.assertNotIn(monster_location(hero, 5, "Legendary"), names)
         self.assertIn(monster_location(hero, 6, "Legendary"), names)
-        self.assertIn(pvp_location(hero, 13), names)
 
     def test_starting_hero_is_precollected_not_in_pool(self) -> None:
         start = hero_item(self.world.starting_hero)
@@ -103,8 +112,8 @@ class TestNoLocks(BazaarTestBase):
         names = [i.name for i in self.multiworld.itempool if i.player == self.player]
         self.assertEqual(len(names), 42)
         self.assertEqual(sum(n.startswith("Hero: ") for n in names), 2 * 3)  # two heroes to find, 3 copies each
-        self.assertEqual(names.count("Legendary Items"), 3)
-        self.assertEqual(names.count("Expedition Tickets"), 3)
+        self.assertEqual(names.count("Legendary Items"), 2)  # the option's copies, never topped up
+        self.assertEqual(names.count("Expedition Tickets"), 2)
 
 
 class TestMonsterCap(BazaarTestBase):
@@ -151,7 +160,7 @@ class TestDuplicates(BazaarTestBase):
 
 class TestLogicThresholds(BazaarTestBase):
     options = {"logic_day_10_cards": 30, "logic_diamond_cards": 30, "logic_legendary_cards": 30,
-               "locked_cards_percent": 5}
+               "locked_cards_percent": 5, "max_monster_tier": "legendary"}
 
     def test_late_checks_need_every_hero_card_but_early_monsters_do_not(self) -> None:
         hero = self.world.starting_hero
@@ -175,15 +184,23 @@ class TestFullPoolHasNoFiller(BazaarTestBase):
 
 
 class TestHalfPercent(BazaarTestBase):
-    options = {"locked_cards_percent": 50}
+    options = {"locked_cards_percent": 50, "legendary_items": 2, "expedition_tickets": 1,
+               "duplicate_cards": ["Cutlass"]}
 
     def test_rest_are_duplicates_in_order(self) -> None:
         from ..items import FILLER_ITEMS
         names = [i.name for i in self.multiworld.itempool if i.player == self.player]
         self.assertFalse([n for n in names if n in FILLER_ITEMS])
         self.assertEqual(sum(n.startswith("Hero: ") for n in names), 2 * 3)
-        self.assertEqual(names.count("Legendary Items"), 3)
-        self.assertTrue(max(names.count(n) for n in set(names)) <= 3)
+        unlocks = [n for n in names if n not in ("Sell Trap", "Lock Bypass")]  # those are counts, not copies
+        self.assertTrue(max(unlocks.count(n) for n in set(unlocks)) <= 3)
+
+    def test_copy_counts_you_set_never_grow(self) -> None:
+        """User, 2026-09-30: asking for 2 Legendary Items and then finding a 3rd would feel wrong."""
+        names = [i.name for i in self.multiworld.itempool if i.player == self.player]
+        self.assertEqual(names.count("Legendary Items"), 2)
+        self.assertEqual(names.count("Expedition Tickets"), 1)
+        self.assertIn(names.count("Cutlass"), (0, 2))  # 0 if Cutlass wasn't picked as a lock
 
 
 class TestDay7IsFree(BazaarTestBase):
