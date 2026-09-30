@@ -212,9 +212,9 @@ class SellTrapDays(Range):
 
 class LockBypasses(Range):
     """
-    Number of Lock Bypasses in the multiworld (0 = off). A buff: the next locked card you get after receiving one is
-    allowed for the rest of that run, including more copies of it (upgrades). Unused ones carry over to later runs.
-    Each bypass takes the place of one locked card.
+    Number of Lock Bypasses in the multiworld (0 = off). A buff: during a run, press Lock Bypass in the client's
+    overlay and pick a locked card; it's allowed for the rest of that run, including more copies of it (upgrades).
+    A bypass is never used by itself. Unused ones carry over to later runs. Each takes the place of one locked card.
     """
     display_name = "Lock Bypasses"
     range_start = 0

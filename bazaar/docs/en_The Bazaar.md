@@ -84,16 +84,15 @@ you're between runs or holding nothing it can pick, it's **dodged** and does not
 
 ## Lock Bypasses (optional, off by default)
 
-The friendly opposite of a Sell Trap. With `lock_bypasses` above 0, the multiworld contains Lock Bypasses. When you
-get one, the next locked card you buy or are given is yours for the rest of that run - more copies of it too, so you
-can upgrade it, and selling it and buying it back is fine. Get one between runs and it waits for your next run;
-get two and they cover two different cards. The card is locked again when the run ends. The top-left box shows
-**Lock Bypass ready** while you have one waiting. Like a trap, each bypass takes the place of one locked card.
+The friendly opposite of a Sell Trap. With `lock_bypasses` above 0, the multiworld contains Lock Bypasses. During
+a run, press **Lock Bypass** in the top-left box. A window lists every card in the game, with a search bar and
+filters for hero (or Common), size and starting rarity. Pick a locked card and press **Use Lock Bypass**: that card
+is yours for the rest of the run - more copies of it too, so you can upgrade it, and selling it and buying it back is
+fine. If you're already holding it, checks unblock straight away. The card is locked again when the run ends.
 
-Would you rather choose? During a run, press **Lock Bypass** in the top-left box. A window lists every card in the
-game, with a search bar and filters for hero (or Common), size and starting rarity. Pick a locked card and press
-**Use Lock Bypass**: that card is yours for the rest of the run, even before you find it. If you're holding it
-already, checks unblock straight away.
+A bypass is never used by itself, so buying a card you didn't realise was locked can't waste one. Unused bypasses
+wait for later runs, and the top-left box shows **Lock Bypass ready** while you have one. Like a trap, each bypass
+takes the place of one locked card.
 
 **Items the game makes for you are always allowed.** Items created by other items (for example what you get from
 selling B Note, a Shovel dig, or a transformation) never block checks, even if the card is locked - you didn't

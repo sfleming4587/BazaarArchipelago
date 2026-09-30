@@ -183,8 +183,9 @@ class BazaarContext(CommonContext):
                     if self.overlay and args.get("index", 0) > 0:  # index 0 = the full list resent on connect
                         self.overlay.toast(f"UNLOCKED: {HERO_ITEM_IDS.get(item.item, name)}  (from {self.who(item.player)})")
                 elif item.item == LOCK_BYPASS_ID and args.get("index", 0) > 0:
-                    self.event("Lock Bypass received: your next locked card is allowed for the rest of that run.")
-                    self.toast(f"LOCK BYPASS from {self.who(item.player)}! Your next locked card is allowed.", seconds=12)
+                    self.event("Lock Bypass received: during a run, press Lock Bypass and pick a locked card.")
+                    self.toast(f"LOCK BYPASS from {self.who(item.player)}! Press Lock Bypass in a run to pick a card.",
+                               seconds=12)
             self.refresh_held()
             self.receive_traps()
             self.update_status()
@@ -307,9 +308,14 @@ class BazaarContext(CommonContext):
     def bypasses_ready(self) -> int:
         return sum(item.item == LOCK_BYPASS_ID for item in self.items_received) - self.bypasses_used
 
-    def spend_bypass(self, guid: str) -> None:
-        """Allow a locked card for the rest of the run (its copies and upgrades too), using up one Lock Bypass.
-        The only place a bypass is spent: on the next locked card you get, or on the one you pick."""
+    def pick_bypass(self, guid: str) -> None:
+        """The card picker's choice (overlay button): allow that locked card for the rest of the run, its copies and
+        upgrades too, using up one Lock Bypass. The only way a bypass is spent - never automatically, so one isn't
+        lost on a card you didn't realise was locked (user, 2026-09-30). Checked again here: the picker may be a
+        moment behind."""
+        if not self.run.get("active") or self.bypasses_ready() <= 0 or guid not in self.run_locked_guids():
+            self.event("That Lock Bypass pick doesn't apply any more (no bypass ready, no run, or not locked).")
+            return
         self.bypasses_used += 1
         self.run.setdefault("bypassed", []).append(guid)
         self.event(f"Lock Bypass used: {self.held_text(guid)} is allowed for the rest of this run.")
@@ -318,13 +324,6 @@ class BazaarContext(CommonContext):
         if self.encounter:  # the shop warning and the Shop Guide show it as allowed now
             self.handle_encounter(self.encounter)
         self.update_status()
-
-    def pick_bypass(self, guid: str) -> None:
-        """The card picker's choice (overlay button). Checked again here: the picker may be a moment behind."""
-        if not self.run.get("active") or self.bypasses_ready() <= 0 or guid not in self.run_locked_guids():
-            self.event("That Lock Bypass pick doesn't apply any more (no bypass ready, no run, or not locked).")
-            return
-        self.spend_bypass(guid)
 
     def run_locked_guids(self) -> Set[str]:
         """Cards you may not hold in this run: the locked ones, minus those a Lock Bypass allowed for this run."""
@@ -508,23 +507,13 @@ class BazaarContext(CommonContext):
                                 "or one added by a patch). It's never locked.")
         if not self.run.get("active") or event.guid not in self.run_locked_guids():
             return
-        # A Lock Bypass is spent on the first locked card you get, and allows that card (its copies and upgrades
-        # too) for the rest of the run. Never on a card already judged (the open run is replayed after a reconnect,
-        # and a bypass received since would land on a card bought before it), nor in runs the client missed: those
-        # ended already.
-        judged = self.run.setdefault("judged", [])
-        fresh = event.instance not in judged
-        if fresh:
-            judged.append(event.instance)
-        if fresh and self.bypasses_ready() > 0 and not self.quiet:
-            self.spend_bypass(event.guid)
-            return
         self.run.setdefault("held", {})[event.instance] = event.guid
         how = "bought" if event.bought else "got"
         self.event(f"You {how} {self.held_text(event.guid)}, which is still locked! "
                    "CHECKS ARE BLOCKED until you sell it.", warning=True)
         self.beep()
-        self.toast(f"SELL IT NOW: {CARDS_BY_GUID[event.guid].name} is locked", seconds=12, warning=True)
+        use = " (or use your Lock Bypass on it)" if self.bypasses_ready() > 0 else ""
+        self.toast(f"SELL IT NOW{use}: {CARDS_BY_GUID[event.guid].name} is locked", seconds=12, warning=True)
         self.refresh_held()
 
     def handle_sold(self, event: CardSold) -> None:
