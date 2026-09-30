@@ -154,6 +154,7 @@ class BazaarContext(CommonContext):
         self.bypasses_used = 0  # Lock Bypasses spent; the rest of those received are ready
         self.watched: Dict[str, Any] = {}  # {"log": game session, "runs": runs of that log already seen}
         self.quiet = False  # replaying runs that ended while the client wasn't watching: no alerts, no DeathLinks
+        self.encounter: Optional[EncounterEntered] = None  # the merchant or event you're at, if any
         self.menu_hero: Optional[str] = None  # hero picked on the hero-select screen, while not in a run
         self.room_seed = ""  # CommonClient never sets seed_name, so the saved state is keyed on this instead
         self.log_session: Optional[str] = None  # which game session the log being read is from (see log_session)
@@ -305,6 +306,25 @@ class BazaarContext(CommonContext):
 
     def bypasses_ready(self) -> int:
         return sum(item.item == LOCK_BYPASS_ID for item in self.items_received) - self.bypasses_used
+
+    def spend_bypass(self, guid: str) -> None:
+        """Allow a locked card for the rest of the run (its copies and upgrades too), using up one Lock Bypass.
+        The only place a bypass is spent: on the next locked card you get, or on the one you pick."""
+        self.bypasses_used += 1
+        self.run.setdefault("bypassed", []).append(guid)
+        self.event(f"Lock Bypass used: {self.held_text(guid)} is allowed for the rest of this run.")
+        self.toast(f"LOCK BYPASS USED: {CARDS_BY_GUID[guid].name} is yours for this run", seconds=12)
+        self.refresh_held()  # a picked card you're already holding stops blocking checks
+        if self.encounter:  # the shop warning and the Shop Guide show it as allowed now
+            self.handle_encounter(self.encounter)
+        self.update_status()
+
+    def pick_bypass(self, guid: str) -> None:
+        """The card picker's choice (overlay button). Checked again here: the picker may be a moment behind."""
+        if not self.run.get("active") or self.bypasses_ready() <= 0 or guid not in self.run_locked_guids():
+            self.event("That Lock Bypass pick doesn't apply any more (no bypass ready, no run, or not locked).")
+            return
+        self.spend_bypass(guid)
 
     def run_locked_guids(self) -> Set[str]:
         """Cards you may not hold in this run: the locked ones, minus those a Lock Bypass allowed for this run."""
@@ -497,12 +517,7 @@ class BazaarContext(CommonContext):
         if fresh:
             judged.append(event.instance)
         if fresh and self.bypasses_ready() > 0 and not self.quiet:
-            self.bypasses_used += 1
-            self.run.setdefault("bypassed", []).append(event.guid)
-            self.event(f"Lock Bypass used: {self.held_text(event.guid)} is allowed for the rest of this run.")
-            self.toast(f"LOCK BYPASS USED: {CARDS_BY_GUID[event.guid].name} is yours for this run", seconds=12)
-            self.save_state()
-            self.update_status()
+            self.spend_bypass(event.guid)
             return
         self.run.setdefault("held", {})[event.instance] = event.guid
         how = "bought" if event.bought else "got"
@@ -539,6 +554,7 @@ class BazaarContext(CommonContext):
         merchant = MERCHANT_DATA.get(event.guid) or OFFER_DATA.get(event.guid)
         if not merchant or not self.run.get("active"):
             return
+        self.encounter = event
         verb = "sell" if event.guid in MERCHANT_DATA else "offer"
         locked = self.run_locked_guids()
         stock = possible_stock(merchant["stock"], self.run["hero"], (CARDS_BY_GUID[g] for g in locked))
@@ -554,6 +570,7 @@ class BazaarContext(CommonContext):
                                     allowed, stock)
 
     def handle_encounter_left(self) -> None:
+        self.encounter = None
         if self.overlay:
             self.overlay.show_shop(None, [])
             if self.shop_guide:
@@ -765,6 +782,8 @@ class BazaarContext(CommonContext):
     def update_status(self) -> None:
         if self.overlay:
             self.overlay.show_status(*self.status_line())
+            ready = self.bypasses_ready() if self.run.get("active") else 0
+            self.overlay.show_bypass(ready, self.run_locked_guids() if ready else ())
             self.overlay.show_tracker_data(self.tracker_data())
 
     def handle_hero_selected(self, event: HeroSelected) -> None:
@@ -948,6 +967,8 @@ async def main(args) -> None:
         from .overlay import Overlay
         ctx.overlay = Overlay(art_cache_dir=Utils.cache_path("bazaar_card_art") if ctx.shop_guide else None,
                               guide_file=Utils.user_path("bazaar_shop_guide.json"))
+        loop = asyncio.get_running_loop()  # the picker runs in the overlay's thread; the choice is handled here
+        ctx.overlay.on_bypass_pick = lambda guid: loop.call_soon_threadsafe(ctx.pick_bypass, guid)
     ctx.server_task = asyncio.create_task(server_loop(ctx), name="server loop")
     if ctx.overlay:
         # the windows start in their own thread; wait until they're up (or known not to come up)
