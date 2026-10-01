@@ -446,6 +446,9 @@ class _Screen:
                       "padlocks": None, "menu": None}
         self.hero_pictures: Dict[str, object] = {}  # the menu panel's portraits (Tk drops an image Python lets go)
         self.list_hidden = False  # the player hid the locked-card list (until they show it again)
+        # the player hid the menu's hero panel, e.g. over character select, which the game gives no sign of
+        # (owner, 2026-10-01: a button, option 3)
+        self.menu_hidden = False
         # what each window shows now, to skip redraws that change nothing
         self.drawn: dict = {"alerts": None, "notices": None, "shop": None, "toasts": None, "alerts_height": 0,
                             "notices_height": 0, "toasts_height": 0, "padlocks": None}
@@ -470,7 +473,8 @@ class _Screen:
             "tracker_toggle": lambda _: self.tracker.toggle(),
             "toast": self.new_toast,
             **{kind: (lambda value, kind=kind: self.set_state(kind, value))
-               for kind in ("locked", "deathlink", "shop", "status", "menu")},
+               for kind in ("locked", "deathlink", "shop", "status")},
+            "menu": self.new_menu,
             "padlocks": self.new_padlocks,
             "board_ui": self.new_board_ui,
         }
@@ -683,6 +687,8 @@ class _Screen:
             buttons.append(("Shop Guide" if self.guide.hidden else "Hide guide", self.toggle_guide))
         if state["shop"] and state["shop"][1]:
             buttons.append(("Show list" if self.list_hidden else "Hide list", self.toggle_list))
+        if state["menu"]:
+            buttons.append(("Show heroes" if self.menu_hidden else "Hide heroes", self.toggle_menu))
         return buttons
 
     def toggle_guide(self, _=None) -> bool:
@@ -706,6 +712,15 @@ class _Screen:
         elif then:
             then()
 
+    def new_menu(self, value) -> bool:
+        if not value:  # left the menu: next time it shows again
+            self.menu_hidden = False
+        self.state["menu"] = value
+        return True
+
+    def toggle_menu(self) -> None:
+        self.menu_hidden = not self.menu_hidden
+
     def toggle_list(self) -> None:
         self.list_hidden = not self.list_hidden
 
@@ -715,7 +730,7 @@ class _Screen:
         played), locked heroes dimmed; a warning banner on top, the goal at the bottom. In the centre of the game
         window and click-through, so it never blocks the menu (owner, 2026-10-01)."""
         tk, f, layout, data = self.tk, self.font, self.layout, self.state["menu"]
-        if not data:
+        if not data or self.menu_hidden:
             moves.append((self.menu_box, None))
             return
         k = layout["k"]

@@ -40,6 +40,14 @@ screen"): there's no board on the menu, and it's click-through so it can never b
 always warns - it can roll a locked hero, or one not in this multiworld. ⚠️ The log's exact text for Random hasn't
 been seen yet; any name that isn't a known hero is treated as Random.
 
+Random itself comes from memory (your character-select settings: Random on/off and the heroes you excluded), so the
+warning names the heroes Random could roll that are locked or not in the multiworld, or says Random is safe. Each
+tile shows the checks you've got with that hero and "Cards X / Y" (their cards unlocked of all of them).
+
+⚠️ The game gives no sign that character select is open (nothing reachable in memory, nothing in the log), so the
+panel can't hide itself there. The header has "Hide heroes" / "Show heroes" (owner, 2026-10-01: option 3); hiding
+lasts until you leave the menu.
+
 ## When things show, fade or hide
 
 Every overlay window follows the same rules as the padlocks (owner, 2026-10-01: "infact the entire overlay should
