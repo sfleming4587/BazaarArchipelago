@@ -831,6 +831,14 @@ class TestShopPadlocks(ClientTestBase):
         self.ctx.handle_snapshot(self.snapshot([LOCKED, self.row[2]]))  # bought the leftmost
         self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [1], False))
 
+    def test_a_level_up_in_the_middle_of_a_shop_keeps_the_shops_gaps(self) -> None:
+        """Seen 2026-10-01: a purchase levelled the player up; back in the shop the last card was re-centred."""
+        self.ctx.handle_snapshot(self.snapshot(self.row))
+        self.ctx.handle_snapshot(self.snapshot([LOCKED, self.row[2]]))  # bought the leftmost
+        self.ctx.handle_snapshot(self.snapshot([], encounter=None, state="LevelUp"))
+        self.ctx.handle_snapshot(self.snapshot([LOCKED, self.row[2]]))
+        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [1], False))
+
     def test_a_reroll_lays_out_the_new_row(self) -> None:
         other = [c for c in self.row if c is not LOCKED]
         self.ctx.handle_snapshot(self.snapshot(self.row))

@@ -190,9 +190,10 @@ class BazaarContext(CommonContext):
         self.quiet = False  # replaying runs that ended while the client wasn't watching: no alerts, no DeathLinks
         self.encounter: Optional[EncounterEntered] = None  # the merchant or event you're at, if any
         self.memory: Optional[Snapshot] = None  # what memory says is on screen now; None while the reader is off
-        # the row the padlocks are laid out on: (screen, ((instance id, size), ...)). Bought cards leave a gap - the
-        # others don't move (user, 2026-10-01) - so it's only replaced when new cards come in
-        self.padlock_row: Optional[tuple] = None
+        # the rows the padlocks are laid out on, by screen: ((instance id, size), ...). Bought cards leave a gap - the
+        # others don't move (user, 2026-10-01) - so a row is only replaced when new cards come in, not when another
+        # screen (a level-up mid-shop) comes and goes
+        self.padlock_rows: Dict[str, tuple] = {}
         self.board_ui = None  # memreader.BoardUI: hover/drag/stash/dialog/reveal, None if unreadable
         self.menu_hero: Optional[str] = None  # hero picked on the hero-select screen, while not in a run
         self.room_seed = ""  # CommonClient never sets seed_name, so the saved state is keyed on this instead
@@ -614,18 +615,17 @@ class BazaarContext(CommonContext):
             return
         snapshot, items = self.memory, items_on_screen(self.memory) if self.run.get("active") else None
         if not items:
-            self.padlock_row = None
             self.overlay.show_padlocks(None, [], [])
             return
         here = {o.instance: o.template for o in items}
-        row = self.padlock_row
-        new = not (row and row[0] == snapshot.state and set(here) <= {instance for instance, _ in row[1]})
+        row = self.padlock_rows.get(snapshot.state)
+        new = not (row and set(here) <= {instance for instance, _ in row})
         if new:
-            row = self.padlock_row = (snapshot.state, tuple(
-                (o.instance, CARDS_BY_GUID[o.template].size if o.template in CARDS_BY_GUID else None) for o in items))
+            row = self.padlock_rows[snapshot.state] = tuple(
+                (o.instance, CARDS_BY_GUID[o.template].size if o.template in CARDS_BY_GUID else None) for o in items)
         locked = self.run_locked_guids()
-        self.overlay.show_padlocks(row[0], [size for _, size in row[1]],
-                                   [i for i, (instance, _) in enumerate(row[1]) if here.get(instance) in locked],
+        self.overlay.show_padlocks(snapshot.state, [size for _, size in row],
+                                   [i for i, (instance, _) in enumerate(row) if here.get(instance) in locked],
                                    reveal=new, level=snapshot.level)
 
     def show_stash_padlocks(self) -> None:
