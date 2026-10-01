@@ -318,8 +318,7 @@ in place; stash and Esc menu hide them; a reroll clears them at once and the new
   list. Game not running or still loading is silent.
 - ⚠️ Only 1080p and 16:9 measured; 1440p, 16:10 and 21:9 are untested.
 
-Not built yet: loot screens, events'
-own layouts, locked heroes on the character select screen (owner wants all of these; each needs a screenshot).
+Not built yet: locked heroes on the character select screen (owner wants it; needs a screenshot).
 
 ## Bringing the rest into the client (plan, nothing built)
 
