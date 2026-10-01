@@ -55,6 +55,11 @@ MENU_WIDTH = 460  # the menu's centre panel, 1080p pixels (scaled with the windo
 MENU_TILE = 100  # one hero's tile
 MENU_COLUMNS = 4  # heroes per row, like the hero select
 MENU_BAR_BG = "#3a3f4b"  # the empty part of a hero's check bar
+# The main menu's buttons that open and close character select (owner's screenshot 2026-10-01, 1080p): the game gives
+# no readable sign that it's open, so a click on "Change hero" hides the hero panel and the close X shows it again
+# (so do Esc and picking a hero). "Change hero" is anchored to the left edge, the X to the right one.
+CHANGE_HERO = (35, 225, 410, 330)  # left, top, right, bottom from the window's left edge
+CLOSE_X = (98, 75, 42)  # the X's centre: from the window's right edge, from the top; radius
 POLL_MS = 250
 
 # Padlocks on the locked cards a shop is offering (user, 2026-10-01): placed by proportion of the game window, a
@@ -229,6 +234,20 @@ def padlock_shape(canvas, x: float, y: float, s: int) -> None:
                             width=max(2, s // 20))
     canvas.create_oval(x + s * 0.43, y + s * 0.58, x + s * 0.57, y + s * 0.72, fill=OUTLINE, outline=OUTLINE)
     canvas.create_rectangle(x + s * 0.47, y + s * 0.68, x + s * 0.53, y + s * 0.84, fill=OUTLINE, outline=OUTLINE)
+
+
+def menu_click(window: tuple, point: tuple) -> Optional[str]:
+    """Which character-select button a click at point (screen x, y) hit in the game window: "open", "close" or
+    None. Scaled with the window's height, as the game's menu is."""
+    x, y, w, h = window
+    k, (px, py) = h / 1080, point
+    left, top, right, bottom = CHANGE_HERO
+    if x + left * k <= px <= x + right * k and y + top * k <= py <= y + bottom * k:
+        return "open"
+    dx, dy, radius = CLOSE_X
+    if (px - (x + w - dx * k)) ** 2 + (py - (y + dy * k)) ** 2 <= (radius * k) ** 2:
+        return "close"
+    return None
 
 
 def below(strip: tuple, taken: int) -> tuple:
@@ -449,6 +468,7 @@ class _Screen:
         # the player hid the menu's hero panel, e.g. over character select, which the game gives no sign of
         # (owner, 2026-10-01: a button, option 3)
         self.menu_hidden = False
+        self.keys_down = (False, False)  # (left button, Esc) at the last look, to see a press, not a held key
         # what each window shows now, to skip redraws that change nothing
         self.drawn: dict = {"alerts": None, "notices": None, "shop": None, "toasts": None, "alerts_height": 0,
                             "notices_height": 0, "toasts_height": 0, "padlocks": None}
@@ -523,6 +543,7 @@ class _Screen:
                 self.padlocks_faded = alpha
                 for padlock in self.padlocks:
                     padlock.attributes("-alpha", alpha)
+            self.watch_menu_buttons()
             factor = self.overlay_factor()
             if factor != self.overlay_faded:
                 if (factor == 0) != (self.overlay_faded == 0):
@@ -713,10 +734,37 @@ class _Screen:
             then()
 
     def new_menu(self, value) -> bool:
-        if not value:  # left the menu: next time it shows again
+        old = self.state["menu"]
+        if not value or (old and value["picked"] != old["picked"]):  # left the menu, or picked a hero: show again
             self.menu_hidden = False
         self.state["menu"] = value
         return True
+
+    def watch_menu_buttons(self) -> None:
+        """On the menu, while the game is in front: a click on "Change hero" hides the hero panel, a click on the
+        close X or Esc shows it again (owner, 2026-10-01). Only the left button, Esc and the mouse's position are
+        read, and only then."""
+        if sys.platform != "win32" or not self.state["menu"] or not self.game_in_front:
+            self.keys_down = (False, False)
+            return
+        import ctypes
+        from ctypes import wintypes
+        user32 = ctypes.windll.user32
+        down = (bool(user32.GetAsyncKeyState(0x01) & 0x8000), bool(user32.GetAsyncKeyState(0x1B) & 0x8000))
+        clicked, escaped = down[0] and not self.keys_down[0], down[1] and not self.keys_down[1]
+        self.keys_down = down
+        hidden = self.menu_hidden
+        if clicked:
+            point = wintypes.POINT()
+            if user32.GetCursorPos(ctypes.byref(point)):
+                hit = menu_click(self.layout["window"], (point.x, point.y))
+                hidden = True if hit == "open" else False if hit == "close" else hidden
+        if escaped:
+            hidden = False
+        if hidden != self.menu_hidden:
+            self.menu_hidden = hidden
+            self.drawn["alerts"] = None  # the panel and the header's button follow
+            self.render()
 
     def toggle_menu(self) -> None:
         self.menu_hidden = not self.menu_hidden
