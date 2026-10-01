@@ -395,6 +395,14 @@ class TestSellTraps(ClientTestBase):
         self.assertEqual(self.ctx.run["traps"], [])
         self.assertIsNone(self.ctx.blocked_reason())
 
+    def test_trap_skips_a_locked_card_you_already_have_to_sell(self) -> None:
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_locked", False))
+        self.receive_trap()
+        self.assertEqual(self.ctx.run["traps"], [])  # nothing else held: dodged
+        self.play(CardGained(self.ITEM.guid, "itm_a", False))
+        self.receive_trap()
+        self.assertEqual([t["instance"] for t in self.ctx.run["traps"]], ["itm_a"])
+
     def test_trap_between_runs_is_dodged(self) -> None:
         self.play(RunStarted("Vanessa"), CardGained(self.ITEM.guid, "itm_a", False), RunEnded(False, 1))
         self.receive_trap()

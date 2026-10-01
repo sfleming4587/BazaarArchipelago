@@ -483,7 +483,9 @@ class BazaarContext(CommonContext):
 
     def start_trap(self, sender: str = "another player") -> None:
         """Pick a random item the player holds; it must be sold before the deadline day starts."""
-        targeted = {t["instance"] for t in self.run.get("traps", [])}
+        # never a locked card you hold: that one must be sold anyway (owner, 2026-10-01: "checks are blocked AND i can
+        # wait to sell til I reach day 3, so what is it?")
+        targeted = {t["instance"] for t in self.run.get("traps", [])} | set(self.run.get("held", {}))
         choices = [i for i in self.run.get("inventory", {}) if i not in targeted] if self.run.get("active") else []
         if not choices:  # not in a run, or holding nothing it can target: the trap misses
             self.event("Sell Trap DODGED - you had nothing it could make you sell.")
