@@ -33,6 +33,12 @@ The information comes from `Player.log` and the game's memory (`bazaar/memreader
 | Pop-ups | bottom of the right column | items received and sent, unlocks | the server |
 | Padlocks | on the locked cards themselves | a red padlock on each locked card offered (shops, level-ups, single-card loot, events' items) and in your open stash | memory |
 | Tracker | its own window, anywhere | each hero's checks | the server |
+| Menu panel | centre of the game window, only on the menu (no run) | every hero in the multiworld as a tile: card, a bar of checks done (gold) and ready (green), "14/52 (9 ready)"; locked heroes dimmed with a padlock; your pick framed gold, or red with a banner when it's locked or Random; the goal and Lock Bypasses | the log's hero pick ("Changing EHero to X"), the server |
+
+The menu panel is the one exception to "only beside the board" (owner, 2026-10-01: "put it in the center of the
+screen"): there's no board on the menu, and it's click-through so it can never block the menu's buttons. Random
+always warns - it can roll a locked hero, or one not in this multiworld. ⚠️ The log's exact text for Random hasn't
+been seen yet; any name that isn't a known hero is treated as Random.
 
 ## When things show, fade or hide
 
