@@ -318,3 +318,25 @@ class TestShopGuideLists(unittest.TestCase):
         expected = {c.guid for c in possible_stock(entries[0]["stock"], "Vanessa", SHOP_CARDS)}
         self.assertEqual({c.guid for c in guide_cards(SHOP_CARDS, "Vanessa", name, "", ANY, ANY)}, expected)
         self.assertFalse(any(n.startswith("[DEBUG]") for n in MERCHANTS))
+
+
+class TestShopGuideKeepsOfferedCards(unittest.TestCase):
+    def test_a_bought_card_stays_in_the_list_even_past_the_cap(self) -> None:
+        """Owner, 2026-10-01: a card bought from "On offer now" "should be in the list at the bottom"."""
+        import tempfile
+        import tkinter
+        from ..shop_guide import MAX_SHOWN, ShopGuide, SHOP_CARDS
+        last = sorted(SHOP_CARDS, key=lambda c: c.name.lower())[-1]  # past the cap with Merchant on Any
+        root = tkinter.Tk()
+        try:
+            guide = ShopGuide.create(tkinter, root, tempfile.mkdtemp(), None, (0, 0, 300, 600),
+                                     on_art=lambda guid: None, on_closed=lambda: None)
+            guide.show_offer(("An event", [last.guid], None))
+            guide.show_offer(("An event", [], None))  # bought: gone from the offer
+            root.update()
+            names = {w.cget("text") for w in _all_widgets(guide.inner) if isinstance(w, tkinter.Label)}
+            self.assertIn(last.name, names)
+            self.assertGreater(len(SHOP_CARDS), MAX_SHOWN)
+            guide.shutdown()
+        finally:
+            root.destroy()

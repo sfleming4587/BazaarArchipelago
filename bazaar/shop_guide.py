@@ -94,6 +94,9 @@ class ShopGuide:
         self.hero: Optional[str] = None  # the hero you're playing (or picked on the menu)
         self.locked: Set[str] = set()  # cards you may not hold right now
         self.offer: Optional[Tuple[str, Tuple[str, ...]]] = None  # (title, offered card guids) on screen right now
+        # every card offered on this screen so far, bought ones included: always in the list (owner, 2026-10-01: a
+        # bought card "should be in the list at the bottom ... otherwise it is missing from the list")
+        self.pinned: Dict[str, None] = {}
         self.cells: Dict[tuple, List[object]] = {}  # (guid, locked) -> the frames showing that card right now
         self.blocks: Dict[str, tuple] = {}  # section -> (what it shows, its frame, its cells): see render
         self.photos: Dict[tuple, object] = {}
@@ -264,6 +267,9 @@ class ShopGuide:
             self.offer = None
         else:
             title, offered, merchant = value
+            if not self.offer or self.offer[0] != title:  # a new screen: start again
+                self.pinned = {}
+            self.pinned.update(dict.fromkeys(offered))
             self.offer = (title, tuple(offered))
             if merchant in MERCHANTS and merchant != self.filters["merchant"].get():
                 for key, var in self.filters.items():
@@ -361,15 +367,20 @@ class ShopGuide:
             self.drawn = None
             return
         values = {key: var.get() for key, var in self.filters.items()}
-        state = (self.offer, self.hero, frozenset(self.locked), self.locked_only, tuple(sorted(values.items())))
+        state = (self.offer, tuple(self.pinned), self.hero, frozenset(self.locked), self.locked_only,
+                 tuple(sorted(values.items())))
         if state == self.drawn and not force:
             return
-        filters_changed = not self.drawn or self.drawn[4] != state[4]
+        filters_changed = not self.drawn or self.drawn[-1] != state[-1]
         self.drawn = state
         listed = guide_cards(self.cards, self.hero, values["merchant"], values["text"], values["size"],
                              values["tier"])
+        # cards offered on this screen are listed whatever the merchant and the cap - unless you filter them out
+        pinned = guide_cards([CARDS_BY_GUID[g] for g in self.pinned if g in CARDS_BY_GUID], None, ANY,
+                             values["text"], values["size"], values["tier"])
+        listed = pinned + [c for c in listed if c.guid not in self.pinned]
         total = len(listed)
-        listed = listed[:MAX_SHOWN]
+        listed = sorted(listed[:max(MAX_SHOWN, len(pinned))], key=lambda c: c.name.lower())
         allowed = [c for c in listed if c.guid not in self.locked]
         locked = [c for c in listed if c.guid in self.locked]
         offered = [CARDS_BY_GUID[g] for g in (self.offer[1] if self.offer else ()) if g in CARDS_BY_GUID]
