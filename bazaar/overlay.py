@@ -65,7 +65,7 @@ SLOT_WIDTH = 113  # the slot pitch: a Small card plus the gap after it
 # The extra space between two cards, by the screen (memory's state name) showing the row. Measured on the owner's
 # screenshots 2026-10-01: a shop's cards touch; a level-up's Small cards sit 181 px apart (113 + 68). A screen not
 # listed here gets no padlocks: its layout hasn't been measured.
-ROW_GAPS = {"Encounter": 0, "LevelUp": 68}
+ROW_GAPS = {"Encounter": 0, "LevelUp": 68, "Stash": 0}
 CARD_HEIGHT = 220  # measured on the same screenshot (the cards' frames, y 322-541 at 1080p)
 YOUR_ROW = (548, 785)  # your own board's cards, top and bottom (their tooltips can open over the shop row too)
 BOARD_SLOTS = {1: 4, 2: 6, 3: 8}  # your board's width by level (owner, 2026-10-01); 10 from level 4 on
@@ -73,7 +73,8 @@ HOVERED_ALPHA = 0.3  # a padlock while a card is hovered: see-through, so the to
 FLIP_SECONDS = 1.0  # new cards flip over first: if the game's reveal flag doesn't start by then, show anyway
 FLIP_MAX = 3.0  # and never wait longer than this for a reveal to end
 HOVER_MS = 60  # how often the mouse is checked while padlocks are up
-SLOTS = {"Small": 1, "Medium": 2, "Large": 3}
+SLOTS = {"Small": 1, "Medium": 2, "Large": 3, "Empty": 1}  # Empty: a free slot in a row laid out by slot (the stash)
+STASH_SLOTS = 10  # the stash is always 10 slots wide, over the shop row (owner's screenshot, 2026-10-01)
 PADLOCK = 56  # the mark's size
 MIN_PADLOCK = 24  # real pixels, however small the window
 PADLOCK_KEY = "#010203"  # the padlock window's see-through colour
@@ -190,7 +191,7 @@ def card_rects(x: int, y: int, w: int, h: int, sizes: List[Optional[str]], gap: 
     half_height, mid = CARD_HEIGHT * across / 2, x + w / 2
     rects = [(round(cx - SLOTS[size] * SLOT_WIDTH * across / 2), round(cy - half_height),
               round(cx + SLOTS[size] * SLOT_WIDTH * across / 2), round(cy + half_height))
-             for (cx, cy), size in zip(centres, sizes)]
+             for (cx, cy), size in zip(centres, sizes) if size != "Empty"]
     board = BOARD_SLOTS.get(level or 0, 10) * SLOT_WIDTH * across / 2  # unknown level: the widest board
     return rects + [(round(mid - board), y + round(YOUR_ROW[0] * h / 1080), round(mid + board),
                      y + round(YOUR_ROW[1] * h / 1080))]
@@ -437,12 +438,13 @@ class _Screen:
         }
 
     def padlock_alpha(self) -> float:
-        """By the game's own flags (owner, 2026-10-01): hidden while your stash or a dialog (Esc menu) covers the
-        board, see-through while a card's tooltip shows or a card is dragged. Unreadable flags: by the mouse."""
+        """By the game's own flags (owner, 2026-10-01): hidden while a dialog (Esc menu) covers the board or your
+        stash slides open or shut, see-through while a card's tooltip shows or a card is dragged. Unreadable flags:
+        by the mouse."""
         ui = self.board_ui
         if ui is None:
             return HOVERED_ALPHA if mouse_on(self.padlock_cards) else 1.0
-        if ui.inventory or ui.dialog:
+        if ui.dialog or ui.stash_moving:  # the client swaps to the stash's own padlocks once it's open
             return 0.0
         return HOVERED_ALPHA if ui.hovering or ui.dragging else 1.0
 

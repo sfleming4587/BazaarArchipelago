@@ -51,6 +51,7 @@ class BoardUI(NamedTuple):
     inventory: bool  # your stash is open over the board (BoardManager.activeStorageToy.toyOpen)
     dialog: bool  # the Esc menu or another dialog is open (BoardManager.DialogOpen)
     revealing: bool  # new cards are flipping over (BoardManager._isRevealing)
+    stash_moving: bool = False  # your stash is sliding open or shut (BoardManager.StorageMoving)
 
 
 class Snapshot(NamedTuple):
@@ -58,6 +59,7 @@ class Snapshot(NamedTuple):
     encounter: Optional[str]  # the guid of the merchant/event/monster you're at
     offers: Tuple[Offer, ...]  # in the game's own order
     level: Optional[int] = None  # your level (it sets how wide your board is)
+    stash: Tuple[Tuple[int, Optional[str]], ...] = ()  # your stash's cards: (first slot 0-9, template), any order
 
 
 def blocked(name: Optional[str]) -> bool:
@@ -499,7 +501,8 @@ class Reader:
                            dragging=(m.read(paths["drag"], 1) or b"\0")[0] == 1,
                            inventory=bool(toy and self._get(toy, "toyOpen")),
                            dialog=bool(self._get(board, "DialogOpen")),
-                           revealing=bool(self._get(board, "_isRevealing")))
+                           revealing=bool(self._get(board, "_isRevealing")),
+                           stash_moving=bool(self._get(board, "StorageMoving")))
         except Exception:  # a read that made no sense this time: the padlocks fall back for now
             return None
 
@@ -577,7 +580,25 @@ class Reader:
                     offers.append(Offer(instance, None, None))
                     continue
                 offers.append(Offer(instance, self._get(card, "TemplateId"), self._get(card, "Type")))
-        return Snapshot(name, encounter, tuple(offers), self._level())
+        return Snapshot(name, encounter, tuple(offers), self._level(), self._stash())
+
+    def _stash(self) -> Tuple[Tuple[int, Optional[str]], ...]:
+        """Your stash's cards and the slot each starts in, from Run.Player.Stash.Container.Sockets (10 slots; a card
+        fills one per slot it covers). Cards can sit in any slot and move freely (owner, 2026-10-01)."""
+        m, run = self.memory, self.memory.ptr(self.statics["<Run>k__BackingField"])
+        player = self._get(run, "Player") if run else 0
+        stash = self._get(player, "Stash") if player else 0
+        container = self._get(stash, "Container") if stash else 0
+        sockets = self._get(container, "Sockets") if container else 0
+        if not sockets:
+            return ()
+        out, seen = [], set()
+        for slot in range(min(m.i32(sockets + 0x18) or 0, 10)):
+            card = m.ptr(sockets + 0x20 + 8 * slot)
+            if card and card not in seen:
+                seen.add(card)
+                out.append((slot, self._get(card, "TemplateId")))
+        return tuple(out)
 
     def _level(self) -> Optional[int]:
         """Your level, from Run.Player.Attributes (a Dictionary of stat -> value with 16-byte entries, K-mem3)."""

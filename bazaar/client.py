@@ -596,7 +596,7 @@ class BazaarContext(CommonContext):
         changed; the shop warning when what's on offer at the current merchant did (you bought a card, rerolled, or
         memory caught up with the log)."""
         before, self.memory = self.memory, snapshot
-        seen = lambda s: (s.state, items_on_screen(s), s.level) if s else None
+        seen = lambda s: (s.state, items_on_screen(s), s.level, s.stash) if s else None
         if seen(before) != seen(snapshot):
             self.refresh_padlocks()
         if self.encounter and offers_at(before, self.encounter.guid) != offers_at(snapshot, self.encounter.guid):
@@ -608,6 +608,9 @@ class BazaarContext(CommonContext):
         2026-10-01), so the row stays as it was until new cards come in; new cards flip over first, so their
         padlocks wait for that (overlay, by the game's own reveal flag)."""
         if not self.overlay:
+            return
+        if self.board_ui and self.board_ui.inventory and self.memory and self.run.get("active"):
+            self.show_stash_padlocks()  # your stash covers the offers while it's open
             return
         snapshot, items = self.memory, items_on_screen(self.memory) if self.run.get("active") else None
         if not items:
@@ -625,12 +628,37 @@ class BazaarContext(CommonContext):
                                    [i for i, (instance, _) in enumerate(row[1]) if here.get(instance) in locked],
                                    reveal=new, level=snapshot.level)
 
+    def show_stash_padlocks(self) -> None:
+        """A padlock on each locked card in your open stash, in whatever slot it sits (owner, 2026-10-01: cards move
+        freely). The stash is laid out as a 10-slot row with Empty filling the free slots."""
+        starts = {slot: template for slot, template in self.memory.stash}
+        locked, sizes, spots, slot = self.run_locked_guids(), [], [], 0
+        while slot < 10:
+            template = starts.get(slot)
+            size = CARDS_BY_GUID[template].size if template in CARDS_BY_GUID else None
+            if template is None:  # a free slot
+                sizes.append("Empty")
+                slot += 1
+                continue
+            if size is None:  # a card we can't size: a guess would put every padlock after it in the wrong place
+                self.overlay.show_padlocks(None, [], [])
+                return
+            if template in locked:
+                spots.append(len(sizes))
+            sizes.append(size)
+            slot += {"Small": 1, "Medium": 2, "Large": 3}[size]
+        self.overlay.show_padlocks("Stash", sizes, spots, level=self.memory.level)
+
     def handle_board_ui(self, ui) -> None:
-        """The board's on-screen flags (memreader.BoardUI, or None): the padlocks hide or fade by them."""
+        """The board's on-screen flags (memreader.BoardUI, or None): the padlocks hide or fade by them, and swap to
+        the stash's own while it's open."""
         if ui != self.board_ui:
+            opened = (ui and ui.inventory) != (self.board_ui and self.board_ui.inventory)
             self.board_ui = ui
             if self.overlay:
                 self.overlay.show_board_ui(ui)
+                if opened:
+                    self.refresh_padlocks()
 
     def handle_encounter(self, event: EncounterEntered) -> None:
         merchant = MERCHANT_DATA.get(event.guid) or OFFER_DATA.get(event.guid)

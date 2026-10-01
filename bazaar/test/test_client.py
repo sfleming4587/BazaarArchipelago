@@ -866,3 +866,22 @@ class TestShopPadlocks(ClientTestBase):
         self.ctx.handle_snapshot(self.snapshot(self.row, encounter="00000000-0000-0000-0000-000000000000"))
         self.enter()
         self.assertFalse(self.ctx.overlay.show_shop.call_args.kwargs["exact"])
+
+    def test_an_open_stash_padlocks_its_locked_cards_in_their_slots(self) -> None:
+        from ..memreader import BoardUI
+        free = self.row[0]
+        snapshot = self.snapshot(self.row)._replace(stash=((5, LOCKED.guid), (0, free.guid)))
+        self.ctx.handle_snapshot(snapshot)
+        self.ctx.handle_board_ui(BoardUI(False, False, True, False, False))
+        empties = 5 - {"Small": 1, "Medium": 2, "Large": 3}[free.size]
+        expected = [free.size] + ["Empty"] * empties + [LOCKED.size]
+        screen, sizes, locked, _ = self.padlocks()
+        self.assertEqual((screen, sizes[:len(expected)], locked), ("Stash", expected, [len(expected) - 1]))
+        self.ctx.handle_board_ui(BoardUI(False, False, False, False, False))  # closed: the shop's padlocks again
+        self.assertEqual(self.padlocks()[0], "Encounter")
+
+    def test_a_stash_card_that_cant_be_sized_means_no_stash_padlocks(self) -> None:
+        from ..memreader import BoardUI
+        self.ctx.handle_snapshot(self.snapshot(self.row)._replace(stash=((0, "not-a-known-card"), (5, LOCKED.guid))))
+        self.ctx.handle_board_ui(BoardUI(False, False, True, False, False))
+        self.assertEqual(self.padlocks(), (None, [], [], False))

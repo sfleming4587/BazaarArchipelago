@@ -270,3 +270,12 @@ class TestRowGaps(unittest.TestCase):
         level_9 = card_rects(0, 0, 1920, 1080, ["Small"], level=9)[-1]
         self.assertAlmostEqual(level_1[2] - level_1[0], 4 * 113, delta=2)
         self.assertAlmostEqual(level_9[2] - level_9[0], 10 * 113, delta=2)
+
+
+class TestStashGrid(unittest.TestCase):
+    def test_slots_land_on_the_measured_grid(self) -> None:
+        """Owner's stash screenshot: Small cards in slots 0 and 1 centred near x 452 and 565 at 1080p."""
+        from ..overlay import card_centres
+        xs = [x for x, _ in card_centres(0, 0, 1920, 1080, ["Small", "Small"] + ["Empty"] * 8)]
+        self.assertAlmostEqual(xs[0], 452, delta=3)
+        self.assertAlmostEqual(xs[1], 565, delta=3)
