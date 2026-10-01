@@ -127,13 +127,18 @@ locked, new heroes aren't part of the seed, and a new monster counts as Bronze. 
 
 - Only play heroes you've received.
 - Don't keep locked cards. Events, loot and level-ups can hand you one; that's fine, just sell it before
-  your next fight. When you open a shop, the client lists which locked cards that merchant could sell, and it pops up a
-  warning whenever you end up with one anyway. The warning clears
+  your next fight. When you open a shop, the client puts a padlock on each locked card that's on offer and lists
+  them beside the board, and it pops up a warning whenever you end up with one anyway. The warning clears
   itself once you sell it. Use `/locked` to see what's locked.
 - DeathLink: when someone else dies, abandon your current run.
 
 ## Is this allowed by Tempo?
 
-The client only reads `Player.log`, which falls under "display of information local to the user" in Tempo's
-[Third-Party Plugin & Modding Policy](https://www.playthebazaar.com/mod-policy). It never modifies the game, reads
-game memory, contacts Tempo's servers or sends input to the game. Tempo's policy can change, so check it yourself.
+The client reads `Player.log`, which falls under "display of information local to the user" in Tempo's
+[Third-Party Plugin & Modding Policy](https://www.playthebazaar.com/mod-policy). To put padlocks on shop cards it
+also **reads the game's memory**: only your own run's current screen and the cards on offer, read-only, nothing
+written or injected, nothing about other players. That same policy lists mods that "access or modify game memory
+or files", so reading memory carries a risk to your account that reading the log doesn't. If you'd rather not take
+it, start the client with `--no-memory-reader`: you lose the padlocks and shops list every locked card they could
+sell instead. The client never modifies the game, contacts Tempo's servers or sends input to the game. Tempo's
+policy can change, so check it yourself.

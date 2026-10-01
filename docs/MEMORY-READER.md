@@ -1,9 +1,11 @@
 # Memory reader - what the game's memory knows that Player.log doesn't
 
-> ⚠️ **Research only, not in the client.** DEVELOPERS.md's "one big rule" (the client only reads `Player.log`) still
-> stands. Shipping any of this changes that rule and needs the owner's OK first. Reading memory needed one-time
-> reverse engineering (EULA section 3); the owner accepted that on 2026-09-30, on the condition that the reader
-> only reads and switches itself off after a breaking patch instead of being re-engineered automatically.
+> ⚠️ **In the client since 2026-10-01 (owner: "yes this is the go ahead, but do not release anything yet til we test
+> it al"), for the shop padlocks only, NOT RELEASED.** `bazaar/memreader.py` reads the screen, the encounter and the
+> offered cards; nothing else from this page is used yet. Reading memory needed one-time reverse engineering (EULA
+> section 3); the owner accepted that on 2026-09-30, on the condition that the reader only reads and switches itself
+> off after a breaking patch instead of being re-engineered automatically. Players can turn it off with
+> `--no-memory-reader`. Widening what it reads needs the owner's OK.
 
 **One live run (2026-09-30, Mak, Unranked, Day 1 to Day 11, 5 wins / 6 losses) was watched once a second. Everything
 below was seen in that run unless it is marked _unverified_.**
@@ -244,7 +246,36 @@ of guessing. Offsets found on 2026-09-30: assembly list +0xA0, class cache +0x4D
 - **K-mem5:** the class an instance field belongs to may be in another assembly (`BazaarGameClient`,
   `BazaarGameShared`), so search classes through the object, not by name in one image.
 
-## Bringing it into the client (plan, nothing built)
+## Shop padlocks (built 2026-10-01, not tested in the game yet)
+
+**A padlock sits on the centre of each locked card the shop is offering; the list beside the board names only
+those cards.** Owner, 2026-10-01: place them by proportion ("the shop row of cards is always roughly 1/3 down from
+the top ... the cards sit in the middle of the width, using their sizes you can accurately put a red X or lock in
+the middle of the card"), a padlock rather than an X.
+
+- `client.watch_memory` reads every 0.3 s; `offers_at` trusts a reading only when the screen is `Encounter`, the
+  encounter is the one the log says you're at, and every offer is an `Item` with a known template. Otherwise: no
+  padlocks, and the list of everything the merchant could sell, as before.
+- `overlay.card_centres` turns the sizes (Small 1 slot, Medium 2, Large 3) into centres: the row is centred across
+  the window at `SHOP_ROW_Y` of its height. An unknown size means no padlocks at all - a guessed width would move
+  every padlock after it onto the wrong card.
+- Each padlock is its own small window: see-through around the lock, click-through (`WS_EX_TRANSPARENT`), never
+  focused, shown only while the game is in front. Checked 2026-10-01 with a stand-in window: placed on the
+  expected centres, clicks pass through, hidden again when the shop closes.
+- If a check fails the reader turns itself off until the game restarts, says so once, and shops fall back to the
+  list. Game not running or still loading is silent.
+
+⚠️ **`SHOP_ROW_Y`, `SLOT_WIDTH` and `CARD_GAP` in `overlay.py` are placeholders (1/3, 120 px, 0 at 1080p).** Measure
+them on a real shop screenshot the owner takes (never one we capture) before trusting the padlocks.
+
+⚠️ **The reader's port from the spike hasn't run against the game yet.** The spike read `TemplateId` as a 16-byte
+`Guid`, but the dumps show a `String`; `memreader._get` handles both by the field's type.
+
+Still to check in the game (the padlock rows of the "Next test session" table below): selection order matches
+left to right; the cards don't slide when one is bought (if they do, the padlocks follow anyway - memory drops the
+bought card and the row is recomputed); event item choices (`OFFER_DATA`) use the same row; 1440p.
+
+## Bringing the rest into the client (plan, nothing built)
 
 **Memory adds to the log; it never replaces it.** Everything the client does from `Player.log` today keeps
 working. If the reader is off or turns itself off mid-run, the client carries on from the log and says so on the
@@ -255,7 +286,7 @@ status line.
 2. **A poll thread** (2-4 readings a second) that turns readings into events, the same way `logparser.py` turns
    lines into events: screen changed, offer changed, PvP won/lost, run lost, monster chosen (with tier), monster
    won/lost.
-3. **Locked cards in the shop (the big one).** On every offer change, the client compares the offered cards with
+3. **Locked cards in the shop (the big one) - BUILT 2026-10-01, see "Shop padlocks".** On every offer change, the client compares the offered cards with
    what's unlocked and tells the overlay exactly which offered cards are locked, using the existing `show_shop()`
    list in the left strip: "Herma: Cellar is locked (2nd card)". That replaces today's "could sell any of N cards"
    list with the real cards. Overlay rules still apply: only beside the board, never over the shop cards, text
@@ -277,6 +308,10 @@ status line.
 | Concede a run | concede DeathLink option and run reset |
 | Restart the game mid-run, start the reader again | the reader must reattach and pick the run up |
 | Is `SelectionSet` order the same as left-to-right on screen? Note one shop's cards in screen order | "2nd card is locked" on the overlay |
+| A shop screenshot (owner takes it) with Small, Medium and Large cards: measure the row height, slot width and gap | replaces the padlock placeholders |
+| Padlocks sit on the right cards, clicks and tooltips still work through them, they go when you leave | the padlocks themselves |
+| Buy a card: do the others slide over? Reroll: do the padlocks move with the new cards? | padlocks follow purchases |
+| An event that offers a choice of items: same row as a shop? | padlocks outside merchants |
 | Read gold, health, prestige, level and XP off the screen once and compare | confirms the stat table |
 | An enchanted card on the board | `Enchantment` decoding |
 | Right-click a monster on the map, then check the dump | where the preview lives (it was not in the run data) |

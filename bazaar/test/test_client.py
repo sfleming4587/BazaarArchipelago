@@ -779,3 +779,57 @@ class TestCommandsTakeTextAsTyped(ClientTestBase):
         self.assertEqual(self.ctx.log_path, before)
         commands(f"/logpath {path}")
         self.assertEqual(self.ctx.log_path, path)
+
+
+class TestShopPadlocks(ClientTestBase):
+    """With the memory reader on, only the locked cards actually on offer are named, and padlocked by position."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        from ..client import MERCHANT_DATA, SHOP_CARDS
+        from ..merchants import possible_stock
+        self.merchant = next(guid for guid, m in MERCHANT_DATA.items()
+                             if LOCKED in possible_stock(m["stock"], "Vanessa", SHOP_CARDS))
+        free = [c for c in SHOP_CARDS if c.hero == "Vanessa" and c.guid != LOCKED.guid][:2]
+        self.row = [free[0], LOCKED, free[1]]
+        self.ctx.overlay = mock.Mock()
+        self.play(RunStarted("Vanessa"), DayReached(1))
+
+    def snapshot(self, cards, encounter=None, state="Encounter"):
+        from ..memreader import Offer, Snapshot
+        return Snapshot(state, encounter or self.merchant,
+                        tuple(Offer(f"itm_{i}", c.guid, c.size, "Item") for i, c in enumerate(cards)))
+
+    def enter(self) -> None:
+        from ..logparser import EncounterEntered
+        self.play(EncounterEntered(self.merchant))
+
+    def test_only_the_locked_card_on_offer_is_named_and_padlocked(self) -> None:
+        self.ctx.handle_snapshot(self.snapshot(self.row))
+        self.enter()
+        overlay = self.ctx.overlay
+        overlay.show_padlocks.assert_called_with([c.size for c in self.row], [1])
+        merchant, names, _verb = overlay.show_shop.call_args.args
+        self.assertEqual(names, [LOCKED.name])
+        self.assertTrue(overlay.show_shop.call_args.kwargs["exact"])
+
+    def test_buying_it_takes_the_padlock_away(self) -> None:
+        self.ctx.handle_snapshot(self.snapshot(self.row))
+        self.enter()
+        self.ctx.handle_snapshot(self.snapshot([self.row[0], self.row[2]]))
+        self.ctx.overlay.show_padlocks.assert_called_with([self.row[0].size, self.row[2].size], [])
+        self.assertEqual(self.ctx.overlay.show_shop.call_args.args[1], [])
+
+    def test_without_memory_it_lists_everything_the_merchant_could_sell(self) -> None:
+        self.enter()
+        self.ctx.overlay.show_padlocks.assert_called_with([], [])
+        self.assertIn(LOCKED.name, self.ctx.overlay.show_shop.call_args.args[1])
+        self.assertFalse(self.ctx.overlay.show_shop.call_args.kwargs["exact"])
+
+    def test_a_reading_from_another_screen_is_not_trusted(self) -> None:
+        self.ctx.handle_snapshot(self.snapshot(self.row, state="Choice"))
+        self.enter()
+        self.ctx.overlay.show_padlocks.assert_called_with([], [])
+        self.ctx.handle_snapshot(self.snapshot(self.row, encounter="00000000-0000-0000-0000-000000000000"))
+        self.ctx.overlay.show_padlocks.assert_called_with([], [])
+        self.assertFalse(self.ctx.overlay.show_shop.call_args.kwargs["exact"])

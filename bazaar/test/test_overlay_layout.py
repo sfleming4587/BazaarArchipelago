@@ -216,3 +216,25 @@ class TestAlertBoxWithManyHeldCards(unittest.TestCase):
             self.assertGreaterEqual(-screen.font(8)[1], 10)  # the smallest font the overlay asks for
         finally:
             root.destroy()
+
+
+class TestCardCentres(unittest.TestCase):
+    def test_row_is_centred_and_cards_follow_their_sizes(self) -> None:
+        from ..overlay import SHOP_ROW_Y, SLOT_WIDTH, card_centres
+        centres = card_centres(0, 0, 1920, 1080, ["Small", "Large", "Medium"])
+        self.assertEqual([y for _, y in centres], [round(1080 * SHOP_ROW_Y)] * 3)
+        # Small(1) Large(3) Medium(2) = 6 slots centred on 960: the Large card's centre is 0.5 slot left of it
+        self.assertAlmostEqual(centres[1][0], 960 - SLOT_WIDTH / 2, delta=1)
+
+    def test_scales_with_the_window_and_follows_it_on_screen(self) -> None:
+        from ..overlay import card_centres
+        small = card_centres(0, 0, 1920, 1080, ["Medium", "Medium"])
+        big = card_centres(100, 50, 2560, 1440, ["Medium", "Medium"])
+        for (x1, y1), (x2, y2) in zip(small, big):
+            self.assertAlmostEqual(x2 - 100, x1 * 4 / 3, delta=1)
+            self.assertAlmostEqual(y2 - 50, y1 * 4 / 3, delta=1)
+
+    def test_an_unknown_size_means_no_padlocks(self) -> None:
+        from ..overlay import card_centres
+        self.assertIsNone(card_centres(0, 0, 1920, 1080, ["Small", None]))
+        self.assertIsNone(card_centres(0, 0, 1920, 1080, []))

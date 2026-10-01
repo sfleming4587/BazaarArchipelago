@@ -5,9 +5,12 @@ Thanks for wanting to help! This page is for working on the apworld and the clie
 
 ## The one big rule
 
-The client only ever **reads** the game's own `Player.log`. Please keep it that way: no reading game memory, no
-automated input, no calls to Tempo's servers, no changes to game files. Those are exactly what Tempo's modding
-policy bans, and nobody should risk their account to play a randomizer.
+The client only ever **reads**: the game's own `Player.log`, and - for the shop padlocks only - the game's memory,
+through `bazaar/memreader.py`. Please keep it that way: no writing to memory, no injection, no automated input, no
+calls to Tempo's servers, no changes to game files, and nothing about other players. Tempo's modding policy names
+mods that "access or modify game memory or files"; the owner accepted the read-only risk for the padlocks on
+2026-10-01, and it can be turned off with `--no-memory-reader`. Don't widen what the reader reads without the
+owner's OK (rules in `docs/MEMORY-READER.md`), and nobody should risk their account to play a randomizer.
 
 ## Finding your way around
 
@@ -17,6 +20,7 @@ policy bans, and nobody should risk their account to play a randomizer.
 | `bazaar/logparser.py` | `Player.log` parsing (no Archipelago imports, so it's easy to test on its own) |
 | `bazaar/client.py` | the CommonClient-based client ("The Bazaar Client" in the Launcher); every run check goes through `send_run_checks` |
 | `bazaar/overlay.py` | the overlay: `Overlay` is the client's handle (a command queue), `_Screen` the Tk thread (alert box, locked-card list, pop-ups) |
+| `bazaar/memreader.py` | reads the shop's offered cards from game memory, read-only; finds Mono's offsets by probing and turns itself off if a check fails (no Archipelago imports) |
 | `bazaar/shop_guide.py` | the Shop Guide window (card pictures, or "no picture" boxes) |
 | `bazaar/theme.py` | colours and the font shared by every window |
 | `bazaar/merchants.py` | which cards a merchant / item choice can offer (from the game's spawn filters) |
@@ -29,7 +33,7 @@ policy bans, and nobody should risk their account to play a randomizer.
 | `tools/build_apworld.py` | builds `bazaar.apworld` (repo root + `releases/`) without opening a window |
 | `tools/quick_run.ps1` | a solo test game: generate, host locally, open the client |
 | `docs/UPDATING-GAME-DATA.md` | what to do after a Bazaar patch |
-| `docs/MEMORY-READER.md` | research only, not in the client: what the game's memory shows that `Player.log` doesn't |
+| `docs/MEMORY-READER.md` | what the game's memory shows that `Player.log` doesn't, the reader's rules, and the shop padlocks |
 | `Archipelago/` (not in git) | an Archipelago 0.6.7 source checkout; `worlds/bazaar` is a junction to `bazaar/` |
 | `.venv/` (not in git) | Python 3.13 (Archipelago doesn't support 3.14 yet) |
 

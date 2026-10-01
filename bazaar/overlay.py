@@ -18,7 +18,7 @@ from typing import Callable, Dict, List, Optional, Set
 
 from . import screens
 from .shop_guide import ShopGuide
-from .theme import ACCENT, FG, FONT, GOOD, MUTED, SEVERITY, WARN
+from .theme import ACCENT, FG, FONT, GOOD, LOCKED_X, MUTED, OUTLINE, SEVERITY, WARN
 from .tracker import Tracker
 
 logger = logging.getLogger("Client")
@@ -54,6 +54,18 @@ TOAST_SHARE = 3  # pop-ups take at most 1/3 of the right strip
 MAX_TOASTS = 4
 POLL_MS = 250
 GAME_EXE = "thebazaar.exe"  # the overlay only shows while this is the active window
+
+# Padlocks on the locked cards a shop is offering (user, 2026-10-01): placed by proportion of the game window, a
+# small mark at each card's centre, never covering the card. The row is centred across the window, about a third
+# down; a card is 1, 2 or 3 slots wide by its size. 1080p pixels, scaled like the strips.
+# ⚠️ UNMEASURED placeholders until checked against a real shop screenshot (row height, slot width, gap).
+SHOP_ROW_Y = 1 / 3  # the cards' centres, as a share of the window's height
+SLOT_WIDTH = 120  # one slot (a Small card)
+CARD_GAP = 0  # between two cards
+SLOTS = {"Small": 1, "Medium": 2, "Large": 3}
+PADLOCK = 56  # the mark's size
+MIN_PADLOCK = 24  # real pixels, however small the window
+PADLOCK_KEY = "#010203"  # the padlock window's see-through colour
 MIN_GAME_WINDOW = 100  # a client area smaller than this is minimised or not laid out yet
 
 
@@ -135,6 +147,24 @@ def strips(x: int, y: int, w: int, h: int) -> tuple:
     right_x, right_end = round(centre + RIGHT_START * across), x + w - margin
     return ((left_x, y, left_end - left_x, round(LEFT_BOTTOM * k)),
             (right_x, y, right_end - right_x, round(RIGHT_BOTTOM * k)), k)
+
+
+def card_centres(x: int, y: int, w: int, h: int, sizes: List[Optional[str]]) -> Optional[List[tuple]]:
+    """
+    Screen centre (x, y) of each card in a shop row of these sizes, left to right, for a game window at x, y of
+    size w x h. None if any size is unknown: a guessed width would put every padlock after it on the wrong card.
+    """
+    if not sizes or any(size not in SLOTS for size in sizes):
+        return None
+    across = min(h / 1080, w / 1920)  # the board's scale, as in strips()
+    widths = [SLOTS[size] * SLOT_WIDTH * across for size in sizes]
+    gap = CARD_GAP * across
+    left = x + w / 2 - (sum(widths) + gap * (len(widths) - 1)) / 2
+    centres = []
+    for width in widths:
+        centres.append((round(left + width / 2), round(y + h * SHOP_ROW_Y)))
+        left += width + gap
+    return centres
 
 
 def below(strip: tuple, taken: int) -> tuple:
@@ -235,9 +265,15 @@ class Overlay:
         blocked: checks are blocked (critical, red) rather than just a warning (a Sell Trap coming up)."""
         self.commands.put(("locked", (title, list(cards), blocked) if title else None))
 
-    def show_shop(self, merchant: Optional[str], locked: List[str], verb: str = "sell") -> None:
-        """Show which locked cards a merchant could sell (or an event could offer). merchant=None hides it."""
-        self.commands.put(("shop", (merchant, list(locked), verb) if merchant else None))
+    def show_shop(self, merchant: Optional[str], locked: List[str], verb: str = "sell", exact: bool = False) -> None:
+        """Show which locked cards a merchant could sell (or an event could offer). merchant=None hides it.
+        exact: these are the locked cards actually on offer right now (read from the game), not every possible one."""
+        self.commands.put(("shop", (merchant, list(locked), verb, exact) if merchant else None))
+
+    def show_padlocks(self, sizes: List[Optional[str]], locked: List[int]) -> None:
+        """A padlock on each locked card on offer: sizes of every offered card left to right, and the positions
+        (0-based) of the locked ones. No locked positions hides them."""
+        self.commands.put(("padlocks", (tuple(sizes), tuple(locked)) if locked else None))
 
     def show_board(self, title: Optional[str], allowed: list, locked: list) -> None:
         """Shop Guide: allowed cards in colour first, locked cards greyed out below. title=None hides it."""
@@ -310,12 +346,17 @@ class _Screen:
             backdrop.attributes("-alpha", LIST_ALPHA)
             screens.never_focus(backdrop)
 
+        self.padlocks: list = []  # one small click-through window per padlock, made as needed and reused
+        self.padlocks_wanted = 0  # how many of them are in use
+
         self.layout: dict = {}  # the strips for where the game window is now (see relayout)
         self.relayout((0, 0, root.winfo_screenwidth(), root.winfo_screenheight()))  # until the game is seen
-        self.state = {"locked": None, "deathlink": None, "shop": None, "toasts": [], "status": None}
+        self.state = {"locked": None, "deathlink": None, "shop": None, "toasts": [], "status": None,
+                      "padlocks": None}
         self.list_hidden = False  # the player hid the locked-card list (until they show it again)
         # what each window shows now, to skip redraws that change nothing
-        self.drawn: dict = {"alerts": None, "shop": None, "toasts": None, "alerts_height": 0, "toasts_height": 0}
+        self.drawn: dict = {"alerts": None, "shop": None, "toasts": None, "alerts_height": 0, "toasts_height": 0,
+                            "padlocks": None}
         self.wanted: set = set()  # windows that have something to show (shown only while the game is in front)
         self.game_in_front = not overlay.only_over_game
         self.widths: Dict[tuple, int] = {}  # (font size, text) -> pixels; measuring hundreds of names is slow
@@ -334,7 +375,7 @@ class _Screen:
             "tracker_toggle": lambda _: self.tracker.toggle(),
             "toast": self.new_toast,
             **{kind: (lambda value, kind=kind: self.set_state(kind, value))
-               for kind in ("locked", "deathlink", "shop", "status")},
+               for kind in ("locked", "deathlink", "shop", "status", "padlocks")},
         }
 
     def run(self) -> None:
@@ -406,6 +447,14 @@ class _Screen:
             elif not show and window.state() == "normal":
                 for layer in layers:
                     layer.withdraw()
+        for i, padlock in enumerate(self.padlocks):
+            show = self.game_in_front and i < self.padlocks_wanted
+            if show and padlock.state() != "normal":
+                padlock.deiconify()
+                padlock.lift()
+                screens.click_through(padlock)  # the card under it must stay clickable, tooltip and all
+            elif not show and padlock.state() == "normal":
+                padlock.withdraw()
         self.tracker.set_visible(self.game_in_front)
 
     # --- drawing ----------------------------------------------------------------------------------------------
@@ -447,6 +496,10 @@ class _Screen:
         if shop != drawn["shop"]:
             drawn["shop"] = shop
             self.render_shop(moves, drawn["alerts_height"], right)
+        padlocks = (state["padlocks"], layout["window"])
+        if padlocks != drawn["padlocks"]:
+            drawn["padlocks"] = padlocks
+            self.render_padlocks()
         for panel, rect in sorted(moves, key=lambda move: move[0] is self.alert_box):  # alert box grows last
             if rect is None:
                 self.wanted.discard(panel)
@@ -574,13 +627,14 @@ class _Screen:
         if not state["shop"] or (self.list_hidden and state["shop"][1]):
             moves += [(self.shop_first, None), (self.shop_second, None)]
             return
-        merchant, names, verb = state["shop"]
+        merchant, names, verb, exact = state["shop"]
         bg = SEVERITY["warning" if names else "ok"]
         first = below(layout["left"], alerts_height)  # the left strip under the alerts first, then the right strip
         first_frame, show_first = self.swap(self.shop_first, bg)
         if names:
             advice = "don't buy them" if verb == "sell" else "pick something else"
-            tk.Label(first_frame, text=f"{merchant} may {verb} these LOCKED cards - {advice}:", fg=ACCENT, bg=bg,
+            what = f"{merchant} is offering" if exact else f"{merchant} may {verb}"  # exact: padlocked on screen
+            tk.Label(first_frame, text=f"{what} these LOCKED cards - {advice}:", fg=ACCENT, bg=bg,
                      font=f(11, "bold"), wraplength=layout["inner_w"], justify="left").pack(anchor="w", pady=(0, 4))
         else:  # nothing locked: just a small tick
             tk.Label(first_frame, text=f"✔  {merchant}: buy freely", fg=GOOD, bg=bg, font=f(11, "bold"),
@@ -609,6 +663,51 @@ class _Screen:
         else:
             moves.append((self.shop_second, None))
 
+    def render_padlocks(self) -> None:
+        """Moves a padlock onto the centre of each locked card on offer (see card_centres)."""
+        layout, value = self.layout, self.state["padlocks"]
+        centres = card_centres(*layout["window"], value[0]) if value else None
+        spots = [centres[i] for i in value[1] if i < len(centres)] if centres else []
+        size = max(MIN_PADLOCK, round(PADLOCK * layout["k"]))
+        while len(self.padlocks) < len(spots):
+            self.padlocks.append(self.new_padlock())
+        for padlock, (x, y) in zip(self.padlocks, spots):
+            if padlock.drawn_size != size:
+                self.draw_padlock(padlock, size)
+            padlock.geometry(screens.geometry(screens.clamp((x - size // 2, y - size // 2, size, size),
+                                                            layout["screen"])))
+        self.padlocks_wanted = len(spots)
+
+    def new_padlock(self):
+        padlock = self.tk.Toplevel(self.root)
+        padlock.withdraw()
+        padlock.overrideredirect(True)
+        padlock.attributes("-topmost", True)
+        padlock.configure(bg=PADLOCK_KEY)
+        padlock.attributes("-transparentcolor", PADLOCK_KEY)  # only the padlock itself shows
+        screens.never_focus(padlock)
+        padlock.canvas = self.tk.Canvas(padlock, bg=PADLOCK_KEY, highlightthickness=0, bd=0)
+        padlock.canvas.pack(fill="both", expand=True)
+        padlock.drawn_size = 0
+        return padlock
+
+    @staticmethod
+    def draw_padlock(padlock, s: int) -> None:
+        """A red padlock with a dark outline, so it reads on light and dark cards alike."""
+        canvas, line = padlock.canvas, max(2, s // 12)
+        canvas.delete("all")
+        canvas.configure(width=s, height=s)
+        for colour, width in ((OUTLINE, line + 4), (LOCKED_X, line)):  # the shackle, outlined
+            canvas.create_arc(s * 0.3, s * 0.08, s * 0.7, s * 0.62, start=0, extent=180, style="arc",
+                              outline=colour, width=width)
+            canvas.create_line(s * 0.3, s * 0.35, s * 0.3, s * 0.48, fill=colour, width=width)
+            canvas.create_line(s * 0.7, s * 0.35, s * 0.7, s * 0.48, fill=colour, width=width)
+        canvas.create_rectangle(s * 0.16, s * 0.45, s * 0.84, s * 0.94, fill=LOCKED_X, outline=OUTLINE,
+                                width=max(2, s // 20))
+        canvas.create_oval(s * 0.43, s * 0.58, s * 0.57, s * 0.72, fill=OUTLINE, outline=OUTLINE)
+        canvas.create_rectangle(s * 0.47, s * 0.68, s * 0.53, s * 0.84, fill=OUTLINE, outline=OUTLINE)
+        padlock.drawn_size = s
+
     def dismiss_deathlink(self) -> None:
         self.state["deathlink"] = None
         self.render()
@@ -630,6 +729,7 @@ class _Screen:
 
     def own_windows(self) -> Set[int]:
         windows = self.panels + list(self.backdrops.values()) + ([self.guide.win] if self.guide else [])
+        windows += self.padlocks
         return {screens.window_handle(w) for w in windows} | set(self.tracker.windows())
 
     def poll(self) -> None:
@@ -684,3 +784,6 @@ class _Screen:
                     layer.attributes("-topmost", True)
         if self.guide and self.guide.win.state() == "normal":
             self.guide.win.attributes("-topmost", True)
+        for padlock in self.padlocks:
+            if padlock.state() == "normal":
+                padlock.attributes("-topmost", True)

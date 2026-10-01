@@ -9,9 +9,11 @@ runs, and each of those sends something to another player - maybe their hookshot
 return, their games unlock your heroes and cards, one find at a time. Get 10 wins with enough different heroes (3
 by default) and you've won!
 
-**Your game stays untouched.** A small companion program sits next to The Bazaar and simply reads the log file the
-game already writes on your PC. It never changes game files, never reads the game's memory, never talks to Tempo's
-servers and never clicks or types for you.
+**Your game stays untouched.** A small companion program sits next to The Bazaar and reads the log file the game
+already writes on your PC. In shops it also peeks at the game's memory - read-only - to see which cards are on
+offer, so it can put a padlock on the locked ones. It never changes game files, never talks to Tempo's servers and
+never clicks or types for you. Reading memory is something Tempo's mod policy mentions, so please read
+[Is this allowed?](bazaar/docs/en_The%20Bazaar.md#is-this-allowed-by-tempo) before you play.
 
 *Want to work on it? Head over to [DEVELOPERS.md](DEVELOPERS.md).*
 

@@ -8,7 +8,8 @@ WARN = "#ff8a8a"  # something wrong: a locked hero picked, locked cards
 MUTED = "#e6d5b8"  # quiet text: the progress line
 DIM = "#8a8a8a"  # done, greyed out
 WINDOW_BG = "#16141c"  # the Shop Guide and the tracker
-LOCKED_X = "#e0303a"  # the red cross over a locked card's picture
+LOCKED_X = "#e0303a"  # the red cross over a locked card's picture, the padlock on a locked card in a shop
+OUTLINE = "#1a0406"  # around the padlock, so it shows on light cards too
 
 # background by how urgent a window is (user 2026-09-28: "not just red, correspondant to the severity")
 SEVERITY = {"critical": "#5a0f14",  # checks blocked, DeathLink

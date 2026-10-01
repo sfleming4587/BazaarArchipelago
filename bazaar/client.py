@@ -1,8 +1,9 @@
 """
 The Bazaar Archipelago client.
 
-Watches The Bazaar's own Player.log (read-only) and turns what it sees into Archipelago checks.
-It never modifies the game, reads its memory, talks to Tempo's servers or sends input to the game.
+Watches The Bazaar's own Player.log (read-only) and turns what it sees into Archipelago checks. It also reads
+what the shop is offering from the game's memory (read-only, see memreader.py and docs/MEMORY-READER.md) to put a
+padlock on locked cards. It never modifies the game, talks to Tempo's servers or sends input to the game.
 Locked heroes/cards and received DeathLinks are enforced by the player (honor system) with the client's help.
 """
 import asyncio
@@ -10,6 +11,7 @@ import dataclasses
 import json
 import os
 import random
+import sys
 from typing import Any, Dict, Optional, Set
 
 import Utils
@@ -27,10 +29,13 @@ from .locations import (card_requirements, day_location, hero_checks, location_n
 from .logparser import (DEFAULT_LOG_PATH, PREV_LOG, HeroSelected, CardGained, CardSold, DayReached, EncounterEntered,
                         EncounterLeft, FightStarted, GameVersion, LogParser, LogTailer, MonsterFought, PvPFought,
                         RunEnded, RunStarted, UnrecognizedRun, log_session)
+from .memreader import GAME_EXE, NotReady, Reader, ReaderOff, Snapshot, find_pid
 from .merchants import possible_stock
 from .overlay import FILE_ONLY  # to the log file only: not the console or the client window
 
 POLL_SECONDS = 0.5
+MEMORY_SECONDS = 0.3  # how often the shop is read from memory
+MEMORY_RETRY = (5, 30)  # seconds before trying the reader again: game not running yet / a check failed
 STATE_FILE = "bazaar_client_state.json"
 
 SHOP_CARDS = [c for c in CARDS if c.shop]
@@ -44,6 +49,15 @@ SLOT_DEFAULTS = {"heroes": [], "max_day": 15, "pvp_win_checks": False, "monster_
 def own_popup(item_id: int) -> bool:
     """Items announced by their own pop-up (UNLOCKED, a Sell Trap, a Lock Bypass) rather than the generic ones."""
     return item_id in UNLOCKS or item_id in HERO_ITEM_IDS or item_id in (SELL_TRAP_ID, LOCK_BYPASS_ID)
+
+
+def offers_at(snapshot: Optional[Snapshot], guid: str) -> Optional[tuple]:
+    """The cards on offer at this merchant/event, left to right, as read from memory; None if memory can't say."""
+    if not snapshot or snapshot.state != "Encounter" or snapshot.encounter != guid or not snapshot.offers:
+        return None
+    if any(offer.kind != "Item" or offer.template is None for offer in snapshot.offers):
+        return None  # not a plain row of items (e.g. a skill choice): no padlocks, the list as before
+    return snapshot.offers
 
 
 def default_log_path() -> str:
@@ -167,6 +181,7 @@ class BazaarContext(CommonContext):
         self.caught_up = False  # the log has been read up to now since connecting: received Sell Traps can start
         self.quiet = False  # replaying runs that ended while the client wasn't watching: no alerts, no DeathLinks
         self.encounter: Optional[EncounterEntered] = None  # the merchant or event you're at, if any
+        self.memory: Optional[Snapshot] = None  # what memory says is on screen now; None while the reader is off
         self.menu_hero: Optional[str] = None  # hero picked on the hero-select screen, while not in a run
         self.room_seed = ""  # CommonClient never sets seed_name, so the saved state is keyed on this instead
         self.log_session: Optional[str] = None  # which game session the log being read is from (see log_session)
@@ -560,6 +575,13 @@ class BazaarContext(CommonContext):
         self.event(f"You went into a fight holding locked cards ({names}). Nothing from this fight counts.",
                    warning=True)
 
+    def handle_snapshot(self, snapshot: Optional[Snapshot]) -> None:
+        """A new reading from memory (None: the reader is off). The shop warning is redone when what's on offer
+        at the current merchant changed: you bought a card, rerolled, or memory caught up with the log."""
+        before, self.memory = self.memory, snapshot
+        if self.encounter and offers_at(before, self.encounter.guid) != offers_at(snapshot, self.encounter.guid):
+            self.handle_encounter(self.encounter)
+
     def handle_encounter(self, event: EncounterEntered) -> None:
         merchant = MERCHANT_DATA.get(event.guid) or OFFER_DATA.get(event.guid)
         if not merchant or not self.run.get("active"):
@@ -568,11 +590,21 @@ class BazaarContext(CommonContext):
         verb = "sell" if event.guid in MERCHANT_DATA else "offer"
         locked = self.run_locked_guids()
         stock = possible_stock(merchant["stock"], self.run["hero"], (CARDS_BY_GUID[g] for g in locked))
-        names = sorted(c.name for c in stock)
+        offers = offers_at(self.memory, event.guid)
+        if offers is not None:  # exactly what's on screen: only those are named, and padlocked
+            spots = [i for i, offer in enumerate(offers) if offer.template in locked]
+            names = [self.card_name(offers[i].template) for i in spots]
+        else:
+            spots, names = [], sorted(c.name for c in stock)
+        if self.overlay:
+            self.overlay.show_padlocks([offer.size for offer in offers or ()], spots)
         if names:
-            logger.info(f"{merchant['name']} may {verb} these locked cards: {', '.join(names)}", extra=FILE_ONLY)
+            how = "offers" if offers is not None else f"may {verb}"
+            logger.info(f"{merchant['name']} {how} these locked cards: {', '.join(names)}", extra=FILE_ONLY)
         if self.overlay and (names or verb == "sell"):  # free choices only warn when something is locked
-            self.overlay.show_shop(merchant["name"], names, verb)
+            self.overlay.show_shop(merchant["name"], names, verb, exact=offers is not None)
+        elif self.overlay:  # memory says the locked card that was offered has gone
+            self.overlay.show_shop(None, [])
         everything = possible_stock(merchant["stock"], self.run["hero"], SHOP_CARDS)
         if self.overlay and self.shop_guide and len(everything) <= GUIDE_MAX:
             allowed = [c for c in everything if c.guid not in locked]
@@ -583,6 +615,7 @@ class BazaarContext(CommonContext):
         self.encounter = None
         if self.overlay:
             self.overlay.show_shop(None, [])
+            self.overlay.show_padlocks([], [])
             if self.shop_guide:
                 self.overlay.show_board(None, [], [])
 
@@ -999,6 +1032,42 @@ async def watch_log(ctx: BazaarContext) -> None:
             await asyncio.sleep(POLL_SECONDS)
 
 
+async def watch_memory(ctx: BazaarContext) -> None:
+    """Reads what's on offer from the game's memory a few times a second. If a check fails the reader stays off
+    for this game session and the shop warning falls back to everything the merchant could sell; it's only tried
+    again when the game restarts (never re-engineered after a patch, owner 2026-09-30)."""
+    reader, loop, said = Reader(), asyncio.get_running_loop(), None
+    while not ctx.exit_event.is_set():
+        try:
+            if not reader.attached():
+                ctx.handle_snapshot(None)
+                await loop.run_in_executor(None, reader.attach)
+                logger.info("Memory reader: reading The Bazaar's shop.", extra=FILE_ONLY)
+                said = None
+            ctx.handle_snapshot(await loop.run_in_executor(None, reader.snapshot))
+            await asyncio.sleep(MEMORY_SECONDS)
+        except ReaderOff as error:
+            reader.close()
+            ctx.handle_snapshot(None)
+            if str(error) != said:
+                said = str(error)
+                logger.info(f"Memory reader off: {error}", extra=FILE_ONLY)
+                if not isinstance(error, NotReady):
+                    ctx.event(f"The memory reader turned itself off ({error}), probably after a game patch. Shops "
+                              f"list every locked card they could sell instead of padlocking the ones on offer.")
+            if isinstance(error, NotReady):
+                await asyncio.sleep(MEMORY_RETRY[0])
+            else:  # wait for this game session to end before trying again
+                session = find_pid(GAME_EXE)
+                while not ctx.exit_event.is_set() and session and find_pid(GAME_EXE) == session:
+                    await asyncio.sleep(MEMORY_RETRY[1])
+        except Exception:
+            logger.exception("Memory reader error; trying again")
+            reader.close()
+            ctx.handle_snapshot(None)
+            await asyncio.sleep(MEMORY_RETRY[1])
+
+
 async def main(args) -> None:
     ctx = BazaarContext(args.connect, args.password)
     ctx.auth = args.name
@@ -1018,11 +1087,17 @@ async def main(args) -> None:
         if not ctx.overlay.available:
             logger.warning("The alert window can't open on this PC (tkinter is missing). Warnings still show here.")
     watcher = asyncio.create_task(watch_log(ctx), name="log watcher")
+    # the padlocks need the overlay; the reader is Windows-only, like the game
+    memory = None
+    if ctx.overlay and not args.no_memory_reader and sys.platform == "win32":
+        memory = asyncio.create_task(watch_memory(ctx), name="memory reader")
     if gui_enabled:
         ctx.run_gui()
     ctx.run_cli()
     await ctx.exit_event.wait()
     watcher.cancel()
+    if memory:
+        memory.cancel()
     if ctx.overlay:
         ctx.overlay.close()
     await ctx.shutdown()
@@ -1035,6 +1110,9 @@ def launch_client(*args: str) -> None:
     parser.add_argument("--name", default=None, help="Slot name to connect as.")
     parser.add_argument("--logpath", default=None, help="Path to The Bazaar's Player.log.")
     parser.add_argument("--no-overlay", action="store_true", help="Don't show alerts in a window above the game.")
+    parser.add_argument("--no-memory-reader", action="store_true",
+                        help="Don't read the shop from the game's memory (no padlocks; shops list every locked card "
+                             "they could sell).")
     parser.add_argument("--no-shop-guide", action="store_true",
                         help="Don't open the Shop Guide window (card pictures of what a merchant can sell).")
     parser.add_argument("url", nargs="?", help="Archipelago connection url")
