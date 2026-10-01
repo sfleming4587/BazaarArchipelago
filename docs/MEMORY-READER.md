@@ -81,7 +81,7 @@ screenshot idea was for: it could mark locked cards on the overlay without match
 | Hour of the day (0-6) | ❌ | ✅ `Run.Hour`, `HoursInADay = 6` |
 | PvP win/loss | ❌ guessed / asked | ✅ `Victories` / `Losses`, when the replay ends |
 | Run lost | ⚠️ only after Continue | ✅ `Losses` up + `Prestige` 0, when the replay ends |
-| Run won | ✅ `EndRunVictoryState` (after Continue, _unverified when_) | ✅ state `EndRunVictory` (_not seen yet_) |
+| Run won | ✅ `EndRunVictoryState`, ~8 s after the 10th win (seen 2026-10-01) | ✅ `Victories` = 10 when the fight ends; state `EndRunVictory` ~7 s later |
 | Monster tier | ⚠️ only through loot after a win | ✅ on the choice card, before the fight |
 | Monster win/loss | ⚠️ inferred from a loot screen | ✅ health of both sides |
 | Monster's board | ❌ | ✅ once the fight starts |
@@ -369,7 +369,9 @@ status line.
   any of this means changing that promise, the docs and the risk statement first.
 - ⚠️ **One run, one PC, one patch.** A patch that renames these classes turns the reader off. By the owner's
   ruling it must stay off, not be re-engineered automatically.
-- Run **victory** (`EndRunVictory`) was not seen. Check what memory shows at 10 wins before relying on it.
+- Run **victory** seen 2026-10-01 (Vanessa, 10 wins 3 losses, day 13): `Victories` 9 -> 10 at 13:00:39 while still
+  `PVPCombat`; state `EndRunVictory` at 13:00:46; the log's `EndRunVictoryState` at 13:00:47. So memory knows the
+  run is won as soon as the 10th win counts, ~8 s before the log.
 - Unknown encounter ids (not in `bazaar_data.json`, mostly level-up and pedestal steps): `054e937d`, `0c410bf1`,
   `255ae0fa`, `3212ade4`, `47c256d3`, `4c3d4b9d` (Argenta skill choice), `4df2e5f8`, `a07fbe69`, `aef5e7d8`
   (right after a PvP loss on Day 10).
