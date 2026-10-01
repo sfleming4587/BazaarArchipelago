@@ -710,8 +710,8 @@ class _Screen:
         self.list_hidden = not self.list_hidden
 
     def render_menu(self, moves: list) -> None:
-        """On the menu: a grid of hero tiles like the game's hero select - portrait, name, a bar of checks done
-        (gold) and ready to do (green) out of all of them - the picked hero framed gold (red when it can't be
+        """On the menu: a grid of hero tiles like the game's hero select - card, a bar of the checks you've got
+        with that hero out of all of them - the picked hero framed gold (red when it can't be
         played), locked heroes dimmed; a warning banner on top, the goal at the bottom. In the centre of the game
         window and click-through, so it never blocks the menu (owner, 2026-10-01)."""
         tk, f, layout, data = self.tk, self.font, self.layout, self.state["menu"]
@@ -725,6 +725,9 @@ class _Screen:
         if data["warning"]:
             tk.Label(frame, text=data["warning"], fg=FG, bg=SEVERITY["critical"], font=f(12, "bold"),
                      padx=10, pady=6, wraplength=round(MENU_WIDTH * k)).pack(fill="x", pady=(0, 8))
+        elif data.get("note"):
+            tk.Label(frame, text=data["note"], fg=FG, bg=SEVERITY["ok"], font=f(11, "bold"), padx=10, pady=5,
+                     wraplength=round(MENU_WIDTH * k)).pack(fill="x", pady=(0, 8))
         grid = tk.Frame(frame, bg=bg)
         grid.pack()
         bar_width, bar_height = round(MENU_TILE * k) - 8, max(4, round(6 * k))
@@ -747,22 +750,23 @@ class _Screen:
                     card.create_rectangle(0, 0, width, height, fill="#000000", stipple="gray50", width=0)
                     lock = round(min(width, height) * 0.45)
                     padlock_shape(card, (width - lock) / 2, (height - lock) / 2, lock)
+            cards = tk.Label(tile, text=f"Cards {hero['cards_unlocked']} / {hero['cards']}", fg=MUTED, bg=bg,
+                             font=f(9))
             if not hero["unlocked"]:
                 tk.Label(tile, text="LOCKED", fg=WARN, bg=bg, font=f(9, "bold")).pack(pady=(2, 0))
+                cards.pack()
                 continue
             bar = tk.Canvas(tile, width=bar_width, height=bar_height, bg=MENU_BAR_BG, highlightthickness=0)
             bar.pack(pady=(2, 0))
-            total = max(1, hero["total"])
-            done_w = round(bar_width * hero["done"] / total)
-            ready_w = round(bar_width * hero["ready"] / total)
-            bar.create_rectangle(0, 0, done_w, bar_height, fill=ACCENT, width=0)
-            bar.create_rectangle(done_w, 0, done_w + ready_w, bar_height, fill=GOOD, width=0)
-            tk.Label(tile, text=f"{hero['done']}/{hero['total']}  ({hero['ready']} ready)", fg=MUTED, bg=bg,
-                     font=f(8)).pack()
+            # the checks you've got with this hero, of all of them (owner, 2026-10-01: "that bar should represent
+            # how many checks I have gotten with her")
+            bar.create_rectangle(0, 0, round(bar_width * hero["done"] / max(1, hero["total"])), bar_height,
+                                 fill=ACCENT, width=0)
+            tk.Label(tile, text=f"{hero['done']} / {hero['total']} checks", fg=MUTED, bg=bg, font=f(9)).pack()
+            cards.pack()
         bypasses = f"   ·   Lock Bypasses: {data['bypasses']}" if data["bypasses"] else ""
         tk.Label(frame, text=f"Goal: {data['won']} / {data['required']} heroes won{bypasses}", fg=MUTED, bg=bg,
                  font=f(10)).pack(pady=(6, 0))
-        tk.Label(frame, text="gold: checks done   green: ready to do now", fg=DIM, bg=bg, font=f(8)).pack()
         show()
         self.menu_box.update_idletasks()
         width, height = self.menu_box.winfo_reqwidth(), self.menu_box.winfo_reqheight()

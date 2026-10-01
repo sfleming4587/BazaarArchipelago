@@ -199,6 +199,30 @@ class TestStatusLine(ClientTestBase):
         self.assertIn("RANDOM can pick a locked hero", text)
         self.assertIn("HEROES YOU CAN PLAY", text)
 
+    def test_random_from_memory_names_the_heroes_it_could_roll_that_are_locked(self) -> None:
+        from ..memreader import HeroPrefs
+        self.play(HeroSelected("Vanessa"))
+        self.ctx.handle_hero_prefs(HeroPrefs(True, frozenset()))
+        data = self.ctx.menu_data()
+        self.assertEqual(data["picked"], "Random")
+        self.assertIn("RANDOM can pick", data["warning"])
+        self.assertIn("Dooley", data["warning"])  # in the multiworld but locked
+        self.assertIn("Mak", data["warning"])  # not in this multiworld
+
+    def test_random_that_can_only_roll_unlocked_heroes_is_fine(self) -> None:
+        from ..client import HEROES_IN_GAME
+        from ..memreader import HeroPrefs
+        self.play(HeroSelected("Vanessa"))
+        self.ctx.handle_hero_prefs(HeroPrefs(True, frozenset(h for h in HEROES_IN_GAME if h != "Vanessa")))
+        data = self.ctx.menu_data()
+        self.assertIsNone(data["warning"])
+        self.assertIn("Random is on", data["note"])
+
+    def test_every_hero_tile_counts_its_unlocked_cards(self) -> None:
+        self.play(HeroSelected("Vanessa"))
+        vanessa = next(h for h in self.ctx.menu_data()["heroes"] if h["name"] == "Vanessa")
+        self.assertEqual(vanessa["cards_unlocked"], vanessa["cards"] - 1)  # LOCKED is one of Vanessa's cards
+
     def test_menu_lists_checks_done_and_in_logic(self) -> None:
         """Vanessa has no locked items in this test seed, so every check (days 1-15, PvP, 2 monsters a day,
         10 wins) is in logic: 15 * 4 + 1 = 61. Nothing done yet."""

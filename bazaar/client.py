@@ -26,14 +26,16 @@ from .items import (GAME, HERO_ITEM_IDS, LOCK_BYPASS_ID, SELL_TRAP, SELL_TRAP_ID
                     item_id_to_name, item_name_to_id, lock_items_by_hero)
 from .locations import (card_requirements, day_location, hero_checks, location_name_to_id, monster_location,
                         pvp_location, win_location)
-from .logparser import (DEFAULT_LOG_PATH, PREV_LOG, HeroSelected, CardGained, CardSold, CardTransformed, DayReached,
+from .logparser import (DEFAULT_LOG_PATH, HERO_ALIASES, PREV_LOG, HeroSelected, CardGained, CardSold, CardTransformed, DayReached,
                         EncounterEntered,
                         EncounterLeft, FightStarted, GameVersion, LogParser, LogTailer, MonsterFought, PvPFought,
                         RunEnded, RunStarted, UnrecognizedRun, log_session)
 from .memreader import NotReady, Reader, ReaderOff, Snapshot, game_pid
 from .merchants import possible_stock
 from .overlay import FILE_ONLY, ROW_GAPS
-from .tracker import hero_order  # FILE_ONLY: to the log file only, not the console or the client window
+from .tracker import hero_order
+# the heroes Random can roll, by the game's own names (PlayerPreferences keys them like this; "Hero8" = The Dragons)
+HEROES_IN_GAME = ("Dooley", "Pygmalien", "Vanessa", "Mak", "Stelle", "Jules", "Karnok", "Hero8")  # FILE_ONLY: to the log file only, not the console or the client window
 
 POLL_SECONDS = 0.5
 MEMORY_SECONDS = 0.06  # how often the board's on-screen flags are read (hover, drag, stash, dialog)
@@ -205,6 +207,7 @@ class BazaarContext(CommonContext):
         # screen (a level-up mid-shop) comes and goes
         self.padlock_rows: Dict[str, tuple] = {}
         self.board_ui = None  # memreader.BoardUI: hover/drag/stash/dialog/reveal, None if unreadable
+        self.hero_prefs = None  # memreader.HeroPrefs: Random on/off and its exclusions, None if unreadable
         self.menu_hero: Optional[str] = None  # hero picked on the hero-select screen, while not in a run
         self.room_seed = ""  # CommonClient never sets seed_name, so the saved state is keyed on this instead
         self.log_session: Optional[str] = None  # which game session the log being read is from (see log_session)
@@ -697,6 +700,12 @@ class BazaarContext(CommonContext):
             slot += {"Small": 1, "Medium": 2, "Large": 3}[size]
         self.overlay.show_padlocks("Stash", sizes, spots, level=self.memory.level)
 
+    def handle_hero_prefs(self, prefs) -> None:
+        """Your Random setting changed (memory): the menu panel's warning follows it."""
+        if prefs != self.hero_prefs:
+            self.hero_prefs = prefs
+            self.update_status()
+
     def handle_board_ui(self, ui) -> None:
         """The board's on-screen flags (memreader.BoardUI, or None): the padlocks hide or fade by them, and swap to
         the stash's own while it's open."""
@@ -958,23 +967,33 @@ class BazaarContext(CommonContext):
         outside the menu (in a run, not connected, no hero picked yet)."""
         if not self.slot_data or self.run.get("active") or not self.menu_hero:
             return None
-        heroes = []
+        heroes, locked = [], self.locked_guids()
         for hero in hero_order():
             if hero not in self.setting("heroes"):
                 continue
             states = self.check_states(hero) or []
+            cards = [c.guid for c in SHOP_CARDS if c.hero == hero]  # this hero's own cards (owner, 2026-10-01)
             heroes.append({"name": hero, "unlocked": self.hero_unlocked(hero), "total": len(states),
                            "done": sum(done for _, done, _ in states),
-                           "ready": sum(1 for _, done, in_logic in states if in_logic and not done)})
-        picked = self.menu_hero
-        if picked not in HEROES:
-            warning = f"{picked.upper()} can pick a locked hero (or one not in this multiworld) - pick a hero instead"
-        elif not self.hero_unlocked(picked):
-            warning = f"{picked.upper()} IS LOCKED - pick another hero"
+                           "cards": len(cards), "cards_unlocked": sum(1 for g in cards if g not in locked)})
+        prefs, note = self.hero_prefs, None
+        if prefs and prefs.random:  # memory: Random is picked (the log only says the setting changed)
+            picked = "Random"
+            pool = [HERO_ALIASES.get(h, h) for h in HEROES_IN_GAME if h not in prefs.excluded]
+            risky = [h for h in pool if h not in self.setting("heroes") or not self.hero_unlocked(h)]
+            if risky:
+                warning = (f"RANDOM can pick {', '.join(risky)} - locked or not in this multiworld. Exclude "
+                           f"{'it' if len(risky) == 1 else 'them'} from Random in character select, or pick a hero.")
+            else:
+                warning, note = None, "Random is on - it can only pick heroes you've unlocked."
+        elif self.menu_hero not in HEROES:  # a name this apworld doesn't know (a hero added by a patch)
+            picked, warning = self.menu_hero, f"{self.menu_hero.upper()} isn't part of this multiworld - pick another hero"
         else:
-            warning = None
-        return {"picked": picked, "warning": warning, "heroes": heroes, "won": len(self.heroes_won()),
-                "required": self.setting("heroes_required"), "bypasses": self.bypasses_ready()}
+            picked = self.menu_hero
+            warning = None if self.hero_unlocked(picked) else f"{picked.upper()} IS LOCKED - pick another hero"
+        return {"picked": picked, "warning": warning, "note": note, "heroes": heroes,
+                "won": len(self.heroes_won()), "required": self.setting("heroes_required"),
+                "bypasses": self.bypasses_ready()}
 
     def handle_hero_selected(self, event: HeroSelected) -> None:
         self.menu_hero = event.hero
@@ -1196,6 +1215,7 @@ async def watch_memory(ctx: BazaarContext) -> None:
                 ctx.handle_board_ui(reader.ui())  # a couple of milliseconds: fine on the event loop
                 await asyncio.sleep(MEMORY_SECONDS)
             ctx.handle_snapshot(await loop.run_in_executor(None, reader.snapshot))
+            ctx.handle_hero_prefs(reader.hero_prefs())
         except ReaderOff as error:
             reader.close()
             ctx.handle_snapshot(None)

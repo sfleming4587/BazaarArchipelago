@@ -26,6 +26,9 @@ ALLOWED_STATICS = ("<CurrentState>k__BackingField", "Entities", "<Run>k__Backing
 # triggers"). Optional: if any of it can't be found (a patch), ui() says None and the padlocks fall back.
 UI_STATICS = ("<TransitionIn>k__BackingField", "<TooltipParentComponent>k__BackingField")
 LEVEL_STAT = 15  # your level among the player's stats (seen 2 -> 3 at the first level-up, 2026-09-30)
+# Named exceptions to BLOCKED: your own character-select settings, not RNG (owner, 2026-10-01: Random must warn
+# when it can roll a locked hero). Nothing else with a blocked word in its name is ever read.
+ALLOWED_NAMES = ("_randomHeroEnabled", "_heroExcludedFromRandom")
 BLOCKED = ("seed", "rng", "random", "opponent", "steam", "store", "title", "account", "ticket", "token", "auth")
 IDENT = re.compile(r"^[A-Za-z_<][\w<>`.\-|=$@]*$")
 STRING, VALUETYPE = 0x0E, 0x11  # MonoTypeEnum
@@ -53,6 +56,12 @@ class BoardUI(NamedTuple):
     dialog: bool  # the Esc menu or another dialog is open (BoardManager.DialogOpen)
     revealing: bool  # new cards are flipping over (BoardManager._isRevealing)
     stash_moving: bool = False  # your stash is sliding open or shut (BoardManager.StorageMoving)
+
+
+class HeroPrefs(NamedTuple):
+    """Your character-select settings (PlayerPreferences.data)."""
+    random: bool  # Random is picked
+    excluded: frozenset  # heroes you've excluded from Random, by the game's own name (The Dragons are "Hero8")
 
 
 class Snapshot(NamedTuple):
@@ -369,7 +378,7 @@ class Mono:
     def field(self, c: int, name: str) -> tuple:
         """(offset, type code, type data) of an instance field of c or a class it derives from (K-mem5: found
         through the object's own class, which may live in another assembly)."""
-        if blocked(name):
+        if blocked(name) and name not in ALLOWED_NAMES:
             raise ReaderOff(f"refused to read {name}")
         while c:
             for n, offset, static, code, data in self.fields(c):
@@ -471,6 +480,38 @@ class Reader:
             raise ReaderOff("TheBazaar.Data has changed")
         self.enums: Dict[int, List[str]] = {}
         self.ui_paths = self._learn_ui(data, base, statics)
+        self.prefs_path = self._learn_prefs()
+
+    def _learn_prefs(self) -> Optional[int]:
+        """Where PlayerPreferences keeps its data (a static), or None if this game version doesn't match."""
+        try:
+            prefs = self.mono.find_class("TheBazaarRuntime", "", "PlayerPreferences")
+            offset = next(o for n, o, st, _c, _d in self.mono.fields(prefs) if st and n == "data")
+            block = self.mono.static_block(prefs) if "method_count" in self.mono.off else 0
+            return block + offset if block else None
+        except (ReaderOff, StopIteration):
+            return None
+
+    def hero_prefs(self) -> Optional[HeroPrefs]:
+        """Random on or off, and the heroes excluded from it; None if it can't be read."""
+        if not self.memory or not self.prefs_path:
+            return None
+        m = self.memory
+        try:
+            data = m.ptr(self.prefs_path)
+            if not data:
+                return None
+            table = self._get(data, "_heroExcludedFromRandom")
+            excluded = set()
+            if table:  # a Dictionary<string, bool>: 24-byte entries (K-mem3)
+                entries, count = self._get(table, "_entries"), self._get(table, "_count") or 0
+                for i in range(min(count, 50)):
+                    entry = entries + 0x20 + 24 * i
+                    if (m.i32(entry) or -1) >= 0 and (m.read(entry + 16, 1) or b"\0")[0] == 1:
+                        excluded.add(m.mono_string(m.ptr(entry + 8)))
+            return HeroPrefs(bool(self._get(data, "_randomHeroEnabled")), frozenset(excluded))
+        except Exception:
+            return None
 
     def _learn_ui(self, data: int, base: int, statics: Dict[str, int]) -> Optional[dict]:
         """Where the board's on-screen flags are (see BoardUI), or None if this game version doesn't match."""
