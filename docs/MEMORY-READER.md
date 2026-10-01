@@ -1,8 +1,9 @@
 # Memory reader - what the game's memory knows that Player.log doesn't
 
 > ⚠️ **In the client since 2026-10-01 (owner: "yes this is the go ahead, but do not release anything yet til we test
-> it al"), for the shop padlocks only, NOT RELEASED.** `bazaar/memreader.py` reads the screen, the encounter and the
-> offered cards; nothing else from this page is used yet. Reading memory needed one-time reverse engineering (EULA
+> it al"), released in v0.8.0 on 2026-10-01 (owner: "I believe we are ready for a release").** `bazaar/memreader.py`
+> reads the screen, the encounter, the offered cards, the stash, the board's UI flags, your Random setting and the
+> game's input layers; nothing else from this page is used yet. Reading memory needed one-time reverse engineering (EULA
 > section 3); the owner accepted that on 2026-09-30, on the condition that the reader only reads and switches itself
 > off after a breaking patch instead of being re-engineered automatically. **Always on, no switch to turn it off**
 > (owner, 2026-10-01: "always have the memory reader on, no option to turn off, this will be a cornerstone for how
@@ -267,7 +268,7 @@ of guessing. Offsets found on 2026-09-30: assembly list +0xA0, class cache +0x4D
   card one size too big. Sizes come from `bazaar_data.json`; only `ECardType` (which does count from 0) is named
   by order.
 
-## Padlocks on locked offers (built and passed in the game 2026-10-01, not released)
+## Padlocks on locked offers (passed in the game 2026-10-01, released in v0.8.0)
 
 **A padlock sits on the centre of each locked card on offer in a shop or a level-up; the list beside the board
 names only those cards.** Owner, 2026-10-01: place them by proportion ("the shop row of cards is always roughly 1/3
@@ -369,8 +370,8 @@ status line.
 
 ## Open questions and traps
 
-- ⚠️ **Not shipped and needs a decision.** DEVELOPERS.md and the README promise "no reading game memory". Using
-  any of this means changing that promise, the docs and the risk statement first.
+- ⚠️ **Shipped in v0.8.0 (2026-10-01).** README and DEVELOPERS.md now say the client reads the game's memory,
+  read-only. Using anything more from this page means updating those first.
 - ⚠️ **One run, one PC, one patch.** A patch that renames these classes turns the reader off. By the owner's
   ruling it must stay off, not be re-engineered automatically.
 - ⚠️ **`<CurrentState>` can point at a dead object for a moment.** 2026-10-01, right after a concede, at the log's
