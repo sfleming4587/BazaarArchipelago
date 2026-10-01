@@ -191,6 +191,14 @@ class TestStatusLine(ClientTestBase):
         self.play(HeroSelected("Vanessa"))
         self.assertFalse(self.ctx.status_line()[1])
 
+    def test_picking_random_warns_too(self) -> None:
+        """Owner, 2026-10-01: Random is an option in character select now, and it can roll a locked hero."""
+        self.play(HeroSelected("Random"))
+        text, warning, big = self.ctx.status_line()
+        self.assertTrue(warning and big)
+        self.assertIn("RANDOM can pick a locked hero", text)
+        self.assertIn("HEROES YOU CAN PLAY", text)
+
     def test_menu_lists_checks_done_and_in_logic(self) -> None:
         """Vanessa has no locked items in this test seed, so every check (days 1-15, PvP, 2 monsters a day,
         10 wins) is in logic: 15 * 4 + 1 = 61. Nothing done yet."""

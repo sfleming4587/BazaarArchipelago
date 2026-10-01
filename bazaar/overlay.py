@@ -17,7 +17,7 @@ from typing import Callable, Dict, List, Optional, Set
 
 from . import screens
 from .shop_guide import ShopGuide
-from .theme import ACCENT, FG, FONT, GOOD, LOCKED_X, MUTED, OUTLINE, SEVERITY, WARN
+from .theme import ACCENT, DIM, FG, FONT, GOOD, LOCKED_X, MUTED, OUTLINE, SEVERITY, WARN
 from .tracker import Tracker
 
 logger = logging.getLogger("Client")
@@ -51,6 +51,10 @@ ALERT_SHARE = 2  # the alert box takes at most 1/2 of the left strip (the rest i
 MAX_ALERT_LINES = 6  # held cards / trap lines shown in it; more become "+ N more" (review 2026-09-30)
 TOAST_SHARE = 3  # pop-ups take at most 1/3 of the right strip
 MAX_TOASTS = 4
+MENU_WIDTH = 460  # the menu's centre panel, 1080p pixels (scaled with the window)
+MENU_TILE = 100  # one hero's tile
+MENU_COLUMNS = 4  # heroes per row, like the hero select
+MENU_BAR_BG = "#3a3f4b"  # the empty part of a hero's check bar
 POLL_MS = 250
 
 # Padlocks on the locked cards a shop is offering (user, 2026-10-01): placed by proportion of the game window, a
@@ -213,6 +217,20 @@ def mouse_on(rects: List[tuple]) -> bool:
     return bool(held) or any(r[0] <= point.x < r[2] and r[1] <= point.y < r[3] for r in rects)
 
 
+def padlock_shape(canvas, x: float, y: float, s: int) -> None:
+    """A red padlock with a dark outline (so it reads on light and dark cards alike), s pixels square at x, y."""
+    line = max(2, s // 12)
+    for colour, width in ((OUTLINE, line + 4), (LOCKED_X, line)):  # the shackle, outlined
+        canvas.create_arc(x + s * 0.3, y + s * 0.08, x + s * 0.7, y + s * 0.62, start=0, extent=180, style="arc",
+                          outline=colour, width=width)
+        canvas.create_line(x + s * 0.3, y + s * 0.35, x + s * 0.3, y + s * 0.48, fill=colour, width=width)
+        canvas.create_line(x + s * 0.7, y + s * 0.35, x + s * 0.7, y + s * 0.48, fill=colour, width=width)
+    canvas.create_rectangle(x + s * 0.16, y + s * 0.45, x + s * 0.84, y + s * 0.94, fill=LOCKED_X, outline=OUTLINE,
+                            width=max(2, s // 20))
+    canvas.create_oval(x + s * 0.43, y + s * 0.58, x + s * 0.57, y + s * 0.72, fill=OUTLINE, outline=OUTLINE)
+    canvas.create_rectangle(x + s * 0.47, y + s * 0.68, x + s * 0.53, y + s * 0.84, fill=OUTLINE, outline=OUTLINE)
+
+
 def below(strip: tuple, taken: int) -> tuple:
     """What's left of a strip under a panel `taken` pixels tall at its top (x, y, width, height)."""
     x, y, width, height = strip
@@ -339,6 +357,10 @@ class Overlay:
         """A short pop-up (bottom right) that disappears by itself."""
         self.commands.put(("toast", (text, time.monotonic() + seconds, warning)))
 
+    def show_menu(self, data: Optional[dict]) -> None:
+        """The menu's centre panel (see client.menu_data); None hides it."""
+        self.commands.put(("menu", data))
+
     def show_status(self, text: Optional[str], warning: bool = False, big: bool = False) -> None:
         """The bottom of the alert box: run progress, or (big) the heroes you may pick on the menu. None hides it."""
         self.commands.put(("status", (text, warning, big) if text else None))
@@ -384,10 +406,13 @@ class _Screen:
         # Owner, 2026-10-01: "The shop guide is always going to be the whole left column": the alert box (root) is
         # now just its header (status and buttons); DeathLink, held locked cards and Sell Traps are the notices box at
         # the top of the right column, the locked-card list under them, the pop-ups at the bottom.
-        self.alert_box, self.notice_box, self.shop_first, self.shop_second, self.toast_box = \
-            root, tk.Toplevel(root), tk.Toplevel(root), tk.Toplevel(root), tk.Toplevel(root)
-        self.panels = [self.alert_box, self.notice_box, self.shop_first, self.shop_second, self.toast_box]
-        self.click_through = {self.shop_first, self.shop_second, self.toast_box}  # nothing to click in these
+        # On the menu (no run, no board) the heroes you may play sit in the centre (owner, 2026-10-01).
+        self.alert_box, self.notice_box, self.shop_first, self.shop_second, self.toast_box, self.menu_box = \
+            root, tk.Toplevel(root), tk.Toplevel(root), tk.Toplevel(root), tk.Toplevel(root), tk.Toplevel(root)
+        self.panels = [self.alert_box, self.notice_box, self.shop_first, self.shop_second, self.toast_box,
+                       self.menu_box]
+        # nothing to click in these (the menu panel must never block the game's menu buttons)
+        self.click_through = {self.shop_first, self.shop_second, self.toast_box, self.menu_box}
         for panel in self.panels:
             panel.withdraw()
             panel.overrideredirect(True)
@@ -418,7 +443,8 @@ class _Screen:
         self.layout: dict = {}  # the strips for where the game window is now (see relayout)
         self.relayout((0, 0, root.winfo_screenwidth(), root.winfo_screenheight()))  # until the game is seen
         self.state = {"locked": None, "deathlink": None, "shop": None, "toasts": [], "status": None,
-                      "padlocks": None}
+                      "padlocks": None, "menu": None}
+        self.hero_pictures: Dict[str, object] = {}  # the menu panel's portraits (Tk drops an image Python lets go)
         self.list_hidden = False  # the player hid the locked-card list (until they show it again)
         # what each window shows now, to skip redraws that change nothing
         self.drawn: dict = {"alerts": None, "notices": None, "shop": None, "toasts": None, "alerts_height": 0,
@@ -444,7 +470,7 @@ class _Screen:
             "tracker_toggle": lambda _: self.tracker.toggle(),
             "toast": self.new_toast,
             **{kind: (lambda value, kind=kind: self.set_state(kind, value))
-               for kind in ("locked", "deathlink", "shop", "status")},
+               for kind in ("locked", "deathlink", "shop", "status", "menu")},
             "padlocks": self.new_padlocks,
             "board_ui": self.new_board_ui,
         }
@@ -463,6 +489,7 @@ class _Screen:
     def faded_windows(self) -> list:
         """(window, its own alpha) for every overlay window the fade scales."""
         out = [(self.alert_box, ALERT_ALPHA), (self.notice_box, ALERT_ALPHA), (self.toast_box, ALERT_ALPHA),
+               (self.menu_box, ALERT_ALPHA),
                (self.shop_first, 1.0),
                (self.shop_second, 1.0)] + [(backdrop, LIST_ALPHA) for backdrop in self.backdrops.values()]
         if self.guide and not self.guide_fading:
@@ -618,10 +645,11 @@ class _Screen:
             drawn["notices_height"] = self.render_notices(moves, right)
         buttons = self.buttons()
         alerts = (state["status"], tuple(label for label, _ in buttons), state["deathlink"] is not None,
-                  bool(state["locked"]))
+                  bool(state["locked"]), str(state["menu"]))
         if alerts != drawn["alerts"]:
             drawn["alerts"] = alerts
             drawn["alerts_height"] = self.render_alerts(moves, buttons)
+            self.render_menu(moves)
         if self.guide:  # the whole left column under its header
             self.guide.fit(screens.clamp(below(layout["left"], drawn["alerts_height"]), layout["screen"]),
                            layout["screen"])
@@ -680,6 +708,76 @@ class _Screen:
 
     def toggle_list(self) -> None:
         self.list_hidden = not self.list_hidden
+
+    def render_menu(self, moves: list) -> None:
+        """On the menu: a grid of hero tiles like the game's hero select - portrait, name, a bar of checks done
+        (gold) and ready to do (green) out of all of them - the picked hero framed gold (red when it can't be
+        played), locked heroes dimmed; a warning banner on top, the goal at the bottom. In the centre of the game
+        window and click-through, so it never blocks the menu (owner, 2026-10-01)."""
+        tk, f, layout, data = self.tk, self.font, self.layout, self.state["menu"]
+        if not data:
+            moves.append((self.menu_box, None))
+            return
+        k = layout["k"]
+        bg = SEVERITY["info"]
+        frame, show = self.swap(self.menu_box, bg)
+        tk.Label(frame, text="HEROES IN THIS MULTIWORLD", fg=ACCENT, bg=bg, font=f(15, "bold")).pack(pady=(0, 6))
+        if data["warning"]:
+            tk.Label(frame, text=data["warning"], fg=FG, bg=SEVERITY["critical"], font=f(12, "bold"),
+                     padx=10, pady=6, wraplength=round(MENU_WIDTH * k)).pack(fill="x", pady=(0, 8))
+        grid = tk.Frame(frame, bg=bg)
+        grid.pack()
+        bar_width, bar_height = round(MENU_TILE * k) - 8, max(4, round(6 * k))
+        for index, hero in enumerate(data["heroes"]):
+            picked = hero["name"] == data["picked"]
+            ring = (WARN if data["warning"] else ACCENT) if picked else bg
+            tile = tk.Frame(grid, bg=bg, highlightthickness=max(2, round(3 * k)), highlightbackground=ring,
+                            padx=4, pady=4)
+            tile.grid(row=index // MENU_COLUMNS, column=index % MENU_COLUMNS, padx=4, pady=4, sticky="n")
+            picture = self.hero_picture(hero["name"], k)
+            if picture is None:  # a hero added by a patch, with no card cut yet: just the name
+                tk.Label(tile, text=hero["name"], fg=FG if hero["unlocked"] else DIM, bg=bg,
+                         font=f(10, "bold")).pack()
+            else:  # the card carries the hero's name already
+                width, height = picture.width(), picture.height()
+                card = tk.Canvas(tile, width=width, height=height, bg=bg, highlightthickness=0)
+                card.pack()
+                card.create_image(0, 0, image=picture, anchor="nw")
+                if not hero["unlocked"]:  # dimmed, with the cards' padlock on it
+                    card.create_rectangle(0, 0, width, height, fill="#000000", stipple="gray50", width=0)
+                    lock = round(min(width, height) * 0.45)
+                    padlock_shape(card, (width - lock) / 2, (height - lock) / 2, lock)
+            if not hero["unlocked"]:
+                tk.Label(tile, text="LOCKED", fg=WARN, bg=bg, font=f(9, "bold")).pack(pady=(2, 0))
+                continue
+            bar = tk.Canvas(tile, width=bar_width, height=bar_height, bg=MENU_BAR_BG, highlightthickness=0)
+            bar.pack(pady=(2, 0))
+            total = max(1, hero["total"])
+            done_w = round(bar_width * hero["done"] / total)
+            ready_w = round(bar_width * hero["ready"] / total)
+            bar.create_rectangle(0, 0, done_w, bar_height, fill=ACCENT, width=0)
+            bar.create_rectangle(done_w, 0, done_w + ready_w, bar_height, fill=GOOD, width=0)
+            tk.Label(tile, text=f"{hero['done']}/{hero['total']}  ({hero['ready']} ready)", fg=MUTED, bg=bg,
+                     font=f(8)).pack()
+        bypasses = f"   ·   Lock Bypasses: {data['bypasses']}" if data["bypasses"] else ""
+        tk.Label(frame, text=f"Goal: {data['won']} / {data['required']} heroes won{bypasses}", fg=MUTED, bg=bg,
+                 font=f(10)).pack(pady=(6, 0))
+        tk.Label(frame, text="gold: checks done   green: ready to do now", fg=DIM, bg=bg, font=f(8)).pack()
+        show()
+        self.menu_box.update_idletasks()
+        width, height = self.menu_box.winfo_reqwidth(), self.menu_box.winfo_reqheight()
+        x, y, w, h = layout["window"]
+        moves.append((self.menu_box, (x + (w - width) // 2, y + (h - height) // 2, width, height)))
+
+    def hero_picture(self, hero: str, k: float):
+        """The hero's portrait for the menu panel (the tracker's cards), sized for the window; None if missing."""
+        key = (hero, k < 0.9)
+        if key not in self.hero_pictures:
+            from .tracker import card_image
+            self.hero_pictures[key] = card_image(self.tk, self.root, hero, half=True)
+            if self.hero_pictures[key] is not None and k < 0.9:
+                self.hero_pictures[key] = self.hero_pictures[key].subsample(2)
+        return self.hero_pictures[key]
 
     def render_toasts(self, moves: list) -> int:
         """Pop-ups at the bottom of the right strip, newest at the bottom; returns their height."""
@@ -752,7 +850,11 @@ class _Screen:
         if not (state["status"] or buttons):
             moves.append((self.alert_box, None))
             return 0
-        bg = SEVERITY["warning" if state["status"] and state["status"][1] else "info"]
+        status = state["status"] if state["status"] and not state["status"][2] else None  # big: the menu panel
+        if not (status or buttons):
+            moves.append((self.alert_box, None))
+            return 0
+        bg = SEVERITY["warning" if status and status[1] else "info"]
         frame, show = self.swap(self.alert_box, bg)
         row = tk.Frame(frame, bg=bg)
         row.pack(fill="x")
@@ -762,11 +864,11 @@ class _Screen:
                       command=lambda a=action: (a(), self.render())).pack(side="left", padx=(4, 0))
         bar.update_idletasks()
         room = inner_w - (bar.winfo_reqwidth() + 8 if buttons else 0)
-        own_row = bool(state["status"]) and room < inner_w // 2
+        own_row = bool(status) and room < inner_w // 2
         if buttons:
             bar.pack(side="bottom" if own_row else "right", anchor="e", pady=(4, 0) if own_row else 0)
-        if state["status"]:
-            text, warning, big = state["status"]
+        if status:
+            text, warning, big = status
             tk.Label(row, text=text, fg=WARN if warning else (FG if big else MUTED), bg=bg,
                      font=f(12 if big else 11 if warning else 10, "bold" if warning or big else "normal"),
                      wraplength=inner_w if own_row else room, justify="left").pack(side="left", anchor="w")
@@ -864,19 +966,10 @@ class _Screen:
 
     @staticmethod
     def draw_padlock(padlock, s: int) -> None:
-        """A red padlock with a dark outline, so it reads on light and dark cards alike."""
-        canvas, line = padlock.canvas, max(2, s // 12)
+        canvas = padlock.canvas
         canvas.delete("all")
         canvas.configure(width=s, height=s)
-        for colour, width in ((OUTLINE, line + 4), (LOCKED_X, line)):  # the shackle, outlined
-            canvas.create_arc(s * 0.3, s * 0.08, s * 0.7, s * 0.62, start=0, extent=180, style="arc",
-                              outline=colour, width=width)
-            canvas.create_line(s * 0.3, s * 0.35, s * 0.3, s * 0.48, fill=colour, width=width)
-            canvas.create_line(s * 0.7, s * 0.35, s * 0.7, s * 0.48, fill=colour, width=width)
-        canvas.create_rectangle(s * 0.16, s * 0.45, s * 0.84, s * 0.94, fill=LOCKED_X, outline=OUTLINE,
-                                width=max(2, s // 20))
-        canvas.create_oval(s * 0.43, s * 0.58, s * 0.57, s * 0.72, fill=OUTLINE, outline=OUTLINE)
-        canvas.create_rectangle(s * 0.47, s * 0.68, s * 0.53, s * 0.84, fill=OUTLINE, outline=OUTLINE)
+        padlock_shape(canvas, 0, 0, s)
         padlock.drawn_size = s
 
     def dismiss_deathlink(self) -> None:
@@ -952,6 +1045,7 @@ class _Screen:
             if kind == "quit":
                 if self.guide:
                     self.guide.shutdown()
+                self.hero_pictures.clear()  # images are freed here, in Tk's own thread, not at exit from another
                 self.root.destroy()
                 return "quit"
             changed = bool(self.handlers[kind](value)) or changed

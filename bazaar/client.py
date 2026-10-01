@@ -32,7 +32,8 @@ from .logparser import (DEFAULT_LOG_PATH, PREV_LOG, HeroSelected, CardGained, Ca
                         RunEnded, RunStarted, UnrecognizedRun, log_session)
 from .memreader import NotReady, Reader, ReaderOff, Snapshot, game_pid
 from .merchants import possible_stock
-from .overlay import FILE_ONLY, ROW_GAPS  # FILE_ONLY: to the log file only, not the console or the client window
+from .overlay import FILE_ONLY, ROW_GAPS
+from .tracker import hero_order  # FILE_ONLY: to the log file only, not the console or the client window
 
 POLL_SECONDS = 0.5
 MEMORY_SECONDS = 0.06  # how often the board's on-screen flags are read (hover, drag, stash, dialog)
@@ -931,6 +932,9 @@ class BazaarContext(CommonContext):
                 progress = self.hero_progress(hero)
                 lines.append(f"   {hero}   {progress[0]} / {progress[1]}" if progress else f"   {hero}")
             lines.append(goal + self.bypass_text())
+            if self.menu_hero not in HEROES:  # Random (or a hero newer than this apworld): it can roll a locked one
+                return "\n".join([f"{self.menu_hero.upper()} can pick a locked hero (or one not in this multiworld) - "
+                                   "pick a hero instead."] + lines), True, True
             if self.menu_hero not in playable:
                 return "\n".join([f"{self.menu_hero.upper()} IS LOCKED - pick another hero."] + lines), True, True
             return "\n".join(lines), False, True
@@ -945,7 +949,32 @@ class BazaarContext(CommonContext):
     def update_status(self) -> None:
         if self.overlay:
             self.overlay.show_status(*self.status_line())
+            self.overlay.show_menu(self.menu_data())
             self.overlay.show_tracker_data(self.tracker_data())
+
+    def menu_data(self) -> Optional[dict]:
+        """The menu's centre panel (owner, 2026-10-01): every hero in this multiworld with their checks, the one
+        you picked, and a warning when it can't be played (locked, or Random, which can roll a locked one). None
+        outside the menu (in a run, not connected, no hero picked yet)."""
+        if not self.slot_data or self.run.get("active") or not self.menu_hero:
+            return None
+        heroes = []
+        for hero in hero_order():
+            if hero not in self.setting("heroes"):
+                continue
+            states = self.check_states(hero) or []
+            heroes.append({"name": hero, "unlocked": self.hero_unlocked(hero), "total": len(states),
+                           "done": sum(done for _, done, _ in states),
+                           "ready": sum(1 for _, done, in_logic in states if in_logic and not done)})
+        picked = self.menu_hero
+        if picked not in HEROES:
+            warning = f"{picked.upper()} can pick a locked hero (or one not in this multiworld) - pick a hero instead"
+        elif not self.hero_unlocked(picked):
+            warning = f"{picked.upper()} IS LOCKED - pick another hero"
+        else:
+            warning = None
+        return {"picked": picked, "warning": warning, "heroes": heroes, "won": len(self.heroes_won()),
+                "required": self.setting("heroes_required"), "bypasses": self.bypasses_ready()}
 
     def handle_hero_selected(self, event: HeroSelected) -> None:
         self.menu_hero = event.hero

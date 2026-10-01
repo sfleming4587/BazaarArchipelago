@@ -444,3 +444,4 @@ class ShopGuide:
 
     def shutdown(self) -> None:
         self.art.shutdown()
+        self.photos.clear()  # images are freed here, in Tk's own thread, not at exit from another
