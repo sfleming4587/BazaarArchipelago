@@ -123,3 +123,15 @@ def never_focus(window) -> None:
     window.update_idletasks()
     _add_style(window, 0x08000000)  # WS_EX_NOACTIVATE
 
+
+def allow_focus(window, allowed: bool) -> None:
+    """Lets a never_focus window take the keyboard for a moment (typing in a search box), then gives it back to
+    the game. Windows only; elsewhere a no-op."""
+    if sys.platform != "win32":
+        return
+    import ctypes
+    user32 = ctypes.windll.user32
+    hwnd = window_handle(window)
+    style = user32.GetWindowLongW(hwnd, -20)
+    user32.SetWindowLongW(hwnd, -20, style & ~0x08000000 if allowed else style | 0x08000000)
+

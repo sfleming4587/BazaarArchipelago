@@ -128,7 +128,8 @@ class TestShopGuideWithoutPillow(unittest.TestCase):
                 guide = ShopGuide.create(tkinter, root, tmp, None, (0, 0, 300, 600), on_art=lambda guid: None,
                                          on_closed=lambda: None)
                 self.assertIsNotNone(guide)
-                guide.render(("Test merchant", [small], [large]))
+                guide.cards = [small, large]
+                guide.set_context(None, {large.guid})
                 root.update()
                 self.assertEqual(sorted((f.winfo_reqwidth(), f.winfo_reqheight()) for f in _placeholders(guide)),
                                  [(48, 96), (144, 96)])  # the cards' in-game shapes, border included
@@ -139,12 +140,12 @@ class TestShopGuideWithoutPillow(unittest.TestCase):
                 for is_locked in (False, True):
                     with open(guide.art.path(small, is_locked), "wb") as f:
                         f.write(cardart.png((48, 96, bytes(48 * 96 * 3))))
-                untouched = guide.cells[(large.guid, True)].winfo_children()
+                untouched = guide.cells[(large.guid, True)][0].winfo_children()
                 guide.refresh(small.guid)
                 root.update()
                 self.assertEqual([(f.winfo_reqwidth(), f.winfo_reqheight()) for f in _placeholders(guide)],
                                  [(144, 96)])
-                self.assertEqual(guide.cells[(large.guid, True)].winfo_children(), untouched)
+                self.assertEqual(guide.cells[(large.guid, True)][0].winfo_children(), untouched)
                 guide.shutdown()
             finally:
                 root.destroy()
@@ -291,3 +292,29 @@ class TestOneCardOnlyScreens(unittest.TestCase):
         self.assertIsNotNone(overlay.commands.get_nowait()[1][0])
         overlay.show_padlocks("Loot", ["Medium", "Small"], [0])
         self.assertIsNone(overlay.commands.get_nowait()[1][0])
+
+
+class TestShopGuideLists(unittest.TestCase):
+    """Owner, 2026-10-01: the guide opens any time, with Search, Size, Rarity and Merchant filters."""
+
+    def test_filters_narrow_by_name_size_and_rarity(self) -> None:
+        from ..shop_guide import ANY, SHOP_CARDS, guide_cards
+        card = next(c for c in SHOP_CARDS if c.hero == "Vanessa")
+        found = guide_cards(SHOP_CARDS, "Vanessa", ANY, card.name[1:5].upper(), card.size, card.tier)
+        self.assertIn(card, found)
+        self.assertTrue(all(c.size == card.size and c.tier == card.tier for c in found))
+        self.assertTrue(all(card.name[1:5].lower() in c.name.lower() for c in found))
+
+    def test_any_merchant_means_your_hero_and_common_cards(self) -> None:
+        from ..shop_guide import ANY, SHOP_CARDS, guide_cards
+        self.assertEqual({c.hero for c in guide_cards(SHOP_CARDS, "Vanessa", ANY, "", ANY, ANY)},
+                         {"Vanessa", "Common"})
+        self.assertEqual(len(guide_cards(SHOP_CARDS, None, ANY, "", ANY, ANY)), len(SHOP_CARDS))
+
+    def test_a_merchant_lists_what_it_could_stock(self) -> None:
+        from ..merchants import possible_stock
+        from ..shop_guide import ANY, MERCHANTS, SHOP_CARDS, guide_cards
+        name, entries = next((n, e) for n, e in MERCHANTS.items() if len(e) == 1)
+        expected = {c.guid for c in possible_stock(entries[0]["stock"], "Vanessa", SHOP_CARDS)}
+        self.assertEqual({c.guid for c in guide_cards(SHOP_CARDS, "Vanessa", name, "", ANY, ANY)}, expected)
+        self.assertFalse(any(n.startswith("[DEBUG]") for n in MERCHANTS))

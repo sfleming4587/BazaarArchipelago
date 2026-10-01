@@ -20,7 +20,7 @@ from CommonClient import (ClientCommandProcessor, CommonContext, get_base_parser
 from MultiServer import mark_raw
 from NetUtils import ClientStatus
 
-from .data import (CARDS, CARDS_BY_GUID, GAME_VERSION, HEROES, MERCHANT_DATA, MONSTERS, OFFER_DATA,
+from .data import (CARDS, CARDS_BY_GUID, EVENT_NAMES, GAME_VERSION, HEROES, MERCHANT_DATA, MONSTERS, OFFER_DATA,
                    TIERS)
 from .items import (GAME, HERO_ITEM_IDS, LOCK_BYPASS_ID, SELL_TRAP, SELL_TRAP_ID, UNLOCKS, hero_item,
                     item_id_to_name, item_name_to_id, lock_items_by_hero)
@@ -41,7 +41,7 @@ MEMORY_RETRY = (5, 30)  # seconds before trying the reader again: game not runni
 STATE_FILE = "bazaar_client_state.json"
 
 SHOP_CARDS = [c for c in CARDS if c.shop]
-GUIDE_MAX = 300  # the Shop Guide skips deals that could be almost anything (hundreds of pictures)
+SCREEN_TITLES = {"LevelUp": "Level-up", "Loot": "Loot"}  # the Shop Guide's title where there's no event name
 # what the client assumes when a seed's slot_data lacks a setting (older apworlds); read through BazaarContext.setting()
 SLOT_DEFAULTS = {"heroes": [], "max_day": 15, "pvp_win_checks": False, "monster_tiers": {}, "heroes_required": 1,
                  "lock_items": [], "logic": None, "death_link": False, "death_link_amnesty": 0, "sell_trap_days": 2,
@@ -140,6 +140,14 @@ class BazaarCommandProcessor(ClientCommandProcessor):
             return True
         self.ctx.clear_blocks()
         self.output("All blocks for this run were cleared by hand.")
+        return True
+
+    def _cmd_guide(self) -> bool:
+        """Open or close the Shop Guide: card pictures with filters (also the Shop Guide button on the overlay)."""
+        if not self.ctx.overlay or not self.ctx.overlay.available or not self.ctx.shop_guide:
+            self.output("The Shop Guide is off (--no-shop-guide) or the overlay can't open on this PC.")
+            return False
+        self.ctx.overlay.toggle_guide()
         return True
 
     def _cmd_tracker(self) -> bool:
@@ -628,6 +636,7 @@ class BazaarContext(CommonContext):
         padlocks wait for that (overlay, by the game's own reveal flag)."""
         if not self.overlay:
             return
+        self.refresh_guide()  # the same moments change what the Shop Guide shows
         if self.board_ui and self.board_ui.inventory and self.memory and self.run.get("active"):
             self.show_stash_padlocks()  # your stash covers the offers while it's open
             return
@@ -645,6 +654,25 @@ class BazaarContext(CommonContext):
         self.overlay.show_padlocks(snapshot.state, [size for _, size in row],
                                    [i for i, (instance, _) in enumerate(row) if here.get(instance) in locked],
                                    reveal=new, level=snapshot.level)
+
+    def refresh_guide(self) -> None:
+        """The Shop Guide (owner, 2026-10-01): your hero and the cards you may not hold, and what's on offer on
+        screen right now - read from memory, so level-ups and events' items too - or, when memory can't say, the
+        merchant the log says you're at."""
+        if not (self.overlay and self.shop_guide):
+            return
+        active = self.run.get("active")
+        self.overlay.guide_context(self.run.get("hero") if active else self.menu_hero,
+                                   self.run_locked_guids() if active else self.locked_guids())
+        snapshot = self.memory
+        items = items_on_screen(snapshot) if active and not (self.board_ui and self.board_ui.inventory) else None
+        guid = snapshot.encounter if items else (self.encounter.guid if self.encounter and active else None)
+        if not items and not guid:
+            self.overlay.show_board(None, [], None)
+            return
+        title = EVENT_NAMES.get(guid) or SCREEN_TITLES.get(snapshot.state if snapshot else None, "On offer")
+        merchant = MERCHANT_DATA[guid]["name"] if guid in MERCHANT_DATA else None
+        self.overlay.show_board(title, [o.template for o in items or ()], merchant)
 
     def show_stash_padlocks(self) -> None:
         """A padlock on each locked card in your open stash, in whatever slot it sits (owner, 2026-10-01: cards move
@@ -699,18 +727,13 @@ class BazaarContext(CommonContext):
             self.overlay.show_shop(merchant["name"], names, verb, exact=offers is not None)
         elif self.overlay:  # memory says the locked card that was offered has gone
             self.overlay.show_shop(None, [])
-        everything = possible_stock(merchant["stock"], self.run["hero"], SHOP_CARDS)
-        if self.overlay and self.shop_guide and len(everything) <= GUIDE_MAX:
-            allowed = [c for c in everything if c.guid not in locked]
-            self.overlay.show_board(f"{merchant['name']} can stock {len(everything)} cards for {self.run['hero']}",
-                                    allowed, stock)
+        self.refresh_guide()
 
     def handle_encounter_left(self) -> None:
         self.encounter = None
         if self.overlay:
             self.overlay.show_shop(None, [])
-            if self.shop_guide:
-                self.overlay.show_board(None, [], [])
+        self.refresh_guide()
 
     async def handle_monster(self, event: MonsterFought) -> None:
         if not self.run.get("active") or not event.won:

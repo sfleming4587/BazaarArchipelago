@@ -1,17 +1,24 @@
 """
-The Shop Guide: pictures of everything the merchant you're at could stock, at their in-game sizes, locked ones
-greyed out with a red cross. A real window you can drag anywhere (other monitors too); until you move it, it
-follows the strip right of the board. Runs in the overlay's Tk thread and only renders what it's given.
+The Shop Guide: card pictures at their in-game sizes, locked ones greyed out with a red cross. A real window you can
+drag anywhere (other monitors too); until you move it, it follows the strip right of the board. Runs in the
+overlay's Tk thread and only renders what it's given.
+
+Owner, 2026-10-01 ("2, and allow user to open it outside of a shop with the filters ... size, which merchant,
+starting rarity, search bar"):
+- the cards on offer right now (shop, level-up, an event's items: read from memory) come first, framed in gold;
+- below them, what the chosen merchant could stock for your hero - entering a shop picks that merchant - or every
+  card with Merchant on Any; Search, Size, Rarity and Merchant narrow it, open or not in a shop.
 
 Pictures come from cardart (no Pillow needed); a card without one yet shows a "no picture" box of the same shape.
 """
 import json
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 from . import screens
 from .cardart import TIER_COLORS, CardArt, card_shape
-from .data import CARDS, CARDS_BY_GUID
-from .theme import ACCENT, DIM, FONT, GOOD, LOCKED_X, WARN, WINDOW_BG
+from .data import CARDS, CARDS_BY_GUID, MERCHANT_DATA, TIERS
+from .merchants import possible_stock
+from .theme import ACCENT, DIM, FG, FONT, GOOD, LOCKED_X, WARN, WINDOW_BG
 
 TILE_BG = "#1d1a24"  # a card with no picture
 
@@ -20,8 +27,36 @@ CARD_PAD = 4  # around each card
 HEADER_RESERVE = 170  # header text width left for the Locked only and X buttons beside it
 ROW_MARGIN = 24  # a row is closed this far before the edge (borders, names a bit wider than their card)
 SAVE_DELAY_MS = 500  # while you drag it, its position is saved once you stop, not on every move
+FILTER_DELAY_MS = 250  # typing in the search box redraws once you pause
 REFLOW_PX = 8  # re-flow the rows only when the width changed by more than this
 DEFAULT_WIDTH = 300
+MAX_SHOWN = 300  # pictures drawn at once; more than that and the filters are needed (Tk slows down)
+
+ANY = "Any"
+SIZES = ("Small", "Medium", "Large")
+SHOP_CARDS = [c for c in CARDS if c.shop]
+# Merchants by the name you see (a name can belong to several encounters, e.g. a tutorial copy); debug ones never
+# show up in real play.
+MERCHANTS: Dict[str, List[dict]] = {}
+for _merchant in MERCHANT_DATA.values():
+    if not _merchant["name"].startswith("[DEBUG]"):
+        MERCHANTS.setdefault(_merchant["name"], []).append(_merchant)
+
+
+def guide_cards(cards: Iterable, hero: Optional[str], merchant: str, text: str, size: str,
+                tier: str) -> List:
+    """The cards the guide lists, by name: what `merchant` could stock while playing `hero` (Any: every card of
+    your hero or Common, every card with no hero), narrowed by the search text (anywhere in the name, any case),
+    size and starting rarity."""
+    cards = list(cards)
+    if merchant != ANY:
+        pool = {c.guid: c for m in MERCHANTS.get(merchant, []) for c in possible_stock(m["stock"], hero or "", cards)}
+        cards = list(pool.values())
+    elif hero:
+        cards = [c for c in cards if c.hero in (hero, "Common")]
+    text = text.strip().lower()
+    return sorted((c for c in cards if text in c.name.lower() and size in (ANY, c.size) and tier in (ANY, c.tier)),
+                  key=lambda c: c.name.lower())
 
 
 def _saved_rect(value) -> Optional[tuple]:
@@ -44,7 +79,7 @@ class ShopGuide:
                  on_art: Callable[[str], None], on_closed: Callable[[], None]) -> None:
         self.tk, self.guide_file, self.on_closed = tk, guide_file, on_closed
         self.art = CardArt(art_cache_dir, CARD_HEIGHT, on_ready=on_art)
-        self.art.preload(c for c in CARDS if c.shop)
+        self.art.preload(SHOP_CARDS)
         saved = self._load()
         self.hidden = bool(saved.get("hidden"))
         self.locked_only = bool(saved.get("locked_only"))  # show only the cards you may not buy
@@ -54,11 +89,15 @@ class ShopGuide:
         self.strip: Optional[tuple] = None  # (rect, monitor) of the right strip it follows
         self.fitted: Optional[str] = None  # the geometry our own placing last gave it
         self.placing = False  # True while we move it ourselves (those moves aren't the player dragging it)
-        self.pending_save = None
-        self.shown = None  # (title, allowed, locked) on screen
-        self.cells: Dict[tuple, object] = {}  # (guid, locked) -> the frame showing that card right now
+        self.pending_save = self.pending_filter = None
+        self.cards = SHOP_CARDS  # what it can list (tests give it a few)
+        self.hero: Optional[str] = None  # the hero you're playing (or picked on the menu)
+        self.locked: Set[str] = set()  # cards you may not hold right now
+        self.offer: Optional[Tuple[str, Tuple[str, ...]]] = None  # (title, offered card guids) on screen right now
+        self.cells: Dict[tuple, List[object]] = {}  # (guid, locked) -> the frames showing that card right now
         self.photos: Dict[tuple, object] = {}
         self.width = DEFAULT_WIDTH
+        self.drawn = None  # what's on screen, so a redraw that changes nothing is skipped
 
         win = self.win = tk.Toplevel(root)
         win.title("Shop Guide - The Bazaar")
@@ -78,9 +117,9 @@ class ShopGuide:
                               relief="flat", padx=6)
         self.only.pack(side="right")
         self.header = tk.Label(top, bg=WINDOW_BG, fg=ACCENT, font=(FONT, 12, "bold"), anchor="w", padx=10, pady=6,
-                               justify="left", wraplength=area[2] - HEADER_RESERVE,
-                               text="Shop Guide: open a merchant to see what it can sell")
+                               justify="left", wraplength=area[2] - HEADER_RESERVE, text="Shop Guide")
         self.header.pack(side="left", fill="x")
+        self.build_filters(win)
         self.canvas = tk.Canvas(win, bg=WINDOW_BG, highlightthickness=0)
         scroll = tk.Scrollbar(win, orient="vertical", command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=scroll.set)
@@ -92,6 +131,49 @@ class ShopGuide:
         win.bind("<MouseWheel>", lambda e: self.canvas.yview_scroll(-1 if e.delta > 0 else 1, "units"))
         self.canvas.bind("<Configure>", self.on_resize)
         win.bind("<Configure>", self.on_moved)
+
+    def build_filters(self, win) -> None:
+        """Search on its own line (the window is narrow), then Size, Rarity and Merchant."""
+        tk = self.tk
+        from tkinter import ttk
+        label = dict(bg=WINDOW_BG, fg=FG, font=(FONT, 9))
+        self.filters = {key: tk.StringVar(win, ANY) for key in ("size", "tier", "merchant")}
+        self.filters["text"] = tk.StringVar(win, "")
+        line = tk.Frame(win, bg=WINDOW_BG, padx=8)
+        line.pack(fill="x")
+        tk.Label(line, text="Search", **label).pack(side="left")
+        self.search = tk.Entry(line, textvariable=self.filters["text"], font=(FONT, 10))
+        self.search.pack(side="left", fill="x", expand=True, padx=(4, 0))
+        # The guide never takes the keyboard from the game (never_focus) - except while you type in here.
+        self.search.bind("<Button-1>", self.start_typing)
+        for key in ("<Return>", "<Escape>", "<FocusOut>"):
+            self.search.bind(key, self.stop_typing)
+        line = tk.Frame(win, bg=WINDOW_BG, padx=8, pady=4)
+        line.pack(fill="x")
+        for key, title, values in (("size", "Size", (ANY, *SIZES)), ("tier", "Rarity", (ANY, *TIERS))):
+            tk.Label(line, text=title, **label).pack(side="left")
+            menu = tk.OptionMenu(line, self.filters[key], *values)
+            menu.configure(font=(FONT, 9), highlightthickness=0, padx=2, pady=0)
+            menu.pack(side="left", padx=(2, 6))
+        tk.Label(line, text="Merchant", **label).pack(side="left")
+        merchant = ttk.Combobox(line, textvariable=self.filters["merchant"], state="readonly", height=20,
+                                values=(ANY, *sorted(MERCHANTS, key=str.lower)), width=12, font=(FONT, 9))
+        merchant.pack(side="left", fill="x", expand=True, padx=(2, 0))
+        for var in self.filters.values():
+            var.trace_add("write", lambda *_: self.filter_soon())
+
+    def start_typing(self, _event=None) -> None:
+        screens.allow_focus(self.win, True)
+        self.win.focus_force()
+        self.search.focus_set()
+
+    def stop_typing(self, _event=None) -> None:
+        screens.allow_focus(self.win, False)
+
+    def filter_soon(self) -> None:
+        if self.pending_filter:
+            self.win.after_cancel(self.pending_filter)
+        self.pending_filter = self.win.after(FILTER_DELAY_MS, self.render)
 
     # --- where it is ------------------------------------------------------------------------------------------
 
@@ -137,12 +219,14 @@ class ShopGuide:
 
     def close(self) -> None:
         self.hidden = True
+        self.stop_typing()
         self.save()
         self.on_closed()  # the overlay hides it; the locked-card list may use the right strip now
 
     def show(self) -> None:
         self.hidden = False
         self.save()
+        self.render()
 
     def only_label(self) -> str:
         return "Show all" if self.locked_only else "Locked only"
@@ -151,8 +235,27 @@ class ShopGuide:
         self.locked_only = not self.locked_only
         self.save()
         self.only.configure(text=self.only_label())
-        if self.shown:
-            self.render(self.shown)
+        self.render()
+
+    # --- what it shows ----------------------------------------------------------------------------------------
+
+    def set_context(self, hero: Optional[str], locked: Iterable[str]) -> None:
+        """Your hero and the cards you may not hold: both change what the guide lists and greys out."""
+        self.hero, self.locked = hero, set(locked)
+        self.render()
+
+    def show_offer(self, value) -> None:
+        """value: (title, offered card guids, merchant name or None) for the screen you're on, or None when you
+        left it. A merchant sets the Merchant filter (and clears the others) so its stock is listed."""
+        if not value:
+            self.offer = None
+        else:
+            title, offered, merchant = value
+            self.offer = (title, tuple(offered))
+            if merchant in MERCHANTS and merchant != self.filters["merchant"].get():
+                for key, var in self.filters.items():
+                    var.set(merchant if key == "merchant" else ("" if key == "text" else ANY))
+        self.render()
 
     # --- pictures ---------------------------------------------------------------------------------------------
 
@@ -184,21 +287,20 @@ class ShopGuide:
         whole guide for every picture kept Tk from painting while a first shop's pictures streamed in)."""
         for locked in (False, True):
             self.photos.pop((guid, locked), None)
-            cell = self.cells.get((guid, locked))
-            if cell is not None and cell.winfo_exists():
-                for child in cell.winfo_children():
-                    child.destroy()
-                self.fill(cell, CARDS_BY_GUID[guid], locked)
+            for cell in self.cells.get((guid, locked), []):
+                if cell.winfo_exists():
+                    for child in cell.winfo_children():
+                        child.destroy()
+                    self.fill(cell, CARDS_BY_GUID[guid], locked)
 
     def on_resize(self, event) -> None:
         if abs(event.width - self.width) > REFLOW_PX:  # rows are filled by width: re-flow when it really changed
             self.width = event.width
-            if self.shown:
-                self.render(self.shown, keep_scroll=True)
+            self.render(force=True)
 
     # --- drawing ----------------------------------------------------------------------------------------------
 
-    def section(self, parent, title: str, color: str, cards: List, locked: bool, row: int) -> int:
+    def section(self, parent, title: str, color: str, cards: List, row: int, framed: bool = False) -> int:
         tk = self.tk
         if not cards:
             return row
@@ -207,15 +309,17 @@ class ShopGuide:
         row += 1
         line, used = None, 0  # cards go left to right in rows, each as wide as its slots (like the board)
         for card in cards:
+            locked = card.guid in self.locked
             width = card_shape(card, CARD_HEIGHT)[0] + 2 * CARD_PAD
             if line is None or used + width > self.width - ROW_MARGIN:
                 line, used = tk.Frame(parent, bg=WINDOW_BG), 0
                 line.grid(row=row, column=0, sticky="w", padx=2)
                 row += 1
             used += width
-            cell = tk.Frame(line, bg=WINDOW_BG, width=width)
+            cell = tk.Frame(line, bg=WINDOW_BG, width=width, highlightthickness=2 if framed else 0,
+                            highlightbackground=ACCENT)
             cell.pack(side="left", anchor="n", padx=CARD_PAD, pady=3)
-            self.cells[(card.guid, locked)] = cell
+            self.cells.setdefault((card.guid, locked), []).append(cell)
             self.fill(cell, card, locked)
         return row
 
@@ -230,41 +334,49 @@ class ShopGuide:
         self.tk.Label(cell, text=card.name, bg=WINDOW_BG, fg=DIM if locked else "#eeeeee", font=(FONT, 8),
                       wraplength=max(40, width - 4), justify="center").pack()
 
-    def render(self, value, keep_scroll: bool = False) -> None:
-        """value: (title, allowed cards, locked cards), or None when you left the shop (the last one stays)."""
-        if not value:
-            if self.shown:
-                self.header.configure(text=f"Last shop: {self.shown[0]}")
+    def render(self, force: bool = False) -> None:
+        """Draws what's on offer, then the filtered list (allowed and locked, the shorter part on top)."""
+        if self.pending_filter:
+            self.win.after_cancel(self.pending_filter)
+            self.pending_filter = None
+        if self.hidden:  # drawn when it's opened (show), not for nobody
+            self.drawn = None
             return
-        self.shown = value
-        title, allowed, locked = value
-        locked_first = len(locked) < len(allowed)  # the shorter list on top, so it's seen without scrolling
-        if not locked:
-            note = "nothing locked here"
-        elif self.locked_only:
-            note = f"{len(locked)} locked"
-        elif locked_first:
-            note = f"{len(locked)} locked (top)"
-        else:
-            note = f"{len(allowed)} you can buy (top)"
-        self.header.configure(text=f"{title}  |  {note}")
-        sections = [(f"You can buy ({len(allowed)})", GOOD, allowed, False),
-                    (f"LOCKED - don't buy ({len(locked)})", WARN, locked, True)]
+        values = {key: var.get() for key, var in self.filters.items()}
+        state = (self.offer, self.hero, frozenset(self.locked), self.locked_only, tuple(sorted(values.items())))
+        if state == self.drawn and not force:
+            return
+        self.drawn = state
+        listed = guide_cards(self.cards, self.hero, values["merchant"], values["text"], values["size"],
+                             values["tier"])
+        total = len(listed)
+        listed = listed[:MAX_SHOWN]
+        allowed = [c for c in listed if c.guid not in self.locked]
+        locked = [c for c in listed if c.guid in self.locked]
+        offered = [CARDS_BY_GUID[g] for g in (self.offer[1] if self.offer else ()) if g in CARDS_BY_GUID]
+
+        where = values["merchant"] if values["merchant"] != ANY else "All cards" + (f" for {self.hero}" if self.hero else "")
+        note = f"showing {MAX_SHOWN} of {total} - narrow it with the filters" if total > MAX_SHOWN else \
+            f"{len(locked)} locked of {total}" if locked else f"{total}, nothing locked"
+        self.header.configure(text=f"{self.offer[0] + '  |  ' if self.offer else ''}{where}: {note}")
+
+        sections = [(f"You can buy ({len(allowed)})", GOOD, allowed), (f"LOCKED - don't buy ({len(locked)})", WARN,
+                                                                     locked)]
         if self.locked_only:  # just the cards to recognise and avoid
             sections = sections[1:]
-        elif locked_first:
+        elif len(locked) < len(allowed):  # the shorter list on top, so it's seen without scrolling
             sections.reverse()
         # built in a new frame, then swapped in: the window never shows up empty in between (no flicker)
         old = self.inner.winfo_children()
         frame = self.tk.Frame(self.inner, bg=WINDOW_BG)
         self.cells = {}
-        row = 0
-        for label, color, cards, is_locked in sections:
-            row = self.section(frame, label, color, sorted(cards, key=lambda c: c.name), is_locked, row)
+        row = self.section(frame, f"On offer now ({len(offered)})", ACCENT, offered, 0, framed=True)
+        for title, color, cards in sections:
+            row = self.section(frame, title, color, cards, row)
         frame.pack(anchor="nw")
         for child in old:
             child.destroy()
-        if not keep_scroll:
+        if not force:
             self.canvas.yview_moveto(0)
 
     # --- saved settings ---------------------------------------------------------------------------------------

@@ -322,9 +322,17 @@ class Overlay:
         fall back to the mouse's position and a fixed wait."""
         self.commands.put(("board_ui", ui))
 
-    def show_board(self, title: Optional[str], allowed: list, locked: list) -> None:
-        """Shop Guide: allowed cards in colour first, locked cards greyed out below. title=None hides it."""
-        self.commands.put(("board", (title, list(allowed), list(locked)) if title else None))
+    def show_board(self, title: Optional[str], offered: List[str], merchant: Optional[str]) -> None:
+        """Shop Guide: what's on offer on screen (card guids, first, framed in gold) and the merchant you're at (its
+        stock is listed below). title=None: you left; the guide keeps its list and filters."""
+        self.commands.put(("board", (title, tuple(offered), merchant) if title else None))
+
+    def guide_context(self, hero: Optional[str], locked) -> None:
+        """Shop Guide: your hero and the cards you may not hold (greyed out with a red cross)."""
+        self.commands.put(("guide_context", (hero, frozenset(locked))))
+
+    def toggle_guide(self) -> None:
+        self.commands.put(("guide_toggle", None))
 
     def toast(self, text: str, seconds: float = 6, warning: bool = False) -> None:
         """A short pop-up (bottom right) that disappears by itself."""
@@ -421,7 +429,9 @@ class _Screen:
         self.tracker = Tracker(tk, root, lambda: self.layout["screen"])
         self.handlers: Dict[str, Callable] = {
             "art": lambda guid: self.guide and self.guide.refresh(guid),
-            "board": lambda value: self.guide and self.guide.render(value),
+            "board": lambda value: self.guide and self.guide.show_offer(value),
+            "guide_context": lambda value: self.guide and self.guide.set_context(*value),
+            "guide_toggle": self.toggle_guide,
             "redraw": lambda _: True,
             "tracker": self.new_tracker_data,
             "tracker_toggle": lambda _: self.tracker.toggle(),
@@ -597,11 +607,16 @@ class _Screen:
         (user: "on the permanent top-left overlay"), the Shop Guide when it's closed, and hiding the list."""
         state = self.state
         buttons = [("Tracker", self.tracker.toggle)] if self.tracker.data else []
-        if state["shop"] and self.guide and self.guide.hidden:
-            buttons.append(("Pictures", self.guide.show))
+        if self.guide and self.guide.hidden:  # any time, not only in a shop (owner, 2026-10-01)
+            buttons.append(("Shop Guide", self.guide.show))
         if state["shop"] and state["shop"][1]:
             buttons.append(("Show list" if self.list_hidden else "Hide list", self.toggle_list))
         return buttons
+
+    def toggle_guide(self, _=None) -> bool:
+        if self.guide:
+            self.guide.close() if not self.guide.hidden else self.guide.show()
+        return True
 
     def toggle_list(self) -> None:
         self.list_hidden = not self.list_hidden

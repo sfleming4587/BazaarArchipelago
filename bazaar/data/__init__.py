@@ -55,6 +55,7 @@ PACKS: List[Pack] = [Pack(p["key"], p["ap_id"], p["name"], p["hero"], tuple(p["c
 MERCHANT_DATA: Dict[str, dict] = {m["guid"]: m for m in _raw.get("merchants", [])}
 # events / steps that let you take an item for free: guid -> {"name": ..., "stock": SpawnContext}
 OFFER_DATA: Dict[str, dict] = {m["guid"]: m for m in _raw.get("offers", [])}
+EVENT_NAMES: Dict[str, str] = {e["guid"]: e["name"] for e in _raw.get("events", [])}  # every event, merchants too
 
 TIERS = ("Bronze", "Silver", "Gold", "Diamond", "Legendary")
 
