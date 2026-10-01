@@ -804,21 +804,25 @@ class TestShopPadlocks(ClientTestBase):
         from ..logparser import EncounterEntered
         self.play(EncounterEntered(self.merchant))
 
+    def padlocks(self):
+        """The last show_padlocks call as (screen, sizes, locked positions, delay)."""
+        call = self.ctx.overlay.show_padlocks.call_args
+        return call.args + (call.kwargs.get("delay", 0),)
+
     def test_only_the_locked_card_on_offer_is_named_and_padlocked(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.enter()
-        overlay = self.ctx.overlay
-        overlay.show_padlocks.assert_called_with([c.size for c in self.row], [1], delay=FLIP_SECONDS)
-        merchant, names, _verb = overlay.show_shop.call_args.args
+        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [1], FLIP_SECONDS))
+        merchant, names, _verb = self.ctx.overlay.show_shop.call_args.args
         self.assertEqual(names, [LOCKED.name])
-        self.assertTrue(overlay.show_shop.call_args.kwargs["exact"])
+        self.assertTrue(self.ctx.overlay.show_shop.call_args.kwargs["exact"])
 
     def test_buying_it_takes_the_padlock_away(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.enter()
         self.ctx.handle_snapshot(self.snapshot([self.row[0], self.row[2]]))
         # the cards left were already showing: no flip, no wait
-        self.ctx.overlay.show_padlocks.assert_called_with([self.row[0].size, self.row[2].size], [], delay=0)
+        self.assertEqual(self.padlocks(), ("Encounter", [self.row[0].size, self.row[2].size], [], 0))
         self.assertEqual(self.ctx.overlay.show_shop.call_args.args[1], [])
 
     def test_an_unlock_arriving_in_the_shop_takes_its_padlock_away(self) -> None:
@@ -827,18 +831,24 @@ class TestShopPadlocks(ClientTestBase):
         unlock = NetworkItem(BASE_ID + LOCKED.ap_id, 0, 0, 0)
         self.ctx.items_received.append(unlock)
         self.ctx.on_package("ReceivedItems", {"index": 1, "items": [unlock]})
-        self.ctx.overlay.show_padlocks.assert_called_with([c.size for c in self.row], [], delay=0)
+        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [], 0))
+
+    def test_a_level_up_is_padlocked_too_though_the_log_never_mentions_it(self) -> None:
+        self.ctx.handle_snapshot(self.snapshot(self.row, encounter=None, state="LevelUp"))
+        self.assertEqual(self.padlocks(), ("LevelUp", [c.size for c in self.row], [1], FLIP_SECONDS))
 
     def test_without_memory_it_lists_everything_the_merchant_could_sell(self) -> None:
         self.enter()
-        self.ctx.overlay.show_padlocks.assert_called_with([], [], delay=0)
+        self.assertFalse(self.ctx.overlay.show_padlocks.called and self.padlocks()[2])
         self.assertIn(LOCKED.name, self.ctx.overlay.show_shop.call_args.args[1])
         self.assertFalse(self.ctx.overlay.show_shop.call_args.kwargs["exact"])
 
-    def test_a_reading_from_another_screen_is_not_trusted(self) -> None:
-        self.ctx.handle_snapshot(self.snapshot(self.row, state="Choice"))
-        self.enter()
-        self.ctx.overlay.show_padlocks.assert_called_with([], [], delay=0)
+    def test_screens_whose_layout_is_unknown_get_no_padlocks(self) -> None:
+        self.ctx.handle_snapshot(self.snapshot(self.row))
+        self.ctx.handle_snapshot(self.snapshot(self.row, state="Loot"))  # not measured yet
+        self.assertEqual(self.padlocks(), (None, [], [], 0))
+
+    def test_the_shop_list_trusts_only_the_merchant_the_log_says_you_are_at(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row, encounter="00000000-0000-0000-0000-000000000000"))
-        self.ctx.overlay.show_padlocks.assert_called_with([], [], delay=0)
+        self.enter()
         self.assertFalse(self.ctx.overlay.show_shop.call_args.kwargs["exact"])

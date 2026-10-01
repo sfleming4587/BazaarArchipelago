@@ -251,5 +251,22 @@ class TestPadlockHoverArea(unittest.TestCase):
         self.assertFalse(inside(500, 430))  # the shop row's empty space, left of the cards
         self.assertFalse(inside(960, 300))  # the merchant above
         self.assertTrue(inside(960, 650))  # your own board's row
+        self.assertFalse(inside(380, 650))  # ...but not past its widest (10 slots: x 395-1525)
         strip_left, strip_right, _ = strips(0, 0, 1920, 1080)
         self.assertTrue(all(r[0] >= strip_left[0] + strip_left[2] and r[2] <= strip_right[0] for r in rects))
+
+
+class TestRowGaps(unittest.TestCase):
+    def test_level_up_small_cards_land_where_they_were_measured(self) -> None:
+        """Owner's level-up screenshot (1919x1079): three Small cards centred near x 779, 960, 1140."""
+        from ..overlay import ROW_GAPS, card_centres
+        xs = [x for x, _ in card_centres(0, 0, 1920, 1080, ["Small"] * 3, ROW_GAPS["LevelUp"])]
+        for got, seen in zip(xs, (779, 960, 1140)):
+            self.assertAlmostEqual(got, seen, delta=3)
+
+    def test_your_board_hover_area_follows_your_level(self) -> None:
+        from ..overlay import card_rects
+        level_1 = card_rects(0, 0, 1920, 1080, ["Small"], level=1)[-1]
+        level_9 = card_rects(0, 0, 1920, 1080, ["Small"], level=9)[-1]
+        self.assertAlmostEqual(level_1[2] - level_1[0], 4 * 113, delta=2)
+        self.assertAlmostEqual(level_9[2] - level_9[0], 10 * 113, delta=2)

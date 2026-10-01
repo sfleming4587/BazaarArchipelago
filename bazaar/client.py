@@ -31,7 +31,7 @@ from .logparser import (DEFAULT_LOG_PATH, PREV_LOG, HeroSelected, CardGained, Ca
                         RunEnded, RunStarted, UnrecognizedRun, log_session)
 from .memreader import GAME_EXE, NotReady, Reader, ReaderOff, Snapshot, find_pid
 from .merchants import possible_stock
-from .overlay import FILE_ONLY  # to the log file only: not the console or the client window
+from .overlay import FILE_ONLY, ROW_GAPS  # FILE_ONLY: to the log file only, not the console or the client window
 
 POLL_SECONDS = 0.5
 MEMORY_SECONDS = 0.3  # how often the shop is read from memory
@@ -52,13 +52,20 @@ def own_popup(item_id: int) -> bool:
     return item_id in UNLOCKS or item_id in HERO_ITEM_IDS or item_id in (SELL_TRAP_ID, LOCK_BYPASS_ID)
 
 
-def offers_at(snapshot: Optional[Snapshot], guid: str) -> Optional[tuple]:
-    """The cards on offer at this merchant/event, left to right, as read from memory; None if memory can't say."""
-    if not snapshot or snapshot.state != "Encounter" or snapshot.encounter != guid or not snapshot.offers:
+def items_on_screen(snapshot: Optional[Snapshot]) -> Optional[tuple]:
+    """The items offered on screen right now, left to right, as read from memory; None unless it's a row of items on
+    a screen whose layout is known (ROW_GAPS) - e.g. a skill choice, or memory being off."""
+    if not snapshot or snapshot.state not in ROW_GAPS or not snapshot.offers:
         return None
     if any(offer.kind != "Item" or offer.template is None for offer in snapshot.offers):
-        return None  # not a plain row of items (e.g. a skill choice): no padlocks, the list as before
+        return None
     return snapshot.offers
+
+
+def offers_at(snapshot: Optional[Snapshot], guid: str) -> Optional[tuple]:
+    """The items on offer at this merchant/event (the one the log says you're at); None if memory can't say."""
+    items = items_on_screen(snapshot)
+    return items if items and snapshot.state == "Encounter" and snapshot.encounter == guid else None
 
 
 def default_log_path() -> str:
@@ -216,8 +223,9 @@ class BazaarContext(CommonContext):
                     self.toast(f"LOCK BYPASS from {self.who(item.player)}! Use it on a locked card you're holding.",
                                seconds=12)
             self.refresh_held()
-            if self.encounter:  # an unlock that arrives while you're in a shop takes its padlock away at once
+            if self.encounter:  # an unlock that arrives while you're in a shop takes it off the list at once
                 self.handle_encounter(self.encounter)
+            self.refresh_padlocks()  # ...and its padlock away, on any screen
             self.receive_traps()
             self.update_status()
         elif cmd == "RoomUpdate" and "checked_locations" in args:
@@ -356,6 +364,7 @@ class BazaarContext(CommonContext):
         self.refresh_held()  # every copy of it you hold stops blocking checks
         if self.encounter:  # the shop warning and the Shop Guide show it as allowed now
             self.handle_encounter(self.encounter)
+        self.refresh_padlocks()
         self.update_status()
 
     def run_locked_guids(self) -> Set[str]:
@@ -580,11 +589,34 @@ class BazaarContext(CommonContext):
                    warning=True)
 
     def handle_snapshot(self, snapshot: Optional[Snapshot]) -> None:
-        """A new reading from memory (None: the reader is off). The shop warning is redone when what's on offer
-        at the current merchant changed: you bought a card, rerolled, or memory caught up with the log."""
+        """A new reading from memory (None: the reader is off). The padlocks are redone when what's on screen
+        changed; the shop warning when what's on offer at the current merchant did (you bought a card, rerolled, or
+        memory caught up with the log)."""
         before, self.memory = self.memory, snapshot
+        seen = lambda s: (s.state, items_on_screen(s), s.level) if s else None
+        if seen(before) != seen(snapshot):
+            self.refresh_padlocks()
         if self.encounter and offers_at(before, self.encounter.guid) != offers_at(snapshot, self.encounter.guid):
             self.handle_encounter(self.encounter)
+
+    def refresh_padlocks(self) -> None:
+        """A padlock on each locked item on screen (shops, level-ups: whatever ROW_GAPS knows). Driven by memory
+        alone, so a screen the log never mentions works the same. New cards flip over before you can see them, so
+        their padlocks wait for that (user, 2026-10-01); a card bought from the row doesn't make the rest wait."""
+        if not self.overlay:
+            return
+        snapshot, items = self.memory, items_on_screen(self.memory) if self.run.get("active") else None
+        if not items:
+            self.offers_seen = set()
+            self.overlay.show_padlocks(None, [], [])
+            return
+        locked = self.run_locked_guids()
+        new = any(o.instance not in self.offers_seen for o in items)
+        self.offers_seen = {o.instance for o in items}
+        self.overlay.show_padlocks(snapshot.state, [CARDS_BY_GUID[o.template].size if o.template in CARDS_BY_GUID
+                                                    else None for o in items],
+                                   [i for i, o in enumerate(items) if o.template in locked],
+                                   delay=FLIP_SECONDS if new else 0, level=snapshot.level)
 
     def handle_encounter(self, event: EncounterEntered) -> None:
         merchant = MERCHANT_DATA.get(event.guid) or OFFER_DATA.get(event.guid)
@@ -595,17 +627,10 @@ class BazaarContext(CommonContext):
         locked = self.run_locked_guids()
         stock = possible_stock(merchant["stock"], self.run["hero"], (CARDS_BY_GUID[g] for g in locked))
         offers = offers_at(self.memory, event.guid)
-        if offers is not None:  # exactly what's on screen: only those are named, and padlocked
-            spots = [i for i, offer in enumerate(offers) if offer.template in locked]
-            names = [self.card_name(offers[i].template) for i in spots]
+        if offers is not None:  # exactly what's on screen: only those are named (and padlocked, refresh_padlocks)
+            names = [self.card_name(o.template) for o in offers if o.template in locked]
         else:
-            spots, names = [], sorted(c.name for c in stock)
-        if self.overlay:
-            sizes = [CARDS_BY_GUID[o.template].size if o.template in CARDS_BY_GUID else None for o in offers or ()]
-            # new cards flip over before you can see them: their padlocks wait for that (user, 2026-10-01)
-            new = any(o.instance not in self.offers_seen for o in offers or ())
-            self.offers_seen = {o.instance for o in offers or ()}
-            self.overlay.show_padlocks(sizes, spots, delay=FLIP_SECONDS if new else 0)
+            names = sorted(c.name for c in stock)
         if names:
             how = "offers" if offers is not None else f"may {verb}"
             logger.info(f"{merchant['name']} {how} these locked cards: {', '.join(names)}", extra=FILE_ONLY)
@@ -621,10 +646,8 @@ class BazaarContext(CommonContext):
 
     def handle_encounter_left(self) -> None:
         self.encounter = None
-        self.offers_seen = set()
         if self.overlay:
             self.overlay.show_shop(None, [])
-            self.overlay.show_padlocks([], [])
             if self.shop_guide:
                 self.overlay.show_board(None, [], [])
 
@@ -1035,6 +1058,7 @@ async def watch_log(ctx: BazaarContext) -> None:
                         handled = True
                 if handled:
                     ctx.save_state()  # the position too, even for events that changed nothing else
+                    ctx.refresh_padlocks()  # a run that started or ended changes what may be padlocked
                 await asyncio.sleep(POLL_SECONDS)
         except Exception:
             logger.exception("Error while following the game's log; reading it again")

@@ -20,7 +20,8 @@ GAME_EXE = "TheBazaar.exe"
 MONO_DLL = "mono-2.0-bdwgc.dll"
 RUN_STATES = ("Choice", "Combat", "Encounter", "EndRunDefeat", "EndRunVictory", "LevelUp", "Loot", "NewRun",
               "Pedestal", "PVPCombat", "Shutdown")  # ERunState in declaration order, matched on screen 2026-09-30
-ALLOWED_STATICS = ("<CurrentState>k__BackingField", "Entities")
+ALLOWED_STATICS = ("<CurrentState>k__BackingField", "Entities", "<Run>k__BackingField")
+LEVEL_STAT = 15  # your level among the player's stats (seen 2 -> 3 at the first level-up, 2026-09-30)
 BLOCKED = ("seed", "rng", "random", "opponent", "steam", "store", "title", "account", "ticket", "token", "auth")
 IDENT = re.compile(r"^[A-Za-z_<][\w<>`.\-|=$@]*$")
 STRING, VALUETYPE = 0x0E, 0x11  # MonoTypeEnum
@@ -44,6 +45,7 @@ class Snapshot(NamedTuple):
     state: Optional[str]  # one of RUN_STATES
     encounter: Optional[str]  # the guid of the merchant/event/monster you're at
     offers: Tuple[Offer, ...]  # in the game's own order
+    level: Optional[int] = None  # your level (it sets how wide your board is)
 
 
 def blocked(name: Optional[str]) -> bool:
@@ -493,4 +495,18 @@ class Reader:
                     offers.append(Offer(instance, None, None))
                     continue
                 offers.append(Offer(instance, self._get(card, "TemplateId"), self._get(card, "Type")))
-        return Snapshot(name, encounter, tuple(offers))
+        return Snapshot(name, encounter, tuple(offers), self._level())
+
+    def _level(self) -> Optional[int]:
+        """Your level, from Run.Player.Attributes (a Dictionary of stat -> value with 16-byte entries, K-mem3)."""
+        m, run = self.memory, self.memory.ptr(self.statics["<Run>k__BackingField"])
+        player = self._get(run, "Player") if run else 0
+        stats = self._get(player, "Attributes") if player else 0
+        if not stats:
+            return None
+        entries, count = self._get(stats, "_entries"), self._get(stats, "_count") or 0
+        for i in range(min(count, 200)):
+            entry = entries + 0x20 + 16 * i
+            if (m.i32(entry) or -1) >= 0 and m.i32(entry + 8) == LEVEL_STAT:  # a used entry (hash code >= 0)
+                return m.i32(entry + 12)
+        return None

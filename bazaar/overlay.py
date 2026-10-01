@@ -62,9 +62,13 @@ GAME_EXE = "thebazaar.exe"  # the overlay only shows while this is the active wi
 # Cards sit on a slot grid, so a card's width is its slots times the slot pitch (the thin gap is inside the pitch).
 SHOP_ROW_Y = 0.398  # the cards' centres, as a share of the window's height
 SLOT_WIDTH = 113  # the slot pitch: a Small card plus the gap after it
-CARD_GAP = 0  # any extra gap between two cards (none: it's part of SLOT_WIDTH)
+# The extra space between two cards, by the screen (memory's state name) showing the row. Measured on the owner's
+# screenshots 2026-10-01: a shop's cards touch; a level-up's Small cards sit 181 px apart (113 + 68). A screen not
+# listed here gets no padlocks: its layout hasn't been measured.
+ROW_GAPS = {"Encounter": 0, "LevelUp": 68}
 CARD_HEIGHT = 220  # measured on the same screenshot (the cards' frames, y 322-541 at 1080p)
 YOUR_ROW = (548, 785)  # your own board's cards, top and bottom (their tooltips can open over the shop row too)
+BOARD_SLOTS = {1: 4, 2: 6, 3: 8}  # your board's width by level (owner, 2026-10-01); 10 from level 4 on
 HOVERED_ALPHA = 0.3  # a padlock while a card is hovered: see-through, so the tooltip reads (user, 2026-10-01)
 HOVER_MS = 60  # how often the mouse is checked while padlocks are up
 SLOTS = {"Small": 1, "Medium": 2, "Large": 3}
@@ -154,7 +158,7 @@ def strips(x: int, y: int, w: int, h: int) -> tuple:
             (right_x, y, right_end - right_x, round(RIGHT_BOTTOM * k)), k)
 
 
-def card_centres(x: int, y: int, w: int, h: int, sizes: List[Optional[str]]) -> Optional[List[tuple]]:
+def card_centres(x: int, y: int, w: int, h: int, sizes: List[Optional[str]], gap: float = 0) -> Optional[List[tuple]]:
     """
     Screen centre (x, y) of each card in a shop row of these sizes, left to right, for a game window at x, y of
     size w x h. None if any size is unknown: a guessed width would put every padlock after it on the wrong card.
@@ -163,7 +167,7 @@ def card_centres(x: int, y: int, w: int, h: int, sizes: List[Optional[str]]) -> 
         return None
     across = min(h / 1080, w / 1920)  # the board's scale, as in strips()
     widths = [SLOTS[size] * SLOT_WIDTH * across for size in sizes]
-    gap = CARD_GAP * across
+    gap *= across
     left = x + w / 2 - (sum(widths) + gap * (len(widths) - 1)) / 2
     centres = []
     for width in widths:
@@ -172,19 +176,22 @@ def card_centres(x: int, y: int, w: int, h: int, sizes: List[Optional[str]]) -> 
     return centres
 
 
-def card_rects(x: int, y: int, w: int, h: int, sizes: List[Optional[str]]) -> List[tuple]:
-    """Where hovering shows a card's tooltip (left, top, right, bottom): each shop card, and your own board's row
-    (which cards sit where on it isn't read, so the whole row counts). Empty if a shop size is unknown."""
-    centres = card_centres(x, y, w, h, sizes)
+def card_rects(x: int, y: int, w: int, h: int, sizes: List[Optional[str]], gap: float = 0,
+               level: Optional[int] = None) -> List[tuple]:
+    """Where hovering shows a card's tooltip (left, top, right, bottom): each offered card, and your own board at
+    its width for your level, as if full (where your cards sit isn't read; owner, 2026-10-01). Empty if an offered
+    card's size is unknown."""
+    centres = card_centres(x, y, w, h, sizes, gap)
     if not centres:
         return []
-    left, right, k = strips(x, y, w, h)
-    across = min(k, w / 1920)
-    half_height = CARD_HEIGHT * across / 2
+    across = min(h / 1080, w / 1920)
+    half_height, mid = CARD_HEIGHT * across / 2, x + w / 2
     rects = [(round(cx - SLOTS[size] * SLOT_WIDTH * across / 2), round(cy - half_height),
               round(cx + SLOTS[size] * SLOT_WIDTH * across / 2), round(cy + half_height))
              for (cx, cy), size in zip(centres, sizes)]
-    return rects + [(left[0] + left[2], y + round(YOUR_ROW[0] * k), right[0], y + round(YOUR_ROW[1] * k))]
+    board = BOARD_SLOTS.get(level or 0, 10) * SLOT_WIDTH * across / 2  # unknown level: the widest board
+    return rects + [(round(mid - board), y + round(YOUR_ROW[0] * h / 1080), round(mid + board),
+                     y + round(YOUR_ROW[1] * h / 1080))]
 
 
 def mouse_on(rects: List[tuple]) -> bool:
@@ -304,11 +311,12 @@ class Overlay:
         exact: these are the locked cards actually on offer right now (read from the game), not every possible one."""
         self.commands.put(("shop", (merchant, list(locked), verb, exact) if merchant else None))
 
-    def show_padlocks(self, sizes: List[Optional[str]], locked: List[int], delay: float = 0) -> None:
-        """A padlock on each locked card on offer: sizes of every offered card left to right, and the positions
-        (0-based) of the locked ones. No locked positions hides them (at once). delay: seconds to wait before
-        showing them, while new cards flip over."""
-        value = (tuple(sizes), tuple(locked)) if locked else None
+    def show_padlocks(self, screen: Optional[str], sizes: List[Optional[str]], locked: List[int], delay: float = 0,
+                      level: Optional[int] = None) -> None:
+        """A padlock on each locked card on offer: the screen showing them (a ROW_GAPS key), sizes of every offered
+        card left to right, and the positions (0-based) of the locked ones. No locked positions hides them (at once).
+        delay: seconds to wait before showing them, while new cards flip over. level: yours (your board's width)."""
+        value = (screen, tuple(sizes), tuple(locked), level) if locked and screen in ROW_GAPS else None
         self.commands.put(("padlocks", (value, time.monotonic() + (delay if value else 0))))
 
     def show_board(self, title: Optional[str], allowed: list, locked: list) -> None:
@@ -720,9 +728,11 @@ class _Screen:
     def render_padlocks(self) -> None:
         """Moves a padlock onto the centre of each locked card on offer (see card_centres)."""
         layout, value = self.layout, self.state["padlocks"]
-        centres = card_centres(*layout["window"], value[0]) if value else None
-        self.padlock_cards = card_rects(*layout["window"], value[0]) if value else []
-        spots = [centres[i] for i in value[1] if i < len(centres)] if centres else []
+        screen, sizes, locked, level = value or (None, (), (), None)
+        gap = ROW_GAPS.get(screen, 0)
+        centres = card_centres(*layout["window"], sizes, gap) if value else None
+        self.padlock_cards = card_rects(*layout["window"], sizes, gap, level) if value else []
+        spots = [centres[i] for i in locked if i < len(centres)] if centres else []
         size = max(MIN_PADLOCK, round(PADLOCK * layout["k"]))
         while len(self.padlocks) < len(spots):
             self.padlocks.append(self.new_padlock())
