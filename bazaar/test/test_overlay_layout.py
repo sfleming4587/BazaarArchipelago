@@ -209,11 +209,11 @@ class TestAlertBoxWithManyHeldCards(unittest.TestCase):
             screen.state["status"] = ("Vanessa: day 4/13", False, False)
             screen.render()
             root.update()
-            buttons = [w for w in _all_widgets(screen.alert_box) if isinstance(w, tkinter.Button)]
-            labels = [w.cget("text") for w in _all_widgets(screen.alert_box) if isinstance(w, tkinter.Label)]
+            buttons = [w for w in _all_widgets(screen.notice_box) if isinstance(w, tkinter.Button)]
+            labels = [w.cget("text") for w in _all_widgets(screen.notice_box) if isinstance(w, tkinter.Label)]
             self.assertEqual(sum(b.cget("text") == "Use Bypass" for b in buttons), MAX_ALERT_LINES - 1)
             self.assertIn("+ 7 more", labels)
-            self.assertLessEqual(screen.alert_box.winfo_reqheight(), screen.layout["left"][3] // 2)
+            self.assertLessEqual(screen.notice_box.winfo_reqheight(), screen.layout["right"][3] // 2)
             self.assertGreaterEqual(-screen.font(8)[1], 10)  # the smallest font the overlay asks for
         finally:
             root.destroy()

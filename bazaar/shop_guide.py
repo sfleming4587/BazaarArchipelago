@@ -69,15 +69,19 @@ def _saved_rect(value) -> Optional[tuple]:
 class ShopGuide:
     @classmethod
     def create(cls, tk, root, art_cache_dir: Optional[str], guide_file: Optional[str], area: tuple,
-               on_art: Callable[[str], None], on_closed: Callable[[], None]) -> Optional["ShopGuide"]:
-        """The guide, or None when it's turned off (no art_cache_dir)."""
+               on_art: Callable[[str], None], on_closed: Callable[[], None],
+               on_close_click: Optional[Callable[[], None]] = None) -> Optional["ShopGuide"]:
+        """The guide, or None when it's turned off (no art_cache_dir). on_close_click: what its X does (the overlay
+        fades it out, like its button); default close()."""
         if not art_cache_dir:
             return None
-        return cls(tk, root, art_cache_dir, guide_file, area, on_art, on_closed)
+        return cls(tk, root, art_cache_dir, guide_file, area, on_art, on_closed, on_close_click)
 
     def __init__(self, tk, root, art_cache_dir: str, guide_file: Optional[str], area: tuple,
-                 on_art: Callable[[str], None], on_closed: Callable[[], None]) -> None:
+                 on_art: Callable[[str], None], on_closed: Callable[[], None],
+                 on_close_click: Optional[Callable[[], None]] = None) -> None:
         self.tk, self.guide_file, self.on_closed = tk, guide_file, on_closed
+        close_click = on_close_click or self.close
         self.art = CardArt(art_cache_dir, CARD_HEIGHT, on_ready=on_art)
         self.art.preload(SHOP_CARDS)
         saved = self._load()
@@ -110,12 +114,12 @@ class ShopGuide:
         win.attributes("-toolwindow", True)  # a small title bar with only X: nothing to minimise it by
         win.geometry(screens.geometry(area))
         win.withdraw()  # the overlay shows it, only while the game (or one of its windows) is in front
-        win.protocol("WM_DELETE_WINDOW", self.close)
+        win.protocol("WM_DELETE_WINDOW", close_click)
         screens.never_focus(win)  # showing it again (e.g. alt-tab back) must not take the keyboard from the game
 
         top = tk.Frame(win, bg=WINDOW_BG)
         top.pack(fill="x")
-        tk.Button(top, text="X", command=self.close, bg=WINDOW_BG, fg=ACCENT, relief="flat", padx=6).pack(
+        tk.Button(top, text="X", command=close_click, bg=WINDOW_BG, fg=ACCENT, relief="flat", padx=6).pack(
             side="right")
         self.only = tk.Button(top, text=self.only_label(), command=self.toggle_locked_only, bg=WINDOW_BG, fg=ACCENT,
                               relief="flat", padx=6)

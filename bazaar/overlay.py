@@ -71,6 +71,7 @@ CARD_HEIGHT = 220  # measured on the same screenshot (the cards' frames, y 322-5
 YOUR_ROW = (548, 785)  # your own board's cards, top and bottom (their tooltips can open over the shop row too)
 BOARD_SLOTS = {1: 4, 2: 6, 3: 8}  # your board's width by level (owner, 2026-10-01); 10 from level 4 on
 HOVERED_ALPHA = 0.3  # a padlock while a card is hovered: see-through, so the tooltip reads (user, 2026-10-01)
+FADE_STEPS, FADE_MS = 6, 25  # opening and closing the Shop Guide: a short fade (owner: "a simple transition")
 FLIP_SECONDS = 1.0  # new cards flip over first: if the game's reveal flag doesn't start by then, show anyway
 FLIP_MAX = 3.0  # and never wait longer than this for a reveal to end
 HOVER_MS = 60  # how often the mouse is checked while padlocks are up
@@ -380,9 +381,12 @@ class _Screen:
         # No two windows overlap: the alert box (root) takes the top of the left strip, the locked-card list goes
         # right under it, and the right strip belongs to the Shop Guide - or, while the guide is closed, to the
         # rest of a long list. Pop-ups (toasts) stack up from the bottom of the right strip, which then shrinks.
-        self.alert_box, self.shop_first, self.shop_second, self.toast_box = \
-            root, tk.Toplevel(root), tk.Toplevel(root), tk.Toplevel(root)
-        self.panels = [self.alert_box, self.shop_first, self.shop_second, self.toast_box]
+        # Owner, 2026-10-01: "The shop guide is always going to be the whole left column": the alert box (root) is
+        # now just its header (status and buttons); DeathLink, held locked cards and Sell Traps are the notices box at
+        # the top of the right column, the locked-card list under them, the pop-ups at the bottom.
+        self.alert_box, self.notice_box, self.shop_first, self.shop_second, self.toast_box = \
+            root, tk.Toplevel(root), tk.Toplevel(root), tk.Toplevel(root), tk.Toplevel(root)
+        self.panels = [self.alert_box, self.notice_box, self.shop_first, self.shop_second, self.toast_box]
         self.click_through = {self.shop_first, self.shop_second, self.toast_box}  # nothing to click in these
         for panel in self.panels:
             panel.withdraw()
@@ -408,6 +412,8 @@ class _Screen:
         self.board_ui = None  # memreader.BoardUI, or None (unreadable: fall back to the mouse)
         self.padlock_cards: List[tuple] = []  # where hovering makes the padlocks see-through (see card_rects)
         self.padlocks_faded = 1.0  # the padlocks' alpha now (see padlock_alpha)
+        self.overlay_faded = 1.0  # every other window's fade now (see overlay_factor)
+        self.guide_fading = False  # the Shop Guide is fading in or out (a second click waits for it)
 
         self.layout: dict = {}  # the strips for where the game window is now (see relayout)
         self.relayout((0, 0, root.winfo_screenwidth(), root.winfo_screenheight()))  # until the game is seen
@@ -415,8 +421,8 @@ class _Screen:
                       "padlocks": None}
         self.list_hidden = False  # the player hid the locked-card list (until they show it again)
         # what each window shows now, to skip redraws that change nothing
-        self.drawn: dict = {"alerts": None, "shop": None, "toasts": None, "alerts_height": 0, "toasts_height": 0,
-                            "padlocks": None}
+        self.drawn: dict = {"alerts": None, "notices": None, "shop": None, "toasts": None, "alerts_height": 0,
+                            "notices_height": 0, "toasts_height": 0, "padlocks": None}
         self.wanted: set = set()  # windows that have something to show (shown only while the game is in front)
         self.game_in_front = not overlay.only_over_game
         self.widths: Dict[tuple, int] = {}  # (font size, text) -> pixels; measuring hundreds of names is slow
@@ -425,7 +431,8 @@ class _Screen:
         self.guide = ShopGuide.create(
             tk, root, overlay.art_cache_dir, overlay.guide_file, self.layout["right"],
             on_art=lambda guid: overlay.commands.put(("art", guid)),
-            on_closed=lambda: overlay.commands.put(("redraw", None)))
+            on_closed=lambda: overlay.commands.put(("redraw", None)),
+            on_close_click=lambda: overlay.commands.put(("guide_toggle", None)))
         self.tracker = Tracker(tk, root, lambda: self.layout["screen"])
         self.handlers: Dict[str, Callable] = {
             "art": lambda guid: self.guide and self.guide.refresh(guid),
@@ -441,6 +448,28 @@ class _Screen:
             "padlocks": self.new_padlocks,
             "board_ui": self.new_board_ui,
         }
+
+    def overlay_factor(self) -> float:
+        """How visible the whole overlay is, by the game's own flags - the padlocks' rules (owner, 2026-10-01:
+        "infact the entire overlay should follow those rules"): hidden under a dialog (Esc menu) or while your
+        stash slides, 30% while a card's tooltip shows or a card is dragged. 1 when the flags can't be read."""
+        ui = self.board_ui
+        if ui is None:
+            return 1.0
+        if ui.dialog or ui.stash_moving:
+            return 0.0
+        return HOVERED_ALPHA if ui.hovering or ui.dragging else 1.0
+
+    def faded_windows(self) -> list:
+        """(window, its own alpha) for every overlay window the fade scales."""
+        out = [(self.alert_box, ALERT_ALPHA), (self.notice_box, ALERT_ALPHA), (self.toast_box, ALERT_ALPHA),
+               (self.shop_first, 1.0),
+               (self.shop_second, 1.0)] + [(backdrop, LIST_ALPHA) for backdrop in self.backdrops.values()]
+        if self.guide and not self.guide_fading:
+            out.append((self.guide.win, 1.0))
+        if self.tracker.win is not None and self.tracker.win.winfo_exists():
+            out.append((self.tracker.win, 1.0))
+        return out
 
     def padlock_alpha(self) -> float:
         """By the game's own flags (owner, 2026-10-01): hidden while a dialog (Esc menu) covers the board or your
@@ -463,6 +492,13 @@ class _Screen:
                 self.padlocks_faded = alpha
                 for padlock in self.padlocks:
                     padlock.attributes("-alpha", alpha)
+            factor = self.overlay_factor()
+            if factor != self.overlay_faded:
+                if (factor == 0) != (self.overlay_faded == 0):
+                    self.sync_visibility()  # hidden, not just see-through: an invisible window still takes clicks
+                self.overlay_faded = factor
+                for window, own in self.faded_windows():
+                    window.attributes("-alpha", own * factor)
         except Exception:
             logger.exception("Overlay error (it keeps going)", extra=FILE_ONLY)
         self.root.after(HOVER_MS, self.fade_padlocks)
@@ -521,10 +557,12 @@ class _Screen:
         return height
 
     def sync_visibility(self) -> None:
-        """Show what has something to show, but only while The Bazaar (or one of these windows) is in front."""
+        """Show what has something to show, but only while The Bazaar (or one of these windows) is in front - and
+        not while the game's own flags hide the overlay (a fully faded window would still catch clicks)."""
         guide = self.guide.win if self.guide else None
+        front = self.game_in_front and self.overlay_factor() > 0
         for window in self.panels + ([guide] if guide else []):
-            show = self.game_in_front and (not self.guide.hidden if window is guide else window in self.wanted)
+            show = front and (not self.guide.hidden if window is guide else window in self.wanted)
             layers = [self.backdrops[window], window] if window in self.backdrops else [window]  # bottom to top
             if show and window.state() != "normal":
                 for layer in layers:
@@ -538,14 +576,14 @@ class _Screen:
                 for layer in layers:
                     layer.withdraw()
         for i, padlock in enumerate(self.padlocks):
-            show = self.game_in_front and i < self.padlocks_wanted
+            show = front and i < self.padlocks_wanted
             if show and padlock.state() != "normal":
                 padlock.deiconify()
                 padlock.lift()
                 screens.click_through(padlock)  # the card under it must stay clickable, tooltip and all
             elif not show and padlock.state() == "normal":
                 padlock.withdraw()
-        self.tracker.set_visible(self.game_in_front)
+        self.tracker.set_visible(front)
 
     # --- drawing ----------------------------------------------------------------------------------------------
 
@@ -572,25 +610,31 @@ class _Screen:
         if toasts != drawn["toasts"]:
             drawn["toasts"] = toasts
             drawn["toasts_height"] = self.render_toasts(moves)
-        x, y, width, height = layout["right"]  # the right strip above the pop-ups
+        x, y, width, height = layout["right"]  # the right column above the pop-ups
         right = (x, y, width, height - (drawn["toasts_height"] + WINDOW_GAP if drawn["toasts_height"] else 0))
-        if self.guide:
-            self.guide.fit(screens.clamp(right, layout["screen"]), layout["screen"])
+        notices = (state["deathlink"], state["locked"], right)
+        if notices != drawn["notices"]:
+            drawn["notices"] = notices
+            drawn["notices_height"] = self.render_notices(moves, right)
         buttons = self.buttons()
-        alerts = (state["deathlink"], state["locked"], state["status"], tuple(label for label, _ in buttons))
+        alerts = (state["status"], tuple(label for label, _ in buttons), state["deathlink"] is not None,
+                  bool(state["locked"]))
         if alerts != drawn["alerts"]:
             drawn["alerts"] = alerts
             drawn["alerts_height"] = self.render_alerts(moves, buttons)
+        if self.guide:  # the whole left column under its header
+            self.guide.fit(screens.clamp(below(layout["left"], drawn["alerts_height"]), layout["screen"]),
+                           layout["screen"])
         guide_hidden = self.guide.hidden if self.guide else True
-        shop = (state["shop"], drawn["alerts_height"], guide_hidden, right, self.list_hidden)
+        shop = (state["shop"], drawn["alerts_height"], drawn["notices_height"], guide_hidden, right, self.list_hidden)
         if shop != drawn["shop"]:
             drawn["shop"] = shop
-            self.render_shop(moves, drawn["alerts_height"], right)
+            self.render_shop(moves, drawn["alerts_height"], below(right, drawn["notices_height"]))
         padlocks = (state["padlocks"], layout["window"])
         if padlocks != drawn["padlocks"]:
             drawn["padlocks"] = padlocks
             self.render_padlocks()
-        for panel, rect in sorted(moves, key=lambda move: move[0] is self.alert_box):  # alert box grows last
+        for panel, rect in sorted(moves, key=lambda move: move[0] in (self.alert_box, self.notice_box)):  # grow last
             if rect is None:
                 self.wanted.discard(panel)
                 continue
@@ -607,27 +651,35 @@ class _Screen:
         (user: "on the permanent top-left overlay"), the Shop Guide when it's closed, and hiding the list."""
         state = self.state
         buttons = [("Tracker", self.tracker.toggle)] if self.tracker.data else []
-        if self.guide and self.guide.hidden:  # any time, not only in a shop (owner, 2026-10-01)
-            buttons.append(("Shop Guide", self.guide.show))
+        if self.guide:  # any time, not only in a shop; the same button closes it (owner, 2026-10-01)
+            buttons.append(("Shop Guide" if self.guide.hidden else "Hide guide", self.toggle_guide))
         if state["shop"] and state["shop"][1]:
             buttons.append(("Show list" if self.list_hidden else "Hide list", self.toggle_list))
         return buttons
 
     def toggle_guide(self, _=None) -> bool:
-        if self.guide:
-            self.guide.close() if not self.guide.hidden else self.guide.show()
+        """Opens or closes the Shop Guide with a short fade (owner, 2026-10-01: "a simple transition")."""
+        if not self.guide or self.guide_fading:
+            return False
+        win = self.guide.win
+        if self.guide.hidden:
+            win.attributes("-alpha", 0.0)
+            self.guide.show()  # the next render shows it; the fade brings it up
+            self.fade(win, 0.0, self.overlay_factor())
+        else:
+            self.fade(win, float(win.attributes("-alpha")), 0.0, then=self.guide.close)
         return True
+
+    def fade(self, window, start: float, end: float, then: Optional[Callable] = None, step: int = 0) -> None:
+        self.guide_fading = step < FADE_STEPS
+        window.attributes("-alpha", start + (end - start) * step / FADE_STEPS)
+        if step < FADE_STEPS:
+            self.root.after(FADE_MS, self.fade, window, start, end, then, step + 1)
+        elif then:
+            then()
 
     def toggle_list(self) -> None:
         self.list_hidden = not self.list_hidden
-
-    def alert_severity(self) -> str:
-        state = self.state
-        if state["deathlink"] or (state["locked"] and state["locked"][2]):
-            return "critical"
-        if state["locked"] or (state["status"] and state["status"][1]):
-            return "warning"  # a Sell Trap to deal with, a locked hero picked
-        return "info"
 
     def render_toasts(self, moves: list) -> int:
         """Pop-ups at the bottom of the right strip, newest at the bottom; returns their height."""
@@ -647,14 +699,20 @@ class _Screen:
         moves.append((self.toast_box, (x, y + strip_height - height, width, height)))
         return height
 
-    def render_alerts(self, moves: list, buttons: list) -> int:
-        """Draws the alert box; returns its height (0 when hidden)."""
-        tk, state, inner_w, f = self.tk, self.state, self.layout["inner_w"], self.font
-        if not (state["deathlink"] or state["locked"] or state["status"] or buttons):
-            moves.append((self.alert_box, None))
+    def notice_severity(self) -> str:
+        state = self.state
+        return "critical" if state["deathlink"] or (state["locked"] and state["locked"][2]) else "warning"
+
+    def render_notices(self, moves: list, right: tuple) -> int:
+        """The top of the right column: a DeathLink to act on, locked cards you hold (with Use Bypass), Sell Traps.
+        Returns its height (0 when there's nothing)."""
+        tk, state, f = self.tk, self.state, self.font
+        inner_w = right[2] - 2 * (PAD + BORDER)
+        if not (state["deathlink"] or state["locked"]):
+            moves.append((self.notice_box, None))
             return 0
-        bg = SEVERITY[self.alert_severity()]
-        frame, show = self.swap(self.alert_box, bg)
+        bg = SEVERITY[self.notice_severity()]
+        frame, show = self.swap(self.notice_box, bg)
         if state["deathlink"]:
             tk.Label(frame, text="DEATHLINK", fg=ACCENT, bg=bg, font=f(16, "bold")).pack(anchor="w")
             tk.Label(frame, text=state["deathlink"], fg=FG, bg=bg, font=f(11), wraplength=inner_w,
@@ -682,25 +740,36 @@ class _Screen:
                 use.update_idletasks()
                 tk.Label(card, text=text, fg=FG, bg=bg, font=f(11), wraplength=inner_w - use.winfo_reqwidth() - 8,
                          justify="left").pack(side="left", anchor="w")
-        # last line: the status text with the buttons on its right; the buttons get a row of their own only when
-        # that would squeeze the text below half the width
-        if state["status"] or buttons:
-            row = tk.Frame(frame, bg=bg)
-            row.pack(fill="x", pady=(4, 0) if frame.winfo_children()[:-1] else 0)
-            bar = tk.Frame(row, bg=bg)
-            for label, action in buttons:
-                tk.Button(bar, text=label, font=f(8), padx=3, pady=0,
-                          command=lambda a=action: (a(), self.render())).pack(side="left", padx=(4, 0))
-            bar.update_idletasks()
-            room = inner_w - (bar.winfo_reqwidth() + 8 if buttons else 0)
-            own_row = bool(state["status"]) and room < inner_w // 2
-            if buttons:
-                bar.pack(side="bottom" if own_row else "right", anchor="e", pady=(4, 0) if own_row else 0)
-            if state["status"]:
-                text, warning, big = state["status"]
-                tk.Label(row, text=text, fg=WARN if warning else (FG if big else MUTED), bg=bg,
-                         font=f(12 if big else 11 if warning else 10, "bold" if warning or big else "normal"),
-                         wraplength=inner_w if own_row else room, justify="left").pack(side="left", anchor="w")
+        show()
+        x, y, width, height = right
+        return self.place(moves, self.notice_box, (x, y, width, height // ALERT_SHARE))
+
+    def render_alerts(self, moves: list, buttons: list) -> int:
+        """The left column's header: the status line with the buttons (Shop Guide, Tracker, the list) on its right;
+        the buttons get a row of their own only when that would squeeze the text below half the width. Returns its
+        height (0 when hidden)."""
+        tk, state, inner_w, f = self.tk, self.state, self.layout["inner_w"], self.font
+        if not (state["status"] or buttons):
+            moves.append((self.alert_box, None))
+            return 0
+        bg = SEVERITY["warning" if state["status"] and state["status"][1] else "info"]
+        frame, show = self.swap(self.alert_box, bg)
+        row = tk.Frame(frame, bg=bg)
+        row.pack(fill="x")
+        bar = tk.Frame(row, bg=bg)
+        for label, action in buttons:
+            tk.Button(bar, text=label, font=f(8), padx=3, pady=0,
+                      command=lambda a=action: (a(), self.render())).pack(side="left", padx=(4, 0))
+        bar.update_idletasks()
+        room = inner_w - (bar.winfo_reqwidth() + 8 if buttons else 0)
+        own_row = bool(state["status"]) and room < inner_w // 2
+        if buttons:
+            bar.pack(side="bottom" if own_row else "right", anchor="e", pady=(4, 0) if own_row else 0)
+        if state["status"]:
+            text, warning, big = state["status"]
+            tk.Label(row, text=text, fg=WARN if warning else (FG if big else MUTED), bg=bg,
+                     font=f(12 if big else 11 if warning else 10, "bold" if warning or big else "normal"),
+                     wraplength=inner_w if own_row else room, justify="left").pack(side="left", anchor="w")
         show()
         x, y, width, strip_height = self.layout["left"]
         return self.place(moves, self.alert_box, (x, y, width, strip_height // ALERT_SHARE))
@@ -724,20 +793,23 @@ class _Screen:
             return
         merchant, names, verb, exact = state["shop"]
         bg = SEVERITY["warning" if names else "ok"]
-        first = below(layout["left"], alerts_height)  # the left strip under the alerts first, then the right strip
+        # the right strip first (the left one is the Shop Guide's, owner 2026-10-01), then under the alert box
+        # while the guide is closed
+        first, inner = right, right[2] - 2 * (PAD + BORDER)  # right: the column under the notices
+        second = below(layout["left"], alerts_height)
         first_frame, show_first = self.swap(self.shop_first, bg)
         if names:
             advice = "don't buy them" if verb == "sell" else "pick something else"
             what = f"{merchant} is offering" if exact else f"{merchant} may {verb}"  # exact: padlocked on screen
             tk.Label(first_frame, text=f"{what} these LOCKED cards - {advice}:", fg=ACCENT, bg=bg,
-                     font=f(11, "bold"), wraplength=layout["inner_w"], justify="left").pack(anchor="w", pady=(0, 4))
+                     font=f(11, "bold"), wraplength=inner, justify="left").pack(anchor="w", pady=(0, 4))
         else:  # nothing locked: just a small tick
             tk.Label(first_frame, text=f"✔  {merchant}: buy freely", fg=GOOD, bg=bg, font=f(11, "bold"),
-                     wraplength=layout["inner_w"], justify="left").pack(anchor="w")
+                     wraplength=inner, justify="left").pack(anchor="w")
         first_frame.update_idletasks()
-        areas = [(layout["inner_w"], first[3] - first_frame.winfo_reqheight() - WINDOW_GAP)]
-        if not self.guide or self.guide.hidden:  # the right strip is the Shop Guide's while it's open
-            areas.append((right[2] - 2 * (PAD + BORDER), right[3] - 2 * (PAD + BORDER)))
+        areas = [(inner, first[3] - first_frame.winfo_reqheight() - WINDOW_GAP)]
+        if not self.guide or self.guide.hidden:  # under the alert box is the Shop Guide's while it's open
+            areas.append((layout["inner_w"], second[3] - 2 * (PAD + BORDER)))
         sizes = sorted({max(MIN_FONT, round(size * layout["k"])) for size in FONT_SIZES}, reverse=True)
         _, placed, missing, column_width, line_height = fit_names(names, areas, sizes, self.measurer)
         font, bold = self.fonts
@@ -745,7 +817,7 @@ class _Screen:
             placed = [[] for _ in areas]
             tk.Label(first_frame, text=f"Could be any of {len(names)} locked cards - too many to list. If you take "
                                        f"a locked one, sell it before your next fight.", fg=FG, bg=bg, font=f(10),
-                     wraplength=layout["inner_w"], justify="left").pack(anchor="w")
+                     wraplength=inner, justify="left").pack(anchor="w")
         else:
             draw_columns(tk, first_frame, placed[0], font, bold, column_width, line_height, bg)
         show_first()
@@ -754,7 +826,7 @@ class _Screen:
             second_frame, show_second = self.swap(self.shop_second, bg)
             draw_columns(tk, second_frame, placed[1], font, bold, column_width, line_height, bg)
             show_second()
-            self.place(moves, self.shop_second, right)
+            self.place(moves, self.shop_second, second)
         else:
             moves.append((self.shop_second, None))
 
