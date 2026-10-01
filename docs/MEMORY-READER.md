@@ -314,7 +314,7 @@ status line.
 2. **A poll thread** (2-4 readings a second) that turns readings into events, the same way `logparser.py` turns
    lines into events: screen changed, offer changed, PvP won/lost, run lost, monster chosen (with tier), monster
    won/lost.
-3. **Locked cards in the shop (the big one) - BUILT 2026-10-01, see "Shop padlocks".** On every offer change, the client compares the offered cards with
+3. **Locked cards in the shop (the big one) - BUILT 2026-10-01, see "Padlocks on locked offers".** On every offer change, the client compares the offered cards with
    what's unlocked and tells the overlay exactly which offered cards are locked, using the existing `show_shop()`
    list in the left strip: "Herma: Cellar is locked (2nd card)". That replaces today's "could sell any of N cards"
    list with the real cards. Overlay rules still apply: only beside the board, never over the shop cards, text
