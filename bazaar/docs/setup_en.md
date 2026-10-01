@@ -16,8 +16,8 @@
 1. Double-click `bazaar.apworld`, or open the Archipelago Launcher and pick **Install APWorld**.
 2. Restart the Launcher. **The Bazaar Client** now shows up in its list.
 
-That's it! Nothing gets installed into The Bazaar itself - the client only reads the log file the game already
-writes.
+That's it! Nothing gets installed into The Bazaar itself - the client reads the log file the game already writes,
+and a little of the game's memory, read-only, for the padlocks on locked cards.
 
 In the game's settings, keep the display mode on **Fullscreen Window** (the default). The client's helpers are
 their own windows on top of the game, and exclusive fullscreen would hide them.
@@ -66,19 +66,22 @@ The Archipelago client window keeps to your item history (what your checks found
 to your commands. Everything about your run shows up in small helper windows around the board instead (and in the
 client's log file). If those can't open on your PC, the messages show in the client window as a fallback.
 
-### The alert window (top left)
+### Padlocks, the header and the notices
 
 - **Padlocks:** every locked card you're offered - in a shop, a level-up, loot or an event's item choice - gets a
   red padlock right on the card, and so do the locked cards in your open stash. Clicks go straight through them,
   and they fade while you read a card's tooltip. Items handed to you with no choice get no padlock; if one of those
   is locked, just sell it.
-- **CHECKS ARE BLOCKED:** shown while you hold a locked card, miss a Sell Trap's deadline, play a locked hero or
+- **Notices (top right) - CHECKS ARE BLOCKED:** shown while you hold a locked card, miss a Sell Trap's deadline, play a locked hero or
   owe a DeathLink. It clears by itself once you sell the card (or press **Use Bypass** next to it); a locked hero
   or a DeathLink blocks the rest of that run. A run you started while the client was off or disconnected that was
   already holding a locked card has to be conceded (no DeathLink is sent for it).
-- **DeathLink:** time to abandon your run.
-- **Status line:** during a run, your hero, day and goal progress. On the hero-select screen, in bigger text,
-  every hero you may play with their checks done / checks in logic, and a warning if the hero you picked is locked.
+- **DeathLink** (in the notices): time to abandon your run.
+- **Header (top left):** during a run, your hero, day, goal progress and Lock Bypasses, with the Shop Guide and
+  Tracker buttons. It turns red while the client isn't connected to the multiworld.
+- **Hero panel (main menu, centre):** every hero in your multiworld with their checks and cards unlocked, locked
+  heroes padlocked, and a warning if the hero you picked - or Random - can land on one you can't play. It steps
+  aside while any of the game's own screens is open, or the Tracker is over it.
 
 The colour tells you how urgent it is: **red** = checks are blocked or a DeathLink arrived, **amber** = something to
 act on (locked cards for sale, a Sell Trap, a locked hero picked), **dark** = just so you know, **green** = all good.
@@ -93,17 +96,17 @@ since the apworld was made. A red **CHECK NOT SENT** pop-up names any check the 
 
 ### Shop Guide
 
-A second window with pictures (courtesy of [Bazaar DB](https://bazaardb.gg)) of everything the merchant you're
-visiting could stock, each at its in-game size (small = 1 slot wide, medium = 2, large = 3), with the locked ones
-greyed out behind a red X. The shorter list goes on top.
+A window with pictures (courtesy of [Bazaar DB](https://bazaardb.gg)) of every card, each at its in-game size
+(small = 1 slot wide, medium = 2, large = 3), with the locked ones greyed out behind a red X.
 
-- It opens in the strip left of the board, under the alert window.
-- It's a real window: drag it anywhere, even onto another monitor, and it stays put.
-- **Locked only** shows just the cards you may not buy - a great way to learn what they look like. **Show all**
-  brings the rest back.
-- After you leave a shop, it keeps showing the last one.
-- Closing it with **X** keeps it closed (next time too) and gives a long list the right strip, until you press
-  **Pictures** in the alert window while at a merchant.
+- **On offer now** comes first, framed in gold: the cards on screen right now, in a shop, a level-up, loot or an
+  event. A card you buy stays in the list.
+- Below it, everything the chosen merchant could stock for your hero.
+- **Search**, **Size**, **Rarity** and **Merchant** filters at the top; **Locked only** shows just the cards you may
+  not buy - a great way to learn what they look like.
+- Open it any time with the **Shop Guide** button in the header (top left), not just in a shop; the same button or
+  its **X** closes it. It fills the column left of the board, and it's a real window: drag it anywhere, even onto
+  another monitor.
 - The pictures download once (about 3 MB) the first time the client starts. Until they're in, or if you're
   offline, you'll see a "no picture" box of the card's size with its name under it.
 
@@ -111,7 +114,7 @@ Start the client with `--no-shop-guide` to turn it off completely.
 
 ### Tracker
 
-Press **Tracker** in the alert window or type `/tracker`. You get a card for every hero, each with four squares:
+Press **Tracker** in the header (top left) or type `/tracker`. You get a card for every hero, each with four squares:
 **1** reach day N, **2** PvP win on day N, **3** monster checks, **4** 10 wins.
 
 - **Green:** something in it is in logic.

@@ -1,122 +1,146 @@
 # The Bazaar - Archipelago
 
-Welcome to the Bazaar, traveler! This brings **The Bazaar** into [Archipelago](https://archipelago.gg), the
-multiworld randomizer where your games and your friends' games are shuffled together.
+**The Bazaar** for [Archipelago](https://archipelago.gg), the multiworld randomizer.
 
-You start with a single hero. Every other hero, and most of the cards merchants would sell you, are locked away
-and scattered across the multiworld. Reach new days, win your PvP fights, beat monsters and go for those 10-win
-runs, and each of those sends something to another player - maybe their hookshot, maybe their next area. In
-return, their games unlock your heroes and cards, one find at a time. Get 10 wins with enough different heroes (3
-by default) and you've won!
+![A shop with the Archipelago overlay: run progress top left, a Sell Trap's flaming skull top right](docs/images/sell-trap.jpg)
 
-**Your game stays untouched.** A small companion program sits next to The Bazaar and reads the log file the game
-already writes on your PC. In shops it also peeks at the game's memory - read-only - to see which cards are on
-offer, so it can put a padlock on the locked ones. It never changes game files, never talks to Tempo's servers and
-never clicks or types for you. More on that in
-[Is this allowed?](bazaar/docs/en_The%20Bazaar.md#is-this-allowed-by-tempo).
-
-*Want to work on it? Head over to [DEVELOPERS.md](DEVELOPERS.md).*
+**Status:** playable, actively developed - [latest release](https://github.com/sfleming4587/BazaarArchipelago/releases/latest).
+Windows only. Needs Archipelago 0.6.4 or newer; last tested with The Bazaar 1.0.12293.
 
 ---
 
+## What is Archipelago?
+
+Picture you and a friend each playing a different game. You reach day 5 in The Bazaar, and somewhere else your
+friend's grappling hook unlocks. They open a chest in their game, and you suddenly get to play Dooley. Archipelago
+shuffles the items of everyone's games together, so you keep finding things for each other until everyone has
+reached their goal. You can play solo too.
+
+## What changes in The Bazaar
+
+- **You start with one hero.** The others are out in the multiworld, and you only play the heroes you've received.
+- **Most cards start locked.** Each hero keeps a set of Bronze starter cards (20 by default), and the rest of the
+  cards merchants sell turn up one by one as items. Until a card is unlocked, you leave it on the shelf.
+- **Your progress sends items to others.** Each hero has checks for:
+  - reaching each day;
+  - winning that day's PvP fight;
+  - beating monsters of each rarity;
+  - a 10-win run.
+- **The goal:** a 10-win run with a set number of different heroes (3 by default).
+- **Optional spice:**
+  - **Sell Traps:** sell the item it names within a couple of days, or your checks pause.
+  - **Lock Bypasses:** keep a locked card for the rest of a run.
+  - **DeathLink:** when one player loses, everyone loses.
+
+Your YAML options file explains every setting, and the defaults make a great first game. For the details of
+checks, logic and items, see the [game page](bazaar/docs/en_The%20Bazaar.md).
+
+## How it works
+
+The Bazaar is online-only and doesn't allow mods, so **the game itself is never changed**. Instead, **The Bazaar
+Client** runs next to it and watches two things:
+
+- **the log file the game already writes on your PC**, which shows runs, days, fights, purchases and sales;
+- **the game's memory, read-only**: your own run's screen and the cards on offer, so it can put padlocks on the
+  locked ones.
+
+It never writes to the game, never talks to Tempo's servers, and never clicks or types for you. Since the game
+can't stop you from buying a locked card, the client keeps things fair: break a rule and it holds back your checks
+until you put it right (see [House rules](#house-rules)).
+
+## What you see on screen
+
+Everything sits beside the board, never on it, apart from the padlocks, which you can click straight through. It
+only shows while The Bazaar is the active window, and it fades while you read a card's tooltip or drag a card.
+
+- **Padlocks:** a red padlock on every locked card you're offered (in shops, level-ups, loot and events) and on
+  the locked cards in your open stash.
+- **The header (top left):** your hero, day, goal progress and Lock Bypasses, with buttons for the Shop Guide
+  and the Tracker.
+  It turns red if the client isn't connected to the multiworld.
+- **Notices (top right):** **CHECKS ARE BLOCKED** and why, any locked card you're holding (with a **Use Bypass**
+  button when you have one), Sell Traps (you'll know them by the flaming skull) and DeathLinks.
+- **Pop-ups (bottom right):** everything you receive, send or find, always with the other player's name.
+- **Shop Guide (left column):** pictures of the cards on offer right now, framed in gold, then everything a
+  merchant could stock, with the locked ones crossed out. Open it any time; search it or filter it by size,
+  rarity or merchant.
+- **The hero panel (main menu):** every hero in your multiworld with their checks and how many of their cards
+  you've unlocked; locked heroes have a padlock. It warns you if the hero you picked is locked, or if Random could
+  roll one you can't play.
+- **Tracker:** every hero's checks at a glance, colour-coded green, yellow, red and grey, PopTracker-style. Hover
+  a square to see its checks, or click to keep the list open.
+
+The Tracker and the Shop Guide are normal windows: drag them anywhere, even onto a second monitor.
+
 ## Getting set up (Windows)
 
-It takes about ten minutes the first time. After that it's just "open the client, open the game".
+New to Archipelago? Just follow the steps in order. It takes about ten minutes the first time; after that it's
+"open the client, open the game".
 
 ### 1. Install The Bazaar
-1. Install [Steam](https://store.steampowered.com/about/) and sign in.
-2. Install [The Bazaar](https://store.steampowered.com/app/1617400/The_Bazaar/) and play until you reach the main
-   menu once (that creates the log file the client reads).
-3. Keep the game's display mode on **Fullscreen Window** (the default). The Archipelago helpers are their own
-   windows on top of the game, and exclusive fullscreen would hide them.
+1. Install [The Bazaar](https://store.steampowered.com/app/1617400/The_Bazaar/) on Steam and play until you
+   reach the main menu once (that creates the log file the client reads).
+2. Keep the game's display mode on **Fullscreen Window** (the default). Exclusive fullscreen would hide the
+   client's helpers.
 
 ### 2. Install Archipelago
-1. Grab the Windows installer (`Setup.Archipelago.<version>.exe`) of the newest release from the
+1. Download the Windows installer (`Setup.Archipelago.<version>.exe`) from the
    [Archipelago releases page](https://github.com/ArchipelagoMW/Archipelago/releases) - 0.6.4 or newer.
-2. Run it with the default settings. It installs to `C:\ProgramData\Archipelago` and puts the
-   **Archipelago Launcher** in your Start menu. That's all you need - no Python or anything else.
+2. Run it with the default settings. You'll find the **Archipelago Launcher** in your Start menu.
 
 ### 3. Add The Bazaar to Archipelago
-1. Download `bazaar.apworld` from the [latest release](https://github.com/sfleming4587/BazaarArchipelago/releases/latest)
-   ([direct download](https://github.com/sfleming4587/BazaarArchipelago/releases/latest/download/bazaar.apworld)).
-2. Double-click it, **or** open the Archipelago Launcher, click **Install APWorld** and pick the file.
-3. Close and reopen the Launcher. **The Bazaar Client** should now be in the list. You're all set!
+1. Download [`bazaar.apworld`](https://github.com/sfleming4587/BazaarArchipelago/releases/latest/download/bazaar.apworld)
+   from the latest release.
+2. Double-click it, or open the Launcher, click **Install APWorld** and pick the file.
+3. Reopen the Launcher. **The Bazaar Client** is now in the list.
 
 ### 4. Make your options file (YAML)
 1. In the Launcher, click **Generate Template Options**. A folder opens with `The Bazaar.yaml` in it.
 2. Copy it somewhere handy and open it in Notepad. The essentials:
-   - `name:` - your player name, e.g. `name: YourName` (no spaces is easiest)
-   - `own_mak:`, `own_stelle:`, `own_jules:`, `own_karnok:`, `own_the_dragons:` - `true` for each DLC hero you
-     own (Vanessa, Pygmalien and Dooley are always in)
-   - `exclude_<hero>:` (e.g. `exclude_dooley: true`) - optional, to sit a hero out even though you own them
-   - `heroes_required:` - how many heroes need a 10-win run to finish (default 3)
-3. Everything else is explained right there in the file, and the defaults make a great first game.
+   - `name:` - your player name, e.g. `name: YourName`.
+   - `own_mak:`, `own_stelle:`, `own_jules:`, `own_karnok:`, `own_the_dragons:` - set `true` for each DLC hero
+     you own. Vanessa, Pygmalien and Dooley are always in.
+   - `exclude_<hero>:` (e.g. `exclude_dooley: true`) - optional, to sit a hero out.
+   - `heroes_required:` - how many heroes need a 10-win run to finish (default 3).
 
-**Want a gentler game?** Turn on `duplicate_all_cards` (shown as **Duplicate All Cards (casual)**). You get the
-same number of checks, but about half as many locked cards: every locked card has two copies out in the
-multiworld, so each one turns up sooner and there's less to steer around in the shops.
+**Want a gentler game?** Turn on `duplicate_all_cards` (**Duplicate All Cards (casual)**). Every locked card gets
+a second copy out in the multiworld, so each one turns up sooner.
 
 ### 5. Generate the game
-Whoever hosts collects everyone's YAML files. **The host needs `bazaar.apworld` installed too.**
+Whoever hosts collects everyone's YAML files, and **the host needs `bazaar.apworld` installed too**.
 1. Put all the YAML files into `C:\ProgramData\Archipelago\Players` (clear out any example files first).
-2. In the Launcher, click **Generate**. When it's done, your game is waiting in
-   `C:\ProgramData\Archipelago\output` as `AP_<numbers>.zip`.
+2. In the Launcher, click **Generate**. The game appears in `C:\ProgramData\Archipelago\output` as
+   `AP_<numbers>.zip`.
 
 ### 6. Host it
-Pick whichever suits you:
-- **On the website:** upload the `AP_….zip` at [archipelago.gg/uploads](https://archipelago.gg/uploads) and create
-  a room. The room page shows the address to connect to, like `archipelago.gg:38281`. If the site won't take the
-  file, use the other option.
-- **On your own PC:** click **Host** in the Launcher and pick the `AP_….zip`. Friends connect to your IP address
-  (you may need to forward port 38281 on your router); you connect to `localhost`.
+- **On the website:** upload the zip at [archipelago.gg/uploads](https://archipelago.gg/uploads) and create a
+  room. The room page shows the address to connect to, like `archipelago.gg:38281`.
+- **On your own PC:** click **Host** in the Launcher and pick the zip. Friends connect to your IP address (you may
+  need to forward port 38281); you connect to `localhost`.
 
 ### 7. Play!
 1. Open **The Bazaar Client** from the Launcher.
-2. Type the room address at the top (e.g. `archipelago.gg:38281`), click **Connect** and enter your player name.
-3. Start The Bazaar. On the hero-select screen, the box in the top-left corner shows which heroes you may play,
-   with how many of their checks are done and how many are in logic. Pick one and start a run.
+2. Type the room address at the top, click **Connect** and enter your player name.
+3. Start The Bazaar. The hero panel on the main menu shows who you may play. Pick a hero and start a run.
 4. Play like you always do. Checks go out on their own as you reach days, win fights and finish runs.
-
----
 
 ## House rules
 
-The Bazaar doesn't know it's in a multiworld, so the client keeps things fair: if a rule is broken, it holds back
-your checks and the top-left box turns red and tells you **CHECKS ARE BLOCKED** and why.
+The game doesn't know it's in a multiworld, so the client keeps watch. If a rule is broken, it holds back your
+checks and the notices box says **CHECKS ARE BLOCKED** and why.
 
 - **Only play heroes you've received.** A run with a locked hero sends nothing.
-- **Don't keep locked cards.** Locked cards in a shop, a level-up, loot or an event get a red padlock on
-  them, so you know what to leave on the shelf. If a locked card lands in your hands anyway (a reward, say), just sell it -
-  checks resume the moment the game's log shows the sale. Items the game makes for you by itself (from another
-  item, a Shovel, a transformation) are always fine.
-- **DeathLink** (off unless you turn it on): when someone else dies, abandon your current run (Settings > Abandon
-  Run); nothing more counts in that run. Losing a run sends a DeathLink to everyone else, and conceding does too
-  only if you turn on `death_link_on_concede`.
-- **Sell Traps** (3 by default): sell the item it names before the day shown, or checks pause until you do.
+- **Don't keep locked cards.** If one lands in your hands anyway (a reward, say), just sell it: checks resume the
+  moment the game logs the sale. Items the game makes for you by itself (from another item, a Shovel, a
+  transformation) are always fine.
+- **Sell Traps** (3 by default): sell the item it names before the day shown.
 - **Lock Bypasses** (5 by default): holding a locked card? Press **Use Bypass** next to it and it's yours for the
-  rest of that run, upgrades included. A bypass is never used by itself; the top-left box shows how many you have.
-- PvP wins count automatically - nothing to answer.
+  rest of that run. A bypass is never used by itself.
+- **DeathLink** (off unless you turn it on): when someone else dies, abandon your current run (Settings > Abandon
+  Run). Losing a run sends a DeathLink to everyone else; conceding only does if you turn on
+  `death_link_on_concede`.
 
-## Your helpers on screen
-
-- **The top-left box:** your hero, day and goal during a run; on the hero-select screen, the heroes you may play.
-  It turns red when checks are blocked or a DeathLink arrives, amber when something needs you. Its **Tracker**
-  button opens the tracker, and a locked card you're holding gets a **Use Bypass** button while you have a Lock
-  Bypass.
-- **Padlocks:** a red padlock sits on every locked card you're offered, and on the locked cards in your stash.
-- **Pop-ups (bottom right):** everything you receive, send or find, always with the other player's name; Sell
-  Traps; **SELL IT NOW** if you pick up a locked card; **CHECK NOT SENT** the moment a check is blocked.
-- **Shop Guide:** a window with pictures of everything the merchant could stock, at their real in-game sizes,
-  with the locked ones greyed out and crossed. Great for learning what the locked cards look like! Every card has
-  a picture, Karnok and The Dragons included.
-- **Tracker:** a card for every hero, PopTracker-style, with four squares - reach day N, PvP win on day N, monster
-  checks, and 10 wins. Green = in logic, yellow = out of logic, red = hero still locked, grey = all done. Hover a
-  square to see its checks, click to keep the list open.
-
-All of it stays beside the board (never on it), only shows while The Bazaar is the active window, never steals the
-keyboard from the game, and always fits fully on your screen, whatever your resolution. The tracker and the Shop
-Guide are normal windows - drag them anywhere, even onto a second monitor. The Archipelago client window itself
-stays tidy: it only shows your item history and replies to your commands.
+PvP wins count automatically - nothing to answer.
 
 ## Client commands
 
@@ -124,35 +148,66 @@ stays tidy: it only shows your item history and replies to your commands.
 |---|---|
 | `/status` | your heroes, days done, 10-win runs, goal progress and the current run |
 | `/locked [hero]` | cards that are still locked (and where they are, if you have a hint for them) |
-| `/where <card>` | where a locked card is - only if you already got a hint for it through Archipelago |
-| `/tracker` | open or close the tracker (same as the **Tracker** button) |
+| `/where <card>` | where a locked card is - only if you already got a hint for it |
+| `/tracker` | open or close the Tracker |
 | `/logpath [path]` | show or change where the client looks for The Bazaar's log |
 | `/unblock` | emergency only: shows what's blocking checks; `/unblock confirm` clears it if something broke |
 
-## Troubleshooting
+## FAQ
 
-- **The client doesn't react to the game.** Type `/logpath`. It should show
-  `C:\Users\<you>\AppData\LocalLow\Tempo Storm\The Bazaar\Player.log`. If your game writes its log somewhere else,
-  point the client there with `/logpath <full path>`.
-- **I don't see the helpers.** They only show while The Bazaar is the active window, and the game needs to be on
-  **Fullscreen Window** or windowed. If the client says the alert window can't open on this PC, the warnings show
-  up in the client window instead.
-- **The client says The Bazaar was updated.** No problem - everything keeps working. Anything a patch adds just
-  isn't part of your seed.
-- **A check didn't count.** Look for the red **CHECKS ARE BLOCKED** box and the **CHECK NOT SENT** pop-ups (locked
-  hero, locked card, DeathLink, Sell Trap), or type `/unblock` to see what's in the way.
-- **I closed the game mid-run.** Just carry on with the run; the client picks it right back up.
-- **My wifi dropped, or I forgot to start the client.** Keep playing! When the client reconnects it reads the
-  game's log and sends everything you earned in the meantime, usual rules included - even for runs that already
-  ended (those don't send a DeathLink hours later). It can look back as far as the previous game session; runs
-  from before your seed's first connection don't count.
+**Is this allowed? Can I get banned?**
+Tempo's [mod policy](https://www.playthebazaar.com/mod-policy) prohibits mods that:
+- change gameplay, game speed or the flow of combat;
+- calculate or simulate combat;
+- interact with the game without your input;
+- talk to the game's server.
+
+The client does none of those: it only reads the game's log and, read-only, a little of its memory. It isn't
+affiliated with or reviewed by Tempo, and their policy can change, so check it yourself.
+
+**My checks aren't sending.**
+Look at the notices box (top right) for **CHECKS ARE BLOCKED**: a locked hero, a locked card you're holding, a
+missed Sell Trap or a DeathLink. `/unblock` shows what's in the way. Also check the header doesn't say you're not
+connected.
+
+**The padlocks are missing.**
+Give the client a minute or two after starting the game. If the client says the memory reader turned itself off,
+restart the game once. If it says so again, a game patch probably changed something, and padlocks stay off until a
+newer `bazaar.apworld` supports it. The Shop Guide still crosses out locked cards, and everything else keeps
+working.
+
+**The client doesn't react to the game at all.**
+Type `/logpath`. It should show `C:\Users\<you>\AppData\LocalLow\Tempo Storm\The Bazaar\Player.log`. If your game
+writes its log somewhere else, use `/logpath <full path>`.
+
+**I don't see any of the helpers.**
+They only show while The Bazaar is the active window, and the game must be on **Fullscreen Window** or windowed.
+
+**My wifi dropped, or I forgot to start the client.**
+Keep playing! When the client reconnects it reads the game's log and sends everything you earned in the meantime,
+usual rules included. It can look back as far as your previous game session.
+
+**I closed the game mid-run.**
+Just carry on; the client picks the run right back up.
+
+**The client says The Bazaar was updated.**
+No problem - everything keeps working. Cards or heroes a patch adds just aren't part of your seed.
 
 ## Updating
-Download `bazaar.apworld` from the [latest release](https://github.com/sfleming4587/BazaarArchipelago/releases/latest)
-and install it the same way as in step 3. Games already in progress keep working with the version they were
-generated with.
+
+Download the newest `bazaar.apworld` from the [latest release](https://github.com/sfleming4587/BazaarArchipelago/releases/latest)
+and install it as in step 3. Finish your current seed first: a seed generated with an older version may not work
+with a newer client.
+
+## Found a bug?
+
+Open an [issue](https://github.com/sfleming4587/BazaarArchipelago/issues) and attach the client's log from
+`C:\ProgramData\Archipelago\logs` (the newest `BazaarClient_...txt`).
 
 ## Credits
-Card pictures are courtesy of [Bazaar DB](https://bazaardb.gg) - thank you! The card art and the tracker's hero
-pictures belong to The Bazaar. The Bazaar is made by Tempo; this project isn't affiliated with or
-endorsed by them. Thanks for playing, and good luck at the Bazaar!
+
+Card pictures are courtesy of [Bazaar DB](https://bazaardb.gg) - thank you! The card art and hero pictures belong
+to The Bazaar. The Bazaar is made by Tempo; this project isn't affiliated with or endorsed by them. Thanks for
+playing, and good luck at the Bazaar!
+
+*Want to help build it? See [DEVELOPERS.md](DEVELOPERS.md).*

@@ -1,0 +1,68 @@
+{{Infobox game
+|platform = {{platform|Personal computer|PC}}
+|genre = Auto battler, deck-building
+|developer = Tempo
+|publisher = Tempo
+|release-year = 2025
+|ap-maintainer = Sulldog
+|ap-status = Custom
+|ap-infolink = [https://github.com/sfleming4587/BazaarArchipelago/blob/main/bazaar/docs/en_The%20Bazaar.md Game page]
+|ap-setuplink = [https://github.com/sfleming4587/BazaarArchipelago#getting-set-up-windows README]
+|ap-repolink = [https://github.com/sfleming4587/BazaarArchipelago GitHub]
+|ap-download = [https://github.com/sfleming4587/BazaarArchipelago/releases/latest GitHub]
+|ap-bugreportlink = [https://github.com/sfleming4587/BazaarArchipelago/issues GitHub issues]
+}}
+'''{{PAGENAME}}''' is a [[custom]] implementation of the game of the same name. First released on September 28th,
+2026, the implementation locks heroes and cards behind [[items]] from the [[multiworld]], and sends checks for
+reaching days, winning fights and finishing 10-win runs.
+
+The Bazaar is an online-only game, so the implementation does not modify it. A client (The Bazaar Client) reads
+the log file the game writes and, read-only, part of the game's memory, and withholds checks while the player
+breaks a lock. It runs on Windows only.
+
+== Resources ==
+* Download, setup guide and changelog: [https://github.com/sfleming4587/BazaarArchipelago GitHub]
+* Game page (checks, logic, items, rules): [https://github.com/sfleming4587/BazaarArchipelago/blob/main/bazaar/docs/en_The%20Bazaar.md GitHub]
+* The client has its own built-in tracker (no [[PopTracker]] pack).
+
+== Differences from vanilla ==
+* The player starts with one hero; the others are items.
+* Most cards merchants sell are locked until received. Each hero keeps a set of Bronze starter cards (20 by
+  default) that are never locked.
+* Nothing in the game changes: locks are enforced by the client, which blocks all checks while the player plays a
+  locked hero or holds a locked card, until the card is sold.
+
+== Features ==
+=== Goal ===
+A 10-win run with a set number of different heroes (<code>heroes_required</code>, 3 by default).
+
+=== Checks ===
+For each hero, for each day up to <code>max_day</code> (13 by default, at most 16):
+* reaching the day;
+* winning that day's PvP fight (<code>pvp_win_checks</code>);
+* beating a monster of each rarity that day's monsters can have (<code>monster_checks</code>).
+Plus a 10-win run with each hero.
+
+=== Items ===
+* Hero unlocks, one per hero.
+* Single card unlocks, and optionally one item per original hero expansion pack that unlocks all of its cards.
+* Legendary Items and Expedition Tickets unlocks.
+* '''Sell Trap''' (trap): the player must sell a random item they hold within a few days, or checks are blocked.
+* '''Lock Bypass''': lets the player keep one locked card for the rest of a run.
+
+=== Client ===
+* Red padlocks on every locked card the player is offered (shops, level-ups, loot, events) and in the stash.
+* A Shop Guide with pictures of the cards on offer and everything a merchant can stock, locked cards crossed out.
+* A panel on the main menu with every hero's checks, warning when the picked hero (or Random) can't be played.
+* A built-in tracker, and [[DeathLink]] (sent when a run is lost; optionally on concede).
+
+== Guides and tips ==
+* The game's display mode must be '''Fullscreen Window''' (the default) or windowed for the client's overlay to show.
+* <code>duplicate_all_cards</code> gives every locked card a second copy in the multiworld, for a gentler game.
+* If the player missed checks while the client was closed, the client reads them from the game's log on its next
+  connection.
+
+== External links ==
+* [https://github.com/sfleming4587/BazaarArchipelago The Bazaar for Archipelago on GitHub]
+* [https://store.steampowered.com/app/1617400/The_Bazaar/ The Bazaar on Steam]
+* [https://www.playthebazaar.com/mod-policy Tempo's third-party plugin and modding policy]

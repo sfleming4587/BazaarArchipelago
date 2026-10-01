@@ -5,9 +5,9 @@
 You start with one hero. Every other hero, plus a set of locked cards, is shuffled into the multiworld.
 Until you receive a hero you may not play them, and until you receive a locked card you may not buy it.
 
-The game itself is never modified. The Bazaar is online-only and Tempo's modding policy forbids client mods,
-so this integration only reads the log file the game writes on your PC. Locks are enforced by you
-(honor system), with the client warning you when you break one.
+The game itself is never modified. The client reads the log file the game writes on your PC and, read-only, a
+little of the game's memory (your run's screen and the cards on offer, to put padlocks on locked ones). Locks are
+enforced by you (honor system), with the client warning you when you break one.
 
 ## What are the checks?
 
@@ -83,7 +83,7 @@ The client refuses to send **any** check (days, PvP, monsters, 10 wins) while:
 - a run started while the client was off or disconnected was already holding a locked card when the client caught
   up - concede that run (no DeathLink is sent for it).
 
-A banner in the top-left corner says "CHECKS ARE BLOCKED ..." and why. Checks you miss this way can still be
+The notices box in the top-right corner says "CHECKS ARE BLOCKED ..." and why. Checks you miss this way can still be
 earned in a later run.
 
 ## Sell Traps
@@ -102,7 +102,7 @@ too, so you can upgrade it, and selling it and buying it back is fine. Checks un
 locked again when the run ends.
 
 A bypass is never used by itself, so buying a card you didn't realise was locked can't waste one - you decide.
-Unused bypasses wait for later runs, and the top-left box always shows how many you have. Like a trap, each bypass
+Unused bypasses wait for later runs, and the header (top left) always shows how many you have. Like a trap, each bypass
 takes the place of one locked card.
 
 **Items the game makes for you are always allowed.** Items created by other items (for example what you get from
@@ -127,8 +127,8 @@ locked, new heroes aren't part of the seed, and a new monster counts as Bronze. 
 
 - Only play heroes you've received.
 - Don't keep locked cards. Events, loot and level-ups can hand you one; that's fine, just sell it before
-  your next fight. When you open a shop, the client puts a padlock on each locked card that's on offer and lists
-  them beside the board, and it pops up a warning whenever you end up with one anyway. The warning clears
+  your next fight. The client puts a padlock on each locked card you're offered (shops, level-ups, loot, events) and
+  pops up a warning whenever you end up with one anyway. The warning clears
   itself once you sell it. Use `/locked` to see what's locked.
 - DeathLink: when someone else dies, abandon your current run.
 
