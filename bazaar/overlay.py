@@ -855,9 +855,8 @@ class _Screen:
         return first  # the Tracker button appears once there's something to track
 
     def own_windows(self) -> Set[int]:
-        windows = self.panels + list(self.backdrops.values()) + ([self.guide.win] if self.guide else [])
-        windows += self.padlocks
-        return {screens.window_handle(w) for w in windows} | set(self.tracker.windows())
+        windows = self.panels + list(self.backdrops.values()) + self.padlocks
+        return {screens.window_handle(w) for w in windows} | set(self.tracker.windows()) |             set(self.guide.windows() if self.guide else [])
 
     def poll(self) -> None:
         """Runs every POLL_MS in the Tk thread. An error is logged and the loop carries on - a stopped loop would

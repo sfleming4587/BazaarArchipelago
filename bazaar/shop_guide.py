@@ -156,11 +156,23 @@ class ShopGuide:
             menu.configure(font=(FONT, 9), highlightthickness=0, padx=2, pady=0)
             menu.pack(side="left", padx=(2, 6))
         tk.Label(line, text="Merchant", **label).pack(side="left")
-        merchant = ttk.Combobox(line, textvariable=self.filters["merchant"], state="readonly", height=20,
-                                values=(ANY, *sorted(MERCHANTS, key=str.lower)), width=12, font=(FONT, 9))
+        merchant = self.merchant_box = ttk.Combobox(line, textvariable=self.filters["merchant"], state="readonly",
+                                                    height=20, values=(ANY, *sorted(MERCHANTS, key=str.lower)),
+                                                    width=12, font=(FONT, 9))
         merchant.pack(side="left", fill="x", expand=True, padx=(2, 0))
         for var in self.filters.values():
             var.trace_add("write", lambda *_: self.filter_soon())
+
+    def windows(self) -> List[int]:
+        """Its window handles - the Merchant list opens in a window of its own - so using them doesn't count as
+        leaving the game (the overlay would hide everything, the open list included)."""
+        handles = [screens.window_handle(self.win)]
+        try:
+            path = str(self.win.tk.call("ttk::combobox::PopdownWindow", self.merchant_box))
+            handles.append(int(self.win.tk.call("wm", "frame", path), 16))
+        except Exception:  # an older Tk without it: the list just closes when the overlay hides
+            pass
+        return handles
 
     def start_typing(self, _event=None) -> None:
         screens.allow_focus(self.win, True)
@@ -339,6 +351,8 @@ class ShopGuide:
         if self.pending_filter:
             self.win.after_cancel(self.pending_filter)
             self.pending_filter = None
+        if not self.header.winfo_exists():  # a redraw queued while the window was being destroyed
+            return
         if self.hidden:  # drawn when it's opened (show), not for nobody
             self.drawn = None
             return
