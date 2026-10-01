@@ -348,7 +348,10 @@ class TestMenuButtons(unittest.TestCase):
     def test_clicks_on_the_owners_screenshot(self) -> None:
         from ..overlay import menu_click
         window = (0, 0, 1920, 1080)
-        self.assertEqual(menu_click(window, (200, 280)), "open")  # "CHANGE HERO / Random"
+        self.assertEqual(menu_click(window, (200, 280), random=True), "open")  # "CHANGE HERO / Random"
+        self.assertIsNone(menu_click(window, (380, 280), random=True))  # past the narrower Random button
+        self.assertEqual(menu_click(window, (380, 280)), "open")  # a hero's button is wider ("Jules")
+        self.assertIsNone(menu_click(window, (200, 380)))  # "Equip collectibles" under it
         self.assertEqual(menu_click(window, (1822, 75)), "close")  # the red-circled X
         self.assertIsNone(menu_click(window, (960, 540)))  # a hero card
         self.assertIsNone(menu_click(window, (1700, 960)))  # Ready

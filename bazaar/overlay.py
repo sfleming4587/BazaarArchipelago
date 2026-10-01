@@ -58,7 +58,10 @@ MENU_BAR_BG = "#3a3f4b"  # the empty part of a hero's check bar
 # The main menu's buttons that open and close character select (owner's screenshot 2026-10-01, 1080p): the game gives
 # no readable sign that it's open, so a click on "Change hero" hides the hero panel and the close X shows it again
 # (so do Esc and picking a hero). "Change hero" is anchored to the left edge, the X to the right one.
-CHANGE_HERO = (35, 225, 410, 330)  # left, top, right, bottom from the window's left edge
+# The button's frame from the window's left edge: left, top, bottom, and its right edge, which depends on what's picked
+# (a hero adds a portrait and a longer name; owner's screenshots: x 35-400 with Jules, 35-301 with Random).
+CHANGE_HERO = (35, 225, 333)
+CHANGE_HERO_RIGHT = {"hero": 400, "random": 301}
 CLOSE_X = (98, 75, 42)  # the X's centre: from the window's right edge, from the top; radius
 POLL_MS = 250
 
@@ -236,12 +239,14 @@ def padlock_shape(canvas, x: float, y: float, s: int) -> None:
     canvas.create_rectangle(x + s * 0.47, y + s * 0.68, x + s * 0.53, y + s * 0.84, fill=OUTLINE, outline=OUTLINE)
 
 
-def menu_click(window: tuple, point: tuple) -> Optional[str]:
+def menu_click(window: tuple, point: tuple, random: bool = False) -> Optional[str]:
     """Which character-select button a click at point (screen x, y) hit in the game window: "open", "close" or
-    None. Scaled with the window's height, as the game's menu is."""
+    None. random: Random is picked (the button is narrower then). Scaled with the window's height, as the game's
+    menu is."""
     x, y, w, h = window
     k, (px, py) = h / 1080, point
-    left, top, right, bottom = CHANGE_HERO
+    left, top, bottom = CHANGE_HERO
+    right = CHANGE_HERO_RIGHT["random" if random else "hero"]
     if x + left * k <= px <= x + right * k and y + top * k <= py <= y + bottom * k:
         return "open"
     dx, dy, radius = CLOSE_X
@@ -757,7 +762,7 @@ class _Screen:
         if clicked:
             point = wintypes.POINT()
             if user32.GetCursorPos(ctypes.byref(point)):
-                hit = menu_click(self.layout["window"], (point.x, point.y))
+                hit = menu_click(self.layout["window"], (point.x, point.y), self.state["menu"]["picked"] == "Random")
                 hidden = True if hit == "open" else False if hit == "close" else hidden
         if escaped:
             hidden = False
