@@ -58,7 +58,8 @@ Prestige moved with the loss counter every time: 25 → 24 (Day 1), 24 → 22, 2
 - Win or loss is plain: whoever's `Health` reaches 0. Radiant Corsair (Day 7) and Frost Street Champion (Day 10)
   were lost. Your health went to -137 and -1491 while the monster still had health left.
 - **A lost monster fight has no loot screen.** Win: `Combat → Loot → ...`. Loss: `Combat → Choice` or
-  `Combat → LevelUp` (XP still counts). This is very likely why the Karnok run "lost" its Day 4, 7 and 9 monster
+  `Combat → LevelUp` (XP still counts). Confirmed again 2026-10-01: `Combat → Choice` at 11:18:55, owner: "yes i
+  lost". This is very likely why the Karnok run "lost" its Day 4, 7 and 9 monster
   checks (Replay → Choice, no LootState): those fights were probably lost. _Unverified for that run_ - we only have
   its logs.
 
@@ -279,7 +280,15 @@ in place; stash and Esc menu hide them; a reroll clears them at once and the new
   it onto the wrong card.
 - **Bought cards leave a gap** (owner: "cards do not move after a purchase"): the row keeps its layout until new
   cards (new instance ids) come in. ⚠️ If the client starts or reconnects after something was already bought from
-  the row, it can't know where the gap was; that row's padlocks are off until the next new cards.
+  the row, it can't know where the gap was; that row's padlocks are off until the next new cards. Offered cards
+  have no slot in memory (`LeftSocketId`/`Section` are empty for them, checked 2026-10-01) and the log doesn't
+  list the row, so there's no exact fix. Owner, 2026-10-01: "no big deal". A cheap option not built: no padlocks
+  in that one case (the log knows a purchase happened in this shop).
+- **Your stash** (passed in the game 2026-10-01: centred on Sharkclaws, followed it to slots 5, 0 and back to 3,
+  shop padlocks back on closing): while it's open the client swaps to padlocks on its locked cards, read from
+  `Run.Player.Stash.Container.Sockets` (cards sit and move freely in any of its 10 slots, owner). It's laid out as a
+  10-slot row with `Empty` in the free slots, so the same centring puts each card on the grid. Your board uses the
+  same 10-slot numbering (level 2 = slots 2-7).
 - **The game's own flags drive them** (`memreader.BoardUI`, read every 60 ms; owner: "apply those useful flags as
   the triggers instead"):
 
@@ -300,7 +309,7 @@ in place; stash and Esc menu hide them; a reroll clears them at once and the new
   list. Game not running or still loading is silent.
 - ⚠️ Only 1080p and 16:9 measured; 1440p, 16:10 and 21:9 are untested.
 
-Not built yet: padlocks on locked cards inside the stash (they're hidden while it's open), loot screens, events'
+Not built yet: loot screens, events'
 own layouts, locked heroes on the character select screen (owner wants all of these; each needs a screenshot).
 
 ## Bringing the rest into the client (plan, nothing built)
