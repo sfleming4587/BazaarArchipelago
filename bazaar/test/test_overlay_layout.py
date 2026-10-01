@@ -238,3 +238,16 @@ class TestCardCentres(unittest.TestCase):
         from ..overlay import card_centres
         self.assertIsNone(card_centres(0, 0, 1920, 1080, ["Small", None]))
         self.assertIsNone(card_centres(0, 0, 1920, 1080, []))
+
+
+class TestPadlockHoverArea(unittest.TestCase):
+    def test_covers_every_padlock_and_the_board_but_not_the_side_strips(self) -> None:
+        from ..overlay import card_centres, row_rect
+        left, top, right, bottom = row_rect(0, 0, 1920, 1080)
+        for x, y in card_centres(0, 0, 1920, 1080, ["Large", "Large", "Large", "Small"]):
+            self.assertTrue(left <= x < right and top <= y < bottom)
+        strip_left, strip_right, _ = strips(0, 0, 1920, 1080)
+        self.assertGreaterEqual(left, strip_left[0] + strip_left[2])  # the overlay's own strips stay outside
+        self.assertLessEqual(right, strip_right[0])
+        self.assertLess(top, 322)  # above the cards' frames (measured y 322-541)
+        self.assertGreater(bottom, 541)

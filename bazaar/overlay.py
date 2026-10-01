@@ -63,6 +63,10 @@ GAME_EXE = "thebazaar.exe"  # the overlay only shows while this is the active wi
 SHOP_ROW_Y = 0.398  # the cards' centres, as a share of the window's height
 SLOT_WIDTH = 113  # the slot pitch: a Small card plus the gap after it
 CARD_GAP = 0  # any extra gap between two cards (none: it's part of SLOT_WIDTH)
+CARD_HEIGHT = 220  # measured on the same screenshot (the cards' frames, y 322-541 at 1080p)
+HOVER_MARGIN = 24  # above the row, so the price tags above the cards count too
+BOARD_BOTTOM = 790  # where your own board ends (its cards' tooltips can open over the shop row too)
+HOVER_MS = 60  # how often the mouse is checked while padlocks are up
 SLOTS = {"Small": 1, "Medium": 2, "Large": 3}
 PADLOCK = 56  # the mark's size
 MIN_PADLOCK = 24  # real pixels, however small the window
@@ -166,6 +170,29 @@ def card_centres(x: int, y: int, w: int, h: int, sizes: List[Optional[str]]) -> 
         centres.append((round(left + width / 2), round(y + h * SHOP_ROW_Y)))
         left += width + gap
     return centres
+
+
+def row_rect(x: int, y: int, w: int, h: int) -> tuple:
+    """Where a card's tooltip can come from (left, top, right, bottom): the board between the side strips, from just
+    above the shop row down to the bottom of your own board. While the mouse is in it the padlocks fade out, so they
+    never cover a tooltip (user, 2026-10-01)."""
+    left, right, k = strips(x, y, w, h)
+    top = y + h * SHOP_ROW_Y - (CARD_HEIGHT / 2 + HOVER_MARGIN) * min(k, w / 1920)
+    return left[0] + left[2], round(top), right[0], y + round(BOARD_BOTTOM * k)
+
+
+def mouse_on(rect: Optional[tuple]) -> bool:
+    """Is the mouse inside rect, or is its left button held (dragging a card shows its tooltip anywhere)?
+    Windows only; elsewhere always False."""
+    if sys.platform != "win32" or not rect:
+        return False
+    import ctypes
+    from ctypes import wintypes
+    point = wintypes.POINT()
+    if not ctypes.windll.user32.GetCursorPos(ctypes.byref(point)):
+        return False
+    held = ctypes.windll.user32.GetAsyncKeyState(0x01) & 0x8000  # VK_LBUTTON
+    return bool(held) or (rect[0] <= point.x < rect[2] and rect[1] <= point.y < rect[3])
 
 
 def below(strip: tuple, taken: int) -> tuple:
@@ -352,6 +379,8 @@ class _Screen:
         self.padlocks: list = []  # one small click-through window per padlock, made as needed and reused
         self.padlocks_wanted = 0  # how many of them are in use
         self.pending_padlocks = None  # (padlocks, when to show them) while new cards are still flipping over
+        self.padlock_row: Optional[tuple] = None  # where the mouse fades the padlocks (see row_rect)
+        self.padlocks_faded = False  # the mouse is on the shop row: padlocks see-through
 
         self.layout: dict = {}  # the strips for where the game window is now (see relayout)
         self.relayout((0, 0, root.winfo_screenwidth(), root.winfo_screenheight()))  # until the game is seen
@@ -383,11 +412,25 @@ class _Screen:
             "padlocks": self.new_padlocks,
         }
 
+    def fade_padlocks(self) -> None:
+        """Every HOVER_MS: padlocks go fully see-through while the mouse is on the shop row (or dragging), so the
+        game's tooltips are never covered, and come back when it leaves."""
+        try:
+            faded = self.padlocks_wanted > 0 and mouse_on(self.padlock_row)
+            if faded != self.padlocks_faded:
+                self.padlocks_faded = faded
+                for padlock in self.padlocks:
+                    padlock.attributes("-alpha", 0.0 if faded else 1.0)
+        except Exception:
+            logger.exception("Overlay error (it keeps going)", extra=FILE_ONLY)
+        self.root.after(HOVER_MS, self.fade_padlocks)
+
     def run(self) -> None:
         # laid out once now: with the game exactly on the primary screen no later tick sees a "move", and an open
         # Shop Guide showed at its unsettled size over the game's corner (review 2026-09-30)
         self.render()
         self.root.after(POLL_MS, self.poll)
+        self.root.after(HOVER_MS, self.fade_padlocks)
         self.root.mainloop()
 
     # --- where things go --------------------------------------------------------------------------------------
@@ -672,6 +715,7 @@ class _Screen:
         """Moves a padlock onto the centre of each locked card on offer (see card_centres)."""
         layout, value = self.layout, self.state["padlocks"]
         centres = card_centres(*layout["window"], value[0]) if value else None
+        self.padlock_row = row_rect(*layout["window"])
         spots = [centres[i] for i in value[1] if i < len(centres)] if centres else []
         size = max(MIN_PADLOCK, round(PADLOCK * layout["k"]))
         while len(self.padlocks) < len(spots):
@@ -694,6 +738,7 @@ class _Screen:
         padlock.canvas = self.tk.Canvas(padlock, bg=PADLOCK_KEY, highlightthickness=0, bd=0)
         padlock.canvas.pack(fill="both", expand=True)
         padlock.drawn_size = 0
+        padlock.attributes("-alpha", 0.0 if self.padlocks_faded else 1.0)
         return padlock
 
     @staticmethod
@@ -725,7 +770,9 @@ class _Screen:
 
     def new_padlocks(self, value) -> bool:  # (padlocks, when to show them)
         self.pending_padlocks = value
-        return self.show_due_padlocks()
+        if not self.show_due_padlocks() and self.state["padlocks"]:
+            self.state["padlocks"] = None  # the old cards' padlocks go at once (user: they lingered on a reroll)
+        return True
 
     def show_due_padlocks(self) -> bool:
         """The latest padlocks once their time has come (a newer command replaces one still waiting)."""
