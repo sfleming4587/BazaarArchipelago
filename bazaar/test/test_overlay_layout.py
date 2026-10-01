@@ -241,13 +241,15 @@ class TestCardCentres(unittest.TestCase):
 
 
 class TestPadlockHoverArea(unittest.TestCase):
-    def test_covers_every_padlock_and_the_board_but_not_the_side_strips(self) -> None:
-        from ..overlay import card_centres, row_rect
-        left, top, right, bottom = row_rect(0, 0, 1920, 1080)
-        for x, y in card_centres(0, 0, 1920, 1080, ["Large", "Large", "Large", "Small"]):
-            self.assertTrue(left <= x < right and top <= y < bottom)
+    def test_only_the_cards_count_not_the_empty_board_around_them(self) -> None:
+        from ..overlay import card_centres, card_rects
+        sizes = ["Medium", "Medium", "Small"]
+        rects = card_rects(0, 0, 1920, 1080, sizes)
+        inside = lambda x, y: any(r[0] <= x < r[2] and r[1] <= y < r[3] for r in rects)
+        for x, y in card_centres(0, 0, 1920, 1080, sizes):
+            self.assertTrue(inside(x, y))
+        self.assertFalse(inside(500, 430))  # the shop row's empty space, left of the cards
+        self.assertFalse(inside(960, 300))  # the merchant above
+        self.assertTrue(inside(960, 650))  # your own board's row
         strip_left, strip_right, _ = strips(0, 0, 1920, 1080)
-        self.assertGreaterEqual(left, strip_left[0] + strip_left[2])  # the overlay's own strips stay outside
-        self.assertLessEqual(right, strip_right[0])
-        self.assertLess(top, 322)  # above the cards' frames (measured y 322-541)
-        self.assertGreater(bottom, 541)
+        self.assertTrue(all(r[0] >= strip_left[0] + strip_left[2] and r[2] <= strip_right[0] for r in rects))

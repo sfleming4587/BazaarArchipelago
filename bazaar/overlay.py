@@ -64,8 +64,8 @@ SHOP_ROW_Y = 0.398  # the cards' centres, as a share of the window's height
 SLOT_WIDTH = 113  # the slot pitch: a Small card plus the gap after it
 CARD_GAP = 0  # any extra gap between two cards (none: it's part of SLOT_WIDTH)
 CARD_HEIGHT = 220  # measured on the same screenshot (the cards' frames, y 322-541 at 1080p)
-HOVER_MARGIN = 24  # above the row, so the price tags above the cards count too
-BOARD_BOTTOM = 790  # where your own board ends (its cards' tooltips can open over the shop row too)
+YOUR_ROW = (548, 785)  # your own board's cards, top and bottom (their tooltips can open over the shop row too)
+HOVERED_ALPHA = 0.3  # a padlock while a card is hovered: see-through, so the tooltip reads (user, 2026-10-01)
 HOVER_MS = 60  # how often the mouse is checked while padlocks are up
 SLOTS = {"Small": 1, "Medium": 2, "Large": 3}
 PADLOCK = 56  # the mark's size
@@ -172,19 +172,25 @@ def card_centres(x: int, y: int, w: int, h: int, sizes: List[Optional[str]]) -> 
     return centres
 
 
-def row_rect(x: int, y: int, w: int, h: int) -> tuple:
-    """Where a card's tooltip can come from (left, top, right, bottom): the board between the side strips, from just
-    above the shop row down to the bottom of your own board. While the mouse is in it the padlocks fade out, so they
-    never cover a tooltip (user, 2026-10-01)."""
+def card_rects(x: int, y: int, w: int, h: int, sizes: List[Optional[str]]) -> List[tuple]:
+    """Where hovering shows a card's tooltip (left, top, right, bottom): each shop card, and your own board's row
+    (which cards sit where on it isn't read, so the whole row counts). Empty if a shop size is unknown."""
+    centres = card_centres(x, y, w, h, sizes)
+    if not centres:
+        return []
     left, right, k = strips(x, y, w, h)
-    top = y + h * SHOP_ROW_Y - (CARD_HEIGHT / 2 + HOVER_MARGIN) * min(k, w / 1920)
-    return left[0] + left[2], round(top), right[0], y + round(BOARD_BOTTOM * k)
+    across = min(k, w / 1920)
+    half_height = CARD_HEIGHT * across / 2
+    rects = [(round(cx - SLOTS[size] * SLOT_WIDTH * across / 2), round(cy - half_height),
+              round(cx + SLOTS[size] * SLOT_WIDTH * across / 2), round(cy + half_height))
+             for (cx, cy), size in zip(centres, sizes)]
+    return rects + [(left[0] + left[2], y + round(YOUR_ROW[0] * k), right[0], y + round(YOUR_ROW[1] * k))]
 
 
-def mouse_on(rect: Optional[tuple]) -> bool:
-    """Is the mouse inside rect, or is its left button held (dragging a card shows its tooltip anywhere)?
+def mouse_on(rects: List[tuple]) -> bool:
+    """Is the mouse on one of the rects, or is its left button held (dragging a card shows its tooltip anywhere)?
     Windows only; elsewhere always False."""
-    if sys.platform != "win32" or not rect:
+    if sys.platform != "win32" or not rects:
         return False
     import ctypes
     from ctypes import wintypes
@@ -192,7 +198,7 @@ def mouse_on(rect: Optional[tuple]) -> bool:
     if not ctypes.windll.user32.GetCursorPos(ctypes.byref(point)):
         return False
     held = ctypes.windll.user32.GetAsyncKeyState(0x01) & 0x8000  # VK_LBUTTON
-    return bool(held) or (rect[0] <= point.x < rect[2] and rect[1] <= point.y < rect[3])
+    return bool(held) or any(r[0] <= point.x < r[2] and r[1] <= point.y < r[3] for r in rects)
 
 
 def below(strip: tuple, taken: int) -> tuple:
@@ -379,8 +385,8 @@ class _Screen:
         self.padlocks: list = []  # one small click-through window per padlock, made as needed and reused
         self.padlocks_wanted = 0  # how many of them are in use
         self.pending_padlocks = None  # (padlocks, when to show them) while new cards are still flipping over
-        self.padlock_row: Optional[tuple] = None  # where the mouse fades the padlocks (see row_rect)
-        self.padlocks_faded = False  # the mouse is on the shop row: padlocks see-through
+        self.padlock_cards: List[tuple] = []  # where hovering makes the padlocks see-through (see card_rects)
+        self.padlocks_faded = False  # a card is hovered: padlocks see-through
 
         self.layout: dict = {}  # the strips for where the game window is now (see relayout)
         self.relayout((0, 0, root.winfo_screenwidth(), root.winfo_screenheight()))  # until the game is seen
@@ -413,14 +419,14 @@ class _Screen:
         }
 
     def fade_padlocks(self) -> None:
-        """Every HOVER_MS: padlocks go fully see-through while the mouse is on the shop row (or dragging), so the
-        game's tooltips are never covered, and come back when it leaves."""
+        """Every HOVER_MS: padlocks turn see-through while a card is hovered (or dragged), so its tooltip reads, and
+        solid again when the mouse leaves it."""
         try:
-            faded = self.padlocks_wanted > 0 and mouse_on(self.padlock_row)
+            faded = self.padlocks_wanted > 0 and mouse_on(self.padlock_cards)
             if faded != self.padlocks_faded:
                 self.padlocks_faded = faded
                 for padlock in self.padlocks:
-                    padlock.attributes("-alpha", 0.0 if faded else 1.0)
+                    padlock.attributes("-alpha", HOVERED_ALPHA if faded else 1.0)
         except Exception:
             logger.exception("Overlay error (it keeps going)", extra=FILE_ONLY)
         self.root.after(HOVER_MS, self.fade_padlocks)
@@ -715,7 +721,7 @@ class _Screen:
         """Moves a padlock onto the centre of each locked card on offer (see card_centres)."""
         layout, value = self.layout, self.state["padlocks"]
         centres = card_centres(*layout["window"], value[0]) if value else None
-        self.padlock_row = row_rect(*layout["window"])
+        self.padlock_cards = card_rects(*layout["window"], value[0]) if value else []
         spots = [centres[i] for i in value[1] if i < len(centres)] if centres else []
         size = max(MIN_PADLOCK, round(PADLOCK * layout["k"]))
         while len(self.padlocks) < len(spots):
@@ -738,7 +744,7 @@ class _Screen:
         padlock.canvas = self.tk.Canvas(padlock, bg=PADLOCK_KEY, highlightthickness=0, bd=0)
         padlock.canvas.pack(fill="both", expand=True)
         padlock.drawn_size = 0
-        padlock.attributes("-alpha", 0.0 if self.padlocks_faded else 1.0)
+        padlock.attributes("-alpha", HOVERED_ALPHA if self.padlocks_faded else 1.0)
         return padlock
 
     @staticmethod
