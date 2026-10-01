@@ -17,7 +17,8 @@ from typing import Callable, Dict, List, Optional, Set
 
 from . import screens
 from .shop_guide import ShopGuide
-from .theme import ACCENT, DIM, FG, FONT, LOCKED_X, MUTED, OUTLINE, SEVERITY, WARN
+from .theme import (ACCENT, BONE, DIM, FG, FLAMES, FONT, LOCKED_X, MUTED, OUTLINE, SEVERITY, TRAP_BG, TRAP_TITLE,
+                    WARN)
 from .tracker import Tracker
 
 logger = logging.getLogger("Client")
@@ -68,6 +69,10 @@ ONE_CARD_ONLY = {"Loot"}
 CARD_HEIGHT = 220  # measured on the same screenshot (the cards' frames, y 322-541 at 1080p)
 YOUR_ROW = (548, 785)  # your own board's cards, top and bottom (their tooltips can open over the shop row too)
 BOARD_SLOTS = {1: 4, 2: 6, 3: 8}  # your board's width by level (owner, 2026-10-01); 10 from level 4 on
+FLICKER_MS = 140  # the Sell Trap's flames
+# A flame's outline, as fractions of the skull's square (x right, y down); the inner flames are it shrunk upward.
+FLAME = ((0.10, 1.0), (0.02, 0.55), (0.17, 0.30), (0.23, 0.46), (0.30, 0.10), (0.41, 0.36), (0.50, 0.0),
+         (0.59, 0.36), (0.70, 0.10), (0.77, 0.46), (0.83, 0.30), (0.98, 0.55), (0.90, 1.0))
 HOVERED_ALPHA = 0.3  # a padlock while a card is hovered: see-through, so the tooltip reads (user, 2026-10-01)
 FADE_STEPS, FADE_MS = 6, 25  # opening and closing the Shop Guide: a short fade (owner: "a simple transition")
 FLIP_SECONDS = 1.0  # new cards flip over first: if the game's reveal flag doesn't start by then, show anyway
@@ -210,6 +215,43 @@ def game_in_front(own: Set[int]) -> tuple:
     return True, (corner.x, corner.y, rect.right, rect.bottom)
 
 
+def draw_skull(tk, parent, size: int, bg: str):
+    """A skull with glowing eyes in front of flickering flames: a Sell Trap's mark (owner, 2026-10-01)."""
+    canvas = tk.Canvas(parent, width=size, height=size, bg=bg, highlightthickness=0, bd=0)
+    flames = []
+    for i, (grow, lift) in enumerate(((1.0, 0.0), (0.74, 0.26), (0.48, 0.5))):
+        points = [v * size for x, y in FLAME for v in (0.5 + (x - 0.5) * grow, lift + y * (1 - lift))]
+        flames.append(canvas.create_polygon(points, smooth=True, fill=FLAMES[0][i], outline=""))
+
+    def box(x0, y0, x1, y1):  # the skull sits low and a little smaller, so the flames rise above it
+        return tuple(size * (0.5 + (v - 0.5) * 0.8 if i % 2 == 0 else 0.2 + v * 0.8)
+                     for i, v in enumerate((x0, y0, x1, y1)))
+    line = max(1, size // 32)
+    canvas.create_rectangle(box(0.37, 0.66, 0.63, 0.90), fill=BONE, outline="black", width=line)  # jaw
+    canvas.create_oval(box(0.24, 0.28, 0.76, 0.78), fill=BONE, outline="black", width=line)  # cranium
+    canvas.create_rectangle(box(0.38, 0.70, 0.62, 0.76), fill=BONE, outline="")  # cranium meets jaw
+    eyes = []
+    for x in (0.31, 0.53):
+        canvas.create_oval(box(x, 0.44, x + 0.16, 0.61), fill="black", outline="")
+        eyes.append(canvas.create_oval(box(x + 0.04, 0.49, x + 0.12, 0.57), fill=FLAMES[0][1], outline=""))
+    canvas.create_polygon(box(0.5, 0.62, 0.46, 0.70)[:2] + box(0.46, 0.70, 0.54, 0.70)[2:] +
+                          box(0.5, 0.62, 0.54, 0.70)[2:], fill="black")  # nose
+    for x in (0.43, 0.5, 0.57):  # teeth
+        canvas.create_line(box(x, 0.80, x, 0.90), fill="black", width=line)
+
+    def flicker(step: int = 1) -> None:
+        if not canvas.winfo_exists():  # the panel was redrawn
+            return
+        colours = FLAMES[step % len(FLAMES)]
+        for flame, colour in zip(flames, colours):
+            canvas.itemconfigure(flame, fill=colour)
+        for eye in eyes:
+            canvas.itemconfigure(eye, fill=colours[1 + step % 2])
+        canvas.after(FLICKER_MS, flicker, step + 1)
+    canvas.after(FLICKER_MS, flicker)
+    return canvas
+
+
 class Overlay:
     """The client's handle on the windows: every method only queues a command for the Tk thread."""
 
@@ -227,11 +269,12 @@ class Overlay:
 
     # --- called from the client ---------------------------------------------------------------------------------
 
-    def show_locked(self, title: Optional[str], cards: list, blocked: bool = False) -> None:
+    def show_locked(self, title: Optional[str], cards: list, blocked: bool = False, trap: bool = False) -> None:
         """The alert box's banner and the lines under it (held locked cards, Sell Traps). title=None hides it.
         A line is text, or (text, card guid) to give it a "Use Bypass" button (a Lock Bypass is ready).
-        blocked: checks are blocked (critical, red) rather than just a warning (a Sell Trap coming up)."""
-        self.commands.put(("locked", (title, list(cards), blocked) if title else None))
+        blocked: checks are blocked (critical, red) rather than just a warning (a Sell Trap coming up).
+        trap: a Sell Trap is behind it - drawn as a skull in flames."""
+        self.commands.put(("locked", (title, list(cards), blocked, trap) if title else None))
 
     def show_padlocks(self, screen: Optional[str], sizes: List[Optional[str]], locked: List[int], reveal: bool = False,
                       level: Optional[int] = None) -> None:
@@ -259,9 +302,9 @@ class Overlay:
     def toggle_guide(self) -> None:
         self.commands.put(("guide_toggle", None))
 
-    def toast(self, text: str, seconds: float = 6, warning: bool = False) -> None:
-        """A short pop-up (bottom right) that disappears by itself."""
-        self.commands.put(("toast", (text, time.monotonic() + seconds, warning)))
+    def toast(self, text: str, seconds: float = 6, warning: bool = False, trap: bool = False) -> None:
+        """A short pop-up (bottom right) that disappears by itself. trap: a Sell Trap's, with its skull."""
+        self.commands.put(("toast", (text, time.monotonic() + seconds, warning, trap)))
 
     def show_menu(self, data: Optional[dict]) -> None:
         """The menu's centre panel (see client.menu_data); None hides it."""
@@ -521,7 +564,7 @@ class _Screen:
     def _render(self) -> None:
         state, drawn, layout = self.state, self.drawn, self.layout
         moves: list = []
-        toasts = tuple((text, warning) for text, _, warning in state["toasts"])
+        toasts = tuple((text, warning, trap) for text, _, warning, trap in state["toasts"])
         if toasts != drawn["toasts"]:
             drawn["toasts"] = toasts
             drawn["toasts_height"] = self.render_toasts(moves)
@@ -678,10 +721,18 @@ class _Screen:
             moves.append((self.toast_box, None))
             return 0
         frame, show = self.swap(self.toast_box, SEVERITY["info"])
-        for text, _, warning in self.state["toasts"]:
+        wrap = layout["right"][2] - 2 * (PAD + BORDER) - 16
+        for text, _, warning, trap in self.state["toasts"]:
+            if trap:
+                row = tk.Frame(frame, bg=TRAP_BG, padx=6, pady=4)
+                row.pack(fill="x", pady=2)
+                skull = draw_skull(tk, row, max(32, round(44 * layout["k"])), TRAP_BG)
+                skull.pack(side="left", padx=(0, 6))
+                tk.Label(row, text=text, fg=TRAP_TITLE, bg=TRAP_BG, font=self.font(11, "bold"),
+                         wraplength=wrap - skull.winfo_reqwidth() - 12, justify="left").pack(side="left", anchor="w")
+                continue
             tk.Label(frame, text=text, fg=FG, bg=SEVERITY["critical" if warning else "ok"],
-                     font=self.font(11, "bold"), wraplength=layout["right"][2] - 2 * (PAD + BORDER) - 16,
-                     justify="left", padx=8, pady=4).pack(fill="x", pady=2)
+                     font=self.font(11, "bold"), wraplength=wrap, justify="left", padx=8, pady=4).pack(fill="x", pady=2)
         show()
         self.toast_box.update_idletasks()
         x, y, width, strip_height = layout["right"]
@@ -701,7 +752,8 @@ class _Screen:
         if not (state["deathlink"] or state["locked"]):
             moves.append((self.notice_box, None))
             return 0
-        bg = SEVERITY[self.notice_severity()]
+        trap = bool(state["locked"] and state["locked"][3])
+        bg = TRAP_BG if trap else SEVERITY[self.notice_severity()]
         frame, show = self.swap(self.notice_box, bg)
         if state["deathlink"]:
             tk.Label(frame, text="DEATHLINK", fg=ACCENT, bg=bg, font=f(16, "bold")).pack(anchor="w")
@@ -711,9 +763,16 @@ class _Screen:
                      font=f(11, "bold"), wraplength=inner_w, justify="left").pack(anchor="w", pady=(2, 6))
             tk.Button(frame, text="Done", command=self.dismiss_deathlink).pack(anchor="e")
         if state["locked"]:
-            title, cards, _ = state["locked"]
-            tk.Label(frame, text=title, fg=ACCENT, bg=bg, font=f(14, "bold"), wraplength=inner_w,
-                     justify="left").pack(anchor="w", pady=(6 if state["deathlink"] else 0, 2 if cards else 0))
+            title, cards, blocked, _ = state["locked"]
+            head = tk.Frame(frame, bg=bg)
+            head.pack(fill="x", pady=(6 if state["deathlink"] else 0, 2 if cards else 0))
+            room = inner_w
+            if trap:  # owner, 2026-10-01: "more menacing ... like a skull with a flame behind it"
+                skull = draw_skull(tk, head, max(40, round(64 * self.layout["k"])), bg)
+                skull.pack(side="left", padx=(0, 8))
+                room -= skull.winfo_reqwidth() + 8
+            tk.Label(head, text=title, fg=(WARN if blocked else TRAP_TITLE) if trap else ACCENT, bg=bg,
+                     font=f(16 if trap else 14, "bold"), wraplength=room, justify="left").pack(side="left", anchor="w")
             if len(cards) > MAX_ALERT_LINES:  # the box would grow past its share and hide its own buttons
                 cards = cards[:MAX_ALERT_LINES - 1] + [f"+ {len(cards) - MAX_ALERT_LINES + 1} more"]
             for line in cards:  # cleared automatically when the log says it was sold
@@ -846,7 +905,7 @@ class _Screen:
         self.state["padlocks"], self.pending_padlocks = value, None
         return True
 
-    def new_toast(self, value) -> bool:  # (text, expires, warning)
+    def new_toast(self, value) -> bool:  # (text, expires, warning, trap)
         self.state["toasts"] = (self.state["toasts"] + [value])[-MAX_TOASTS:]
         return True
 
@@ -887,7 +946,7 @@ class _Screen:
             changed = bool(self.handlers[kind](value)) or changed
         changed = self.show_due_padlocks() or changed
         now = time.monotonic()
-        if any(expires <= now for _, expires, _ in self.state["toasts"]):
+        if any(t[1] <= now for t in self.state["toasts"]):
             self.state["toasts"] = [t for t in self.state["toasts"] if t[1] > now]
             changed = True
         game, window = game_in_front(self.own_windows()) if overlay.only_over_game else (True, overlay.game_window)

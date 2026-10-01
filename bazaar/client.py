@@ -452,6 +452,7 @@ class BazaarContext(CommonContext):
         self.update_status()
         if any(t["deadline"] == event.day for t in self.run.get("traps", [])):
             self.beep()
+        if self.run.get("traps"):  # also a deadline passed while the client was off (the day jumped past it)
             self.update_block_banner()
 
     def held_text(self, guid: str) -> str:
@@ -495,8 +496,13 @@ class BazaarContext(CommonContext):
         name = self.card_name(guid)
         self.event(f"SELL TRAP! Sell {name} before day {deadline} starts, or checks get blocked.", warning=True)
         self.beep()
-        self.toast(f"SELL TRAP from {sender}! Sell {name} before day {deadline} starts.", seconds=15)
+        self.toast(f"SELL TRAP from {sender}! Sell {name} before day {deadline} starts.", seconds=15, trap=True)
         self.update_block_banner()
+
+    def trap_target(self, trap: dict) -> str:
+        """What a Sell Trap wants sold: the card, or what it turned into (the log doesn't name that)."""
+        name = self.card_name(trap["guid"])
+        return f"what {name} turned into" if trap.get("transformed") else name
 
     def card_name(self, guid: str) -> str:
         return CARDS_BY_GUID[guid].name if guid in CARDS_BY_GUID else "that new item"
@@ -533,7 +539,7 @@ class BazaarContext(CommonContext):
         if not self.run.get("counting"):
             return f"- {self.run.get('hero', 'this hero').upper()} IS LOCKED: ABANDON THIS RUN"
         names = sorted({CARDS_BY_GUID[g].name.upper() for g in self.run.get("held", {}).values()}
-                       | {self.card_name(t["guid"]).upper() for t in self.overdue_traps()})
+                       | {self.trap_target(t).upper() for t in self.overdue_traps()})
         if names:
             return f"UNTIL {' AND '.join(names)} {'IS' if len(names) == 1 else 'ARE'} SOLD"
         return None
@@ -555,10 +561,11 @@ class BazaarContext(CommonContext):
                      for g in held.values()]
             upcoming = [t for t in self.run.get("traps", []) if t not in self.overdue_traps()] \
                 if self.run.get("active") else []
-            lines += [f"Sell Trap: sell {self.card_name(t['guid'])} before day {t['deadline']} starts"
+            lines += [f"Sell Trap: sell {self.trap_target(t)} before day {t['deadline']} starts"
                       for t in upcoming]
             title = f"CHECKS ARE BLOCKED {reason}" if reason else ("SELL TRAP" if upcoming else None)
-            self.overlay.show_locked(title, lines, blocked=bool(reason))
+            trap = bool(self.run.get("traps")) and bool(self.run.get("active"))
+            self.overlay.show_locked(title, lines, blocked=bool(reason), trap=trap)
 
     async def send_run_checks(self, names) -> None:
         """The only way checks earned in a run are sent: refused while cheating (locked hero or locked card)."""
@@ -595,6 +602,10 @@ class BazaarContext(CommonContext):
             return
         self.run.get("inventory", {}).pop(event.old, None)
         self.run.setdefault("transformed", []).append(event.new)
+        for trap in self.run.get("traps", []):  # a Sell Trap follows its card (the old one can't be sold any more)
+            if trap["instance"] == event.old:
+                trap.update(instance=event.new, transformed=True)
+                self.update_block_banner()
         guid = self.run.get("held", {}).pop(event.old, None)
         if guid:
             self.event(f"{CARDS_BY_GUID[guid].name} transformed into another card - transformed cards are allowed."

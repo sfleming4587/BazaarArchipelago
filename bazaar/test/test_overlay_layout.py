@@ -122,7 +122,7 @@ class TestAlertBoxWithManyHeldCards(unittest.TestCase):
             screen = _Screen(fake, tkinter, root)
             screen.relayout((0, 0, 1280, 720))
             lines = [(f"Card {i} (Vanessa) - SELL OR USE BYPASS", f"g{i}") for i in range(12)]
-            screen.state["locked"] = ("CHECKS ARE BLOCKED", lines, True)
+            screen.state["locked"] = ("CHECKS ARE BLOCKED", lines, True, False)
             screen.state["status"] = ("Vanessa: day 4/13", False, False)
             screen.render()
             root.update()

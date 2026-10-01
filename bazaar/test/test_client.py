@@ -407,6 +407,39 @@ class TestSellTraps(ClientTestBase):
         self.ctx.receive_traps()  # e.g. reconnect: the server resends everything
         self.assertEqual(len(self.ctx.run["traps"]), 1)
 
+    def test_a_missed_deadline_blocks_after_a_restart_and_shows_in_red(self) -> None:
+        """Owner, 2026-10-01: "make sure you are confident with the sell trap deadline check block"."""
+        self.ctx.overlay = mock.Mock()
+        self.play(RunStarted("Vanessa"), CardGained(self.ITEM.guid, "itm_a", False), DayReached(2))
+        self.receive_trap()
+        title, lines, blocked = self.ctx.overlay.show_locked.call_args.args[:2] + (
+            self.ctx.overlay.show_locked.call_args.kwargs["blocked"],)
+        self.assertEqual((title, blocked), ("SELL TRAP", False))  # a warning first, not a block
+        self.assertIn(f"sell {self.ITEM.name} before day 4", lines[0])
+        self.ctx.save_state()
+        self.ctx.load_state()  # the client restarts mid-trap: the trap is still there
+        self.play(DayReached(5))  # days can be skipped past the deadline
+        title = self.ctx.overlay.show_locked.call_args.args[0]
+        self.assertEqual(title, f"CHECKS ARE BLOCKED UNTIL {self.ITEM.name.upper()} IS SOLD")
+        self.assertTrue(self.ctx.overlay.show_locked.call_args.kwargs["blocked"])
+        self.assertTrue(self.ctx.overlay.show_locked.call_args.kwargs["trap"])  # the skull, owner 2026-10-01
+        self.play(MonsterFought(BRONZE_MONSTER, 5, True))
+        self.assertFalse(self.was_sent(monster_location("Vanessa", 5, "Bronze")))
+        self.play(CardSold("itm_a"))
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.assertIsNone(self.ctx.overlay.show_locked.call_args.args[0])  # the banner goes
+
+    def test_a_trapped_card_that_transforms_must_still_be_sold(self) -> None:
+        """The old card can't be sold once it's transformed: the trap follows it, or a missed deadline would block
+        the rest of the run."""
+        from ..logparser import CardTransformed
+        self.play(RunStarted("Vanessa"), CardGained(self.ITEM.guid, "itm_a", False), DayReached(2))
+        self.receive_trap()
+        self.play(CardTransformed("itm_a", "itm_b"), DayReached(4))
+        self.assertIn(f"WHAT {self.ITEM.name.upper()} TURNED INTO", self.ctx.blocked_reason())
+        self.play(CardSold("itm_b"))
+        self.assertIsNone(self.ctx.blocked_reason())
+
     def test_new_run_clears_old_traps(self) -> None:
         self.play(RunStarted("Vanessa"), CardGained(self.ITEM.guid, "itm_a", False))
         self.receive_trap()
