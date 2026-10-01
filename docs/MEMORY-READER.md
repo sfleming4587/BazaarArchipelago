@@ -27,7 +27,8 @@ below was seen in that run unless it is marked _unverified_.**
 
 `Run.Victories` / `Run.Losses` went up at the end of each fight's replay, 11 out of 11 times (5 wins, 6 losses
 including the run-ending one). Checked against the owner 2026-10-01: `Victories` 1 -> 2 at 11:29:01, while the screen was still
-`PVPCombat`, the same second the owner's "W" arrived; Continue (screen `Choice`) came 10 s later. Today the client asks "did you win?" or guesses from the "Waiting for N exit tasks"
+`PVPCombat`, the same second the owner's "W" arrived; Continue (screen `Choice`) came 10 s later. And a loss:
+`Losses` 0 -> 1 and prestige 25 -> 22 at 11:44:59, still `PVPCombat`, the same second the owner's "L" arrived. Today the client asks "did you win?" or guesses from the "Waiting for N exit tasks"
 log line. Memory makes both unnecessary.
 
 ### 2. A lost run is known when the loss is counted, not when the player presses Continue
