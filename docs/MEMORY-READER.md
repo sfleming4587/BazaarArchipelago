@@ -208,7 +208,8 @@ Owner's rules, 2026-09-30: "only memory and nothing that we are not allowed to s
 cards ... even if it is when you right click a monster", "Just dont involve players".
 
 - **Allowlist:** only `Data.<Run>`, `<CurrentState>`, `Entities`, `<CurrentEncounterId>`, `<HoursInADay>`,
-  `<CurrentBoardId>`. Nothing else in `TheBazaar.Data` is touched.
+  `<CurrentBoardId>`, and (2026-10-01, for the padlocks) `<TransitionIn>` (to reach the `BoardManager`) and
+  `<TooltipParentComponent>`, plus `CardController`'s static drag flag. Nothing else in `TheBazaar.Data` is touched.
 - **Blocked by name anywhere below that:** anything containing seed, rng, random, opponent, steam, store, title,
   account, ticket, token, auth.
 - **Real players are never read:** no opponent during PvP, no `SimPvpOpponent`, no PvP encounter cards, and no
@@ -246,40 +247,61 @@ of guessing. Offsets found on 2026-09-30: assembly list +0xA0, class cache +0x4D
   every entry look invalid.
 - **K-mem5:** the class an instance field belongs to may be in another assembly (`BazaarGameClient`,
   `BazaarGameShared`), so search classes through the object, not by name in one image.
+- **K-mem6 (2026-10-01):** a class's statics are NOT at a fixed vtable slot. They sit after its vtable's method
+  slots: `vt->vtable[klass->vtable_size]` (array at vt+0x48, method count at class+0x5C here). `Data` and
+  `AnalyticsManager` happen to have the same method count, so slot +0x68 looked fixed; `BoardManager` and
+  `CardController` both read garbage there. `Mono.learn_static_blocks` finds the count's place and only accepts
+  it when two classes agree (`BoardManager.CancellationToken` is a `CancellationTokenSource`, `CardController`'s
+  drag flag is 0 or 1).
+- **K-mem7 (2026-10-01):** `ECardSize` doesn't count from 0, so naming enum values by declaration order read every
+  card one size too big. Sizes come from `bazaar_data.json`; only `ECardType` (which does count from 0) is named
+  by order.
 
-## Shop padlocks (built 2026-10-01, not tested in the game yet)
+## Padlocks on locked offers (built and passed in the game 2026-10-01, not released)
 
-**A padlock sits on the centre of each locked card the shop is offering; the list beside the board names only
-those cards.** Owner, 2026-10-01: place them by proportion ("the shop row of cards is always roughly 1/3 down from
-the top ... the cards sit in the middle of the width, using their sizes you can accurately put a red X or lock in
-the middle of the card"), a padlock rather than an X.
+**A padlock sits on the centre of each locked card on offer in a shop or a level-up; the list beside the board
+names only those cards.** Owner, 2026-10-01: place them by proportion ("the shop row of cards is always roughly 1/3
+down from the top ... using their sizes you can accurately put a red X or lock in the middle of the card"), a
+padlock rather than an X. The reader is always on (owner: "a cornerstone for how the archipelago client will
+work").
 
-- `client.watch_memory` reads every 0.3 s; `offers_at` trusts a reading only when the screen is `Encounter`, the
-  encounter is the one the log says you're at, and every offer is an `Item` with a known template. Otherwise: no
-  padlocks, and the list of everything the merchant could sell, as before.
-- `overlay.card_centres` turns the sizes (Small 1 slot, Medium 2, Large 3; taken from `bazaar_data.json` by the card's
-  template, never from memory - see the `Size` row above) into centres: the row is centred across
-  the window at `SHOP_ROW_Y` of its height. An unknown size means no padlocks at all - a guessed width would move
-  every padlock after it onto the wrong card.
+Passed in the game 2026-10-01 (owner, 1080p, Valpak and other shops, a level-up): padlocks centred on mixed sizes;
+they appear as the flip ends; hovering any card fades them, empty board doesn't; a bought card leaves the others
+in place; stash and Esc menu hide them; a reroll clears them at once and the new ones follow the flip.
+
+- **Driven by memory alone** (`client.refresh_padlocks`), so screens the log never mentions (level-ups) work the
+  same. A screen gets padlocks only if its layout is in `overlay.ROW_GAPS` (measured): `Encounter` (cards touch)
+  and `LevelUp` (68 px apart at 1080p). Loot, events with their own layouts and anything else: none until
+  measured. The list beside the board still follows the log's merchant line (`offers_at`).
+- **Positions** (`overlay.card_centres`): sizes from `bazaar_data.json` (K-mem7), Small/Medium/Large = 1/2/3 slots
+  of 113 px at 1080p, the row centred across the window at 39.8% of its height (measured on two screenshots,
+  centres within 1-2 px). An unknown size means no padlocks at all - a guessed width would move every padlock after
+  it onto the wrong card.
+- **Bought cards leave a gap** (owner: "cards do not move after a purchase"): the row keeps its layout until new
+  cards (new instance ids) come in. ⚠️ If the client starts or reconnects after something was already bought from
+  the row, it can't know where the gap was; that row's padlocks are off until the next new cards.
+- **The game's own flags drive them** (`memreader.BoardUI`, read every 60 ms; owner: "apply those useful flags as
+  the triggers instead"):
+
+  | Flag | Where | Padlocks |
+  |---|---|---|
+  | stash open | `BoardManager.activeStorageToy.toyOpen` | hidden |
+  | Esc menu / dialog | `BoardManager.DialogOpen` | hidden |
+  | a card's tooltip | `TooltipParentComponent._cardTooltipController._currentCard` (the controller lingers while fading out; the card doesn't) | 30% |
+  | dragging | `CardController.IsAnyCardDragging` (static) | 30% |
+  | cards flipping | `BoardManager._isRevealing` (starts ~1 s after the screen opens, lasts ~1 s) | new padlocks wait for it to start and end; 1 s if it doesn't start, 3 s at most |
+
+  `BoardManager` is reached through `Data.<TransitionIn>._boardManager`. If these can't be read (a patch), the
+  padlocks fall back to the mouse's position (each card, plus your board's width for your level, as if full: 4/6/8
+  slots at levels 1-3, 10 after; owner) and a fixed 1 s wait.
 - Each padlock is its own small window: see-through around the lock, click-through (`WS_EX_TRANSPARENT`), never
-  focused, shown only while the game is in front. Checked 2026-10-01 with a stand-in window: placed on the
-  expected centres, clicks pass through, hidden again when the shop closes.
-- New cards flip over before you can see them, so their padlocks wait `FLIP_SECONDS` (1 s, user 2026-10-01); when a
-  card is bought the others' padlocks move at once. Hiding is always immediate.
+  focused, shown only while the game is in front.
 - If a check fails the reader turns itself off until the game restarts, says so once, and shops fall back to the
   list. Game not running or still loading is silent.
+- ⚠️ Only 1080p and 16:9 measured; 1440p, 16:10 and 21:9 are untested.
 
-**Measured 2026-10-01 on the owner's shop screenshot (Small, Large, Small; taken at 1024x576, 16:9):** card
-centres at 39.8% of the window's height (not a third), on a slot grid with a 113 px pitch at 1080p (a card is its
-slots times the pitch; the ~4 px gap between cards is inside it, so `CARD_GAP` is 0). The predicted centres landed
-within 1 px of the real ones. ⚠️ Only one shop and one aspect ratio measured; 16:10 and 21:9 are untested.
-
-⚠️ **The reader's port from the spike hasn't run against the game yet.** The spike read `TemplateId` as a 16-byte
-`Guid`, but the dumps show a `String`; `memreader._get` handles both by the field's type.
-
-Still to check in the game (the padlock rows of the "Next test session" table below): selection order matches
-left to right; the cards don't slide when one is bought (if they do, the padlocks follow anyway - memory drops the
-bought card and the row is recomputed); event item choices (`OFFER_DATA`) use the same row; 1440p.
+Not built yet: padlocks on locked cards inside the stash (they're hidden while it's open), loot screens, events'
+own layouts, locked heroes on the character select screen (owner wants all of these; each needs a screenshot).
 
 ## Bringing the rest into the client (plan, nothing built)
 
