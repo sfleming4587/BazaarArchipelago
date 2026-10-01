@@ -1217,7 +1217,7 @@ async def watch_log(ctx: BazaarContext) -> None:
 
 async def watch_memory(ctx: BazaarContext) -> None:
     """Reads what's on offer from the game's memory a few times a second. If a check fails the reader stays off
-    for this game session and the shop warning falls back to everything the merchant could sell; it's only tried
+    for this game session (no padlocks; the Shop Guide still marks locked cards); it's only tried
     again when the game restarts (never re-engineered after a patch, owner 2026-09-30)."""
     reader, loop, said = Reader(), asyncio.get_running_loop(), None
     while not ctx.exit_event.is_set():
@@ -1242,8 +1242,8 @@ async def watch_memory(ctx: BazaarContext) -> None:
                 said = str(error)
                 logger.info(f"Memory reader off: {error}", extra=FILE_ONLY)
                 if not isinstance(error, NotReady):
-                    ctx.event(f"The memory reader turned itself off ({error}), probably after a game patch. Shops "
-                              f"list every locked card they could sell instead of padlocking the ones on offer.")
+                    ctx.event(f"The memory reader turned itself off ({error}), probably after a game patch. Locked "
+                              f"cards on offer get no padlocks until it's back (the Shop Guide still marks them).")
             if isinstance(error, NotReady):
                 await asyncio.sleep(MEMORY_RETRY[0])
             else:  # wait for this game session to end before trying again

@@ -378,6 +378,10 @@ status line.
   the reader switched off for the session. A failed check on a non-`RunState` object is no patch (attach already
   checks the static's type), so the snapshot reads it as "no screen" and the next look tries again
   (`Mono.is_a`). Only a field missing from a real `RunState` still turns the reader off.
+- ⚠️ **A few seconds after launch the assembly list exists without the game's code** (2026-10-01: "the game's
+  assembly list wasn't found" switched the reader off for that session). A list holding `mscorlib` but not yet
+  `TheBazaarRuntime` now means "still loading" (retried in 5 s); no list at all is still a failed check. The fix is
+  unverified in the game until the next launch.
 - Run **victory** seen 2026-10-01 (Vanessa, 10 wins 3 losses, day 13): `Victories` 9 -> 10 at 13:00:39 while still
   `PVPCombat`; state `EndRunVictory` at 13:00:46; the log's `EndRunVictoryState` at 13:00:47. So memory knows the
   run is won as soon as the 10th win counts, ~8 s before the log.

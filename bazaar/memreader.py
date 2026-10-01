@@ -268,7 +268,7 @@ class Mono:
         return out
 
     def _images(self) -> Dict[str, int]:
-        m = self.m
+        m, loading = self.m, False
         for domain_off in range(0, 0x400, 8):
             assemblies = self._list(m.ptr(self.domain + domain_off), 600)
             if len(assemblies) < 5:
@@ -278,6 +278,10 @@ class Mono:
                 if "mscorlib" in names and "TheBazaarRuntime" in names:
                     image_off = self._image_offset(assemblies[names.index("TheBazaarRuntime")])
                     return {n: m.ptr(a + image_off) for n, a in zip(names, assemblies) if n}
+                loading = loading or "mscorlib" in names
+        # the list is there but the game's own code isn't loaded yet (seen 2026-10-01, a few seconds after launch)
+        if loading:
+            raise NotReady("the game is still loading")
         raise ReaderOff("the game's assembly list wasn't found")
 
     def _image_offset(self, assembly: int) -> int:
