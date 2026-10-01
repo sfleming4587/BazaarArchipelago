@@ -38,6 +38,7 @@ nobody should risk their account to play a randomizer.
 | `tools/build_apworld.py` | builds `bazaar.apworld` (repo root + `releases/`) without opening a window |
 | `tools/quick_run.ps1` | a solo test game: generate, host locally, open the client |
 | `docs/UPDATING-GAME-DATA.md` | what to do after a Bazaar patch |
+| `docs/OVERLAY.md` | what the overlay shows where, when it fades or hides, with an example |
 | `docs/MEMORY-READER.md` | what the game's memory shows that `Player.log` doesn't, the reader's rules, and the shop padlocks |
 | `Archipelago/` (not in git) | an Archipelago 0.6.7 source checkout; `worlds/bazaar` is a junction to `bazaar/` |
 | `.venv/` (not in git) | Python 3.13 (Archipelago doesn't support 3.14 yet) |
