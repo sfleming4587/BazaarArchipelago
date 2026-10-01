@@ -35,6 +35,7 @@ from .overlay import FILE_ONLY  # to the log file only: not the console or the c
 
 POLL_SECONDS = 0.5
 MEMORY_SECONDS = 0.3  # how often the shop is read from memory
+FLIP_SECONDS = 1.0  # new shop cards flip over first; their padlocks show after this
 MEMORY_RETRY = (5, 30)  # seconds before trying the reader again: game not running yet / a check failed
 STATE_FILE = "bazaar_client_state.json"
 
@@ -182,6 +183,7 @@ class BazaarContext(CommonContext):
         self.quiet = False  # replaying runs that ended while the client wasn't watching: no alerts, no DeathLinks
         self.encounter: Optional[EncounterEntered] = None  # the merchant or event you're at, if any
         self.memory: Optional[Snapshot] = None  # what memory says is on screen now; None while the reader is off
+        self.offers_seen: Set[str] = set()  # instance ids of the shop cards padlocked so far (see FLIP_SECONDS)
         self.menu_hero: Optional[str] = None  # hero picked on the hero-select screen, while not in a run
         self.room_seed = ""  # CommonClient never sets seed_name, so the saved state is keyed on this instead
         self.log_session: Optional[str] = None  # which game session the log being read is from (see log_session)
@@ -597,7 +599,11 @@ class BazaarContext(CommonContext):
         else:
             spots, names = [], sorted(c.name for c in stock)
         if self.overlay:
-            self.overlay.show_padlocks([offer.size for offer in offers or ()], spots)
+            sizes = [CARDS_BY_GUID[o.template].size if o.template in CARDS_BY_GUID else None for o in offers or ()]
+            # new cards flip over before you can see them: their padlocks wait for that (user, 2026-10-01)
+            new = any(o.instance not in self.offers_seen for o in offers or ())
+            self.offers_seen = {o.instance for o in offers or ()}
+            self.overlay.show_padlocks(sizes, spots, delay=FLIP_SECONDS if new else 0)
         if names:
             how = "offers" if offers is not None else f"may {verb}"
             logger.info(f"{merchant['name']} {how} these locked cards: {', '.join(names)}", extra=FILE_ONLY)
@@ -613,6 +619,7 @@ class BazaarContext(CommonContext):
 
     def handle_encounter_left(self) -> None:
         self.encounter = None
+        self.offers_seen = set()
         if self.overlay:
             self.overlay.show_shop(None, [])
             self.overlay.show_padlocks([], [])

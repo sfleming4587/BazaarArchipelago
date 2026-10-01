@@ -6,7 +6,7 @@ from unittest import mock
 
 from NetUtils import NetworkItem, NetworkSlot, SlotType
 
-from ..client import BazaarContext, catch_up, dispatch
+from ..client import FLIP_SECONDS, BazaarContext, catch_up, dispatch
 from ..data import CARDS
 from ..items import BASE_ID, GAME, item_name_to_id
 from ..locations import day_location, location_name_to_id, monster_location, win_location
@@ -798,7 +798,7 @@ class TestShopPadlocks(ClientTestBase):
     def snapshot(self, cards, encounter=None, state="Encounter"):
         from ..memreader import Offer, Snapshot
         return Snapshot(state, encounter or self.merchant,
-                        tuple(Offer(f"itm_{i}", c.guid, c.size, "Item") for i, c in enumerate(cards)))
+                        tuple(Offer(f"itm_{c.guid}", c.guid, "Item") for c in cards))
 
     def enter(self) -> None:
         from ..logparser import EncounterEntered
@@ -808,7 +808,7 @@ class TestShopPadlocks(ClientTestBase):
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.enter()
         overlay = self.ctx.overlay
-        overlay.show_padlocks.assert_called_with([c.size for c in self.row], [1])
+        overlay.show_padlocks.assert_called_with([c.size for c in self.row], [1], delay=FLIP_SECONDS)
         merchant, names, _verb = overlay.show_shop.call_args.args
         self.assertEqual(names, [LOCKED.name])
         self.assertTrue(overlay.show_shop.call_args.kwargs["exact"])
@@ -817,19 +817,20 @@ class TestShopPadlocks(ClientTestBase):
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.enter()
         self.ctx.handle_snapshot(self.snapshot([self.row[0], self.row[2]]))
-        self.ctx.overlay.show_padlocks.assert_called_with([self.row[0].size, self.row[2].size], [])
+        # the cards left were already showing: no flip, no wait
+        self.ctx.overlay.show_padlocks.assert_called_with([self.row[0].size, self.row[2].size], [], delay=0)
         self.assertEqual(self.ctx.overlay.show_shop.call_args.args[1], [])
 
     def test_without_memory_it_lists_everything_the_merchant_could_sell(self) -> None:
         self.enter()
-        self.ctx.overlay.show_padlocks.assert_called_with([], [])
+        self.ctx.overlay.show_padlocks.assert_called_with([], [], delay=0)
         self.assertIn(LOCKED.name, self.ctx.overlay.show_shop.call_args.args[1])
         self.assertFalse(self.ctx.overlay.show_shop.call_args.kwargs["exact"])
 
     def test_a_reading_from_another_screen_is_not_trusted(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row, state="Choice"))
         self.enter()
-        self.ctx.overlay.show_padlocks.assert_called_with([], [])
+        self.ctx.overlay.show_padlocks.assert_called_with([], [], delay=0)
         self.ctx.handle_snapshot(self.snapshot(self.row, encounter="00000000-0000-0000-0000-000000000000"))
-        self.ctx.overlay.show_padlocks.assert_called_with([], [])
+        self.ctx.overlay.show_padlocks.assert_called_with([], [], delay=0)
         self.assertFalse(self.ctx.overlay.show_shop.call_args.kwargs["exact"])

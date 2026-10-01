@@ -271,10 +271,12 @@ class Overlay:
         exact: these are the locked cards actually on offer right now (read from the game), not every possible one."""
         self.commands.put(("shop", (merchant, list(locked), verb, exact) if merchant else None))
 
-    def show_padlocks(self, sizes: List[Optional[str]], locked: List[int]) -> None:
+    def show_padlocks(self, sizes: List[Optional[str]], locked: List[int], delay: float = 0) -> None:
         """A padlock on each locked card on offer: sizes of every offered card left to right, and the positions
-        (0-based) of the locked ones. No locked positions hides them."""
-        self.commands.put(("padlocks", (tuple(sizes), tuple(locked)) if locked else None))
+        (0-based) of the locked ones. No locked positions hides them (at once). delay: seconds to wait before
+        showing them, while new cards flip over."""
+        value = (tuple(sizes), tuple(locked)) if locked else None
+        self.commands.put(("padlocks", (value, time.monotonic() + (delay if value else 0))))
 
     def show_board(self, title: Optional[str], allowed: list, locked: list) -> None:
         """Shop Guide: allowed cards in colour first, locked cards greyed out below. title=None hides it."""
@@ -349,6 +351,7 @@ class _Screen:
 
         self.padlocks: list = []  # one small click-through window per padlock, made as needed and reused
         self.padlocks_wanted = 0  # how many of them are in use
+        self.pending_padlocks = None  # (padlocks, when to show them) while new cards are still flipping over
 
         self.layout: dict = {}  # the strips for where the game window is now (see relayout)
         self.relayout((0, 0, root.winfo_screenwidth(), root.winfo_screenheight()))  # until the game is seen
@@ -376,7 +379,8 @@ class _Screen:
             "tracker_toggle": lambda _: self.tracker.toggle(),
             "toast": self.new_toast,
             **{kind: (lambda value, kind=kind: self.set_state(kind, value))
-               for kind in ("locked", "deathlink", "shop", "status", "padlocks")},
+               for kind in ("locked", "deathlink", "shop", "status")},
+            "padlocks": self.new_padlocks,
         }
 
     def run(self) -> None:
@@ -719,6 +723,17 @@ class _Screen:
         self.state[kind] = value
         return True
 
+    def new_padlocks(self, value) -> bool:  # (padlocks, when to show them)
+        self.pending_padlocks = value
+        return self.show_due_padlocks()
+
+    def show_due_padlocks(self) -> bool:
+        """The latest padlocks once their time has come (a newer command replaces one still waiting)."""
+        if self.pending_padlocks and self.pending_padlocks[1] <= time.monotonic():
+            self.state["padlocks"], self.pending_padlocks = self.pending_padlocks[0], None
+            return True
+        return False
+
     def new_toast(self, value) -> bool:  # (text, expires, warning)
         self.state["toasts"] = (self.state["toasts"] + [value])[-MAX_TOASTS:]
         return True
@@ -758,6 +773,7 @@ class _Screen:
                 self.root.destroy()
                 return "quit"
             changed = bool(self.handlers[kind](value)) or changed
+        changed = self.show_due_padlocks() or changed
         now = time.monotonic()
         if any(expires <= now for _, expires, _ in self.state["toasts"]):
             self.state["toasts"] = [t for t in self.state["toasts"] if t[1] > now]

@@ -36,8 +36,7 @@ class NotReady(ReaderOff):
 
 class Offer(NamedTuple):
     instance: str  # the game's instance id, stable while the card exists
-    template: Optional[str]  # the card's guid (the same guids as bazaar_data.json)
-    size: Optional[str]  # Small, Medium, Large
+    template: Optional[str]  # the card's guid (the same guids as bazaar_data.json); its size comes from there
     kind: Optional[str]  # Item, Skill, EventEncounter, ...
 
 
@@ -433,6 +432,9 @@ class Reader:
         m = self.memory
         if code == STRING:
             return m.mono_string(m.ptr(obj + offset))
+        # An enum's name is taken by its position in the declaration. ⚠️ That's only right when its values count from
+        # 0: ECardType does (Item, Skill, EventEncounter matched the screen), ECardSize doesn't (it read one size too
+        # big, 2026-10-01), so sizes come from bazaar_data.json instead.
         if code == VALUETYPE and self.mono.name(self.mono.parent(data) or 0) == "Enum":
             names = self.enums.setdefault(data, self.mono.enum_names(data))
             value = m.i32(obj + offset)
@@ -488,8 +490,7 @@ class Reader:
             for instance in ids:
                 card = by_id.get(instance)
                 if not card:
-                    offers.append(Offer(instance, None, None, None))
+                    offers.append(Offer(instance, None, None))
                     continue
-                offers.append(Offer(instance, self._get(card, "TemplateId"), self._get(card, "Size"),
-                                    self._get(card, "Type")))
+                offers.append(Offer(instance, self._get(card, "TemplateId"), self._get(card, "Type")))
         return Snapshot(name, encounter, tuple(offers))

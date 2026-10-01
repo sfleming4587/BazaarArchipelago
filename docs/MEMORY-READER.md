@@ -65,7 +65,7 @@ Prestige moved with the loss counter every time: 25 → 24 (Day 1), 24 → 22, 2
 ### 4. The shop's exact contents, with tier, size and price
 
 Every merchant, loot and level-up offer is readable, including rerolls. Example, Herma on Day 2: Cellar (Bronze,
-Large, 4 gold), Philosopher's Stone (Bronze, Medium, 2 gold), Sword Cane (Bronze, Large, 4 gold), reroll cost 3,
+Medium, 4 gold), Philosopher's Stone (Bronze, Small, 2 gold), Sword Cane (Bronze, Medium, 4 gold), reroll cost 3,
 1 reroll left. 469 item offers were read across the run with no misses we noticed. This is what the opt-in
 screenshot idea was for: it could mark locked cards on the overlay without matching card art.
 
@@ -142,7 +142,7 @@ Each card is an entity in `Data.Entities`, with:
 |---|---|
 | name | from `TemplateId` + our data; falls back to the game's internal name (`Template.InternalName`) |
 | `Tier` | Bronze, Silver, Gold, Diamond, Legendary |
-| `Size` | Small, Medium, Large |
+| `Size` | ⚠️ read one size too big by the spike (2026-10-01): `ECardSize` doesn't count from 0, so naming values by declaration order is wrong. Not read any more - sizes come from `bazaar_data.json` |
 | `Type` | Item, Skill, CombatEncounter, EventEncounter, PvpEncounter, PedestalEncounter, EncounterStep |
 | `Section` | 0 = board, 1 = stash, empty = not placed (on offer) |
 | `LeftSocketId` | the slot, 0-9. **Live while dragging**: Cellar showed stash slot 3 while it was held over it |
@@ -257,12 +257,15 @@ the middle of the card"), a padlock rather than an X.
 - `client.watch_memory` reads every 0.3 s; `offers_at` trusts a reading only when the screen is `Encounter`, the
   encounter is the one the log says you're at, and every offer is an `Item` with a known template. Otherwise: no
   padlocks, and the list of everything the merchant could sell, as before.
-- `overlay.card_centres` turns the sizes (Small 1 slot, Medium 2, Large 3) into centres: the row is centred across
+- `overlay.card_centres` turns the sizes (Small 1 slot, Medium 2, Large 3; taken from `bazaar_data.json` by the card's
+  template, never from memory - see the `Size` row above) into centres: the row is centred across
   the window at `SHOP_ROW_Y` of its height. An unknown size means no padlocks at all - a guessed width would move
   every padlock after it onto the wrong card.
 - Each padlock is its own small window: see-through around the lock, click-through (`WS_EX_TRANSPARENT`), never
   focused, shown only while the game is in front. Checked 2026-10-01 with a stand-in window: placed on the
   expected centres, clicks pass through, hidden again when the shop closes.
+- New cards flip over before you can see them, so their padlocks wait `FLIP_SECONDS` (1 s, user 2026-10-01); when a
+  card is bought the others' padlocks move at once. Hiding is always immediate.
 - If a check fails the reader turns itself off until the game restarts, says so once, and shops fall back to the
   list. Game not running or still loading is silent.
 
