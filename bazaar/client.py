@@ -44,6 +44,8 @@ MEMORY_RETRY = (5, 30)  # seconds before trying the reader again: game not runni
 STATE_FILE = "bazaar_client_state.json"
 
 SHOP_CARDS = [c for c in CARDS if c.shop]
+NOT_CONNECTED = ("NOT CONNECTED to your multiworld - click Connect at the top of the Bazaar Client (or type "
+                 "/connect). Nothing you do in the game counts until then.")
 SCREEN_TITLES = {"LevelUp": "Level-up", "Loot": "Loot"}  # the Shop Guide's title where there's no event name
 # what the client assumes when a seed's slot_data lacks a setting (older apworlds); read through BazaarContext.setting()
 SLOT_DEFAULTS = {"heroes": [], "max_day": 15, "pvp_win_checks": False, "monster_tiers": {}, "heroes_required": 1,
@@ -208,6 +210,7 @@ class BazaarContext(CommonContext):
         self.padlock_rows: Dict[str, tuple] = {}
         self.board_ui = None  # memreader.BoardUI: hover/drag/stash/dialog/reveal, None if unreadable
         self.hero_prefs = None  # memreader.HeroPrefs: Random on/off and its exclusions, None if unreadable
+        self.menu_layers: Optional[int] = None  # the game's own screens open on the menu (memreader.menu_layers)
         self.menu_hero: Optional[str] = None  # hero picked on the hero-select screen, while not in a run
         self.room_seed = ""  # CommonClient never sets seed_name, so the saved state is keyed on this instead
         self.log_session: Optional[str] = None  # which game session the log being read is from (see log_session)
@@ -226,6 +229,7 @@ class BazaarContext(CommonContext):
         elif cmd == "Connected":
             self.slot_data = args.get("slot_data") or {}
             self.load_state()
+            self.update_status()  # the "not connected" warning goes
             Utils.async_start(self.update_death_link(bool(self.setting("death_link"))))
             logger.info(f"Watching {self.log_path}", extra=FILE_ONLY)
         elif cmd == "ReceivedItems":
@@ -277,6 +281,7 @@ class BazaarContext(CommonContext):
         super().reset_server_state()
         self.slot_data = {}
         self.caught_up = False
+        self.update_status()  # the "not connected" warning
 
     async def disconnect(self, allow_autoreconnect: bool = False) -> None:
         # a different room may follow: nothing from this one (checks, goal, the hero on the menu) may leak into it
@@ -700,6 +705,11 @@ class BazaarContext(CommonContext):
             slot += {"Small": 1, "Medium": 2, "Large": 3}[size]
         self.overlay.show_padlocks("Stash", sizes, spots, level=self.memory.level)
 
+    def handle_menu_layers(self, layers: Optional[int]) -> None:
+        if layers != self.menu_layers:
+            self.menu_layers = layers
+            self.update_status()
+
     def handle_hero_prefs(self, prefs) -> None:
         """Your Random setting changed (memory): the menu panel's warning follows it."""
         if prefs != self.hero_prefs:
@@ -928,8 +938,8 @@ class BazaarContext(CommonContext):
         (what's still to check is PopTracker's job - user, 2026-09-28). On the hero-select screen: the heroes you
         may play with (checks done / checks in logic), and a warning if the picked one is locked (user, 2026-09-29:
         "make it more obvious on the homescreen which heros are available")."""
-        if not self.slot_data:
-            return None, False, False
+        if not self.slot_data:  # owner, 2026-10-01: warn when there's no connection to the multiworld
+            return NOT_CONNECTED, True, False
         goal = f"Goal {len(self.heroes_won())}/{self.setting('heroes_required')}"
         if self.run.get("active"):
             hero, day, max_day = self.run["hero"], self.run.get("day", 1), self.setting("max_day")
@@ -991,7 +1001,8 @@ class BazaarContext(CommonContext):
         else:
             picked = self.menu_hero
             warning = None if self.hero_unlocked(picked) else f"{picked.upper()} IS LOCKED - pick another hero"
-        return {"picked": picked, "warning": warning, "note": note, "heroes": heroes,
+        # hidden while any of the game's own screens is open over the menu (settings, stores, character select ...)
+        return {"picked": picked, "warning": warning, "note": note, "heroes": heroes, "covered": bool(self.menu_layers),
                 "won": len(self.heroes_won()), "required": self.setting("heroes_required"),
                 "bypasses": self.bypasses_ready()}
 
@@ -1216,6 +1227,8 @@ async def watch_memory(ctx: BazaarContext) -> None:
                 await asyncio.sleep(MEMORY_SECONDS)
             ctx.handle_snapshot(await loop.run_in_executor(None, reader.snapshot))
             ctx.handle_hero_prefs(reader.hero_prefs())
+            if not ctx.run.get("active"):  # the menu's hero panel hides under the game's own screens
+                ctx.handle_menu_layers(await loop.run_in_executor(None, reader.menu_layers))
         except ReaderOff as error:
             reader.close()
             ctx.handle_snapshot(None)
@@ -1257,6 +1270,7 @@ async def main(args) -> None:
         await asyncio.get_running_loop().run_in_executor(None, ctx.overlay.ready.wait, 10)
         if not ctx.overlay.available:
             logger.warning("The alert window can't open on this PC (tkinter is missing). Warnings still show here.")
+        ctx.update_status()  # "not connected" until the connection is made
     watcher = asyncio.create_task(watch_log(ctx), name="log watcher")
     # always on (owner, 2026-10-01: "a cornerstone for how the archipelago client will work"); Windows-only, like
     # the game. If a check fails it turns itself off and the client carries on from the log (see watch_memory).

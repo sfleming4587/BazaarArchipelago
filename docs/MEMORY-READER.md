@@ -259,6 +259,10 @@ of guessing. Offsets found on 2026-09-30: assembly list +0xA0, class cache +0x4D
   `CardController` both read garbage there. `Mono.learn_static_blocks` finds the count's place and only accepts
   it when two classes agree (`BoardManager.CancellationToken` is a `CancellationTokenSource`, `CardController`'s
   drag flag is 0 or 1).
+- **K-mem8 (2026-10-01):** some objects nothing static points to (the input manager) are found by searching the
+  game's private read-write memory once for their class's vtable pointer (`Memory.find_pointer`, ~4.4 GB in 6-28 s);
+  this Mono's GC never moves objects, so the address holds for the session. Needs PROCESS_QUERY_INFORMATION (to
+  list the regions) on top of VM_READ - still read-only.
 - **K-mem7 (2026-10-01):** `ECardSize` doesn't count from 0, so naming enum values by declaration order read every
   card one size too big. Sizes come from `bazaar_data.json`; only `ECardType` (which does count from 0) is named
   by order.

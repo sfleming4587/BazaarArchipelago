@@ -181,6 +181,13 @@ class TestStatusLine(ClientTestBase):
         self.assertNotIn("next", text)  # what's left to check is PopTracker's job
         self.assertIn("Goal 0/2", text)
 
+    def test_no_connection_warns(self) -> None:
+        """Owner, 2026-10-01: warn when the client isn't connected to the multiworld."""
+        self.ctx.slot_data = {}
+        text, warning, big = self.ctx.status_line()
+        self.assertTrue(warning)
+        self.assertIn("NOT CONNECTED", text)
+
     def test_picking_a_locked_hero_warns(self) -> None:
         self.play(HeroSelected("Dooley"))
         text, warning, big = self.ctx.status_line()

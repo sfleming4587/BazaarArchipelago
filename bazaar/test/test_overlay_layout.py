@@ -341,23 +341,3 @@ class TestShopGuideKeepsOfferedCards(unittest.TestCase):
         finally:
             root.destroy()
 
-
-class TestMenuButtons(unittest.TestCase):
-    """Owner's main-menu screenshot 2026-10-01: "Change hero" at the left, the close X at the top right."""
-
-    def test_clicks_on_the_owners_screenshot(self) -> None:
-        from ..overlay import menu_click
-        window = (0, 0, 1920, 1080)
-        self.assertEqual(menu_click(window, (200, 280), random=True), "open")  # "CHANGE HERO / Random"
-        self.assertIsNone(menu_click(window, (380, 280), random=True))  # past the narrower Random button
-        self.assertEqual(menu_click(window, (380, 280)), "open")  # a hero's button is wider ("Jules")
-        self.assertIsNone(menu_click(window, (200, 380)))  # "Equip collectibles" under it
-        self.assertEqual(menu_click(window, (1822, 75)), "close")  # the red-circled X
-        self.assertIsNone(menu_click(window, (960, 540)))  # a hero card
-        self.assertIsNone(menu_click(window, (1700, 960)))  # Ready
-
-    def test_the_buttons_scale_with_the_window(self) -> None:
-        from ..overlay import menu_click
-        window = (100, 50, 2560, 1440)  # 1440p, not at the screen's corner
-        self.assertEqual(menu_click(window, (100 + 200 * 4 / 3, 50 + 280 * 4 / 3)), "open")
-        self.assertEqual(menu_click(window, (100 + 2560 - 98 * 4 / 3, 50 + 75 * 4 / 3)), "close")

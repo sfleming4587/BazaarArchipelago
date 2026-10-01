@@ -44,12 +44,15 @@ Random itself comes from memory (your character-select settings: Random on/off a
 warning names the heroes Random could roll that are locked or not in the multiworld, or says Random is safe. Each
 tile shows the checks you've got with that hero and "Cards X / Y" (their cards unlocked of all of them).
 
-The game gives no readable sign that character select is open (nothing reachable in memory, nothing in the log),
-so the panel follows the menu's own buttons (owner's idea, 2026-10-01, passed in the game): a click on "Change hero"
-hides it; the close X, Esc, or picking a hero or Random shows it again. Only the left button, Esc and the mouse
-position are read, and only while the game is in front. The "Change hero" area follows the button's width (x 35-301
-with Random, 35-400 with a hero, y 225-333 at 1080p; `overlay.menu_click`). The header's "Hide heroes" / "Show
-heroes" covers anything else (e.g. clicking the hero that's already picked); hiding lasts until you leave the menu.
+**The panel only shows while none of the game's own screens is open over the menu** - settings, the stores, chests,
+character select, MENU, anything: the game keeps a stack of input layers (`InputManager.Context`) and every one of
+those screens pushes "Modal" onto it while it's open (watched with the owner 2026-10-01). One generic rule, no
+per-screen lists (owner: "I want a generic solution ... simple is a priority"). A click-detection version came first
+and was dropped for this. If the stack can't be read (a patch), the panel just stays visible; the header's "Hide
+heroes" / "Show heroes" is the fallback.
+
+**Not connected:** while the client has no connection to the multiworld, the header says so in red - "NOT CONNECTED
+... click Connect at the top of the Bazaar Client (or type /connect)" (owner, 2026-10-01).
 
 ## When things show, fade or hide
 

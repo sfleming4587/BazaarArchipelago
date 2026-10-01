@@ -89,7 +89,13 @@ if sys.platform == "win32":
     k32.CloseHandle.argtypes = [W.HANDLE]
     u32 = C.WinDLL("user32", use_last_error=True)
     u32.FindWindowW.restype = W.HWND
-    PROCESS_VM_READ, PROCESS_QUERY_LIMITED_INFORMATION = 0x10, 0x1000
+    PROCESS_VM_READ, PROCESS_QUERY_INFORMATION, PROCESS_QUERY_LIMITED_INFORMATION = 0x10, 0x400, 0x1000
+
+    class _Region(C.Structure):  # MEMORY_BASIC_INFORMATION
+        _fields_ = [("BaseAddress", C.c_void_p), ("AllocationBase", C.c_void_p), ("AllocationProtect", W.DWORD),
+                    ("PartitionId", W.WORD), ("RegionSize", C.c_size_t), ("State", W.DWORD), ("Protect", W.DWORD),
+                    ("Type", W.DWORD)]
+    k32.VirtualQueryEx.argtypes = [W.HANDLE, C.c_void_p, C.POINTER(_Region), C.c_size_t]
 
     class _ModuleEntry(C.Structure):
         _fields_ = [("dwSize", W.DWORD), ("th32ModuleID", W.DWORD), ("th32ProcessID", W.DWORD),
@@ -145,7 +151,9 @@ class Memory:
     """Reads another process's memory. Every read that can't be done returns None (or 0 for a pointer)."""
 
     def __init__(self, pid: int) -> None:
-        self.handle = k32.OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        # read-only: reading memory, and (QUERY_INFORMATION) listing its regions to find one object once
+        self.handle = k32.OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION,
+                                      False, pid)
         if not self.handle:
             raise ReaderOff(f"can't open the game for reading (error {C.get_last_error()})")
 
@@ -187,6 +195,25 @@ class Memory:
             return data.split(b"\0", 1)[0].decode("ascii")
         except UnicodeDecodeError:
             return None
+
+    def find_pointer(self, value: int) -> List[int]:
+        """Every 8-byte-aligned address in the game's private read-write memory holding `value` - how an object
+        nothing static points to is found by its class's vtable (a few seconds; done once, objects don't move)."""
+        key, found, address, region = struct.pack("<Q", value), [], 0, _Region()
+        while k32.VirtualQueryEx(self.handle, C.c_void_p(address), C.byref(region), C.sizeof(region)):
+            base, size = region.BaseAddress or 0, region.RegionSize
+            if region.State == 0x1000 and region.Type == 0x20000 and region.Protect in (0x04, 0x40):  # committed RW
+                for offset in range(0, size, 1 << 22):
+                    chunk = self.read(base + offset, min(1 << 22, size - offset)) or b""
+                    i = chunk.find(key)
+                    while i >= 0:
+                        if i % 8 == 0:
+                            found.append(base + offset + i)
+                        i = chunk.find(key, i + 1)
+            address = base + size
+            if address >= 0x7FFFFFFFFFFF:
+                break
+        return found
 
     def mono_string(self, obj: int) -> Optional[str]:
         """A System.String: length at +0x10, UTF-16 text at +0x14."""
@@ -481,6 +508,8 @@ class Reader:
         self.enums: Dict[int, List[str]] = {}
         self.ui_paths = self._learn_ui(data, base, statics)
         self.prefs_path = self._learn_prefs()
+        self.input_manager = self.input_class = 0  # found when first needed (menu_layers)
+        self.input_searched = False
 
     def _learn_prefs(self) -> Optional[int]:
         """Where PlayerPreferences keeps its data (a static), or None if this game version doesn't match."""
@@ -490,6 +519,33 @@ class Reader:
             block = self.mono.static_block(prefs) if "method_count" in self.mono.off else 0
             return block + offset if block else None
         except (ReaderOff, StopIteration):
+            return None
+
+    def menu_layers(self) -> Optional[int]:
+        """How many of the game's own screens are open over the board or menu (settings, stores, chests, character
+        select ...): the size of InputManager.Context, the game's stack of input layers - each screen pushes
+        "Modal" and pops it when it closes (watched 2026-10-01 with the owner). None if it can't be read. The
+        input manager is found once per game session (nothing static points to it; it never moves)."""
+        if not self.memory:
+            return None
+        mono, m = self.mono, self.memory
+        try:
+            if self.input_manager and mono.klass(self.input_manager) != self.input_class:
+                self.input_manager = None  # gone (it never should): nothing to read until the game restarts
+            if not self.input_searched:  # once per game session: the search reads a few GB
+                self.input_searched = True
+                self.input_class = mono.find_class("TheBazaarRuntime", "TheBazaar.Inputs", "InputManager")
+                vtable = m.ptr(m.ptr(self.input_class + mono.off["class_runtime_info"]) + 8)
+                for obj in m.find_pointer(vtable) if vtable else []:
+                    context = self._get(obj, "Context")
+                    if context and mono.name(mono.klass(context)) == "InputContextStack":
+                        self.input_manager = obj
+                        break
+            if not self.input_manager:
+                return None
+            stack = self._get(self._get(self.input_manager, "Context"), "_stack")
+            return self._get(stack, "_size") if stack else None
+        except Exception:
             return None
 
     def hero_prefs(self) -> Optional[HeroPrefs]:
