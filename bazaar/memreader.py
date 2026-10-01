@@ -417,6 +417,20 @@ class Mono:
     def klass(self, obj: int) -> int:
         return self.m.ptr(self.m.ptr(obj)) if obj else 0
 
+    def is_a(self, obj: int, name: str) -> bool:
+        """The object's class is `name` or derives from it. False for anything unreadable (a torn-down object)."""
+        try:
+            c = self.klass(obj)
+            for _ in range(16):  # a garbage parent chain must not loop
+                if not c:
+                    return False
+                if self.name(c) == name:
+                    return True
+                c = self.parent(c)
+        except Exception:
+            pass
+        return False
+
     def enum_names(self, c: int) -> List[str]:
         return [n for n, _o, static, _code, _data in self.fields(c) if static and n != "value__"]
 
@@ -665,7 +679,10 @@ class Reader:
     def _snapshot(self) -> Snapshot:
         m = self.memory
         state = m.ptr(self.statics["<CurrentState>k__BackingField"])
-        if not state:
+        # Not a RunState: the static was caught mid-change - once, right after a concede (2026-10-01), it pointed at
+        # an object without StateName and the reader switched off for the session. That's no patch (attach checks the
+        # static's type), so it's read as "no screen" and the next look tries again.
+        if not state or not self.mono.is_a(state, "RunState"):
             return Snapshot(None, None, ())
         name = self._get(state, "StateName")
         if name is not None and name not in RUN_STATES:
