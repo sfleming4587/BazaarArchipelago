@@ -15,6 +15,8 @@ Game state as seen in the log (client version 1.0.x, Sept 2026):
         ^ logged for every item that lands on your board or in storage: shop buys, event rewards, loot, level-ups
     [BoardManager] Sold Card itm_xxx for 2 gold.
         ^ the same instance id the item got when it was gained, so held items can be tracked exactly
+    [GameSimHandler] Transformed: itm_old into: itm_new
+        ^ a card turned into another (e.g. Mandala); only ids - what it became isn't logged (seen 2026-10-01)
 """
 import os
 import re
@@ -37,6 +39,7 @@ EXIT_TASKS_RE = re.compile(r"\[AppState\] Waiting for \d+ exit tasks")
 VERSION_RE = re.compile(r"\[VersionShow\]\s+Version: (\d+\.\d+\.\d+)")
 CONCEDE_RE = re.compile(r"type=AbandonRunCommand|Sending AbandonRunCommand")
 SOLD_RE = re.compile(r"\[BoardManager\] Sold Card (itm_\S+) for \d+ gold")
+TRANSFORM_RE = re.compile(r"\[GameSimHandler\] Transformed: (itm_\S+) into: (itm_\S+)")
 
 # states in which the game shows you something to pick from (a shop, an event, a level-up, loot)
 CHOICE_STATES = ("EncounterState", "LevelUpState", "LootState", "PedestalState")
@@ -72,6 +75,12 @@ class CardGained:
 @dataclass(frozen=True)
 class CardSold:
     instance: str
+
+
+@dataclass(frozen=True)
+class CardTransformed:
+    old: str  # the instance that turned into another card
+    new: str
 
 
 @dataclass(frozen=True)
@@ -206,6 +215,8 @@ class LogParser:
             self.conceded = True
         elif match := SOLD_RE.search(line):
             yield CardSold(match[1])
+        elif match := TRANSFORM_RE.search(line):
+            yield CardTransformed(match[1], match[2])
         elif self.in_pvp and EXIT_TASKS_RE.search(line):
             self.pvp_exit_tasks = True
 

@@ -26,7 +26,8 @@ from .items import (GAME, HERO_ITEM_IDS, LOCK_BYPASS_ID, SELL_TRAP, SELL_TRAP_ID
                     item_id_to_name, item_name_to_id, lock_items_by_hero)
 from .locations import (card_requirements, day_location, hero_checks, location_name_to_id, monster_location,
                         pvp_location, win_location)
-from .logparser import (DEFAULT_LOG_PATH, PREV_LOG, HeroSelected, CardGained, CardSold, DayReached, EncounterEntered,
+from .logparser import (DEFAULT_LOG_PATH, PREV_LOG, HeroSelected, CardGained, CardSold, CardTransformed, DayReached,
+                        EncounterEntered,
                         EncounterLeft, FightStarted, GameVersion, LogParser, LogTailer, MonsterFought, PvPFought,
                         RunEnded, RunStarted, UnrecognizedRun, log_session)
 from .memreader import NotReady, Reader, ReaderOff, Snapshot, game_pid
@@ -569,6 +570,23 @@ class BazaarContext(CommonContext):
         self.toast(f"{what}: {CARDS_BY_GUID[event.guid].name} is locked", seconds=12, warning=True)
         self.refresh_held()
 
+    def handle_transform(self, event: CardTransformed) -> None:
+        """A card turned into another (owner, 2026-10-01: "Lets allow transformations"): the old one stops counting
+        - a held locked card no longer blocks checks - and what it became is allowed for the rest of the run,
+        locked or not (the log doesn't even say what it became)."""
+        if not self.run.get("active"):
+            return
+        self.run.get("inventory", {}).pop(event.old, None)
+        self.run.setdefault("transformed", []).append(event.new)
+        guid = self.run.get("held", {}).pop(event.old, None)
+        if guid:
+            self.event(f"{CARDS_BY_GUID[guid].name} transformed into another card - transformed cards are allowed."
+                       + ("" if self.run.get("held") else " Checks unblocked."))
+            self.refresh_held()
+        else:
+            self.save_state()
+        self.refresh_padlocks()
+
     def handle_sold(self, event: CardSold) -> None:
         self.run.get("inventory", {}).pop(event.instance, None)
         traps = self.run.get("traps", [])
@@ -631,10 +649,11 @@ class BazaarContext(CommonContext):
     def show_stash_padlocks(self) -> None:
         """A padlock on each locked card in your open stash, in whatever slot it sits (owner, 2026-10-01: cards move
         freely). The stash is laid out as a 10-slot row with Empty filling the free slots."""
-        starts = {slot: template for slot, template in self.memory.stash}
+        starts = {slot: (template, instance) for slot, template, instance in self.memory.stash}
         locked, sizes, spots, slot = self.run_locked_guids(), [], [], 0
+        allowed = set(self.run.get("transformed", []))  # transformed cards are allowed (handle_transform)
         while slot < 10:
-            template = starts.get(slot)
+            template, instance = starts.get(slot, (None, None))
             size = CARDS_BY_GUID[template].size if template in CARDS_BY_GUID else None
             if template is None:  # a free slot
                 sizes.append("Empty")
@@ -643,7 +662,7 @@ class BazaarContext(CommonContext):
             if size is None:  # a card we can't size: a guess would put every padlock after it in the wrong place
                 self.overlay.show_padlocks(None, [], [])
                 return
-            if template in locked:
+            if template in locked and instance not in allowed:
                 spots.append(len(sizes))
             sizes.append(size)
             slot += {"Small": 1, "Medium": 2, "Large": 3}[size]
@@ -941,6 +960,8 @@ async def dispatch(ctx: BazaarContext, event) -> None:
         ctx.handle_gain(event)
     elif isinstance(event, CardSold):
         ctx.handle_sold(event)
+    elif isinstance(event, CardTransformed):
+        ctx.handle_transform(event)
     elif isinstance(event, FightStarted):
         ctx.handle_fight(event)
     elif isinstance(event, EncounterEntered):

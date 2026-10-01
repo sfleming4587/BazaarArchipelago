@@ -60,7 +60,7 @@ class Snapshot(NamedTuple):
     encounter: Optional[str]  # the guid of the merchant/event/monster you're at
     offers: Tuple[Offer, ...]  # in the game's own order
     level: Optional[int] = None  # your level (it sets how wide your board is)
-    stash: Tuple[Tuple[int, Optional[str]], ...] = ()  # your stash's cards: (first slot 0-9, template), any order
+    stash: Tuple[Tuple[int, Optional[str], Optional[str]], ...] = ()  # your stash: (first slot 0-9, template, instance id)
 
 
 def blocked(name: Optional[str]) -> bool:
@@ -601,11 +601,14 @@ class Reader:
         if not sockets:
             return ()
         out, seen = [], set()
+        ids = None
         for slot in range(min(m.i32(sockets + 0x18) or 0, 10)):
             card = m.ptr(sockets + 0x20 + 8 * slot)
             if card and card not in seen:
                 seen.add(card)
-                out.append((slot, self._get(card, "TemplateId")))
+                if ids is None:  # instance ids are the Entities keys (only read when the stash isn't empty)
+                    ids = {obj: instance for instance, obj in self._entities().items()}
+                out.append((slot, self._get(card, "TemplateId"), ids.get(card)))
         return tuple(out)
 
     def _level(self) -> Optional[int]:

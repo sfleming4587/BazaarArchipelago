@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from ..logparser import (CardGained, CardSold, DayReached, EncounterEntered, EncounterLeft, FightStarted, HeroSelected,
+from ..logparser import (CardGained, CardSold, CardTransformed, DayReached, EncounterEntered, EncounterLeft, FightStarted, HeroSelected,
                          LogParser,
                          MonsterFought, PvPFought, GameVersion, UnrecognizedRun,
                          LogTailer, RunEnded, RunStarted)
@@ -81,8 +81,10 @@ class TestLogParser(unittest.TestCase):
             state("ChoiceState", "LootState"), gain("itm_c"),
             "[x] [NetworkManager] [HttpGameClient] Command completed: type=SellCardCommand, requestId=9",
             "[x] [BoardManager] Sold Card itm_c for 1 gold.",
+            "[x] [GameSimHandler] Transformed: itm_a into: itm_d ",
         ]
         events = [e for e in LogParser([merchant]).feed_all(lines) if isinstance(e, (CardGained, CardSold))]
+        self.assertIn(CardTransformed("itm_a", "itm_d"), LogParser([merchant]).feed_all(lines))
         self.assertEqual(events, [CardGained(GUID, "itm_a", True), CardGained(GUID, "itm_b", False),
                                   CardGained(GUID, "itm_c", False), CardSold("itm_c")])
 

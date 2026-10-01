@@ -878,7 +878,7 @@ class TestShopPadlocks(ClientTestBase):
     def test_an_open_stash_padlocks_its_locked_cards_in_their_slots(self) -> None:
         from ..memreader import BoardUI
         free = self.row[0]
-        snapshot = self.snapshot(self.row)._replace(stash=((5, LOCKED.guid), (0, free.guid)))
+        snapshot = self.snapshot(self.row)._replace(stash=((5, LOCKED.guid, "itm_a"), (0, free.guid, "itm_b")))
         self.ctx.handle_snapshot(snapshot)
         self.ctx.handle_board_ui(BoardUI(False, False, True, False, False))
         empties = 5 - {"Small": 1, "Medium": 2, "Large": 3}[free.size]
@@ -888,8 +888,31 @@ class TestShopPadlocks(ClientTestBase):
         self.ctx.handle_board_ui(BoardUI(False, False, False, False, False))  # closed: the shop's padlocks again
         self.assertEqual(self.padlocks()[0], "Encounter")
 
+    def test_a_transformed_card_in_the_stash_gets_no_padlock(self) -> None:
+        """Owner, 2026-10-01: "Lets allow transformations" - what a card turns into is allowed, locked or not."""
+        from ..logparser import CardTransformed
+        from ..memreader import BoardUI
+        self.play(CardTransformed("itm_old", "itm_b"))
+        self.ctx.handle_snapshot(self.snapshot(self.row)._replace(stash=((0, LOCKED.guid, "itm_b"),)))
+        self.ctx.handle_board_ui(BoardUI(False, False, True, False, False))
+        self.assertEqual(self.padlocks()[:3], ("Stash", [LOCKED.size] + ["Empty"] * (10 - {"Small": 1, "Medium": 2,
+                                                                                          "Large": 3}[LOCKED.size]), []))
+
     def test_a_stash_card_that_cant_be_sized_means_no_stash_padlocks(self) -> None:
         from ..memreader import BoardUI
-        self.ctx.handle_snapshot(self.snapshot(self.row)._replace(stash=((0, "not-a-known-card"), (5, LOCKED.guid))))
+        self.ctx.handle_snapshot(self.snapshot(self.row)._replace(stash=((0, "not-a-known-card", "itm_a"), (5, LOCKED.guid, "itm_b"))))
         self.ctx.handle_board_ui(BoardUI(False, False, True, False, False))
         self.assertEqual(self.padlocks(), (None, [], [], False))
+
+
+class TestTransforms(ClientTestBase):
+    """Owner, 2026-10-01: "Lets allow transformations"."""
+
+    def test_a_held_locked_card_that_transforms_stops_blocking_checks(self) -> None:
+        from ..logparser import CardTransformed
+        self.play(RunStarted("Vanessa"), DayReached(1), CardGained(LOCKED.guid, "itm_x", False))
+        self.assertIn("UNTIL", self.ctx.blocked_reason())
+        self.play(CardTransformed("itm_x", "itm_y"), DayReached(2))
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.assertTrue(self.was_sent(day_location("Vanessa", 2)))
+        self.assertIn("itm_y", self.ctx.run["transformed"])
