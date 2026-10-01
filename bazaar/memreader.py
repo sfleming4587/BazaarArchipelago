@@ -21,6 +21,9 @@ MONO_DLL = "mono-2.0-bdwgc.dll"
 RUN_STATES = ("Choice", "Combat", "Encounter", "EndRunDefeat", "EndRunVictory", "LevelUp", "Loot", "NewRun",
               "Pedestal", "PVPCombat", "Shutdown")  # ERunState in declaration order, matched on screen 2026-09-30
 ALLOWED_STATICS = ("<CurrentState>k__BackingField", "Entities", "<Run>k__BackingField")
+# The board's own on-screen state, read for the padlocks (owner, 2026-10-01: "apply those useful flags as the
+# triggers"). Optional: if any of it can't be found (a patch), ui() says None and the padlocks fall back.
+UI_STATICS = ("<TransitionIn>k__BackingField", "<TooltipParentComponent>k__BackingField")
 LEVEL_STAT = 15  # your level among the player's stats (seen 2 -> 3 at the first level-up, 2026-09-30)
 BLOCKED = ("seed", "rng", "random", "opponent", "steam", "store", "title", "account", "ticket", "token", "auth")
 IDENT = re.compile(r"^[A-Za-z_<][\w<>`.\-|=$@]*$")
@@ -39,6 +42,15 @@ class Offer(NamedTuple):
     instance: str  # the game's instance id, stable while the card exists
     template: Optional[str]  # the card's guid (the same guids as bazaar_data.json); its size comes from there
     kind: Optional[str]  # Item, Skill, EventEncounter, ...
+
+
+class BoardUI(NamedTuple):
+    """What the board is doing on screen right now (each found 2026-10-01 by watching it while the owner played)."""
+    hovering: bool  # a card's tooltip is showing (TooltipParentComponent._cardTooltipController._currentCard)
+    dragging: bool  # a card is being dragged (CardController.IsAnyCardDragging, static)
+    inventory: bool  # your stash is open over the board (BoardManager.activeStorageToy.toyOpen)
+    dialog: bool  # the Esc menu or another dialog is open (BoardManager.DialogOpen)
+    revealing: bool  # new cards are flipping over (BoardManager._isRevealing)
 
 
 class Snapshot(NamedTuple):
@@ -364,7 +376,7 @@ class Mono:
 
     def static_data(self, c: int, expect: Dict[str, str]) -> int:
         """The class's static field block, found by needing at least two statics to hold an object of the
-        expected class (K-mem2: one match can be a coincidence)."""
+        expected class (K-mem2: one match can be a coincidence). Remembers where it was (see static_block)."""
         m = self.m
         statics = {n: offset for n, offset, static, _c, _d in self.fields(c) if static}
         for info_off in range(0x60, 0x200, 8):
@@ -376,8 +388,34 @@ class Mono:
                 data = m.ptr(vtable + vtable_off)
                 if data and sum(1 for n, want in expect.items() if n in statics and
                                 self.name(self.klass(m.ptr(data + statics[n]))) == want) >= 2:
+                    self.off.update(class_runtime_info=info_off, static_slot=vtable_off)
                     return data
         raise NotReady("static data not found (the game is still loading?)")
+
+    def learn_static_blocks(self, known: int, check) -> bool:
+        """Where any class's statics are: after its vtable's method slots, vt->vtable[klass->vtable_size]
+        (K-mem6: a fixed slot only looked right because Data and AnalyticsManager have the same number of
+        methods). The method count's place in MonoClass is found from the class whose block is `known`, and
+        accepted only if `check(static_block)` agrees on other classes. False if nothing passes."""
+        m = self.m
+        for at in range(0x10, 0x140, 2):
+            count = struct.unpack("<H", m.read(known + at, 2) or b"\0\0")[0]
+            array = self.off["static_slot"] - 8 * count
+            if 0 < count < 4000 and 0x20 <= array <= 0x80:
+                self.off.update(method_count=at, method_array=array)
+                if check(self.static_block):
+                    return True
+        self.off.pop("method_count", None)
+        return False
+
+    def static_block(self, c: int) -> int:
+        """A class's static field block (0 if the class has none set up yet). Needs learn_static_blocks."""
+        m = self.m
+        vtable = m.ptr(m.ptr(c + self.off["class_runtime_info"]) + 8)
+        if not vtable or m.ptr(vtable) != c:
+            return 0
+        count = struct.unpack("<H", m.read(c + self.off["method_count"], 2) or b"\0\0")[0]
+        return m.ptr(vtable + self.off["method_array"] + 8 * count)
 
 
 # --- the reader ---------------------------------------------------------------------------------------------------
@@ -422,6 +460,48 @@ class Reader:
             self.close()
             raise ReaderOff("TheBazaar.Data has changed")
         self.enums: Dict[int, List[str]] = {}
+        self.ui_paths = self._learn_ui(data, base, statics)
+
+    def _learn_ui(self, data: int, base: int, statics: Dict[str, int]) -> Optional[dict]:
+        """Where the board's on-screen flags are (see BoardUI), or None if this game version doesn't match."""
+        mono, m = self.mono, self.memory
+        try:
+            board = mono.find_class("TheBazaarRuntime", "", "BoardManager")
+            cards = mono.find_class("TheBazaarRuntime", "", "CardController")
+            board_statics = {n: o for n, o, st, _c, _d in mono.fields(board) if st}
+            card_statics = {n: o for n, o, st, _c, _d in mono.fields(cards) if st}
+            drag = card_statics["<IsAnyCardDragging>k__BackingField"]
+
+            def check(block) -> bool:  # two classes must make sense through the same rule
+                token = mono.name(mono.klass(m.ptr(block(board) + board_statics["CancellationToken"])))
+                dragging = (m.read(block(cards) + drag, 1) or b"\xff")[0]
+                return token == "CancellationTokenSource" and dragging in (0, 1)
+            if not mono.learn_static_blocks(data, check):
+                return None
+            return {"statics": {n: base + statics[n] for n in UI_STATICS}, "drag": mono.static_block(cards) + drag}
+        except (ReaderOff, KeyError):
+            return None
+
+    def ui(self) -> Optional[BoardUI]:
+        """The board's on-screen state now, or None if it can't be read (not learned, not on the board)."""
+        if not self.memory or not self.ui_paths:
+            return None
+        m, paths = self.memory, self.ui_paths
+        try:
+            transition = m.ptr(paths["statics"]["<TransitionIn>k__BackingField"])
+            board = self._get(transition, "_boardManager") if transition else 0
+            if not board:
+                return None
+            toy = self._get(board, "activeStorageToy")
+            tooltips = m.ptr(paths["statics"]["<TooltipParentComponent>k__BackingField"])
+            tooltip = self._get(tooltips, "_cardTooltipController") if tooltips else 0
+            return BoardUI(hovering=bool(tooltip and self._get(tooltip, "_currentCard")),
+                           dragging=(m.read(paths["drag"], 1) or b"\0")[0] == 1,
+                           inventory=bool(toy and self._get(toy, "toyOpen")),
+                           dialog=bool(self._get(board, "DialogOpen")),
+                           revealing=bool(self._get(board, "_isRevealing")))
+        except Exception:  # a read that made no sense this time: the padlocks fall back for now
+            return None
 
     def close(self) -> None:
         if self.memory:
@@ -432,6 +512,8 @@ class Reader:
         """An instance field's value: a pointer for objects, a str for strings/guids, an int (or its enum name)."""
         offset, code, data = self.mono.field(self.mono.klass(obj), name)
         m = self.memory
+        if code == 0x02:  # bool
+            return (m.read(obj + offset, 1) or b"\0")[0] == 1
         if code == STRING:
             return m.mono_string(m.ptr(obj + offset))
         # An enum's name is taken by its position in the declaration. ⚠️ That's only right when its values count from

@@ -70,6 +70,8 @@ CARD_HEIGHT = 220  # measured on the same screenshot (the cards' frames, y 322-5
 YOUR_ROW = (548, 785)  # your own board's cards, top and bottom (their tooltips can open over the shop row too)
 BOARD_SLOTS = {1: 4, 2: 6, 3: 8}  # your board's width by level (owner, 2026-10-01); 10 from level 4 on
 HOVERED_ALPHA = 0.3  # a padlock while a card is hovered: see-through, so the tooltip reads (user, 2026-10-01)
+FLIP_SECONDS = 1.0  # new cards flip over first: if the game's reveal flag doesn't start by then, show anyway
+FLIP_MAX = 3.0  # and never wait longer than this for a reveal to end
 HOVER_MS = 60  # how often the mouse is checked while padlocks are up
 SLOTS = {"Small": 1, "Medium": 2, "Large": 3}
 PADLOCK = 56  # the mark's size
@@ -311,13 +313,18 @@ class Overlay:
         exact: these are the locked cards actually on offer right now (read from the game), not every possible one."""
         self.commands.put(("shop", (merchant, list(locked), verb, exact) if merchant else None))
 
-    def show_padlocks(self, screen: Optional[str], sizes: List[Optional[str]], locked: List[int], delay: float = 0,
+    def show_padlocks(self, screen: Optional[str], sizes: List[Optional[str]], locked: List[int], reveal: bool = False,
                       level: Optional[int] = None) -> None:
-        """A padlock on each locked card on offer: the screen showing them (a ROW_GAPS key), sizes of every offered
-        card left to right, and the positions (0-based) of the locked ones. No locked positions hides them (at once).
-        delay: seconds to wait before showing them, while new cards flip over. level: yours (your board's width)."""
+        """A padlock on each locked card on offer: the screen showing them (a ROW_GAPS key), sizes of the row's
+        cards left to right (gaps included), and the positions (0-based) of the locked ones. No locked positions
+        hides them (at once). reveal: these are new cards, so wait until they've flipped over. level: yours."""
         value = (screen, tuple(sizes), tuple(locked), level) if locked and screen in ROW_GAPS else None
-        self.commands.put(("padlocks", (value, time.monotonic() + (delay if value else 0))))
+        self.commands.put(("padlocks", (value, time.monotonic(), reveal and value is not None)))
+
+    def show_board_ui(self, ui) -> None:
+        """The board's on-screen flags (memreader.BoardUI), or None when they can't be read: then the padlocks
+        fall back to the mouse's position and a fixed wait."""
+        self.commands.put(("board_ui", ui))
 
     def show_board(self, title: Optional[str], allowed: list, locked: list) -> None:
         """Shop Guide: allowed cards in colour first, locked cards greyed out below. title=None hides it."""
@@ -392,9 +399,11 @@ class _Screen:
 
         self.padlocks: list = []  # one small click-through window per padlock, made as needed and reused
         self.padlocks_wanted = 0  # how many of them are in use
-        self.pending_padlocks = None  # (padlocks, when to show them) while new cards are still flipping over
+        self.pending_padlocks = None  # (padlocks, since, wait for the reveal) while new cards are still flipping
+        self.reveal_started = False  # the game's reveal began since those padlocks came in
+        self.board_ui = None  # memreader.BoardUI, or None (unreadable: fall back to the mouse)
         self.padlock_cards: List[tuple] = []  # where hovering makes the padlocks see-through (see card_rects)
-        self.padlocks_faded = False  # a card is hovered: padlocks see-through
+        self.padlocks_faded = 1.0  # the padlocks' alpha now (see padlock_alpha)
 
         self.layout: dict = {}  # the strips for where the game window is now (see relayout)
         self.relayout((0, 0, root.winfo_screenwidth(), root.winfo_screenheight()))  # until the game is seen
@@ -424,17 +433,29 @@ class _Screen:
             **{kind: (lambda value, kind=kind: self.set_state(kind, value))
                for kind in ("locked", "deathlink", "shop", "status")},
             "padlocks": self.new_padlocks,
+            "board_ui": self.new_board_ui,
         }
 
+    def padlock_alpha(self) -> float:
+        """By the game's own flags (owner, 2026-10-01): hidden while your stash or a dialog (Esc menu) covers the
+        board, see-through while a card's tooltip shows or a card is dragged. Unreadable flags: by the mouse."""
+        ui = self.board_ui
+        if ui is None:
+            return HOVERED_ALPHA if mouse_on(self.padlock_cards) else 1.0
+        if ui.inventory or ui.dialog:
+            return 0.0
+        return HOVERED_ALPHA if ui.hovering or ui.dragging else 1.0
+
     def fade_padlocks(self) -> None:
-        """Every HOVER_MS: padlocks turn see-through while a card is hovered (or dragged), so its tooltip reads, and
-        solid again when the mouse leaves it."""
+        """Every HOVER_MS: the padlocks' see-through-ness follows padlock_alpha; one still waiting checks if it's due."""
         try:
-            faded = self.padlocks_wanted > 0 and mouse_on(self.padlock_cards)
-            if faded != self.padlocks_faded:
-                self.padlocks_faded = faded
+            if self.pending_padlocks and self.show_due_padlocks():
+                self.render()
+            alpha = self.padlock_alpha() if self.padlocks_wanted else 1.0
+            if alpha != self.padlocks_faded:
+                self.padlocks_faded = alpha
                 for padlock in self.padlocks:
-                    padlock.attributes("-alpha", HOVERED_ALPHA if faded else 1.0)
+                    padlock.attributes("-alpha", alpha)
         except Exception:
             logger.exception("Overlay error (it keeps going)", extra=FILE_ONLY)
         self.root.after(HOVER_MS, self.fade_padlocks)
@@ -754,7 +775,7 @@ class _Screen:
         padlock.canvas = self.tk.Canvas(padlock, bg=PADLOCK_KEY, highlightthickness=0, bd=0)
         padlock.canvas.pack(fill="both", expand=True)
         padlock.drawn_size = 0
-        padlock.attributes("-alpha", HOVERED_ALPHA if self.padlocks_faded else 1.0)
+        padlock.attributes("-alpha", self.padlocks_faded)
         return padlock
 
     @staticmethod
@@ -784,18 +805,33 @@ class _Screen:
         self.state[kind] = value
         return True
 
-    def new_padlocks(self, value) -> bool:  # (padlocks, when to show them)
-        self.pending_padlocks = value
+    def new_padlocks(self, value) -> bool:  # (padlocks, since, wait for the reveal)
+        self.pending_padlocks, self.reveal_started = value, False
         if not self.show_due_padlocks() and self.state["padlocks"]:
             self.state["padlocks"] = None  # the old cards' padlocks go at once (user: they lingered on a reroll)
         return True
 
+    def new_board_ui(self, ui) -> bool:
+        self.board_ui = ui
+        return self.show_due_padlocks()
+
     def show_due_padlocks(self) -> bool:
-        """The latest padlocks once their time has come (a newer command replaces one still waiting)."""
-        if self.pending_padlocks and self.pending_padlocks[1] <= time.monotonic():
-            self.state["padlocks"], self.pending_padlocks = self.pending_padlocks[0], None
-            return True
-        return False
+        """The latest padlocks once they may show (a newer command replaces one still waiting). New cards: once
+        the game's reveal has started and ended; if it hasn't started within FLIP_SECONDS (or can't be read), after
+        FLIP_SECONDS; never later than FLIP_MAX."""
+        if not self.pending_padlocks:
+            return False
+        value, since, reveal = self.pending_padlocks
+        waited, ui = time.monotonic() - since, self.board_ui
+        if ui and ui.revealing:
+            self.reveal_started = True
+        if reveal and waited < FLIP_MAX:
+            if self.reveal_started and ui and ui.revealing:
+                return False
+            if not self.reveal_started and waited < FLIP_SECONDS:
+                return False
+        self.state["padlocks"], self.pending_padlocks = value, None
+        return True
 
     def new_toast(self, value) -> bool:  # (text, expires, warning)
         self.state["toasts"] = (self.state["toasts"] + [value])[-MAX_TOASTS:]

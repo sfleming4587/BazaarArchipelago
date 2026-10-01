@@ -34,8 +34,8 @@ from .merchants import possible_stock
 from .overlay import FILE_ONLY, ROW_GAPS  # FILE_ONLY: to the log file only, not the console or the client window
 
 POLL_SECONDS = 0.5
-MEMORY_SECONDS = 0.3  # how often the shop is read from memory
-FLIP_SECONDS = 1.0  # new shop cards flip over first; their padlocks show after this
+MEMORY_SECONDS = 0.06  # how often the board's on-screen flags are read (hover, drag, stash, dialog)
+SNAPSHOT_EVERY = 5  # ...and what's on offer, every this many of those
 MEMORY_RETRY = (5, 30)  # seconds before trying the reader again: game not running yet / a check failed
 STATE_FILE = "bazaar_client_state.json"
 
@@ -190,7 +190,10 @@ class BazaarContext(CommonContext):
         self.quiet = False  # replaying runs that ended while the client wasn't watching: no alerts, no DeathLinks
         self.encounter: Optional[EncounterEntered] = None  # the merchant or event you're at, if any
         self.memory: Optional[Snapshot] = None  # what memory says is on screen now; None while the reader is off
-        self.offers_seen: Set[str] = set()  # instance ids of the shop cards padlocked so far (see FLIP_SECONDS)
+        # the row the padlocks are laid out on: (screen, ((instance id, size), ...)). Bought cards leave a gap - the
+        # others don't move (user, 2026-10-01) - so it's only replaced when new cards come in
+        self.padlock_row: Optional[tuple] = None
+        self.board_ui = None  # memreader.BoardUI: hover/drag/stash/dialog/reveal, None if unreadable
         self.menu_hero: Optional[str] = None  # hero picked on the hero-select screen, while not in a run
         self.room_seed = ""  # CommonClient never sets seed_name, so the saved state is keyed on this instead
         self.log_session: Optional[str] = None  # which game session the log being read is from (see log_session)
@@ -601,22 +604,33 @@ class BazaarContext(CommonContext):
 
     def refresh_padlocks(self) -> None:
         """A padlock on each locked item on screen (shops, level-ups: whatever ROW_GAPS knows). Driven by memory
-        alone, so a screen the log never mentions works the same. New cards flip over before you can see them, so
-        their padlocks wait for that (user, 2026-10-01); a card bought from the row doesn't make the rest wait."""
+        alone, so a screen the log never mentions works the same. Cards keep their places when one is bought (user,
+        2026-10-01), so the row stays as it was until new cards come in; new cards flip over first, so their
+        padlocks wait for that (overlay, by the game's own reveal flag)."""
         if not self.overlay:
             return
         snapshot, items = self.memory, items_on_screen(self.memory) if self.run.get("active") else None
         if not items:
-            self.offers_seen = set()
+            self.padlock_row = None
             self.overlay.show_padlocks(None, [], [])
             return
+        here = {o.instance: o.template for o in items}
+        row = self.padlock_row
+        new = not (row and row[0] == snapshot.state and set(here) <= {instance for instance, _ in row[1]})
+        if new:
+            row = self.padlock_row = (snapshot.state, tuple(
+                (o.instance, CARDS_BY_GUID[o.template].size if o.template in CARDS_BY_GUID else None) for o in items))
         locked = self.run_locked_guids()
-        new = any(o.instance not in self.offers_seen for o in items)
-        self.offers_seen = {o.instance for o in items}
-        self.overlay.show_padlocks(snapshot.state, [CARDS_BY_GUID[o.template].size if o.template in CARDS_BY_GUID
-                                                    else None for o in items],
-                                   [i for i, o in enumerate(items) if o.template in locked],
-                                   delay=FLIP_SECONDS if new else 0, level=snapshot.level)
+        self.overlay.show_padlocks(row[0], [size for _, size in row[1]],
+                                   [i for i, (instance, _) in enumerate(row[1]) if here.get(instance) in locked],
+                                   reveal=new, level=snapshot.level)
+
+    def handle_board_ui(self, ui) -> None:
+        """The board's on-screen flags (memreader.BoardUI, or None): the padlocks hide or fade by them."""
+        if ui != self.board_ui:
+            self.board_ui = ui
+            if self.overlay:
+                self.overlay.show_board_ui(ui)
 
     def handle_encounter(self, event: EncounterEntered) -> None:
         merchant = MERCHANT_DATA.get(event.guid) or OFFER_DATA.get(event.guid)
@@ -1077,11 +1091,14 @@ async def watch_memory(ctx: BazaarContext) -> None:
                 await loop.run_in_executor(None, reader.attach)
                 logger.info("Memory reader: reading The Bazaar's shop.", extra=FILE_ONLY)
                 said = None
+            for _ in range(SNAPSHOT_EVERY):
+                ctx.handle_board_ui(reader.ui())  # a couple of milliseconds: fine on the event loop
+                await asyncio.sleep(MEMORY_SECONDS)
             ctx.handle_snapshot(await loop.run_in_executor(None, reader.snapshot))
-            await asyncio.sleep(MEMORY_SECONDS)
         except ReaderOff as error:
             reader.close()
             ctx.handle_snapshot(None)
+            ctx.handle_board_ui(None)
             if str(error) != said:
                 said = str(error)
                 logger.info(f"Memory reader off: {error}", extra=FILE_ONLY)

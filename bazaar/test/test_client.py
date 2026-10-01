@@ -6,7 +6,7 @@ from unittest import mock
 
 from NetUtils import NetworkItem, NetworkSlot, SlotType
 
-from ..client import FLIP_SECONDS, BazaarContext, catch_up, dispatch
+from ..client import BazaarContext, catch_up, dispatch
 from ..data import CARDS
 from ..items import BASE_ID, GAME, item_name_to_id
 from ..locations import day_location, location_name_to_id, monster_location, win_location
@@ -805,14 +805,14 @@ class TestShopPadlocks(ClientTestBase):
         self.play(EncounterEntered(self.merchant))
 
     def padlocks(self):
-        """The last show_padlocks call as (screen, sizes, locked positions, delay)."""
+        """The last show_padlocks call as (screen, sizes, locked positions, waits for the reveal)."""
         call = self.ctx.overlay.show_padlocks.call_args
-        return call.args + (call.kwargs.get("delay", 0),)
+        return call.args + (call.kwargs.get("reveal", False),)
 
     def test_only_the_locked_card_on_offer_is_named_and_padlocked(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.enter()
-        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [1], FLIP_SECONDS))
+        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [1], True))
         merchant, names, _verb = self.ctx.overlay.show_shop.call_args.args
         self.assertEqual(names, [LOCKED.name])
         self.assertTrue(self.ctx.overlay.show_shop.call_args.kwargs["exact"])
@@ -821,9 +821,23 @@ class TestShopPadlocks(ClientTestBase):
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.enter()
         self.ctx.handle_snapshot(self.snapshot([self.row[0], self.row[2]]))
-        # the cards left were already showing: no flip, no wait
-        self.assertEqual(self.padlocks(), ("Encounter", [self.row[0].size, self.row[2].size], [], 0))
+        # the others keep their places (a gap where it was) and were already showing: no flip, no wait
+        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [], False))
         self.assertEqual(self.ctx.overlay.show_shop.call_args.args[1], [])
+
+    def test_buying_another_card_leaves_the_padlock_where_it_was(self) -> None:
+        """User, 2026-10-01: cards don't move after a purchase; the padlocks thought they did."""
+        self.ctx.handle_snapshot(self.snapshot(self.row))
+        self.ctx.handle_snapshot(self.snapshot([LOCKED, self.row[2]]))  # bought the leftmost
+        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [1], False))
+
+    def test_a_reroll_lays_out_the_new_row(self) -> None:
+        other = [c for c in self.row if c is not LOCKED]
+        self.ctx.handle_snapshot(self.snapshot(self.row))
+        rerolled = self.snapshot([LOCKED] + other)
+        rerolled = rerolled._replace(offers=tuple(o._replace(instance=o.instance + "_new") for o in rerolled.offers))
+        self.ctx.handle_snapshot(rerolled)
+        self.assertEqual(self.padlocks(), ("Encounter", [LOCKED.size] + [c.size for c in other], [0], True))
 
     def test_an_unlock_arriving_in_the_shop_takes_its_padlock_away(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
@@ -831,11 +845,11 @@ class TestShopPadlocks(ClientTestBase):
         unlock = NetworkItem(BASE_ID + LOCKED.ap_id, 0, 0, 0)
         self.ctx.items_received.append(unlock)
         self.ctx.on_package("ReceivedItems", {"index": 1, "items": [unlock]})
-        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [], 0))
+        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [], False))
 
     def test_a_level_up_is_padlocked_too_though_the_log_never_mentions_it(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row, encounter=None, state="LevelUp"))
-        self.assertEqual(self.padlocks(), ("LevelUp", [c.size for c in self.row], [1], FLIP_SECONDS))
+        self.assertEqual(self.padlocks(), ("LevelUp", [c.size for c in self.row], [1], True))
 
     def test_without_memory_it_lists_everything_the_merchant_could_sell(self) -> None:
         self.enter()
@@ -846,7 +860,7 @@ class TestShopPadlocks(ClientTestBase):
     def test_screens_whose_layout_is_unknown_get_no_padlocks(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.ctx.handle_snapshot(self.snapshot(self.row, state="Loot"))  # not measured yet
-        self.assertEqual(self.padlocks(), (None, [], [], 0))
+        self.assertEqual(self.padlocks(), (None, [], [], False))
 
     def test_the_shop_list_trusts_only_the_merchant_the_log_says_you_are_at(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row, encounter="00000000-0000-0000-0000-000000000000"))
