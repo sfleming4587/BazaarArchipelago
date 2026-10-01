@@ -821,6 +821,14 @@ class TestShopPadlocks(ClientTestBase):
         self.ctx.overlay.show_padlocks.assert_called_with([self.row[0].size, self.row[2].size], [], delay=0)
         self.assertEqual(self.ctx.overlay.show_shop.call_args.args[1], [])
 
+    def test_an_unlock_arriving_in_the_shop_takes_its_padlock_away(self) -> None:
+        self.ctx.handle_snapshot(self.snapshot(self.row))
+        self.enter()
+        unlock = NetworkItem(BASE_ID + LOCKED.ap_id, 0, 0, 0)
+        self.ctx.items_received.append(unlock)
+        self.ctx.on_package("ReceivedItems", {"index": 1, "items": [unlock]})
+        self.ctx.overlay.show_padlocks.assert_called_with([c.size for c in self.row], [], delay=0)
+
     def test_without_memory_it_lists_everything_the_merchant_could_sell(self) -> None:
         self.enter()
         self.ctx.overlay.show_padlocks.assert_called_with([], [], delay=0)

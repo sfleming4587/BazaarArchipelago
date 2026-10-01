@@ -216,6 +216,8 @@ class BazaarContext(CommonContext):
                     self.toast(f"LOCK BYPASS from {self.who(item.player)}! Use it on a locked card you're holding.",
                                seconds=12)
             self.refresh_held()
+            if self.encounter:  # an unlock that arrives while you're in a shop takes its padlock away at once
+                self.handle_encounter(self.encounter)
             self.receive_traps()
             self.update_status()
         elif cmd == "RoomUpdate" and "checked_locations" in args:
