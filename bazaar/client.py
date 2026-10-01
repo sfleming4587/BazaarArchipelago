@@ -29,7 +29,7 @@ from .locations import (card_requirements, day_location, hero_checks, location_n
 from .logparser import (DEFAULT_LOG_PATH, PREV_LOG, HeroSelected, CardGained, CardSold, DayReached, EncounterEntered,
                         EncounterLeft, FightStarted, GameVersion, LogParser, LogTailer, MonsterFought, PvPFought,
                         RunEnded, RunStarted, UnrecognizedRun, log_session)
-from .memreader import GAME_EXE, NotReady, Reader, ReaderOff, Snapshot, find_pid
+from .memreader import NotReady, Reader, ReaderOff, Snapshot, game_pid
 from .merchants import possible_stock
 from .overlay import FILE_ONLY, ROW_GAPS  # FILE_ONLY: to the log file only, not the console or the client window
 
@@ -1136,8 +1136,8 @@ async def watch_memory(ctx: BazaarContext) -> None:
             if isinstance(error, NotReady):
                 await asyncio.sleep(MEMORY_RETRY[0])
             else:  # wait for this game session to end before trying again
-                session = find_pid(GAME_EXE)
-                while not ctx.exit_event.is_set() and session and find_pid(GAME_EXE) == session:
+                session = game_pid()
+                while not ctx.exit_event.is_set() and session and game_pid() == session:
                     await asyncio.sleep(MEMORY_RETRY[1])
         except Exception:
             logger.exception("Memory reader error; trying again")

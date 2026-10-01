@@ -867,7 +867,7 @@ class TestShopPadlocks(ClientTestBase):
 
     def test_screens_whose_layout_is_unknown_get_no_padlocks(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
-        self.ctx.handle_snapshot(self.snapshot(self.row, state="Loot"))  # not measured yet
+        self.ctx.handle_snapshot(self.snapshot(self.row, state="Pedestal"))  # not measured
         self.assertEqual(self.padlocks(), (None, [], [], False))
 
     def test_the_shop_list_trusts_only_the_merchant_the_log_says_you_are_at(self) -> None:

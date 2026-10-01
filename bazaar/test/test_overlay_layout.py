@@ -279,3 +279,15 @@ class TestStashGrid(unittest.TestCase):
         xs = [x for x, _ in card_centres(0, 0, 1920, 1080, ["Small", "Small"] + ["Empty"] * 8)]
         self.assertAlmostEqual(xs[0], 452, delta=3)
         self.assertAlmostEqual(xs[1], 565, delta=3)
+
+
+class TestOneCardOnlyScreens(unittest.TestCase):
+    def test_a_loot_with_several_cards_gets_no_padlocks_until_measured(self) -> None:
+        import queue
+        from ..overlay import Overlay
+        overlay = Overlay.__new__(Overlay)  # only the command queue: no windows
+        overlay.commands = queue.Queue()
+        overlay.show_padlocks("Loot", ["Medium"], [0])
+        self.assertIsNotNone(overlay.commands.get_nowait()[1][0])
+        overlay.show_padlocks("Loot", ["Medium", "Small"], [0])
+        self.assertIsNone(overlay.commands.get_nowait()[1][0])

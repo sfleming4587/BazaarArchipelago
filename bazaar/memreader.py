@@ -17,6 +17,7 @@ import uuid
 from typing import Dict, List, NamedTuple, Optional, Tuple
 
 GAME_EXE = "TheBazaar.exe"
+GAME_WINDOW = ("UnityWndClass", "The Bazaar")  # the game's main window: class and title (seen 2026-10-01)
 MONO_DLL = "mono-2.0-bdwgc.dll"
 RUN_STATES = ("Choice", "Combat", "Encounter", "EndRunDefeat", "EndRunVictory", "LevelUp", "Loot", "NewRun",
               "Pedestal", "PVPCombat", "Shutdown")  # ERunState in declaration order, matched on screen 2026-09-30
@@ -77,13 +78,9 @@ if sys.platform == "win32":
     k32.OpenProcess.restype = W.HANDLE
     k32.ReadProcessMemory.argtypes = [W.HANDLE, C.c_void_p, C.c_void_p, C.c_size_t, C.POINTER(C.c_size_t)]
     k32.CloseHandle.argtypes = [W.HANDLE]
+    u32 = C.WinDLL("user32", use_last_error=True)
+    u32.FindWindowW.restype = W.HWND
     PROCESS_VM_READ, PROCESS_QUERY_LIMITED_INFORMATION = 0x10, 0x1000
-
-    class _ProcessEntry(C.Structure):
-        _fields_ = [("dwSize", W.DWORD), ("cntUsage", W.DWORD), ("th32ProcessID", W.DWORD),
-                    ("th32DefaultHeapID", C.c_size_t), ("th32ModuleID", W.DWORD), ("cntThreads", W.DWORD),
-                    ("th32ParentProcessID", W.DWORD), ("pcPriClassBase", W.LONG), ("dwFlags", W.DWORD),
-                    ("szExeFile", W.WCHAR * 260)]
 
     class _ModuleEntry(C.Structure):
         _fields_ = [("dwSize", W.DWORD), ("th32ModuleID", W.DWORD), ("th32ProcessID", W.DWORD),
@@ -92,21 +89,32 @@ if sys.platform == "win32":
                     ("szExePath", W.WCHAR * 260)]
 
 
-def find_pid(exe: str) -> Optional[int]:
+def game_window() -> Optional[Tuple[int, int]]:
+    """(window handle, process id) of The Bazaar, or None if it isn't open. Owner, 2026-10-01: the client must not
+    touch anything outside the game, so it never lists or opens other programs: it asks Windows for the one window
+    with the game's class and title, and only opens that window's process to confirm it's TheBazaar.exe."""
     if sys.platform != "win32":
         return None
-    snap = k32.CreateToolhelp32Snapshot(0x2, 0)  # TH32CS_SNAPPROCESS
-    entry = _ProcessEntry()
-    entry.dwSize = C.sizeof(entry)
+    hwnd = u32.FindWindowW(GAME_WINDOW[0], GAME_WINDOW[1])
+    if not hwnd:
+        return None
+    pid = W.DWORD()
+    u32.GetWindowThreadProcessId(hwnd, C.byref(pid))
+    process = k32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid.value)
+    if not process:
+        return None
     try:
-        ok = k32.Process32FirstW(snap, C.byref(entry))
-        while ok:
-            if entry.szExeFile.lower() == exe.lower():
-                return entry.th32ProcessID
-            ok = k32.Process32NextW(snap, C.byref(entry))
+        name, size = C.create_unicode_buffer(1024), W.DWORD(1024)
+        ok = k32.QueryFullProcessImageNameW(process, 0, name, C.byref(size))
+        exe = name.value.replace("/", "\\").rsplit("\\", 1)[-1] if ok else ""
     finally:
-        k32.CloseHandle(snap)
-    return None
+        k32.CloseHandle(process)
+    return (hwnd, pid.value) if exe.lower() == GAME_EXE.lower() else None
+
+
+def game_pid() -> Optional[int]:
+    found = game_window()
+    return found[1] if found else None
 
 
 def find_module(pid: int, name: str) -> Optional[Tuple[int, int]]:
@@ -435,7 +443,7 @@ class Reader:
         self.close()
         if sys.platform != "win32":
             raise ReaderOff("only works on Windows")
-        pid = find_pid(GAME_EXE)
+        pid = game_pid()
         if not pid:
             raise NotReady("The Bazaar isn't running")
         module = find_module(pid, MONO_DLL)

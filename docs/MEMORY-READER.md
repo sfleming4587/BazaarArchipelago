@@ -219,6 +219,9 @@ cards ... even if it is when you right click a monster", "Just dont involve play
   the screen isn't PvP.
 - **Read-only:** the process is opened with `PROCESS_VM_READ` only. No writes, no injection, no network, no game
   files.
+- **Nothing outside the game** (owner, 2026-10-01): the game is found by its window (class `UnityWndClass`, title
+  `The Bazaar`) and only that window's process is opened, to confirm it's `TheBazaar.exe`. No process list, and the
+  overlay never opens whatever app is in front; it only compares the front window with the game's.
 
 ## How the reader works
 

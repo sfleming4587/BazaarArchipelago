@@ -9,7 +9,6 @@ Rules (user, 2026-09-28/29): beside the board, never on it; never overlapping ea
 only while the game is the active window; never taking the keyboard from the game; redrawing only what changed.
 """
 import logging
-import os
 import queue
 import sys
 import threading
@@ -53,7 +52,6 @@ MAX_ALERT_LINES = 6  # held cards / trap lines shown in it; more become "+ N mor
 TOAST_SHARE = 3  # pop-ups take at most 1/3 of the right strip
 MAX_TOASTS = 4
 POLL_MS = 250
-GAME_EXE = "thebazaar.exe"  # the overlay only shows while this is the active window
 
 # Padlocks on the locked cards a shop is offering (user, 2026-10-01): placed by proportion of the game window, a
 # small mark at each card's centre, never covering the card. The row is centred across the window, about a third
@@ -65,7 +63,10 @@ SLOT_WIDTH = 113  # the slot pitch: a Small card plus the gap after it
 # The extra space between two cards, by the screen (memory's state name) showing the row. Measured on the owner's
 # screenshots 2026-10-01: a shop's cards touch; a level-up's Small cards sit 181 px apart (113 + 68). A screen not
 # listed here gets no padlocks: its layout hasn't been measured.
-ROW_GAPS = {"Encounter": 0, "LevelUp": 68, "Stash": 0}
+ROW_GAPS = {"Encounter": 0, "LevelUp": 68, "Stash": 0, "Loot": 0}
+# Screens only measured with one card (a loot's single card sits centred, owner's screenshot 2026-10-01): with more
+# than one, the spacing is unknown, so no padlocks rather than misplaced ones.
+ONE_CARD_ONLY = {"Loot"}
 CARD_HEIGHT = 220  # measured on the same screenshot (the cards' frames, y 322-541 at 1080p)
 YOUR_ROW = (548, 785)  # your own board's cards, top and bottom (their tooltips can open over the shop row too)
 BOARD_SLOTS = {1: 4, 2: 6, 3: 8}  # your board's width by level (owner, 2026-10-01); 10 from level 4 on
@@ -236,28 +237,21 @@ def game_in_front(own: Set[int]) -> tuple:
     (in front, window) - in front: True while The Bazaar is the active window (Windows only; elsewhere always
     True), None when one of our own windows is (that says nothing about the game, so the caller keeps what it
     had). window: the game's client area (x, y, width, height) on screen while it's in front, else None.
-    The process name is looked up every time: Windows reuses process ids, so a cache could name the wrong program.
+    The game's window is looked up every time (memreader.game_window): Windows reuses handles and process ids.
     """
     if sys.platform != "win32":
         return True, None
     import ctypes
     from ctypes import wintypes
-    user32, kernel32 = ctypes.windll.user32, ctypes.windll.kernel32
+    from .memreader import game_window
+    user32 = ctypes.windll.user32
     hwnd = user32.GetAncestor(user32.GetForegroundWindow(), 2)  # GA_ROOT
     if not hwnd:
         return False, None
     if hwnd in own:
         return None, None
-    pid = wintypes.DWORD()
-    user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
-    name = ""
-    process = kernel32.OpenProcess(0x1000, False, pid.value)  # PROCESS_QUERY_LIMITED_INFORMATION
-    if process:
-        buffer, size = ctypes.create_unicode_buffer(1024), wintypes.DWORD(1024)
-        if kernel32.QueryFullProcessImageNameW(process, 0, buffer, ctypes.byref(size)):
-            name = os.path.basename(buffer.value).lower()
-        kernel32.CloseHandle(process)
-    if name != GAME_EXE:
+    game = game_window()  # the game's own window; whatever else is in front is never looked into (owner, 2026-10-01)
+    if not game or game[0] != hwnd:
         return False, None
     rect, corner = wintypes.RECT(), wintypes.POINT(0, 0)
     user32.GetClientRect(hwnd, ctypes.byref(rect))
@@ -319,7 +313,8 @@ class Overlay:
         """A padlock on each locked card on offer: the screen showing them (a ROW_GAPS key), sizes of the row's
         cards left to right (gaps included), and the positions (0-based) of the locked ones. No locked positions
         hides them (at once). reveal: these are new cards, so wait until they've flipped over. level: yours."""
-        value = (screen, tuple(sizes), tuple(locked), level) if locked and screen in ROW_GAPS else None
+        measured = screen in ROW_GAPS and not (screen in ONE_CARD_ONLY and len(sizes) > 1)
+        value = (screen, tuple(sizes), tuple(locked), level) if locked and measured else None
         self.commands.put(("padlocks", (value, time.monotonic(), reveal and value is not None)))
 
     def show_board_ui(self, ui) -> None:
@@ -442,8 +437,8 @@ class _Screen:
         stash slides open or shut, see-through while a card's tooltip shows or a card is dragged. Unreadable flags:
         by the mouse."""
         ui = self.board_ui
-        if ui is None:
-            return HOVERED_ALPHA if mouse_on(self.padlock_cards) else 1.0
+        if ui is None:  # the mouse, but only while the game is in front (owner: nothing outside the game)
+            return HOVERED_ALPHA if self.game_in_front and mouse_on(self.padlock_cards) else 1.0
         if ui.dialog or ui.stash_moving:  # the client swaps to the stash's own padlocks once it's open
             return 0.0
         return HOVERED_ALPHA if ui.hovering or ui.dragging else 1.0
