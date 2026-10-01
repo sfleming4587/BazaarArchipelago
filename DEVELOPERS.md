@@ -7,10 +7,11 @@ Thanks for wanting to help! This page is for working on the apworld and the clie
 
 The client only ever **reads**: the game's own `Player.log`, and - for the shop padlocks only - the game's memory,
 through `bazaar/memreader.py`. Please keep it that way: no writing to memory, no injection, no automated input, no
-calls to Tempo's servers, no changes to game files, and nothing about other players. Tempo's modding policy names
-mods that "access or modify game memory or files"; the owner accepted the read-only risk for the padlocks on
-2026-10-01, and it can be turned off with `--no-memory-reader`. Don't widen what the reader reads without the
-owner's OK (rules in `docs/MEMORY-READER.md`), and nobody should risk their account to play a randomizer.
+calls to Tempo's servers, no changes to game files, and nothing about other players. Tempo's policy expressly
+prohibits mods that change gameplay or combat flow, simulate combat, act without user input, or talk to the game's
+server; the owner's ruling (2026-10-01) is that those are the lines that apply here. Players can turn the reader
+off with `--no-memory-reader`. Don't widen what it reads without the owner's OK (rules in
+`docs/MEMORY-READER.md`), and nobody should risk their account to play a randomizer.
 
 ## Finding your way around
 

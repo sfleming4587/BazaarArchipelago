@@ -12,8 +12,8 @@ by default) and you've won!
 **Your game stays untouched.** A small companion program sits next to The Bazaar and reads the log file the game
 already writes on your PC. In shops it also peeks at the game's memory - read-only - to see which cards are on
 offer, so it can put a padlock on the locked ones. It never changes game files, never talks to Tempo's servers and
-never clicks or types for you. Reading memory is something Tempo's mod policy mentions, so please read
-[Is this allowed?](bazaar/docs/en_The%20Bazaar.md#is-this-allowed-by-tempo) before you play.
+never clicks or types for you. More on that in
+[Is this allowed?](bazaar/docs/en_The%20Bazaar.md#is-this-allowed-by-tempo).
 
 *Want to work on it? Head over to [DEVELOPERS.md](DEVELOPERS.md).*
 

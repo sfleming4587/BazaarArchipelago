@@ -58,10 +58,11 @@ GAME_EXE = "thebazaar.exe"  # the overlay only shows while this is the active wi
 # Padlocks on the locked cards a shop is offering (user, 2026-10-01): placed by proportion of the game window, a
 # small mark at each card's centre, never covering the card. The row is centred across the window, about a third
 # down; a card is 1, 2 or 3 slots wide by its size. 1080p pixels, scaled like the strips.
-# ⚠️ UNMEASURED placeholders until checked against a real shop screenshot (row height, slot width, gap).
-SHOP_ROW_Y = 1 / 3  # the cards' centres, as a share of the window's height
-SLOT_WIDTH = 120  # one slot (a Small card)
-CARD_GAP = 0  # between two cards
+# Measured 2026-10-01 on the owner's shop screenshot (Small, Large, Small): the three centres matched within 1 px.
+# Cards sit on a slot grid, so a card's width is its slots times the slot pitch (the thin gap is inside the pitch).
+SHOP_ROW_Y = 0.398  # the cards' centres, as a share of the window's height
+SLOT_WIDTH = 113  # the slot pitch: a Small card plus the gap after it
+CARD_GAP = 0  # any extra gap between two cards (none: it's part of SLOT_WIDTH)
 SLOTS = {"Small": 1, "Medium": 2, "Large": 3}
 PADLOCK = 56  # the mark's size
 MIN_PADLOCK = 24  # real pixels, however small the window

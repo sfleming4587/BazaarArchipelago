@@ -134,11 +134,10 @@ locked, new heroes aren't part of the seed, and a new monster counts as Bronze. 
 
 ## Is this allowed by Tempo?
 
-The client reads `Player.log`, which falls under "display of information local to the user" in Tempo's
-[Third-Party Plugin & Modding Policy](https://www.playthebazaar.com/mod-policy). To put padlocks on shop cards it
-also **reads the game's memory**: only your own run's current screen and the cards on offer, read-only, nothing
-written or injected, nothing about other players. That same policy lists mods that "access or modify game memory
-or files", so reading memory carries a risk to your account that reading the log doesn't. If you'd rather not take
-it, start the client with `--no-memory-reader`: you lose the padlocks and shops list every locked card they could
-sell instead. The client never modifies the game, contacts Tempo's servers or sends input to the game. Tempo's
-policy can change, so check it yourself.
+Tempo's [Third-Party Plugin & Modding Policy](https://www.playthebazaar.com/mod-policy) expressly prohibits mods
+that change gameplay, game speed or the flow of combat; calculate or simulate combat; interact with the game
+without your input; or talk to the game's server. The client does none of those. It reads `Player.log`, and to put
+padlocks on shop cards it also **reads the game's memory**: only your own run's current screen and the cards on
+offer, read-only, with nothing written or injected and nothing about other players. If you'd rather it didn't, start
+the client with `--no-memory-reader`: you lose the padlocks, and shops list every locked card they could sell
+instead. Tempo's policy can change, so check it yourself.

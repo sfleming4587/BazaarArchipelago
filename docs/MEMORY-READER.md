@@ -265,8 +265,10 @@ the middle of the card"), a padlock rather than an X.
 - If a check fails the reader turns itself off until the game restarts, says so once, and shops fall back to the
   list. Game not running or still loading is silent.
 
-⚠️ **`SHOP_ROW_Y`, `SLOT_WIDTH` and `CARD_GAP` in `overlay.py` are placeholders (1/3, 120 px, 0 at 1080p).** Measure
-them on a real shop screenshot the owner takes (never one we capture) before trusting the padlocks.
+**Measured 2026-10-01 on the owner's shop screenshot (Small, Large, Small; taken at 1024x576, 16:9):** card
+centres at 39.8% of the window's height (not a third), on a slot grid with a 113 px pitch at 1080p (a card is its
+slots times the pitch; the ~4 px gap between cards is inside it, so `CARD_GAP` is 0). The predicted centres landed
+within 1 px of the real ones. ⚠️ Only one shop and one aspect ratio measured; 16:10 and 21:9 are untested.
 
 ⚠️ **The reader's port from the spike hasn't run against the game yet.** The spike read `TemplateId` as a 16-byte
 `Guid`, but the dumps show a `String`; `memreader._get` handles both by the field's type.
@@ -308,7 +310,7 @@ status line.
 | Concede a run | concede DeathLink option and run reset |
 | Restart the game mid-run, start the reader again | the reader must reattach and pick the run up |
 | Is `SelectionSet` order the same as left-to-right on screen? Note one shop's cards in screen order | "2nd card is locked" on the overlay |
-| A shop screenshot (owner takes it) with Small, Medium and Large cards: measure the row height, slot width and gap | replaces the padlock placeholders |
+| A shop with a Medium card, and a 1440p screen: padlocks still centred? (row measured on Small/Large at 1080p-ratio, 2026-10-01) | padlock positions |
 | Padlocks sit on the right cards, clicks and tooltips still work through them, they go when you leave | the padlocks themselves |
 | Buy a card: do the others slide over? Reroll: do the padlocks move with the new cards? | padlocks follow purchases |
 | An event that offers a choice of items: same row as a shop? | padlocks outside merchants |
