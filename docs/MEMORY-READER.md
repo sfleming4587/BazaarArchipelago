@@ -278,7 +278,8 @@ in place; stash and Esc menu hide them; a reroll clears them at once and the new
 - **Driven by memory alone** (`client.refresh_padlocks`), so screens the log never mentions (level-ups) work the
   same. A screen gets padlocks only if its layout is in `overlay.ROW_GAPS` (measured): `Encounter` (cards touch)
   and `LevelUp` (68 px apart at 1080p), and `Loot` with one card only (centred; passed in the game 2026-10-01,
-  Drafting Table) - a loot with several cards gets none until its spacing is measured (`ONE_CARD_ONLY`). Event item
+  Drafting Table). `ONE_CARD_ONLY` refuses several-card loot, which never happens: owner, 2026-10-01, "Every
+  monster fight will only provide 1 item". Event item
   choices on the `Encounter` screen use the shop's touching layout: Wishing Fountain's five cards (M S M M S, 8
   slots) all centred within 2 px on the owner's screenshot 2026-10-01. Events
   with their own layouts and anything else: none until measured. The list beside the board still follows the log's merchant line (`offers_at`).
