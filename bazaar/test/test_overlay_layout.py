@@ -1,6 +1,6 @@
 import unittest
 
-from ..overlay import below, strips
+from ..overlay import below, overlaps, strips
 from ..data import CARDS
 
 
@@ -258,3 +258,11 @@ class TestShopGuideKeepsOfferedCards(unittest.TestCase):
         finally:
             root.destroy()
 
+
+class TestTrackerOverMenu(unittest.TestCase):
+    """Owner, 2026-10-01: the Tracker and the menu's hero panel shouldn't sit on top of each other."""
+    def test_overlap(self) -> None:
+        panel = (600, 300, 700, 400)
+        self.assertTrue(overlaps(panel, (500, 200, 300, 200)))  # the Tracker's corner on the panel
+        self.assertFalse(overlaps(panel, (1300, 300, 400, 400)))  # dragged off to the right: touching isn't covering
+        self.assertFalse(overlaps(panel, (0, 0, 200, 200)))

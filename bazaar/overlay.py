@@ -215,6 +215,11 @@ def game_in_front(own: Set[int]) -> tuple:
     return True, (corner.x, corner.y, rect.right, rect.bottom)
 
 
+def overlaps(a: tuple, b: tuple) -> bool:
+    """Two (x, y, width, height) rectangles share any area."""
+    return a[0] < b[0] + b[2] and b[0] < a[0] + a[2] and a[1] < b[1] + b[3] and b[1] < a[1] + a[3]
+
+
 def draw_skull(tk, parent, size: int, bg: str):
     """A skull with glowing eyes in front of flickering flames: a Sell Trap's mark (owner, 2026-10-01)."""
     canvas = tk.Canvas(parent, width=size, height=size, bg=bg, highlightthickness=0, bd=0)
@@ -386,6 +391,10 @@ class _Screen:
         # the player hid the menu's hero panel, e.g. over character select, which the game gives no sign of
         # (owner, 2026-10-01: a button, option 3)
         self.menu_hidden = False
+        # the Tracker covers the menu panel (it opens in the middle of the screen too, and shows the same checks and
+        # more): the panel steps aside while it does (owner, 2026-10-01)
+        self.menu_rect: Optional[tuple] = None  # where the menu panel goes (x, y, width, height)
+        self.menu_under_tracker = False
         # what each window shows now, to skip redraws that change nothing
         self.drawn: dict = {"alerts": None, "notices": None, "toasts": None, "alerts_height": 0,
                             "notices_height": 0, "toasts_height": 0, "padlocks": None}
@@ -646,7 +655,7 @@ class _Screen:
         played), locked heroes dimmed; a warning banner on top, the goal at the bottom. In the centre of the game
         window and click-through, so it never blocks the menu (owner, 2026-10-01)."""
         tk, f, layout, data = self.tk, self.font, self.layout, self.state["menu"]
-        if not data or self.menu_hidden or data.get("covered"):
+        if not data or self.menu_hidden or data.get("covered") or self.menu_under_tracker:
             moves.append((self.menu_box, None))
             return
         k = layout["k"]
@@ -702,7 +711,8 @@ class _Screen:
         self.menu_box.update_idletasks()
         width, height = self.menu_box.winfo_reqwidth(), self.menu_box.winfo_reqheight()
         x, y, w, h = layout["window"]
-        moves.append((self.menu_box, (x + (w - width) // 2, y + (h - height) // 2, width, height)))
+        self.menu_rect = (x + (w - width) // 2, y + (h - height) // 2, width, height)
+        moves.append((self.menu_box, self.menu_rect))
 
     def hero_picture(self, hero: str, k: float):
         """The hero's portrait for the menu panel (the tracker's cards), sized for the window; None if missing."""
@@ -918,6 +928,13 @@ class _Screen:
         windows = self.panels + self.padlocks
         return {screens.window_handle(w) for w in windows} | set(self.tracker.windows()) |             set(self.guide.windows() if self.guide else [])
 
+    def tracker_covers_menu(self) -> bool:
+        """The open Tracker overlaps where the menu panel goes."""
+        win = self.tracker.win
+        if not (self.menu_rect and self.state["menu"] and self.tracker.is_open() and win.winfo_ismapped()):
+            return False
+        return overlaps(self.menu_rect, (win.winfo_rootx(), win.winfo_rooty(), win.winfo_width(), win.winfo_height()))
+
     def poll(self) -> None:
         """Runs every POLL_MS in the Tk thread. An error is logged and the loop carries on - a stopped loop would
         leave the windows frozen for the rest of the session."""
@@ -957,6 +974,11 @@ class _Screen:
         if game is not None and game != self.game_in_front:
             self.game_in_front = game
             self.sync_visibility()
+        under = self.tracker_covers_menu()
+        if under != self.menu_under_tracker:
+            self.menu_under_tracker = under
+            self.drawn["alerts"] = None  # the menu panel is drawn with the header
+            changed = True
         if self.guide and self.game_in_front and not self.guide.hidden and self.guide.win.state() == "iconic":
             self.guide.win.deiconify()  # Windows minimised it along with something else: it belongs on screen
         if changed:

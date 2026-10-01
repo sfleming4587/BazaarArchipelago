@@ -48,7 +48,9 @@ character select, MENU, anything: the game keeps a stack of input layers (`Input
 those screens pushes "Modal" onto it while it's open (watched with the owner 2026-10-01). One generic rule, no
 per-screen lists (owner: "I want a generic solution ... simple is a priority"). A click-detection version came first
 and was dropped for this. If the stack can't be read (a patch), the panel just stays visible; the header's "Hide
-heroes" / "Show heroes" is the fallback.
+heroes" / "Show heroes" is the fallback. It also steps aside while the Tracker window overlaps it (owner, 2026-10-01: they
+shouldn't sit on top of each other): the Tracker opens in the middle of the screen too and shows the same checks;
+drag the Tracker off the panel, or close it, and the panel comes back.
 
 **No locked-card list** (owner, 2026-10-01: "as long as we can put a lock on the card in the event correctly ...
 there is no need for that overlay"): a list in the right column used to name the locked cards a shop or event
