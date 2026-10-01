@@ -24,7 +24,7 @@ nobody should risk their account to play a randomizer.
 | `bazaar/` | the world, packaged as `bazaar.apworld`. The player docs for the website are in `bazaar/docs/` |
 | `bazaar/logparser.py` | `Player.log` parsing (no Archipelago imports, so it's easy to test on its own) |
 | `bazaar/client.py` | the CommonClient-based client ("The Bazaar Client" in the Launcher); every run check goes through `send_run_checks` |
-| `bazaar/overlay.py` | the overlay: `Overlay` is the client's handle (a command queue), `_Screen` the Tk thread (alert box, locked-card list, pop-ups) |
+| `bazaar/overlay.py` | the overlay: `Overlay` is the client's handle (a command queue), `_Screen` the Tk thread (header, notices, pop-ups, menu panel, padlocks) |
 | `bazaar/memreader.py` | reads the shop's offered cards from game memory, read-only; finds Mono's offsets by probing and turns itself off if a check fails (no Archipelago imports) |
 | `bazaar/shop_guide.py` | the Shop Guide window (card pictures, or "no picture" boxes) |
 | `bazaar/theme.py` | colours and the font shared by every window |

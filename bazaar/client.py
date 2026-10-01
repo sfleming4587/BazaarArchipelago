@@ -743,16 +743,10 @@ class BazaarContext(CommonContext):
         if names:
             how = "offers" if offers is not None else f"may {verb}"
             logger.info(f"{merchant['name']} {how} these locked cards: {', '.join(names)}", extra=FILE_ONLY)
-        if self.overlay and (names or verb == "sell"):  # free choices only warn when something is locked
-            self.overlay.show_shop(merchant["name"], names, verb, exact=offers is not None)
-        elif self.overlay:  # memory says the locked card that was offered has gone
-            self.overlay.show_shop(None, [])
         self.refresh_guide()
 
     def handle_encounter_left(self) -> None:
         self.encounter = None
-        if self.overlay:
-            self.overlay.show_shop(None, [])
         self.refresh_guide()
 
     async def handle_monster(self, event: MonsterFought) -> None:

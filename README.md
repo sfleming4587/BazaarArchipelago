@@ -85,8 +85,8 @@ The Bazaar doesn't know it's in a multiworld, so the client keeps things fair: i
 your checks and the top-left box turns red and tells you **CHECKS ARE BLOCKED** and why.
 
 - **Only play heroes you've received.** A run with a locked hero sends nothing.
-- **Don't keep locked cards.** When you visit a merchant, the client lists the locked cards it could sell, so you
-  know what to leave on the shelf. If a locked card lands in your hands anyway (a reward, say), just sell it -
+- **Don't keep locked cards.** Locked cards in a shop, a level-up, loot or an event get a red padlock on
+  them, so you know what to leave on the shelf. If a locked card lands in your hands anyway (a reward, say), just sell it -
   checks resume the moment the game's log shows the sale. Items the game makes for you by itself (from another
   item, a Shovel, a transformation) are always fine.
 - **DeathLink** (off unless you turn it on): when someone else dies, abandon your current run (Settings > Abandon
@@ -103,8 +103,7 @@ your checks and the top-left box turns red and tells you **CHECKS ARE BLOCKED** 
   It turns red when checks are blocked or a DeathLink arrives, amber when something needs you. Its **Tracker**
   button opens the tracker, and a locked card you're holding gets a **Use Bypass** button while you have a Lock
   Bypass.
-- **Locked-card list:** right under that box whenever you're at a merchant or an item choice - the locked cards on
-  offer, so you know what not to take. **Hide list** tucks it away.
+- **Padlocks:** a red padlock sits on every locked card you're offered, and on the locked cards in your stash.
 - **Pop-ups (bottom right):** everything you receive, send or find, always with the other player's name; Sell
   Traps; **SELL IT NOW** if you pick up a locked card; **CHECK NOT SENT** the moment a check is blocked.
 - **Shop Guide:** a window with pictures of everything the merchant could stock, at their real in-game sizes,

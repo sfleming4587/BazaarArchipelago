@@ -17,7 +17,7 @@ from typing import Callable, Dict, List, Optional, Set
 
 from . import screens
 from .shop_guide import ShopGuide
-from .theme import ACCENT, DIM, FG, FONT, GOOD, LOCKED_X, MUTED, OUTLINE, SEVERITY, WARN
+from .theme import ACCENT, DIM, FG, FONT, LOCKED_X, MUTED, OUTLINE, SEVERITY, WARN
 from .tracker import Tracker
 
 logger = logging.getLogger("Client")
@@ -25,9 +25,6 @@ FILE_ONLY = {"NoStream": True, "skip_gui": True}  # to the client's log file, no
 
 # see-through enough to read the game's tooltips behind (the list lets the mouse through, so they do show)
 ALERT_ALPHA = 0.8
-# The locked-card list: only its background is see-through (a backdrop window at this opacity under it); its
-# text stays fully solid (user 2026-09-28: at 60% for the whole window the names were hard to read).
-LIST_ALPHA = 0.55
 
 # Where the overlay may draw: the strips left and right of the board, measured on a 1920x1080 shop screenshot
 # (2026-09-28). It must never cover the board: the overlay takes the clicks where it sits, and a list over the
@@ -39,14 +36,11 @@ RIGHT_START = 1565 - 960  # the right strip starts this far right of the centre
 LEFT_BOTTOM = 1056
 RIGHT_BOTTOM = 950  # above the settings gear in the bottom-right corner
 
-FONT_SIZES = range(13, 9, -1)  # 1080p pixel sizes tried for the locked-card list (scaled with the window)
 MIN_FONT = 10  # never smaller than this many real pixels, however small the window (user rule: text >= 10 px)
 POINT_TO_PX = 4 / 3  # Tk points to pixels at 96 dpi (the overlay's other text is sized in points)
 PAD = 10  # inside every panel
 BORDER = 2  # every panel's gold border
 WINDOW_GAP = 4  # between two panels that sit on top of each other
-INDENT = 8  # names sit a little right of their letter
-GAP = 12  # between columns
 ALERT_SHARE = 2  # the alert box takes at most 1/2 of the left strip (the rest is the list's)
 MAX_ALERT_LINES = 6  # held cards / trap lines shown in it; more become "+ N more" (review 2026-09-30)
 TOAST_SHARE = 3  # pop-ups take at most 1/3 of the right strip
@@ -85,70 +79,6 @@ PADLOCK = 56  # the mark's size
 MIN_PADLOCK = 24  # real pixels, however small the window
 PADLOCK_KEY = "#010203"  # the padlock window's see-through colour
 MIN_GAME_WINDOW = 100  # a client area smaller than this is minimised or not laid out yet
-
-
-def letter_columns(names: List[str], rows: int) -> List[List[str]]:
-    """
-    Names grouped under their first letter; each letter starts a heading line. Letters stack in a column while
-    they fit in `rows` lines, otherwise the letter starts the next column. A letter longer than a whole column
-    carries on in the next one under its heading again.
-    """
-    groups: Dict[str, List[str]] = {}
-    for name in sorted(names, key=str.lower):
-        groups.setdefault(name[0].upper(), []).append(name)
-    rows = max(rows, 2)  # a heading and at least one name
-    columns: List[List[str]] = [[]]
-    for letter, members in groups.items():
-        if columns[-1] and len(columns[-1]) + 1 + len(members) > rows:
-            columns.append([])
-        while members:
-            if len(columns[-1]) >= rows - 1:
-                columns.append([])
-            room = rows - len(columns[-1]) - 1
-            columns[-1] += [letter] + members[:room]
-            members = members[room:]
-    return columns
-
-
-def fit_columns(names: List[str], areas: List[tuple], column_width: Callable[[List[str]], int],
-                line_height: int) -> tuple:
-    """
-    Lays the names out as letter columns over the areas ((width, height) in pixels), filling the first area
-    before the next. Returns (columns per area, how many names didn't fit).
-    """
-    remaining = sorted(names, key=str.lower)
-    placed: List[List[List[str]]] = []
-    for width, height in areas:
-        placed.append([])
-        rows = height // line_height
-        if rows < 2 or not remaining:
-            continue
-        used = 0
-        for column in letter_columns(remaining, rows):
-            used += column_width(column)
-            if used > width:
-                break
-            placed[-1].append(column)
-        taken = sum(1 for column in placed[-1] for line in column if len(line) > 1)
-        remaining = remaining[taken:]
-    return placed, len(remaining)
-
-
-def fit_names(names: List[str], areas: List[tuple], sizes: List[int], measurer: Callable) -> tuple:
-    """
-    The biggest text size (sizes, biggest first) at which the names fit the areas, else the smallest.
-    measurer(size) -> (line width function, line height). Returns (size, columns per area, how many didn't fit,
-    column width function, line height).
-    """
-    for size in sizes:
-        line_width, line_height = measurer(size)
-
-        def column_width(column: List[str], line_width=line_width) -> int:
-            return max(line_width(line) for line in column) + GAP
-        placed, missing = fit_columns(names, areas, column_width, line_height)
-        if not missing:
-            break
-    return size, placed, missing, column_width, line_height
 
 
 def strips(x: int, y: int, w: int, h: int) -> tuple:
@@ -280,25 +210,6 @@ def game_in_front(own: Set[int]) -> tuple:
     return True, (corner.x, corner.y, rect.right, rect.bottom)
 
 
-def draw_columns(tk, parent, columns: List[List[str]], font, bold, column_width: Callable[[List[str]], int],
-                 line_height: int, bg: str) -> None:
-    """One canvas of positioned text: hundreds of separate label widgets took Tk seconds to lay out."""
-    if not columns:
-        return
-    widths = [column_width(column) for column in columns]
-    canvas = tk.Canvas(parent, bg=bg, highlightthickness=0, bd=0, width=sum(widths),
-                       height=max(len(column) for column in columns) * line_height)
-    canvas.pack(anchor="w")
-    x = 0
-    for column, width in zip(columns, widths):
-        for y, line in enumerate(column):
-            if len(line) == 1:  # a letter heading
-                canvas.create_text(x, y * line_height, text=line, fill=ACCENT, font=bold, anchor="nw")
-            else:
-                canvas.create_text(x + INDENT, y * line_height, text=line, fill=FG, font=font, anchor="nw")
-        x += width
-
-
 class Overlay:
     """The client's handle on the windows: every method only queues a command for the Tk thread."""
 
@@ -321,11 +232,6 @@ class Overlay:
         A line is text, or (text, card guid) to give it a "Use Bypass" button (a Lock Bypass is ready).
         blocked: checks are blocked (critical, red) rather than just a warning (a Sell Trap coming up)."""
         self.commands.put(("locked", (title, list(cards), blocked) if title else None))
-
-    def show_shop(self, merchant: Optional[str], locked: List[str], verb: str = "sell", exact: bool = False) -> None:
-        """Show which locked cards a merchant could sell (or an event could offer). merchant=None hides it.
-        exact: these are the locked cards actually on offer right now (read from the game), not every possible one."""
-        self.commands.put(("shop", (merchant, list(locked), verb, exact) if merchant else None))
 
     def show_padlocks(self, screen: Optional[str], sizes: List[Optional[str]], locked: List[int], reveal: bool = False,
                       level: Optional[int] = None) -> None:
@@ -397,39 +303,28 @@ class _Screen:
     """Everything that lives in the Tk thread: the panels, what they show, and the command loop."""
 
     def __init__(self, overlay: Overlay, tk, root) -> None:
-        import tkinter.font as tkfont
-        self.overlay, self.tk, self.tkfont, self.root = overlay, tk, tkfont, root
+        self.overlay, self.tk, self.root = overlay, tk, root
         root.withdraw()
         # No two windows overlap: the alert box (root) takes the top of the left strip, the locked-card list goes
         # right under it, and the right strip belongs to the Shop Guide - or, while the guide is closed, to the
         # rest of a long list. Pop-ups (toasts) stack up from the bottom of the right strip, which then shrinks.
         # Owner, 2026-10-01: "The shop guide is always going to be the whole left column": the alert box (root) is
         # now just its header (status and buttons); DeathLink, held locked cards and Sell Traps are the notices box at
-        # the top of the right column, the locked-card list under them, the pop-ups at the bottom.
+        # the top of the right column, the pop-ups at the bottom. The locked-card list that sat between them went
+        # (owner, 2026-10-01: the padlocks on the cards themselves say it).
         # On the menu (no run, no board) the heroes you may play sit in the centre (owner, 2026-10-01).
-        self.alert_box, self.notice_box, self.shop_first, self.shop_second, self.toast_box, self.menu_box = \
-            root, tk.Toplevel(root), tk.Toplevel(root), tk.Toplevel(root), tk.Toplevel(root), tk.Toplevel(root)
-        self.panels = [self.alert_box, self.notice_box, self.shop_first, self.shop_second, self.toast_box,
-                       self.menu_box]
+        self.alert_box, self.notice_box, self.toast_box, self.menu_box = \
+            root, tk.Toplevel(root), tk.Toplevel(root), tk.Toplevel(root)
+        self.panels = [self.alert_box, self.notice_box, self.toast_box, self.menu_box]
         # nothing to click in these (the menu panel must never block the game's menu buttons)
-        self.click_through = {self.shop_first, self.shop_second, self.toast_box, self.menu_box}
+        self.click_through = {self.toast_box, self.menu_box}
         for panel in self.panels:
             panel.withdraw()
             panel.overrideredirect(True)
             panel.attributes("-topmost", True)
-            panel.attributes("-alpha", 1.0 if panel in (self.shop_first, self.shop_second) else ALERT_ALPHA)
+            panel.attributes("-alpha", ALERT_ALPHA)
             panel.configure(bg=SEVERITY["info"], highlightthickness=BORDER, highlightbackground=ACCENT)
             screens.never_focus(panel)
-        # the list's see-through background: a plain window right under each list window, same size
-        self.backdrops = {}
-        for panel in (self.shop_first, self.shop_second):
-            backdrop = self.backdrops[panel] = tk.Toplevel(root)
-            backdrop.withdraw()
-            backdrop.overrideredirect(True)
-            backdrop.attributes("-topmost", True)
-            backdrop.attributes("-alpha", LIST_ALPHA)
-            screens.never_focus(backdrop)
-
         self.padlocks: list = []  # one small click-through window per padlock, made as needed and reused
         self.padlocks_wanted = 0  # how many of them are in use
         self.pending_padlocks = None  # (padlocks, since, wait for the reveal) while new cards are still flipping
@@ -442,20 +337,17 @@ class _Screen:
 
         self.layout: dict = {}  # the strips for where the game window is now (see relayout)
         self.relayout((0, 0, root.winfo_screenwidth(), root.winfo_screenheight()))  # until the game is seen
-        self.state = {"locked": None, "deathlink": None, "shop": None, "toasts": [], "status": None,
+        self.state = {"locked": None, "deathlink": None, "toasts": [], "status": None,
                       "padlocks": None, "menu": None}
         self.hero_pictures: Dict[str, object] = {}  # the menu panel's portraits (Tk drops an image Python lets go)
-        self.list_hidden = False  # the player hid the locked-card list (until they show it again)
         # the player hid the menu's hero panel, e.g. over character select, which the game gives no sign of
         # (owner, 2026-10-01: a button, option 3)
         self.menu_hidden = False
         # what each window shows now, to skip redraws that change nothing
-        self.drawn: dict = {"alerts": None, "notices": None, "shop": None, "toasts": None, "alerts_height": 0,
+        self.drawn: dict = {"alerts": None, "notices": None, "toasts": None, "alerts_height": 0,
                             "notices_height": 0, "toasts_height": 0, "padlocks": None}
         self.wanted: set = set()  # windows that have something to show (shown only while the game is in front)
         self.game_in_front = not overlay.only_over_game
-        self.widths: Dict[tuple, int] = {}  # (font size, text) -> pixels; measuring hundreds of names is slow
-        self.fonts: tuple = ()  # Tk drops a font once Python lets go of it
         self.rendering = self.render_again = False
         self.guide = ShopGuide.create(
             tk, root, overlay.art_cache_dir, overlay.guide_file, self.layout["right"],
@@ -473,7 +365,7 @@ class _Screen:
             "tracker_toggle": lambda _: self.tracker.toggle(),
             "toast": self.new_toast,
             **{kind: (lambda value, kind=kind: self.set_state(kind, value))
-               for kind in ("locked", "deathlink", "shop", "status")},
+               for kind in ("locked", "deathlink", "status")},
             "menu": self.new_menu,
             "padlocks": self.new_padlocks,
             "board_ui": self.new_board_ui,
@@ -493,9 +385,7 @@ class _Screen:
     def faded_windows(self) -> list:
         """(window, its own alpha) for every overlay window the fade scales."""
         out = [(self.alert_box, ALERT_ALPHA), (self.notice_box, ALERT_ALPHA), (self.toast_box, ALERT_ALPHA),
-               (self.menu_box, ALERT_ALPHA),
-               (self.shop_first, 1.0),
-               (self.shop_second, 1.0)] + [(backdrop, LIST_ALPHA) for backdrop in self.backdrops.values()]
+               (self.menu_box, ALERT_ALPHA)]
         if self.guide and not self.guide_fading:
             out.append((self.guide.win, 1.0))
         if self.tracker.win is not None and self.tracker.win.winfo_exists():
@@ -572,9 +462,6 @@ class _Screen:
         old = [child for child in panel.winfo_children() if type(child) is self.tk.Frame]  # not other windows
         new = self.tk.Frame(panel, bg=bg, padx=PAD, pady=PAD)
         panel.configure(bg=bg)
-        if panel in self.backdrops:  # the colour goes on the backdrop; in the list window it turns see-through
-            self.backdrops[panel].configure(bg=bg)
-            panel.attributes("-transparentcolor", bg)
         return new, lambda: (new.pack(fill="both", expand=True), [child.destroy() for child in old])
 
     @staticmethod
@@ -594,18 +481,15 @@ class _Screen:
         front = self.game_in_front and self.overlay_factor() > 0
         for window in self.panels + ([guide] if guide else []):
             show = front and (not self.guide.hidden if window is guide else window in self.wanted)
-            layers = [self.backdrops[window], window] if window in self.backdrops else [window]  # bottom to top
             if show and window.state() != "normal":
-                for layer in layers:
-                    layer.deiconify()
-                    layer.lift()
-                    if window in self.click_through:
-                        screens.click_through(layer)
+                window.deiconify()
+                window.lift()
+                if window in self.click_through:
+                    screens.click_through(window)
                 if window is guide:
                     self.guide.place_on_screen(self.layout["screen"])  # needs it shown to measure its frame
             elif not show and window.state() == "normal":
-                for layer in layers:
-                    layer.withdraw()
+                window.withdraw()
         for i, padlock in enumerate(self.padlocks):
             show = front and i < self.padlocks_wanted
             if show and padlock.state() != "normal":
@@ -657,11 +541,6 @@ class _Screen:
         if self.guide:  # the whole left column under its header
             self.guide.fit(screens.clamp(below(layout["left"], drawn["alerts_height"]), layout["screen"]),
                            layout["screen"])
-        guide_hidden = self.guide.hidden if self.guide else True
-        shop = (state["shop"], drawn["alerts_height"], drawn["notices_height"], guide_hidden, right, self.list_hidden)
-        if shop != drawn["shop"]:
-            drawn["shop"] = shop
-            self.render_shop(moves, drawn["alerts_height"], below(right, drawn["notices_height"]))
         padlocks = (state["padlocks"], layout["window"])
         if padlocks != drawn["padlocks"]:
             drawn["padlocks"] = padlocks
@@ -674,8 +553,6 @@ class _Screen:
             geometry = screens.geometry(screens.clamp(rect, layout["screen"]))  # never off the monitor
             if panel.geometry() != geometry:  # leave an unchanged window alone
                 panel.geometry(geometry)
-                if panel in self.backdrops:
-                    self.backdrops[panel].geometry(geometry)
         self.sync_visibility()
 
     def buttons(self) -> list:
@@ -685,8 +562,6 @@ class _Screen:
         buttons = [("Tracker", self.tracker.toggle)] if self.tracker.data else []
         if self.guide:  # any time, not only in a shop; the same button closes it (owner, 2026-10-01)
             buttons.append(("Shop Guide" if self.guide.hidden else "Hide guide", self.toggle_guide))
-        if state["shop"] and state["shop"][1]:
-            buttons.append(("Show list" if self.list_hidden else "Hide list", self.toggle_list))
         if state["menu"]:
             buttons.append(("Show heroes" if self.menu_hidden else "Hide heroes", self.toggle_menu))
         return buttons
@@ -720,9 +595,6 @@ class _Screen:
 
     def toggle_menu(self) -> None:
         self.menu_hidden = not self.menu_hidden
-
-    def toggle_list(self) -> None:
-        self.list_hidden = not self.list_hidden
 
     def render_menu(self, moves: list) -> None:
         """On the menu - only while none of the game's own screens is open over it (client.menu_data's "covered") -
@@ -896,62 +768,6 @@ class _Screen:
         x, y, width, strip_height = self.layout["left"]
         return self.place(moves, self.alert_box, (x, y, width, strip_height // ALERT_SHARE))
 
-    def measurer(self, size: int) -> tuple:
-        """(line width, line height) at a pixel size, for fit_names; widths are cached (the slow part)."""
-        font = self.tkfont.Font(root=self.root, family=FONT, size=-size)
-        bold = self.tkfont.Font(root=self.root, family=FONT, size=-size, weight="bold")
-        self.fonts = (font, bold)
-
-        def line_width(line: str) -> int:
-            if (size, line) not in self.widths:
-                self.widths[size, line] = bold.measure(line) if len(line) == 1 else font.measure(line) + INDENT
-            return self.widths[size, line]
-        return line_width, font.metrics("linespace")
-
-    def render_shop(self, moves: list, alerts_height: int, right: tuple) -> None:
-        tk, state, layout, f = self.tk, self.state, self.layout, self.font
-        if not state["shop"] or (self.list_hidden and state["shop"][1]):
-            moves += [(self.shop_first, None), (self.shop_second, None)]
-            return
-        merchant, names, verb, exact = state["shop"]
-        bg = SEVERITY["warning" if names else "ok"]
-        # the right strip first (the left one is the Shop Guide's, owner 2026-10-01), then under the alert box
-        # while the guide is closed
-        first, inner = right, right[2] - 2 * (PAD + BORDER)  # right: the column under the notices
-        second = below(layout["left"], alerts_height)
-        first_frame, show_first = self.swap(self.shop_first, bg)
-        if names:
-            advice = "don't buy them" if verb == "sell" else "pick something else"
-            what = f"{merchant} is offering" if exact else f"{merchant} may {verb}"  # exact: padlocked on screen
-            tk.Label(first_frame, text=f"{what} these LOCKED cards - {advice}:", fg=ACCENT, bg=bg,
-                     font=f(11, "bold"), wraplength=inner, justify="left").pack(anchor="w", pady=(0, 4))
-        else:  # nothing locked: just a small tick
-            tk.Label(first_frame, text=f"✔  {merchant}: buy freely", fg=GOOD, bg=bg, font=f(11, "bold"),
-                     wraplength=inner, justify="left").pack(anchor="w")
-        first_frame.update_idletasks()
-        areas = [(inner, first[3] - first_frame.winfo_reqheight() - WINDOW_GAP)]
-        if not self.guide or self.guide.hidden:  # under the alert box is the Shop Guide's while it's open
-            areas.append((layout["inner_w"], second[3] - 2 * (PAD + BORDER)))
-        sizes = sorted({max(MIN_FONT, round(size * layout["k"])) for size in FONT_SIZES}, reverse=True)
-        _, placed, missing, column_width, line_height = fit_names(names, areas, sizes, self.measurer)
-        font, bold = self.fonts
-        if missing:  # e.g. Make a Wish, which can deal almost any item: a partial A-to-D list would mislead
-            placed = [[] for _ in areas]
-            tk.Label(first_frame, text=f"Could be any of {len(names)} locked cards - too many to list. If you take "
-                                       f"a locked one, sell it before your next fight.", fg=FG, bg=bg, font=f(10),
-                     wraplength=inner, justify="left").pack(anchor="w")
-        else:
-            draw_columns(tk, first_frame, placed[0], font, bold, column_width, line_height, bg)
-        show_first()
-        self.place(moves, self.shop_first, first)
-        if len(placed) > 1 and placed[1]:
-            second_frame, show_second = self.swap(self.shop_second, bg)
-            draw_columns(tk, second_frame, placed[1], font, bold, column_width, line_height, bg)
-            show_second()
-            self.place(moves, self.shop_second, second)
-        else:
-            moves.append((self.shop_second, None))
-
     def render_padlocks(self) -> None:
         """Moves a padlock onto the centre of each locked card on offer (see card_centres)."""
         layout, value = self.layout, self.state["padlocks"]
@@ -1040,7 +856,7 @@ class _Screen:
         return first  # the Tracker button appears once there's something to track
 
     def own_windows(self) -> Set[int]:
-        windows = self.panels + list(self.backdrops.values()) + self.padlocks
+        windows = self.panels + self.padlocks
         return {screens.window_handle(w) for w in windows} | set(self.tracker.windows()) |             set(self.guide.windows() if self.guide else [])
 
     def poll(self) -> None:
@@ -1090,11 +906,10 @@ class _Screen:
             self.keep_on_top()
 
     def keep_on_top(self) -> None:
-        """Games sometimes take the top spot; the shown windows claim it back (the list's text above its backdrop)."""
+        """Games sometimes take the top spot; the shown windows claim it back."""
         for panel in self.panels:
             if panel.state() == "normal":
-                for layer in ([self.backdrops[panel]] if panel in self.backdrops else []) + [panel]:
-                    layer.attributes("-topmost", True)
+                panel.attributes("-topmost", True)
         if self.guide and self.guide.win.state() == "normal":
             self.guide.win.attributes("-topmost", True)
         for padlock in self.padlocks:

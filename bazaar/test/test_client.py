@@ -852,9 +852,6 @@ class TestShopPadlocks(ClientTestBase):
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.enter()
         self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [1], True))
-        merchant, names, _verb = self.ctx.overlay.show_shop.call_args.args
-        self.assertEqual(names, [LOCKED.name])
-        self.assertTrue(self.ctx.overlay.show_shop.call_args.kwargs["exact"])
 
     def test_buying_it_takes_the_padlock_away(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
@@ -862,7 +859,6 @@ class TestShopPadlocks(ClientTestBase):
         self.ctx.handle_snapshot(self.snapshot([self.row[0], self.row[2]]))
         # the others keep their places (a gap where it was) and were already showing: no flip, no wait
         self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [], False))
-        self.assertEqual(self.ctx.overlay.show_shop.call_args.args[1], [])
 
     def test_buying_another_card_leaves_the_padlock_where_it_was(self) -> None:
         """User, 2026-10-01: cards don't move after a purchase; the padlocks thought they did."""
@@ -898,21 +894,14 @@ class TestShopPadlocks(ClientTestBase):
         self.ctx.handle_snapshot(self.snapshot(self.row, encounter=None, state="LevelUp"))
         self.assertEqual(self.padlocks(), ("LevelUp", [c.size for c in self.row], [1], True))
 
-    def test_without_memory_it_lists_everything_the_merchant_could_sell(self) -> None:
+    def test_without_memory_nothing_is_padlocked(self) -> None:
         self.enter()
         self.assertFalse(self.ctx.overlay.show_padlocks.called and self.padlocks()[2])
-        self.assertIn(LOCKED.name, self.ctx.overlay.show_shop.call_args.args[1])
-        self.assertFalse(self.ctx.overlay.show_shop.call_args.kwargs["exact"])
 
     def test_screens_whose_layout_is_unknown_get_no_padlocks(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.ctx.handle_snapshot(self.snapshot(self.row, state="Pedestal"))  # not measured
         self.assertEqual(self.padlocks(), (None, [], [], False))
-
-    def test_the_shop_list_trusts_only_the_merchant_the_log_says_you_are_at(self) -> None:
-        self.ctx.handle_snapshot(self.snapshot(self.row, encounter="00000000-0000-0000-0000-000000000000"))
-        self.enter()
-        self.assertFalse(self.ctx.overlay.show_shop.call_args.kwargs["exact"])
 
     def test_an_open_stash_padlocks_its_locked_cards_in_their_slots(self) -> None:
         from ..memreader import BoardUI

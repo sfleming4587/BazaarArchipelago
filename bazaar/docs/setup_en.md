@@ -68,12 +68,10 @@ client's log file). If those can't open on your PC, the messages show in the cli
 
 ### The alert window (top left)
 
-- **Shopping:** when you open a merchant, it lists the locked cards that merchant could sell, grouped by first
-  letter, so you know what to leave on the shelf - or shows a green tick when nothing there is locked. Clicks go
-  straight through the list to the game, so it never gets in your way. **Hide list** / **Show list** tucks it away.
-- **Item choices:** whenever an event, an event option (like Hidden Lake's "Fight the Beast") or a level-up lays
-  items out for you to take, it lists the locked cards it could offer - or, if it could be almost anything (Make a
-  Wish), says so. Items handed to you with no choice get no warning; if one of those is locked, just sell it.
+- **Padlocks:** every locked card you're offered - in a shop, a level-up, loot or an event's item choice - gets a
+  red padlock right on the card, and so do the locked cards in your open stash. Clicks go straight through them,
+  and they fade while you read a card's tooltip. Items handed to you with no choice get no padlock; if one of those
+  is locked, just sell it.
 - **CHECKS ARE BLOCKED:** shown while you hold a locked card, miss a Sell Trap's deadline, play a locked hero or
   owe a DeathLink. It clears by itself once you sell the card (or press **Use Bypass** next to it); a locked hero
   or a DeathLink blocks the rest of that run. A run you started while the client was off or disconnected that was
@@ -99,8 +97,7 @@ A second window with pictures (courtesy of [Bazaar DB](https://bazaardb.gg)) of 
 visiting could stock, each at its in-game size (small = 1 slot wide, medium = 2, large = 3), with the locked ones
 greyed out behind a red X. The shorter list goes on top.
 
-- It opens in the strip right of the board, and the locked-card list stays on the left. If a merchant could sell
-  too many locked cards to list, the list says so instead - the Shop Guide still shows them all.
+- It opens in the strip left of the board, under the alert window.
 - It's a real window: drag it anywhere, even onto another monitor, and it stays put.
 - **Locked only** shows just the cards you may not buy - a great way to learn what they look like. **Show all**
   brings the rest back.
