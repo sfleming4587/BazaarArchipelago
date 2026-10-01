@@ -377,7 +377,8 @@ status line.
   `[AppState] Clean up completed`, it held something that wasn't a `RunState` ("field StateName not found") and
   the reader switched off for the session. A failed check on a non-`RunState` object is no patch (attach already
   checks the static's type), so the snapshot reads it as "no screen" and the next look tries again
-  (`Mono.is_a`). Only a field missing from a real `RunState` still turns the reader off.
+  (`Mono.is_a`). Only a field missing from a real `RunState` still turns the reader off. The same moment once read
+  `StateName` as "0" ("unknown screen 0", 15:20, a run start): an unknown screen name is now "no screen" as well.
 - ⚠️ **A few seconds after launch the assembly list exists without the game's code** (2026-10-01: "the game's
   assembly list wasn't found" switched the reader off for that session). A list holding `mscorlib` but not yet
   `TheBazaarRuntime` now means "still loading" (retried in 5 s); no list at all is still a failed check. The fix is

@@ -689,8 +689,10 @@ class Reader:
         if not state or not self.mono.is_a(state, "RunState"):
             return Snapshot(None, None, ())
         name = self._get(state, "StateName")
+        # An unknown name ("0" for a moment at a run start, 2026-10-01; or a screen a patch added) is "no screen" too:
+        # nothing gets padlocked there, nothing wrong is shown, and the next look tries again.
         if name is not None and name not in RUN_STATES:
-            raise ReaderOff(f"unknown screen {name}")
+            return Snapshot(None, None, ())
         encounter = self._get(state, "CurrentEncounterId")
         selection = self._get(state, "SelectionSet")
         ids: List[str] = []
