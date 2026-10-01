@@ -381,8 +381,9 @@ status line.
   `StateName` as "0" ("unknown screen 0", 15:20, a run start): an unknown screen name is now "no screen" as well.
 - ⚠️ **A few seconds after launch the assembly list exists without the game's code** (2026-10-01: "the game's
   assembly list wasn't found" switched the reader off for that session). A list holding `mscorlib` but not yet
-  `TheBazaarRuntime` now means "still loading" (retried in 5 s); no list at all is still a failed check. The fix is
-  unverified in the game until the next launch.
+  `TheBazaarRuntime` means "still loading" (retried in 5 s). That wasn't enough - at 15:33 there was no list at
+  all yet - so for `LOADING_SECONDS` (120) after the reader first looks at a game, a missing list is "still
+  loading" too; only after that is it a failed check (`test_memreader.py`).
 - Run **victory** seen 2026-10-01 (Vanessa, 10 wins 3 losses, day 13): `Victories` 9 -> 10 at 13:00:39 while still
   `PVPCombat`; state `EndRunVictory` at 13:00:46; the log's `EndRunVictoryState` at 13:00:47. So memory knows the
   run is won as soon as the 10th win counts, ~8 s before the log.

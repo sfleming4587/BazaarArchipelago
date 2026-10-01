@@ -13,6 +13,7 @@ after a patch (owner, 2026-09-30). Windows only, no Archipelago imports, so it's
 import re
 import struct
 import sys
+import time
 import uuid
 from typing import Dict, List, NamedTuple, Optional, Tuple
 
@@ -40,6 +41,15 @@ class ReaderOff(Exception):
 
 class NotReady(ReaderOff):
     """The game isn't running or is still loading: nothing wrong, try again later."""
+
+
+class NoAssemblies(ReaderOff):
+    """The game's assembly list isn't there: still loading, or (if it stays that way) a patch."""
+
+
+# How long after a launch a missing assembly list still means "loading" (2026-10-01: twice the reader looked a few
+# seconds after launch, found no list and switched off for the whole session).
+LOADING_SECONDS = 120
 
 
 class Offer(NamedTuple):
@@ -282,7 +292,7 @@ class Mono:
         # the list is there but the game's own code isn't loaded yet (seen 2026-10-01, a few seconds after launch)
         if loading:
             raise NotReady("the game is still loading")
-        raise ReaderOff("the game's assembly list wasn't found")
+        raise NoAssemblies("the game's assembly list wasn't found")
 
     def _image_offset(self, assembly: int) -> int:
         m = self.m
@@ -489,6 +499,7 @@ class Reader:
 
     def __init__(self) -> None:
         self.memory: Optional[Memory] = None
+        self.first_look: Tuple[int, float] = (0, 0.0)  # (game pid, when the reader first looked at it)
 
     def attached(self) -> bool:
         return self.memory is not None and self.memory.alive()
@@ -504,6 +515,8 @@ class Reader:
         if not module:
             raise NotReady("the game is still loading")
         memory = Memory(pid)
+        if self.first_look[0] != pid:
+            self.first_look = (pid, time.monotonic())
         try:
             mono = Mono(memory, *module)
             data = mono.find_class("TheBazaarRuntime", "TheBazaar", "Data")
@@ -512,6 +525,11 @@ class Reader:
             base = mono.static_data(data, {"_dataInstance": "Data", "Entities": "Dictionary`2",
                                            "<CurrentState>k__BackingField": "RunState",
                                            "<Run>k__BackingField": "Run"})
+        except NoAssemblies:
+            memory.close()
+            if time.monotonic() - self.first_look[1] < LOADING_SECONDS:
+                raise NotReady("the game is still loading")
+            raise
         except ReaderOff:
             memory.close()
             raise
