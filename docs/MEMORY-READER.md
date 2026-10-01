@@ -276,8 +276,9 @@ in place; stash and Esc menu hide them; a reroll clears them at once and the new
 
 - **Driven by memory alone** (`client.refresh_padlocks`), so screens the log never mentions (level-ups) work the
   same. A screen gets padlocks only if its layout is in `overlay.ROW_GAPS` (measured): `Encounter` (cards touch)
-  and `LevelUp` (68 px apart at 1080p). Loot, events with their own layouts and anything else: none until
-  measured. The list beside the board still follows the log's merchant line (`offers_at`).
+  and `LevelUp` (68 px apart at 1080p), and `Loot` with one card only (centred; passed in the game 2026-10-01,
+  Drafting Table) - a loot with several cards gets none until its spacing is measured (`ONE_CARD_ONLY`). Events
+  with their own layouts and anything else: none until measured. The list beside the board still follows the log's merchant line (`offers_at`).
 - **Positions** (`overlay.card_centres`): sizes from `bazaar_data.json` (K-mem7), Small/Medium/Large = 1/2/3 slots
   of 113 px at 1080p, the row centred across the window at 39.8% of its height (measured on two screenshots,
   centres within 1-2 px). An unknown size means no padlocks at all - a guessed width would move every padlock after
