@@ -95,6 +95,7 @@ class ShopGuide:
         self.locked: Set[str] = set()  # cards you may not hold right now
         self.offer: Optional[Tuple[str, Tuple[str, ...]]] = None  # (title, offered card guids) on screen right now
         self.cells: Dict[tuple, List[object]] = {}  # (guid, locked) -> the frames showing that card right now
+        self.blocks: Dict[str, tuple] = {}  # section -> (what it shows, its frame, its cells): see render
         self.photos: Dict[tuple, object] = {}
         self.width = DEFAULT_WIDTH
         self.drawn = None  # what's on screen, so a redraw that changes nothing is skipped
@@ -312,28 +313,28 @@ class ShopGuide:
 
     # --- drawing ----------------------------------------------------------------------------------------------
 
-    def section(self, parent, title: str, color: str, cards: List, row: int, framed: bool = False) -> int:
+    def block(self, title: str, color: str, cards: List, framed: bool) -> tuple:
+        """One section in a frame of its own: (frame, its cells by (guid, locked)). Cards go left to right in
+        rows, each as wide as its slots (like the board)."""
         tk = self.tk
-        if not cards:
-            return row
-        tk.Label(parent, text=title, bg=WINDOW_BG, fg=color, font=(FONT, 11, "bold")).grid(
-            row=row, column=0, sticky="w", padx=6, pady=(8, 2))
-        row += 1
-        line, used = None, 0  # cards go left to right in rows, each as wide as its slots (like the board)
+        frame, cells = tk.Frame(self.inner, bg=WINDOW_BG), {}
+        tk.Label(frame, text=title, bg=WINDOW_BG, fg=color, font=(FONT, 11, "bold")).grid(
+            row=0, column=0, sticky="w", padx=6, pady=(8, 2))
+        row, line, used = 1, None, 0
         for card in cards:
             locked = card.guid in self.locked
             width = card_shape(card, CARD_HEIGHT)[0] + 2 * CARD_PAD
             if line is None or used + width > self.width - ROW_MARGIN:
-                line, used = tk.Frame(parent, bg=WINDOW_BG), 0
+                line, used = tk.Frame(frame, bg=WINDOW_BG), 0
                 line.grid(row=row, column=0, sticky="w", padx=2)
                 row += 1
             used += width
             cell = tk.Frame(line, bg=WINDOW_BG, width=width, highlightthickness=2 if framed else 0,
                             highlightbackground=ACCENT)
             cell.pack(side="left", anchor="n", padx=CARD_PAD, pady=3)
-            self.cells.setdefault((card.guid, locked), []).append(cell)
+            cells.setdefault((card.guid, locked), []).append(cell)
             self.fill(cell, card, locked)
-        return row
+        return frame, cells
 
     def fill(self, cell, card, locked: bool) -> None:
         """A card's picture (or a placeholder until it has one) and its name."""
@@ -347,7 +348,10 @@ class ShopGuide:
                       wraplength=max(40, width - 4), justify="center").pack()
 
     def render(self, force: bool = False) -> None:
-        """Draws what's on offer, then the filtered list (allowed and locked, the shorter part on top)."""
+        """Draws what's on offer, then the filtered list (allowed and locked, the shorter part on top).
+        A silent refresh (owner, 2026-10-01: "please make it a silent refresh like before"): each section is its
+        own block and only a block whose cards changed is rebuilt - buying a card redraws "On offer now", not the
+        list - and the scroll only jumps to the top when you change a filter."""
         if self.pending_filter:
             self.win.after_cancel(self.pending_filter)
             self.pending_filter = None
@@ -360,6 +364,7 @@ class ShopGuide:
         state = (self.offer, self.hero, frozenset(self.locked), self.locked_only, tuple(sorted(values.items())))
         if state == self.drawn and not force:
             return
+        filters_changed = not self.drawn or self.drawn[4] != state[4]
         self.drawn = state
         listed = guide_cards(self.cards, self.hero, values["merchant"], values["text"], values["size"],
                              values["tier"])
@@ -370,27 +375,37 @@ class ShopGuide:
         offered = [CARDS_BY_GUID[g] for g in (self.offer[1] if self.offer else ()) if g in CARDS_BY_GUID]
 
         where = values["merchant"] if values["merchant"] != ANY else "All cards" + (f" for {self.hero}" if self.hero else "")
-        note = f"showing {MAX_SHOWN} of {total} - narrow it with the filters" if total > MAX_SHOWN else \
-            f"{len(locked)} locked of {total}" if locked else f"{total}, nothing locked"
+        note = f"showing {MAX_SHOWN} of {total} - narrow it with the filters" if total > MAX_SHOWN else             f"{len(locked)} locked of {total}" if locked else f"{total}, nothing locked"
         self.header.configure(text=f"{self.offer[0] + '  |  ' if self.offer else ''}{where}: {note}")
 
-        sections = [(f"You can buy ({len(allowed)})", GOOD, allowed), (f"LOCKED - don't buy ({len(locked)})", WARN,
-                                                                     locked)]
+        lists = [("allowed", f"You can buy ({len(allowed)})", GOOD, allowed),
+                 ("locked", f"LOCKED - don't buy ({len(locked)})", WARN, locked)]
         if self.locked_only:  # just the cards to recognise and avoid
-            sections = sections[1:]
+            lists = lists[1:]
         elif len(locked) < len(allowed):  # the shorter list on top, so it's seen without scrolling
-            sections.reverse()
-        # built in a new frame, then swapped in: the window never shows up empty in between (no flicker)
-        old = self.inner.winfo_children()
-        frame = self.tk.Frame(self.inner, bg=WINDOW_BG)
+            lists.reverse()
+        wanted = [("offer", f"On offer now ({len(offered)})", ACCENT, offered, True)]
+        wanted += [(key, title, color, cards, False) for key, title, color, cards in lists]
+        kept: Dict[str, tuple] = {}
+        for row, (key, title, color, cards, framed) in enumerate(b for b in wanted if b[3]):
+            signature = (title, tuple((c.guid, c.guid in self.locked) for c in cards), self.width)
+            old = self.blocks.pop(key, None)
+            if old and old[0] == signature:
+                frame, cells = old[1], old[2]
+            else:  # built first, then the old one goes: the window never shows the section missing (no flicker)
+                frame, cells = self.block(title, color, cards, framed)
+                if old:
+                    old[1].destroy()
+            frame.grid(row=row, column=0, sticky="nw")
+            kept[key] = (signature, frame, cells)
+        for _signature, frame, _cells in self.blocks.values():  # sections with nothing in them now
+            frame.destroy()
+        self.blocks = kept
         self.cells = {}
-        row = self.section(frame, f"On offer now ({len(offered)})", ACCENT, offered, 0, framed=True)
-        for title, color, cards in sections:
-            row = self.section(frame, title, color, cards, row)
-        frame.pack(anchor="nw")
-        for child in old:
-            child.destroy()
-        if not force:
+        for _signature, _frame, cells in kept.values():
+            for key, found in cells.items():
+                self.cells.setdefault(key, []).extend(found)
+        if filters_changed:
             self.canvas.yview_moveto(0)
 
     # --- saved settings ---------------------------------------------------------------------------------------
