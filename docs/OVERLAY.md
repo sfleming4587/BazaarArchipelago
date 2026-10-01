@@ -44,9 +44,12 @@ Random itself comes from memory (your character-select settings: Random on/off a
 warning names the heroes Random could roll that are locked or not in the multiworld, or says Random is safe. Each
 tile shows the checks you've got with that hero and "Cards X / Y" (their cards unlocked of all of them).
 
-⚠️ The game gives no sign that character select is open (nothing reachable in memory, nothing in the log), so the
-panel can't hide itself there. The header has "Hide heroes" / "Show heroes" (owner, 2026-10-01: option 3); hiding
-lasts until you leave the menu.
+The game gives no readable sign that character select is open (nothing reachable in memory, nothing in the log),
+so the panel follows the menu's own buttons (owner's idea, 2026-10-01, passed in the game): a click on "Change hero"
+hides it; the close X, Esc, or picking a hero or Random shows it again. Only the left button, Esc and the mouse
+position are read, and only while the game is in front. The "Change hero" area follows the button's width (x 35-301
+with Random, 35-400 with a hero, y 225-333 at 1080p; `overlay.menu_click`). The header's "Hide heroes" / "Show
+heroes" covers anything else (e.g. clicking the hero that's already picked); hiding lasts until you leave the menu.
 
 ## When things show, fade or hide
 
