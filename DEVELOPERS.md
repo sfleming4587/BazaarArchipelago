@@ -9,9 +9,10 @@ The client only ever **reads**: the game's own `Player.log`, and - for the shop 
 through `bazaar/memreader.py`. Please keep it that way: no writing to memory, no injection, no automated input, no
 calls to Tempo's servers, no changes to game files, and nothing about other players. Tempo's policy expressly
 prohibits mods that change gameplay or combat flow, simulate combat, act without user input, or talk to the game's
-server; the owner's ruling (2026-10-01) is that those are the lines that apply here. Players can turn the reader
-off with `--no-memory-reader`. Don't widen what it reads without the owner's OK (rules in
-`docs/MEMORY-READER.md`), and nobody should risk their account to play a randomizer.
+server; the owner's ruling (2026-10-01) is that those are the lines that apply here. The reader is always on, with
+no switch to turn it off (owner, 2026-10-01: "a cornerstone for how the archipelago client will work"); only a
+failed check turns it off. Don't widen what it reads without the owner's OK (rules in `docs/MEMORY-READER.md`), and
+nobody should risk their account to play a randomizer.
 
 ## Finding your way around
 

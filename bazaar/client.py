@@ -1087,10 +1087,9 @@ async def main(args) -> None:
         if not ctx.overlay.available:
             logger.warning("The alert window can't open on this PC (tkinter is missing). Warnings still show here.")
     watcher = asyncio.create_task(watch_log(ctx), name="log watcher")
-    # the padlocks need the overlay; the reader is Windows-only, like the game
-    memory = None
-    if ctx.overlay and not args.no_memory_reader and sys.platform == "win32":
-        memory = asyncio.create_task(watch_memory(ctx), name="memory reader")
+    # always on (owner, 2026-10-01: "a cornerstone for how the archipelago client will work"); Windows-only, like
+    # the game. If a check fails it turns itself off and the client carries on from the log (see watch_memory).
+    memory = asyncio.create_task(watch_memory(ctx), name="memory reader") if sys.platform == "win32" else None
     if gui_enabled:
         ctx.run_gui()
     ctx.run_cli()
@@ -1110,9 +1109,6 @@ def launch_client(*args: str) -> None:
     parser.add_argument("--name", default=None, help="Slot name to connect as.")
     parser.add_argument("--logpath", default=None, help="Path to The Bazaar's Player.log.")
     parser.add_argument("--no-overlay", action="store_true", help="Don't show alerts in a window above the game.")
-    parser.add_argument("--no-memory-reader", action="store_true",
-                        help="Don't read the shop from the game's memory (no padlocks; shops list every locked card "
-                             "they could sell).")
     parser.add_argument("--no-shop-guide", action="store_true",
                         help="Don't open the Shop Guide window (card pictures of what a merchant can sell).")
     parser.add_argument("url", nargs="?", help="Archipelago connection url")

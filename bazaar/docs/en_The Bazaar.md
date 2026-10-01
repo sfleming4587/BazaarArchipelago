@@ -138,6 +138,5 @@ Tempo's [Third-Party Plugin & Modding Policy](https://www.playthebazaar.com/mod-
 that change gameplay, game speed or the flow of combat; calculate or simulate combat; interact with the game
 without your input; or talk to the game's server. The client does none of those. It reads `Player.log`, and to put
 padlocks on shop cards it also **reads the game's memory**: only your own run's current screen and the cards on
-offer, read-only, with nothing written or injected and nothing about other players. If you'd rather it didn't, start
-the client with `--no-memory-reader`: you lose the padlocks, and shops list every locked card they could sell
-instead. Tempo's policy can change, so check it yourself.
+offer, read-only, with nothing written or injected and nothing about other players. Tempo's policy can change, so
+check it yourself.

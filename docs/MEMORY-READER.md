@@ -4,8 +4,9 @@
 > it al"), for the shop padlocks only, NOT RELEASED.** `bazaar/memreader.py` reads the screen, the encounter and the
 > offered cards; nothing else from this page is used yet. Reading memory needed one-time reverse engineering (EULA
 > section 3); the owner accepted that on 2026-09-30, on the condition that the reader only reads and switches itself
-> off after a breaking patch instead of being re-engineered automatically. Players can turn it off with
-> `--no-memory-reader`. Widening what it reads needs the owner's OK.
+> off after a breaking patch instead of being re-engineered automatically. **Always on, no switch to turn it off**
+> (owner, 2026-10-01: "always have the memory reader on, no option to turn off, this will be a cornerstone for how
+> the archipelago client will work"); only a failed check turns it off. Widening what it reads needs the owner's OK.
 
 **One live run (2026-09-30, Mak, Unranked, Day 1 to Day 11, 5 wins / 6 losses) was watched once a second. Everything
 below was seen in that run unless it is marked _unverified_.**
