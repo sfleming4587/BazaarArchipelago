@@ -89259,5 +89259,6746 @@
    "level": 20,
    "spawns": false
   }
+ ],
+ "events": [
+  {
+   "guid": "c5326dd7-3e82-45c5-9a6c-81965a78bf89",
+   "name": "A Strange Mushroom",
+   "internal": "A Strange Mushroom",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "538290f0-a363-4c05-8efa-ff68932d43bb",
+   "name": "Abandoned Property",
+   "internal": "Abandoned Property (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien",
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "6391c95c-1dc1-420e-ab5e-ab99c6db4267",
+   "name": "Abandoned Property",
+   "internal": "Abandoned Property (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien",
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "db927fd4-b1b4-4587-b295-d0d1e4e15d0c",
+   "name": "Abandoned Property",
+   "internal": "Abandoned Property (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Pygmalien",
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "fed8adb8-8fc6-49be-88da-a6fa8496ad2f",
+   "name": "Abandoned Property",
+   "internal": "Abandoned Property (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a7b60dc3-36a1-46e8-ba7e-c34f255513c8",
+   "name": "Adira",
+   "internal": "Adira (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "6a5e82cf-969c-432a-863a-1df6e7f56513",
+   "name": "Advanced Training",
+   "internal": "Advanced Training",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "847b1294-649d-4f02-ab04-0ee9f838c462",
+   "name": "Aero",
+   "internal": "Aero",
+   "tier": "Silver",
+   "heroes": [
+    "Stelle"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "f1302d1d-24e4-4d17-a434-3550af908ba3",
+   "name": "Aerodrome",
+   "internal": "Aerodrome",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "0cb20108-dcbb-48e2-8294-519d09c60b3e",
+   "name": "Aila",
+   "internal": "Tutorial Day 3 Hour 4 - Aila",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "3155d09b-1440-4a95-a64e-68243735421d",
+   "name": "Aila",
+   "internal": "Aila Tutorial Day 1 Hour 3",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "3e22799f-87df-4c9f-bd45-769e14753caa",
+   "name": "Aila",
+   "internal": "Tutorial Day 4 Hour 4 - Aila",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "47a149e6-a8e2-4e33-aa88-e76246c45696",
+   "name": "Aila",
+   "internal": "Aila - Tutorial Day 2 Hour 2",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "97b6aca1-f1f5-492b-afd8-fcab7752ef7c",
+   "name": "Aila",
+   "internal": "[DEBUG] DownShiftTier Test",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "9cac2384-2020-4ae9-8375-15c5d07da446",
+   "name": "Aila",
+   "internal": "Tutorial Day 1 Hour 3 - Aila",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "abf614d4-4700-41f3-a05a-68c7e843cb1a",
+   "name": "Aila",
+   "internal": "Aila Tutorial Day 2 Hour 2",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "dc12f4bd-6c33-41f0-b7ad-d62a0be09a47",
+   "name": "Aila",
+   "internal": "Aila",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "f22fd14f-7e00-40cb-9e44-a46f34d64764",
+   "name": "Aimbot",
+   "internal": "Aimbot",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "0dc4e708-415a-4ee5-ba1f-4cda9b880ebd",
+   "name": "Alchemy Lab",
+   "internal": "Alchemy Lab (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "2ff9137c-1089-43f2-a389-120860aec5ea",
+   "name": "Alchemy Lab",
+   "internal": "Alchemy Lab (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "3016cd02-8221-4d9b-9572-89af7705184f",
+   "name": "Alchemy Lab",
+   "internal": "Alchemy Lab (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "52419a5c-f565-4e6d-9827-baa65c6d9d92",
+   "name": "Alchemy Lab",
+   "internal": "Alchemy Lab (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "78cf8b25-5812-4b9a-a9ff-9694c86e7a90",
+   "name": "Aldric",
+   "internal": "Aldric",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien",
+    "Mak",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "33ff7845-b3c5-43f6-b9b9-dfbff4729ce9",
+   "name": "Ammo Cache",
+   "internal": "Ammo Cache (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8ae41204-4071-42be-9d6f-4aff260851b0",
+   "name": "Ammo Cache",
+   "internal": "Ammo Cache (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ba2f4ad0-ff5b-4959-9acb-224cb3b66898",
+   "name": "Ammo Cache",
+   "internal": "Ammo Cache (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "60e67364-7aab-4ffa-9751-db5ec0caf452",
+   "name": "Ande",
+   "internal": "Tutorial Day 3 Hour 5 - Ande",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "705c0d8e-8513-49ce-82e8-81782cdac316",
+   "name": "Ande",
+   "internal": "Ande",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "70915950-ad96-47c8-a139-48b913b80750",
+   "name": "Ande",
+   "internal": "Ande Tutorial Day 1 Hour 3",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b649cc9a-9ea4-46d3-9ee5-8d57626260cf",
+   "name": "Ande",
+   "internal": "Tutorial Day 5 Hour 5 - Ande",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e3bbe96b-7108-4343-9584-3bade7f004a5",
+   "name": "Ande",
+   "internal": "Tutorial Day 3 Hour 1 - Ande",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "04ac552f-c292-455e-bf5f-438119dfa196",
+   "name": "Apothecary",
+   "internal": "Apothecary",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "4c3d4b9d-e5b7-469c-be91-67b213c5a975",
+   "name": "Argenta",
+   "internal": "Argenta (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8d5c8a08-45cf-43d2-b1ec-a37d3bd5542b",
+   "name": "Argenta",
+   "internal": "Tutorial - Level 2 - Argenta",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "7c179f37-5845-4041-b123-0c7da0fdabbd",
+   "name": "Armory",
+   "internal": "Armory (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ae1d3ea7-71d8-498c-b607-9cb12e3555cd",
+   "name": "Armory",
+   "internal": "Armory (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "bfa6d377-2fbe-4c8f-82ab-685e93dde1cb",
+   "name": "Armory",
+   "internal": "Armory (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c9fe4d57-1e5e-40dc-b878-9243ac41d130",
+   "name": "Armory",
+   "internal": "Tutorial Day 3 Hour 4 - Free Item",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d277e30d-2be8-4026-b0af-e1c11413e8a0",
+   "name": "Armory",
+   "internal": "Armory (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "0174f95a-8aae-4074-84d2-124ea0dcfb96",
+   "name": "Arms Locker",
+   "internal": "Arms Locker (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa",
+    "Mak",
+    "Stelle",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "16065716-b9f7-49db-931c-55f6097ff562",
+   "name": "Arms Locker",
+   "internal": "Arms Locker (Bronze) (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa",
+    "Mak",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a38bfa3d-2e09-4785-a2ec-0c73dac5cc91",
+   "name": "Arms Locker",
+   "internal": "Arms Locker (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa",
+    "Mak",
+    "Stelle",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a7686c79-a56c-4286-86ca-edb8eca85fee",
+   "name": "Arms Locker",
+   "internal": "Arms Locker (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa",
+    "Mak",
+    "Stelle",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a5b983cb-ee95-48bf-b84a-d25a74b9c1df",
+   "name": "Artisan Dunes",
+   "internal": "Artisan Dunes",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "7495fc68-4444-4fef-96f0-000000000000",
+   "name": "Aurora Dome",
+   "internal": "Aurora Dome (Encounter)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "1b164a15-cf5d-459d-a010-3bf86b25cde8",
+   "name": "B1&B2",
+   "internal": "The Financial District - Merchant Investment - B1&B2 - Small",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "8f0aea10-9894-4ded-a726-72b23142589c",
+   "name": "Barkun",
+   "internal": "Barkun",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "488df2ed-b698-4fe6-814f-5adcde618208",
+   "name": "Battlefield",
+   "internal": "Battlefield (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8e61f266-d58a-45ec-9560-76bf27afd1ca",
+   "name": "Battlefield",
+   "internal": "Battlefield (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "9037d88a-5e05-4ba6-8219-69360d402759",
+   "name": "Battlefield",
+   "internal": "Battlefield (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "9ba94af3-54c6-4e34-99eb-32d4309118ec",
+   "name": "Battlefield",
+   "internal": "Battlefield (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "6e840bf1-1cda-4c20-9c6b-44b4523c31a1",
+   "name": "BazaarCON",
+   "internal": "BazaarCON",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "bace3077-4de8-4f45-874d-c515e5327c64",
+   "name": "BeFriend",
+   "internal": "BeFriend (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Dooley",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "bb166ad8-bd42-4ddc-9055-3ba3d9ff2faa",
+   "name": "BeFriend",
+   "internal": "BeFriend (Bronze) (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Dooley",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "cbc4c504-73e7-43ad-b00a-2318e7e4c271",
+   "name": "BeFriend",
+   "internal": "BeFriend (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Dooley",
+    "Karnok",
+    "Vanessa",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "da05e5ef-63b3-4306-adbb-75d67dfc60d4",
+   "name": "BeFriend",
+   "internal": "BeFriend (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Dooley",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "34dc624d-1046-4e2d-906d-1fd8d19647d8",
+   "name": "Bex",
+   "internal": "Bex",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "0417372b-77dc-4040-9f29-33d709c591a5",
+   "name": "Bjorn",
+   "internal": "Bjorn (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Dooley",
+    "Vanessa",
+    "Mak",
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a64974ac-1250-41fe-aada-508b22c93ac4",
+   "name": "Bjorn's Gift Exchange",
+   "internal": "Bjorn's Gift Exchange",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "57a90bd8-9ece-4917-a2e7-fb8925fe231a",
+   "name": "Block Party",
+   "internal": "Block Party (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "71c529a8-7366-4f69-b2ab-4f0eec8573b5",
+   "name": "Block Party",
+   "internal": "Block Party (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "db314574-3ebe-49e1-8b87-c6b3678a7368",
+   "name": "Block Party",
+   "internal": "Block Party (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "efdb2b8a-7475-47fe-ad84-8a40ab49c27e",
+   "name": "Block Party",
+   "internal": "Block Party (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "036ce025-fc8a-4924-b1bd-a4f6f470ebc7",
+   "name": "Borrow",
+   "internal": "Borrow (Day 1-2)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "1bd4edc9-0cb9-49f7-bc03-703c36835de1",
+   "name": "Botanical Gardens",
+   "internal": "Botanical Gardens (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa",
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8251155c-f8b0-4dbc-9a42-fd2448a30171",
+   "name": "Botanical Gardens",
+   "internal": "Botanical Gardens (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa",
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b4d4dae0-708a-452e-87a2-cb87b308c1ac",
+   "name": "Botanical Gardens",
+   "internal": "Botanical Gardens (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa",
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b6baa6f3-7321-4d14-9412-68acdab57d9c",
+   "name": "Botanical Gardens",
+   "internal": "Botanical Gardens (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa",
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "4751d02e-876e-47e3-bb23-d7675e4ee5c6",
+   "name": "Botul",
+   "internal": "Botul",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Mak",
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "1a508bee-0dba-4110-9402-f372bb6c6137",
+   "name": "Bountiful Harvest",
+   "internal": "Bountiful Harvest (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "9dea6b33-264c-4550-9282-80ec297fb070",
+   "name": "Bountiful Harvest",
+   "internal": "Bountiful Harvest (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ec7fa0bf-dc6b-4019-b199-253a1475abf7",
+   "name": "Bountiful Harvest",
+   "internal": "Bountiful Harvest (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "facaa0bc-ddb9-48dc-8be7-f44b8a07df00",
+   "name": "Bountiful Harvest",
+   "internal": "Bountiful Harvest (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "0a46b7df-e0a2-4211-8529-0bfe91974a71",
+   "name": "Bounty Hunters",
+   "internal": "Bounty Hunters",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "54e27892-1eb3-4b1d-9824-51f9fa0bf51a",
+   "name": "C4",
+   "internal": "C4 (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "0c77d216-69de-4a92-9893-5f4b154128dc",
+   "name": "Cabin Fishing",
+   "internal": "Cabin Fishing (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "3845dfe7-e077-46a4-9534-02ddb895060a",
+   "name": "Cabin Fishing",
+   "internal": "Cabin Fishing (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "987abc50-90a5-416b-ac98-9220a31737e5",
+   "name": "Cabin Fishing",
+   "internal": "Cabin Fishing (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "f10a4289-ddb2-46e2-9985-dfefff459951",
+   "name": "Cabin Fishing",
+   "internal": "Cabin Fishing (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "7d832f18-dd4c-4d67-8e4f-573618f7fa38",
+   "name": "Cache of Riches",
+   "internal": "Cache of Riches (Day 3 to 4)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "937489c5-22bf-4190-89b1-f396894c85f1",
+   "name": "Cache of Riches",
+   "internal": "Cache of Riches (Day 1 to 2)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "af188bbf-4e10-42c8-803c-12594f4d80d7",
+   "name": "Cache of Riches",
+   "internal": "Cache of Riches (Day 5+)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "33a881fa-66fc-4a98-8744-de38c1d44baf",
+   "name": "Candy Stash",
+   "internal": "Candy Stash (Day 4-6)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "384bd291-99b1-4736-8cbc-ebdac4d11d63",
+   "name": "Candy Stash",
+   "internal": "Candy Stash (Day 7-9)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "cbcb84f9-631a-4d85-bed3-cfd2f86fb8d6",
+   "name": "Candy Stash",
+   "internal": "Candy Stash (Day 10)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e6e09e6a-ebe0-46f8-bfbb-716b74f78bc6",
+   "name": "Candy Stash",
+   "internal": "Candy Stash (Day 1-3)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "07139793-c844-4fbb-ad90-9f279843cdc8",
+   "name": "Cargo Hold",
+   "internal": "[Crash Site Expedition] Cargo Hold",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c0733dee-bc0e-46ec-a1ac-291284444c36",
+   "name": "Catalyst",
+   "internal": "Catalyst (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "4b9c8dd5-fa9c-47a1-bd26-3f043faa5e2a",
+   "name": "Chef Brolin",
+   "internal": "Chef Brolin",
+   "tier": "Gold",
+   "heroes": [
+    "Jules",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "7a4f9be7-9132-45a2-9885-6f2ce40a59be",
+   "name": "Chef Brolin",
+   "internal": "Chef Brolin (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "3346b0d5-20a0-4aa4-a7d4-b86ad0109e59",
+   "name": "Chronos",
+   "internal": "Tutorial Day 4 Hour 1 - Chronos",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b1288f12-2cf9-4473-a43e-4dd521703990",
+   "name": "Chronos",
+   "internal": "Chronos",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "168a04a9-d761-4df4-b9d9-0be88fe90f53",
+   "name": "Cinder Chase",
+   "internal": "Cinder Chase (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "176ebe3f-4e14-4b8e-9704-98cd8e95190c",
+   "name": "Cinder Chase",
+   "internal": "Cinder Chase (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "3ee61d8b-775f-4d75-a043-1975e1cbb55f",
+   "name": "Cinder Chase",
+   "internal": "Cinder Chase (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "9c8fa101-03e7-4e29-aca6-01c05f47faf8",
+   "name": "Cinder Chase",
+   "internal": "Cinder Chase (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "2381e033-ae5a-4a8d-876d-4048fc4cd078",
+   "name": "Claw Game",
+   "internal": "Claw Game",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "b10f79af-da26-4b27-88da-3e7fea49a3b9",
+   "name": "Cobweb",
+   "internal": "Tutorial Day 4 Hour 4 - Cobweb",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ef25f92c-484a-48de-b6de-8fc6429823ca",
+   "name": "Cobweb",
+   "internal": "Cobweb",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "816e6ba0-8f5f-412e-9756-8e1901dd9d49",
+   "name": "Colt",
+   "internal": "Colt",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "91586550-41b0-4bc0-8739-d2268f04b703",
+   "name": "Colt",
+   "internal": "Tutorial Day 2 Hour 4 - Colt",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "db0dbc04-7652-46e6-84bf-a616f4a8e384",
+   "name": "Colt",
+   "internal": "Tutorial Day 3 Hour 5 - Colt",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "54a0e045-36fe-4de4-92fb-9254fa73c48f",
+   "name": "Command Nexus",
+   "internal": "[Crash Site Expedition] Command Nexus",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a5bbdcf8-c1a3-41e3-898f-71a1819039d3",
+   "name": "Concert Hall",
+   "internal": "Concert Hall (Encounter)",
+   "tier": "Diamond",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "1596d1df-e943-48b4-bfc6-df2edb9dfe55",
+   "name": "Core Initialization",
+   "internal": "Core Initialization",
+   "tier": "Bronze",
+   "heroes": [
+    "Dooley"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "0b39d34b-e0dd-429e-a7f3-216732f0f95a",
+   "name": "Craftsmanship",
+   "internal": "Fierce Competition - Craft - Speed",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "ead0a1ed-703e-445e-ba43-9a7df5d64f54",
+   "name": "Crash Site Expedition",
+   "internal": "[Crash Site Expedition] Crash Site Expedition",
+   "tier": "Legendary",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "2950afee-ce0e-40c1-becb-735570e560c5",
+   "name": "Crystal Growth Chamber",
+   "internal": "[Crash Site Expedition] Crystal Growth Chamber",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "13b4c0cd-313d-4e0f-9a51-eb4d288f32a5",
+   "name": "Cupboard",
+   "internal": "Cupboard (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Jules",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "6de772fb-6a02-4b8c-a2c2-26023472ca31",
+   "name": "Cupboard",
+   "internal": "Cupboard (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "7421cca5-1d3e-4cf8-afa0-a3ce0c06e1c1",
+   "name": "Cupboard",
+   "internal": "Cupboard (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "f0a36d78-d446-4d57-81e0-9dfe942e4307",
+   "name": "Cupboard",
+   "internal": "Cupboard (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c6cffe25-8e94-4a7b-a821-3e3c7093333b",
+   "name": "Curio",
+   "internal": "Curio",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "77cd5ccd-be81-49fb-a697-58da76571c0a",
+   "name": "Cymon",
+   "internal": "Cymon (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Dooley"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "bea81fd6-ae81-49b2-b733-40246d8e825f",
+   "name": "D'flek",
+   "internal": "D'flek",
+   "tier": "Diamond",
+   "heroes": [
+    "Dooley",
+    "Pygmalien",
+    "Stelle",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "5ea96339-6c5e-42b4-bc5f-028b780348e0",
+   "name": "Dabora",
+   "internal": "Dabora",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "a120c614-233b-460f-8b54-1dd81d5e1db5",
+   "name": "Deadly Duel",
+   "internal": "Deadly Duel (Day 5)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ddecdf10-d7b5-475a-9c7b-d74e4cb51294",
+   "name": "Deadly Duel",
+   "internal": "Deadly Duel (Day 7)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "fc1960b0-ac02-4e3c-9b46-e421ae896724",
+   "name": "Deadly Duel",
+   "internal": "Deadly Duel (Day 6)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "2584cba4-fa60-4132-9e46-40f7eb9ee95d",
+   "name": "Deep Sea Fishing",
+   "internal": "Deep Sea Fishing (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "36b24aae-977a-40f4-a5d1-05deae478215",
+   "name": "Deep Sea Fishing",
+   "internal": "Deep Sea Fishing (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "6a8a9d37-f88b-4da8-a1fa-3584a4bd5c3d",
+   "name": "Deep Sea Fishing",
+   "internal": "Deep Sea Fishing (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "9e3c43fe-0205-4bf6-9da9-2b9bbbef8a65",
+   "name": "Deep Sea Fishing",
+   "internal": "Deep Sea Fishing (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "4e6d3224-affa-49a8-90ef-c6c9c986f786",
+   "name": "Dino Trapping",
+   "internal": "Dino Trapping (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Dooley"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "88416f83-e642-4a1f-82ad-d80d9a9a57bb",
+   "name": "Dino Trapping",
+   "internal": "Dino Trapping (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Dooley"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ae81a2e5-66c3-4bda-82ad-f9657add738a",
+   "name": "Dino Trapping",
+   "internal": "Dino Trapping (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Dooley"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "f785c906-9f01-4641-80a6-b7cc360c271a",
+   "name": "Dino Trapping",
+   "internal": "Dino Trapping (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Dooley"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8c053f67-7f6a-4f50-9ff8-b6ac59dc33ed",
+   "name": "Dire Inge Reward",
+   "internal": "Dire Inge Reward",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "4580fb31-b2ea-4f9b-9ab9-2979602f83d8",
+   "name": "Dooley",
+   "internal": "Dooley (Hero Merchant)",
+   "tier": "Diamond",
+   "heroes": [
+    "Stelle",
+    "Vanessa",
+    "Mak",
+    "Pygmalien",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "2e0acd01-e0b2-4c0d-a7aa-84914c0cbb94",
+   "name": "Dooley's Crib",
+   "internal": "Dooley's Crib",
+   "tier": "Diamond",
+   "heroes": [
+    "Dooley"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "64fcc650-1266-4fcd-8f9a-7c64a38da056",
+   "name": "Dooley's Crib",
+   "internal": "Dooley's Crib (Start Run 2)",
+   "tier": "Bronze",
+   "heroes": [
+    "Dooley"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "69bc6d15-487a-43cd-9b7f-d0652853d991",
+   "name": "Dooley's Crib",
+   "internal": "Dooley's Crib (Start Run)",
+   "tier": "Bronze",
+   "heroes": [
+    "Dooley"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "095f7c1d-25b3-4fd3-9e10-6eeb949503ef",
+   "name": "Dragon Up",
+   "internal": "Dragon Up (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "6a274350-32fc-4725-9981-376c8f525938",
+   "name": "Dragon Up",
+   "internal": "Dragon Up (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e9b4b8f2-a88a-417c-a092-b0f436a596e7",
+   "name": "Dragon Up",
+   "internal": "Dragon Up (Bronze) (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "fda84272-0558-4f8d-a3b1-1d25b6f554e9",
+   "name": "Dragon Up",
+   "internal": "Dragon Up (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "fadfae7c-94e2-4d89-800f-8df526970ba6",
+   "name": "Dungeon chest",
+   "internal": "Dungeon chest",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "d349b1d4-1dee-4893-b2ba-7493e20ecb4c",
+   "name": "Dungeon move forward 1",
+   "internal": "Dungeon move forward 1",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "174d59d2-fb3e-4f41-8e5c-81b82a26a343",
+   "name": "Dungeon move forward 2",
+   "internal": "Dungeon move forward 2",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "47704642-ae7a-4775-a26a-e5e5a8cff7bf",
+   "name": "Eating Contest",
+   "internal": "Eating Contest",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "9d0370fc-f091-4483-9e18-bde61a02212f",
+   "name": "Economic Seminar",
+   "internal": "Economic Seminar",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "0ff275f7-60ef-4428-acb6-1a138d03152d",
+   "name": "Eli",
+   "internal": "Eli",
+   "tier": "Silver",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "2f50dc7e-8a03-41d9-82d0-dd956dfe4b50",
+   "name": "Epic Battle",
+   "internal": "Epic Battle (Day 9)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "58413cc6-7c39-45c7-aeb5-de0fd5e801eb",
+   "name": "Epic Battle",
+   "internal": "Epic Battle (Day 8)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d290146b-28d4-4aae-87c7-249d4e7c0a81",
+   "name": "Epic Battle",
+   "internal": "Epic Battle (Day 10)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "25e61e9e-2329-48e9-9f59-77026530cf05",
+   "name": "Equipment Van",
+   "internal": "Equipment Van (Encounter) (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "48536b9e-bcca-4547-ac6f-9db888a94b86",
+   "name": "Equipment Van",
+   "internal": "Equipment Van (Encounter) (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8058eadd-b2f1-4019-a437-f593af6ee076",
+   "name": "Equipment Van",
+   "internal": "Equipment Van (Encounter) (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8205d118-b8d2-4040-b359-166bd1738fb3",
+   "name": "Equipment Van",
+   "internal": "Equipment Van (Encounter) (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "287ff00b-37f3-4c58-aafe-70272b9b150f",
+   "name": "Excavation",
+   "internal": "Excavation (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8f83e037-1420-4210-a2b0-b4d80f7d86f5",
+   "name": "Excavation",
+   "internal": "Excavation (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "91b039eb-1478-4cc8-a44e-c0b0a2f3fd20",
+   "name": "Excavation",
+   "internal": "Tutorial Day 5 Hour 5 - Free Item",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "aebbf2cb-acbc-4cc7-86a8-ac9f49756d35",
+   "name": "Excavation",
+   "internal": "Excavation (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c2ecd101-b69d-42ed-a0e9-f8bb84b0fa09",
+   "name": "Excavation",
+   "internal": "Excavation (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "30101d11-aff6-430e-a2e4-57c261111933",
+   "name": "Extract Extract",
+   "internal": "Extract Extract (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Mak",
+    "Dooley",
+    "Vanessa",
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "9ed55b8e-6ac3-4fdf-898e-30e181e6c88c",
+   "name": "Extract Extract",
+   "internal": "Extract Extract (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Mak",
+    "Dooley",
+    "Vanessa",
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "adeccad5-0430-4a3a-a305-d007788f7627",
+   "name": "Extract Extract",
+   "internal": "Extract Extract (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Mak",
+    "Dooley",
+    "Vanessa",
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d896d88c-91e8-4950-9670-0c42f9fd5a92",
+   "name": "Extract Extract",
+   "internal": "Extract Extract (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Mak",
+    "Dooley",
+    "Vanessa",
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d0697c4c-2b63-4505-a946-d396493ac8a6",
+   "name": "Family Reunion",
+   "internal": "Family Reunion",
+   "tier": "Diamond",
+   "heroes": [
+    "Stelle"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "412fb3ec-88de-40b4-a475-10e583189d8a",
+   "name": "Farai",
+   "internal": "Farai",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "4ba32835-093b-4623-806a-2c37e5037d80",
+   "name": "Farai's Rewards",
+   "internal": "Farai's Rewards",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "f40135ba-ddcb-405e-aefb-c085c4a397cd",
+   "name": "Farmer's Market",
+   "internal": "Farmer's Market (Encounter)",
+   "tier": "Diamond",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "0623cedd-f24b-4117-a6b8-5fc41064a00d",
+   "name": "Finn's Big Bite",
+   "internal": "Finn's Big Bite",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "f4347956-4eaf-4665-aa1b-addf8423588b",
+   "name": "Flambe",
+   "internal": "Flambe",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "7bd967dd-4631-4252-bdff-ee0bd5e3ddb7",
+   "name": "Flex",
+   "internal": "Flex",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien",
+    "Karnok"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "a72c9135-0869-4243-a689-cde06ad97dd0",
+   "name": "Form",
+   "internal": "Form",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "d3a78867-fd60-4a67-b03a-4200ba58674c",
+   "name": "Fortis",
+   "internal": "Fortis (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Pygmalien",
+    "Dooley",
+    "Stelle",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "1b34f123-434c-4b88-bfc8-5fb2d245e1b1",
+   "name": "Freezer",
+   "internal": "Freezer (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Pygmalien",
+    "Jules",
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "1f56ada9-2f87-469e-ad8b-29f7bc5754f2",
+   "name": "Freezer",
+   "internal": "Freezer (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien",
+    "Jules",
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "24633cbe-9198-4d1c-be90-0108cd170fb2",
+   "name": "Freezer",
+   "internal": "Freezer (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Pygmalien",
+    "Jules",
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "3b70cc4c-867d-4a04-a9c4-e09726d8b211",
+   "name": "Freezer",
+   "internal": "Freezer (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien",
+    "Jules",
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c246ee53-51ea-40c1-ac2f-71435e179531",
+   "name": "Freiya",
+   "internal": "Freiya",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "dac7e568-4b7d-487a-8564-ad37dcedde39",
+   "name": "Frog Hollow",
+   "internal": "Frog Hollow (Encounter)",
+   "tier": "Diamond",
+   "heroes": [
+    "Dooley",
+    "Karnok",
+    "Vanessa",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "086e814f-5525-4747-b783-3279f1e67880",
+   "name": "Furnace",
+   "internal": "Furnace (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Mak",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "3f758597-56ae-400e-bc5b-92978fbe6b2c",
+   "name": "Furnace",
+   "internal": "Furnace (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Mak",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "69a2a91d-326d-44de-bfd6-a8ad68440a40",
+   "name": "Furnace",
+   "internal": "Furnace (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Mak",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8b4d74f6-6491-40d6-87da-023672144e03",
+   "name": "Furnace",
+   "internal": "Furnace (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Mak",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "aef5e7d8-ea0b-4e7e-8f3d-6e7ba492fa10",
+   "name": "Futura",
+   "internal": "Futura",
+   "tier": "Legendary",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "9fc8b5a3-f522-4999-b310-26a0fadc7708",
+   "name": "Gaseo",
+   "internal": "Gaseo",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "c3d9c329-0db6-478e-ad0f-ef2ae78834ce",
+   "name": "Gastro",
+   "internal": "Gastro",
+   "tier": "Silver",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "146907bc-135e-4d54-bf13-f530605ee673",
+   "name": "Get Bronze Loot",
+   "internal": "Bronze Loot (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Mak",
+    "Jules",
+    "Stelle",
+    "Vanessa",
+    "Pygmalien",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "1453be13-1d81-45ea-82a5-7d1ef35ec78b",
+   "name": "Get Bronze item",
+   "internal": "Bronze item (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Mak",
+    "Jules",
+    "Stelle",
+    "Vanessa",
+    "Pygmalien",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e7491a78-b378-479e-bb27-f1c07d75e14b",
+   "name": "Get Diamond Loot",
+   "internal": "Diamond Loot (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "496e1223-e240-4347-84da-42b87cdd8eb0",
+   "name": "Get Diamond item",
+   "internal": "Diamond item (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "dc665019-00a8-4ae5-b192-9068ecfc3996",
+   "name": "Get Gold Loot",
+   "internal": "Gold Loot (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a07f89ee-2648-4f5e-9832-8a2db923a779",
+   "name": "Get Gold item",
+   "internal": "Gold item (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "270c3ff7-507a-40e0-95bb-5c742ce9aa7a",
+   "name": "Get Gold or Diamond Loot",
+   "internal": "Gold or Diamond Loot (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "fb57d860-8bf4-4a46-bb77-af7ccd4474dc",
+   "name": "Get Silver Loot",
+   "internal": "Silver Loot (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "4a9ccdf5-8f2b-478f-9060-2b5dc14fc0f0",
+   "name": "Get Silver item",
+   "internal": "Silver item (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "0615ce02-f9d9-44a8-8323-4feec73692fb",
+   "name": "Go Fishing",
+   "internal": "Go Fishing (Bronze) (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "5ab62b4c-ab63-4ced-b2c2-0abec4814fc2",
+   "name": "Go Fishing",
+   "internal": "Go Fishing (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a4fbd0a5-9078-4c9f-9888-961cfd9eaf24",
+   "name": "Go Fishing",
+   "internal": "Go Fishing (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c8722e2b-0f4f-4532-8915-3b9fb9bbc105",
+   "name": "Go Fishing",
+   "internal": "Go Fishing (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "fd017aa9-d8b9-4327-8832-2fbc56901f34",
+   "name": "Go Fishing",
+   "internal": "Tutorial Day 3 Hour 2 - Free Item",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "4c213448-66a1-4cb0-a2b8-c38e1d742f4e",
+   "name": "Gold or Diamond item",
+   "internal": "Gold or Diamond item (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "1f72700a-fe11-4792-8a47-9e52b9387f29",
+   "name": "Goldie",
+   "internal": "Goldie",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "50292930-5e68-47a2-8cc5-fde69aadc5aa",
+   "name": "Goldie",
+   "internal": "Tutorial Day 4 Hour 5 - Goldie",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "12fb92f0-b76c-4493-85eb-47a6d18bdf5f",
+   "name": "Grandmaster",
+   "internal": "Grandmaster",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "97147e21-62ef-4067-b7d5-d0cb0736775f",
+   "name": "Guard Locker",
+   "internal": "Guard Locker (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Pygmalien",
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "bc1ed5b8-9603-41f2-9d03-b1ff423484aa",
+   "name": "Guard Locker",
+   "internal": "Guard Locker (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Pygmalien",
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "f7467c4b-87c5-4e55-957b-813ac703a3c1",
+   "name": "Guard Locker",
+   "internal": "Guard Locker (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien",
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "fbc087d9-f0d5-48a2-8c83-f9fccd572b4b",
+   "name": "Guard Locker",
+   "internal": "Guard Locker (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien",
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8c69a3e3-8c82-4049-aa89-1836ccb6ebc4",
+   "name": "Gulch's Dive",
+   "internal": "Gulch's Dive",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "af395a8a-f327-4ebf-96a3-58f6016976b7",
+   "name": "Gumball Machine",
+   "internal": "Gumball Machine (Event)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "55cb2028-845d-476b-8e28-8cba27cc22d9",
+   "name": "Gunpowder Cache",
+   "internal": "Gunpowder Cache (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Mak",
+    "Vanessa",
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "57db7d4b-421a-4869-b7be-d969b494f508",
+   "name": "Gunpowder Cache",
+   "internal": "Gunpowder Cache (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Mak",
+    "Vanessa",
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "acaf7c4f-ecd4-4af1-a79c-c5b0b20ee21f",
+   "name": "Gunpowder Cache",
+   "internal": "Gunpowder Cache (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Mak",
+    "Vanessa",
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "c22b85e7-3860-48b4-b639-8d55ac423b74",
+   "name": "Haddy",
+   "internal": "Haddy",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "43dbd6ed-6989-4ae4-acdc-f8bfcb8a008f",
+   "name": "Hef",
+   "internal": "Hef",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "55e0f929-071a-4e51-b60e-51fcc792f0b9",
+   "name": "Hef",
+   "internal": "Tutorial Day 5 Hour 1 - Hef",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "2708055d-a8be-4c2f-a8d6-574e884a254e",
+   "name": "Herma",
+   "internal": "Herma",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien",
+    "Mak",
+    "Jules",
+    "Karnok"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "0f34d701-1529-4dac-aa46-35d97d5a57a1",
+   "name": "Hidden Lake",
+   "internal": "[Karnok Unique] Hidden Lake",
+   "tier": "Silver",
+   "heroes": [
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a5cde235-2d98-4cb4-bbd7-15068935722b",
+   "name": "Hide",
+   "internal": "Greenheart Monster Lair Hide Sniffed Out",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "a79c70c6-44a8-4553-b715-2e25c83c3b8c",
+   "name": "Hospital",
+   "internal": "Hospital (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Pygmalien",
+    "Mak",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c1c4c655-4c5b-4873-bdce-3832c65e4d8e",
+   "name": "Hospital",
+   "internal": "Hospital (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien",
+    "Mak",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d36cb96b-be1a-418c-985a-1a49cb5a7036",
+   "name": "Hospital",
+   "internal": "Hospital (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien",
+    "Mak",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "faae3bd7-8d8f-4561-b127-78e6420a67a5",
+   "name": "Hospital",
+   "internal": "Hospital (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Pygmalien",
+    "Mak",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "07dabb08-156e-486e-96e2-c0d0e2aaa904",
+   "name": "House Party",
+   "internal": "House Party (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "25543cb9-e918-4e8b-98e3-10b07c475162",
+   "name": "House Party",
+   "internal": "House Party (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "2b3bbe43-06b7-4dcd-b486-a9d9b337ace1",
+   "name": "House Party",
+   "internal": "House Party (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "4ecd92f8-43d3-419d-9abf-95d3a53d3e0f",
+   "name": "House Party",
+   "internal": "House Party (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "61fb68dc-74dd-4ddc-8ff7-ad4c6565c2e0",
+   "name": "Ifrit",
+   "internal": "Ifrit",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "08685a09-f7d6-4963-8537-f979ff17d94b",
+   "name": "Inheritance",
+   "internal": "Inheritance (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "6caf92fe-048e-4362-b34b-55f06802a32e",
+   "name": "Inheritance",
+   "internal": "Inheritance (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "a8e09b36-65b5-4a32-8a66-b3a369176163",
+   "name": "Inheritance",
+   "internal": "Inheritance (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "fcac9b2d-acea-403e-99cc-c5e706fbe9b3",
+   "name": "Inheritance",
+   "internal": "Inheritance (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "44a8c60d-5852-4398-b7b3-836353f4a760",
+   "name": "Instrument Up",
+   "internal": "Instrument Up (Bronze) (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "bcca85f3-2d80-4296-b6bc-e834360d1604",
+   "name": "Instrument Up",
+   "internal": "Instrument Up (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "cbe6fb40-262e-4e08-bf2b-8337dd079165",
+   "name": "Instrument Up",
+   "internal": "Instrument Up (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e30470a3-4a63-4559-8376-190ce706d0f1",
+   "name": "Instrument Up",
+   "internal": "Instrument Up (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8ece0ce0-1b20-41da-a3d9-262f2038af58",
+   "name": "Invest in Yourself",
+   "internal": "Invest in Yourself (Day 3-4)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b69e0b6d-d4c2-4017-a4b4-43e4369600b1",
+   "name": "Invest in Yourself",
+   "internal": "Invest in Yourself (Day 5-6)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "f6430efe-8452-475b-8c8f-5d789b914a3f",
+   "name": "Invest in Yourself",
+   "internal": "Invest in Yourself (Day 1-2)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8375c937-5542-4d89-9a87-37c01673c611",
+   "name": "Investment Pitch",
+   "internal": "Investment Pitch",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "00b9bc97-b751-48c3-b3ae-6d96adf7a929",
+   "name": "Jay Jay",
+   "internal": "Tutorial Day 1 Hour 5 - Jay Jay",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "2f885e4a-bbb5-4233-8798-7224dd126f6e",
+   "name": "Jay Jay",
+   "internal": "Jay Jay Tutorial Day 1 Hour 5",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "5406f2e4-d22e-4aca-84c5-87fc81883d6e",
+   "name": "Jay Jay",
+   "internal": "Tutorial Day 2 Hour 4 - Jay Jay",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "74d81658-9f44-45e6-8f7c-fd6ced634e63",
+   "name": "Jay Jay",
+   "internal": "Jay Jay Tutorial Day 2 Hour 2",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "85db60ee-3619-4e39-bfb2-2f4ac56f172b",
+   "name": "Jay Jay",
+   "internal": "Jay Jay",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "89d7bbcd-bf3e-48e5-a2ab-013d23452378",
+   "name": "Jay Jay",
+   "internal": "Jay Jay Tutorial Day 1 Hour 1",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "96cf61f6-9b9b-453c-9fc0-ea9268a0b71d",
+   "name": "Jay Jay",
+   "internal": "JayJay - Tutorial Day 2 Hour 2",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e25617c8-7366-428d-a3c2-b721fb9aa722",
+   "name": "Jay Jay",
+   "internal": "Tutorial Day 3 Hour 1 - Jay Jay",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e34024e3-4380-4689-b9c6-b3db7faeaec5",
+   "name": "Jay Jay",
+   "internal": "Tutorial Day 5 Hour 2 - Jay Jay",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "eb1453e4-2307-4b6f-9a15-f8f30c849eb4",
+   "name": "Jay Jay",
+   "internal": "Tutorial Day 1 Hour 3 - Jay Jay",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "fa533c05-c89a-4849-8562-b560532f1431",
+   "name": "Jay Jay",
+   "internal": "Jay Jay Tutorial Day 1 Hour 3",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "7fdc233f-b81f-4216-a646-4c807c2240da",
+   "name": "Jules",
+   "internal": "Jules (Hero Merchant)",
+   "tier": "Diamond",
+   "heroes": [
+    "Stelle",
+    "Dooley",
+    "Mak",
+    "Pygmalien",
+    "Vanessa",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "185a03bc-2fb2-4366-bbe8-1b1c6f7d39fd",
+   "name": "Jules' Cafe",
+   "internal": "Jules' Cafe",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "1e511488-af8e-4852-a46a-0f27a2b07aac",
+   "name": "Jungle Ruins",
+   "internal": "Jungle Ruins",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "379d881b-4524-4db9-a606-47bd35749f44",
+   "name": "Karnok",
+   "internal": "Karnok (Hero Merchant)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Mak",
+    "Pygmalien",
+    "Jules",
+    "Stelle",
+    "Hero8"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "de175e34-df34-4581-a13a-46767e1c7c6b",
+   "name": "Kelsa",
+   "internal": "Kelsa (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "6f5c1ce2-19c1-4df8-bc5a-242a0f5b5189",
+   "name": "Kev's Armory",
+   "internal": "Kev's Armory (Vanessa)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "a4fa13f8-6beb-4b6c-839b-60af167628d9",
+   "name": "Kev's Armory",
+   "internal": "Kev's Armory",
+   "tier": "Silver",
+   "heroes": [
+    "Dooley",
+    "Pygmalien",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "3ab184ce-bdb8-4dee-9169-8b383a25eae6",
+   "name": "Kina",
+   "internal": "Kina Tutorial Day 1 Hour 5",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "5b7c5fc4-c942-44fe-9ca8-726dc36a2ad6",
+   "name": "Kina",
+   "internal": "Kina",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "79fe1693-1e6d-4ed6-b376-794baca19262",
+   "name": "Kina",
+   "internal": "Tutorial Day 4 Hour 5 - Kina",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "7b598c89-fdf2-4e83-bc4c-6f16d86fbe04",
+   "name": "Kina",
+   "internal": "Tutorial Day 3 Hour 2 - Kina",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "2745a661-095c-44a5-bb6e-8dc76e07bda2",
+   "name": "Knightshade",
+   "internal": "Knightshade",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "d86e22d9-b54d-4be9-8b5b-f3fe93d4c133",
+   "name": "Knightshade",
+   "internal": "Tutorial Day 5 Hour 1 - Knightshade",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "df8ff0c9-05cc-4797-aa70-f648e4b283df",
+   "name": "Launch Tower",
+   "internal": "Launch Tower (Encounter)",
+   "tier": "Diamond",
+   "heroes": [
+    "Stelle"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "2d23952b-f0e4-4a7a-ac65-11c7def01679",
+   "name": "Laurel's Night Terrors",
+   "internal": "Laurel's Night Terrors",
+   "tier": "Diamond",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "adcc1a7a-c372-4563-b916-3735cacac82b",
+   "name": "Ledger",
+   "internal": "Ledger (Encounter)",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "48a25657-baf6-440d-9085-bd7aeda1638a",
+   "name": "Library",
+   "internal": "Library",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "c28b6e9c-dd6d-4bb7-97e7-14aee53e528b",
+   "name": "Likit",
+   "internal": "Likit",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "1de89ac3-3d0c-4f27-94c8-3d190992b61a",
+   "name": "Load Up",
+   "internal": "Load Up (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "377db915-c94b-407d-b558-6f3a88101b83",
+   "name": "Load Up",
+   "internal": "Load Up (Bronze) (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a8f01028-0321-4fd5-99ea-02c972379946",
+   "name": "Load Up",
+   "internal": "Load Up (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "be0aa7d6-5be6-4b0c-9c1b-c4f0643725c6",
+   "name": "Load Up",
+   "internal": "Load Up (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "39961216-13c2-4013-8da5-6435a86e0e76",
+   "name": "Look for Spare Change",
+   "internal": "Look for Spare Change (Day 4-6)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b3f47a45-98bd-4200-9e94-5ddbc32e60cf",
+   "name": "Look for Spare Change",
+   "internal": "Look for Spare Change (Day 10)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "cbe0d294-09db-47ea-a7e8-8127605c1173",
+   "name": "Look for Spare Change",
+   "internal": "Look for Spare Change (Day 1-3)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ef60b13f-35cb-49ef-bf9c-55847e3ab9ce",
+   "name": "Look for Spare Change",
+   "internal": "Look for Spare Change (Day 7-9)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "1025eacf-efd6-4749-88a1-e1f7a2ce500e",
+   "name": "Lost Wallet",
+   "internal": "Lost Wallet - Keep - Large",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "4ebea557-6912-4082-9e04-a4c02472fc45",
+   "name": "Lost and Found",
+   "internal": "Lost and Found (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "592c3f31-a6a0-4b1a-a1d9-4016224f09ab",
+   "name": "Lost and Found",
+   "internal": "Lost and Found (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "9297f1eb-0435-4483-b530-5b1074210720",
+   "name": "Lost and Found",
+   "internal": "Lost and Found (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ff66c76e-34aa-42fa-99b7-cbd0fba31ecb",
+   "name": "Lost and Found",
+   "internal": "Lost and Found (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "892de564-d894-4e07-ab21-959e16e8cdf8",
+   "name": "Luxe",
+   "internal": "Luxe",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "1ff8a6be-5087-45f6-8e72-9e94dbfa0c2b",
+   "name": "Mad Maddie",
+   "internal": "Mad Maddie",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa",
+    "Mak",
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "045c8751-0395-4b3b-b703-b11bc96a1944",
+   "name": "Mag Storage",
+   "internal": "Mag Storage (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Dooley",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "17493eb4-2d8c-4bbd-9e9e-8220269dd323",
+   "name": "Mag Storage",
+   "internal": "Mag Storage (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Dooley",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "1f14ebe7-5c23-4439-a787-3ca6933ee2ff",
+   "name": "Mag Storage",
+   "internal": "Mag Storage (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Dooley",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "497c2eb4-2b38-4dd9-b41f-a2553416622c",
+   "name": "Mag Storage",
+   "internal": "Mag Storage (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Dooley",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "3e07a32a-c304-4086-825b-8465436e9246",
+   "name": "Magic Mirror",
+   "internal": "Magic Mirror",
+   "tier": "Legendary",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "4475cff5-6105-4f4a-978c-b282e36173eb",
+   "name": "Mak",
+   "internal": "Mak (Hero Merchant)",
+   "tier": "Diamond",
+   "heroes": [
+    "Stelle",
+    "Dooley",
+    "Vanessa",
+    "Pygmalien",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "001a960b-7ffb-4156-9fc1-1121eb93fb9e",
+   "name": "Mak's Laboratory",
+   "internal": "Mak's Laboratory (Start Run)",
+   "tier": "Bronze",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "294f81dd-eb9f-47a9-9b9c-fa9766291485",
+   "name": "Malafang",
+   "internal": "Malafang (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "386dd351-d08e-49a5-9a38-52c4e73d45b2",
+   "name": "Mama Bear",
+   "internal": "Mama Bear (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "255ae0fa-f203-4e9f-855d-e090e6937b5b",
+   "name": "Mandala",
+   "internal": "Mandala",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "e80ebe4b-6bb3-480a-bc06-32973c84cf90",
+   "name": "Maximus",
+   "internal": "Maximus",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "04e1aad5-e5e4-4864-b217-28e5ff00023b",
+   "name": "Meal Prep",
+   "internal": "Meal Prep (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "71b59c65-e8b3-47bd-abb3-f5b019edb5c7",
+   "name": "Meal Prep",
+   "internal": "Meal Prep (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e3aac200-f30f-404f-83cf-27732bb6f927",
+   "name": "Meal Prep",
+   "internal": "Meal Prep (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "0e0a056f-ad2f-4049-b17d-8031393402ec",
+   "name": "Medicine Cabinet",
+   "internal": "Medicine Cabinet (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien",
+    "Mak",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "76da2ed3-caa0-4420-82a6-a4f5211d012c",
+   "name": "Medicine Cabinet",
+   "internal": "Medicine Cabinet (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Pygmalien",
+    "Mak",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a5980f5b-4f19-4826-8919-8d88077d6ba0",
+   "name": "Medicine Cabinet",
+   "internal": "Medicine Cabinet (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien",
+    "Mak",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d237472b-0d0e-47d2-b51d-37def1e201dd",
+   "name": "Medicine Cabinet",
+   "internal": "Medicine Cabinet (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Pygmalien",
+    "Mak",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "0e5caade-789e-4184-92dc-d1ab03fcf926",
+   "name": "Midsworth",
+   "internal": "Tutorial Day 3 Hour 1 - Midsworth",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "214fe1d5-c583-4766-99c5-c621598c83ce",
+   "name": "Midsworth",
+   "internal": "Tutorial Day 5 Hour 4 - Midsworth",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b8f55bb0-536e-4d5f-a328-d38f88c6d479",
+   "name": "Midsworth",
+   "internal": "Midsworth",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "912c8b09-3b76-4aa1-8e21-245e0dfb5046",
+   "name": "Mittel",
+   "internal": "Mittel",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "ab14e395-2bef-42f1-a5ad-9947e56bb3f2",
+   "name": "Mittel",
+   "internal": "Tutorial Day 1 Hour 5 - Mittel",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "cca9281a-d259-4771-9747-ea7af6de8dcf",
+   "name": "Mittel",
+   "internal": "Mittel Tutorial Day 1 Hour 5",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e1e3e229-9806-4d2d-99e7-d25592fe14b6",
+   "name": "Mittel",
+   "internal": "Tutorial Day 4 Hour 2 - Mittel",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "2ec26bc0-c7b9-41c8-961c-b78c48add586",
+   "name": "Mmmm!",
+   "internal": "Furry Return - Large - Pet - Mmm",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "b4d5052c-7424-4062-b563-2c67d6d40b8d",
+   "name": "Mmmm!",
+   "internal": "Furry Return - Small - Pet - Mmm",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "617a3f2c-e964-4bc0-8929-d0524e269bc1",
+   "name": "Monster Ranch",
+   "internal": "Monster Ranch",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "3cb5a1a2-819e-433e-9f41-f5ed77cb04b0",
+   "name": "Moonlit Meadow",
+   "internal": "Moonlit Meadow (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Mak",
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "4d64d6cd-d42a-4a08-bac9-5f1563d6b7eb",
+   "name": "Moonlit Meadow",
+   "internal": "Moonlit Meadow (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Mak",
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "8d1dda63-1fb9-44e5-9ed6-e8050d4d65d7",
+   "name": "Moonlit Meadow",
+   "internal": "Moonlit Meadow (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Mak",
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "9178c378-9e59-4e92-9023-17105e0686d3",
+   "name": "Moonlit Meadow",
+   "internal": "Moonlit Meadow (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Mak",
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "158b3bec-e4e1-4d5a-8e27-a82ba7fcb292",
+   "name": "Mountain Pass",
+   "internal": "[DEFUNCT] Mountain Pass (Day 7)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "1e590634-499a-43d0-9152-d9425cd380f6",
+   "name": "Mountain Pass",
+   "internal": "[DEFUNCT] Mountain Pass (Day 5)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "721dc5f3-7146-46ca-85ac-116505f59b00",
+   "name": "Mountain Pass",
+   "internal": "[DEFUNCT] Mountain Pass (Day 3)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "956e9c74-7d98-4a2b-b500-def577914945",
+   "name": "Mountain Pass",
+   "internal": "Mountain Pass",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "b66ed0c1-13ee-4ebb-ac35-9eeeaec5c2e3",
+   "name": "Mountain Pass",
+   "internal": "[DEFUNCT] Mountain Pass (Day 4)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "e64431ff-8979-4112-81e3-81fb7865be36",
+   "name": "Mountain Pass",
+   "internal": "[DEFUNCT] Mountain Pass (Day 6)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "e30d8bef-5bea-4e95-b4c2-e29e17325a82",
+   "name": "Mr. Morland",
+   "internal": "Mr. Morland",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "35e74c18-1bd6-4c91-ab21-2fd64adf6cc6",
+   "name": "Mr. Tuskari",
+   "internal": "Mr. Tuskari (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b7acf32d-79f8-4040-810f-4fb44e16682b",
+   "name": "Mysterious Portal",
+   "internal": "Mysterious Portal",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e78da732-de3f-443f-8e3e-94d0dcfb63dd",
+   "name": "Mystery Box",
+   "internal": "Mystery Box",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "1a21931f-6183-4251-914b-c8f83dc58a30",
+   "name": "Nautica",
+   "internal": "Nautica",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "2e2f894d-209c-47e0-905a-63b3b59c8aa8",
+   "name": "Nautica",
+   "internal": "Tutorial Day 3 Hour 2 - Nautica",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c4e01347-bcbc-e164-c848-544774f80599",
+   "name": "Nonna",
+   "internal": "Nonna",
+   "tier": "Diamond",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "210003fa-a20d-4ad1-9ada-d5fad5bf9f89",
+   "name": "Nufu",
+   "internal": "Nufu",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "8d6dadfa-6517-4eca-8c79-5f7c3fc7e116",
+   "name": "Nufu",
+   "internal": "Nufu (Pygmalien Restricted Skill List)",
+   "tier": "Bronze",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "3bb35f2f-3474-4edb-98a7-d7588fb20f74",
+   "name": "Obstacle Course",
+   "internal": "Obstacle Course (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "6e4b782d-d4e4-43ac-93cd-4ee46d680d48",
+   "name": "Obstacle Course",
+   "internal": "Obstacle Course (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "7077c578-f19e-483b-bc2c-db65b5e47e7c",
+   "name": "Obstacle Course",
+   "internal": "Tutorial Day 4 Hour 4 - Free Item",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "7b5bd866-3b46-4bc0-b5dc-e5458c67cf9d",
+   "name": "Obstacle Course",
+   "internal": "Obstacle Course (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d21fae9a-1cb4-40f2-8574-9c72b51a1ce1",
+   "name": "Obstacle Course",
+   "internal": "Obstacle Course (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "845d2051-cca0-4533-947a-aa290f364e0a",
+   "name": "Old Zane",
+   "internal": "Old Zane (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d3727a3a-3dd2-4ea7-a396-515e2c41c1b0",
+   "name": "Orion",
+   "internal": "Orion",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "d61f942a-6da4-48bd-a4db-1bde45174aba",
+   "name": "Orion",
+   "internal": "Tutorial Day 5 Hour 2 - Orion",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a07fbe69-c1d0-41a3-af72-d517e7706718",
+   "name": "Orlin",
+   "internal": "Orlin (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "dbdf69f8-9bea-40e7-9098-209c8c475971",
+   "name": "Pearl's Dig Site",
+   "internal": "Pearl's Dig Site",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "26164d27-60b8-4935-840c-816bbe535a64",
+   "name": "Photo Booth",
+   "internal": "Photo Booth (Encounter)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "8b623bf7-d8ef-42ce-820d-8b23b3972094",
+   "name": "Piano",
+   "internal": "Piano (Encounter)",
+   "tier": "Gold",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "7066e72e-40b7-4104-b521-159de457f2d0",
+   "name": "Pinfeather",
+   "internal": "Pinfeather",
+   "tier": "Gold",
+   "heroes": [
+    "Stelle",
+    "Mak",
+    "Pygmalien",
+    "Karnok",
+    "Vanessa",
+    "Dooley"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "61be3473-6546-427f-ac13-9dee4c43d23c",
+   "name": "Pip",
+   "internal": "[DEBUG] Pip (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "bc75676c-032f-441a-a6a2-35b1ccc2eb80",
+   "name": "Pip",
+   "internal": "Tutorial - Level 1 - Pip",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e2fc8bd4-b97d-485b-8bb6-5c966d336c4a",
+   "name": "Pip",
+   "internal": "Pip (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "065f6793-8607-4f02-abfe-db6afb221ab2",
+   "name": "Pol",
+   "internal": "Pol",
+   "tier": "Silver",
+   "heroes": [
+    "Dooley",
+    "Jules",
+    "Karnok",
+    "Mak",
+    "Stelle",
+    "Vanessa"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "bdf0a9ab-8bc2-4f1b-8f7d-614293ac2db2",
+   "name": "Pol",
+   "internal": "Pol (Pygmalien)",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "11681158-9f70-4ed3-8bd4-dce4571b9fa6",
+   "name": "Potion Rack",
+   "internal": "Potion Rack (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "6d6ae43f-fa0b-424b-b2dc-d70aa57273fa",
+   "name": "Potion Rack",
+   "internal": "Potion Rack (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a287f26a-5145-4665-a97b-8bfd07b98f82",
+   "name": "Potion Rack",
+   "internal": "Potion Rack (Bronze) (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e66a00c2-c34c-4b92-97ce-30bb488ed4a6",
+   "name": "Potion Rack",
+   "internal": "Potion Rack (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "6c0c352b-255d-4e07-b58a-9233c7d1e2d4",
+   "name": "Power Up",
+   "internal": "Power Up (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Dooley",
+    "Stelle",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a5c6d5b9-fd6d-4036-9513-a43c0aade6e7",
+   "name": "Power Up",
+   "internal": "Power Up (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Dooley",
+    "Stelle",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a97dce09-c242-44be-8488-bbf18d48421e",
+   "name": "Power Up",
+   "internal": "Power Up (Bronze) (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Dooley",
+    "Stelle",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "cace10a4-6073-429d-a345-ec3a9de31df1",
+   "name": "Power Up",
+   "internal": "Power Up (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Dooley",
+    "Stelle",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "3cb6a52e-282d-4e17-adf6-300d4f97875a",
+   "name": "Praeteria",
+   "internal": "Praeteria",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "15b88e74-024e-40a3-a811-aa5810e68ca2",
+   "name": "Private Pitchfork",
+   "internal": "Private Pitchfork",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "1ff79367-b005-43e2-81cc-a9f3b2e55b49",
+   "name": "Procure Medkit",
+   "internal": "Procure Medkit (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Pygmalien",
+    "Vanessa",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "9f7cbbaf-aeed-4170-9400-e1da445fe101",
+   "name": "Procure Medkit",
+   "internal": "Procure Medkit (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien",
+    "Vanessa",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "cb280097-2346-43e0-b6ef-bf7ba2b01b2f",
+   "name": "Procure Medkit",
+   "internal": "Procure Medkit (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Pygmalien",
+    "Vanessa",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e750af0e-60f1-4da1-838a-a0ac41ca6a73",
+   "name": "Procure Medkit",
+   "internal": "Procure Medkit (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien",
+    "Vanessa",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "f1892cf4-3dcb-4d41-b137-d670f44a65f8",
+   "name": "Professor Riggle",
+   "internal": "Professor Riggle (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Mak",
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "bcdaa6d4-9057-4ea1-8110-a2dae217c55f",
+   "name": "Prospero",
+   "internal": "Prospero",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "c770d3da-3f41-41c2-91d9-4eb49a9e8ae5",
+   "name": "Proteus",
+   "internal": "Proteus",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "be759478-d828-4bc2-8268-0596f2c731aa",
+   "name": "Purrr",
+   "internal": "Furry Return - Large - Pet - Purr",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "f9074804-1812-445a-8688-b8c86f9c7711",
+   "name": "Pygmalien",
+   "internal": "Pygmalien (Hero Merchant)",
+   "tier": "Diamond",
+   "heroes": [
+    "Stelle",
+    "Dooley",
+    "Mak",
+    "Vanessa",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "0262e8cd-9f8d-4d01-9b6e-24acd4d28d98",
+   "name": "Pygmalien's Loft",
+   "internal": "Pygmalien's Loft (Start Run)",
+   "tier": "Bronze",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "5df1c571-e80e-492d-ae4c-78e4fb1e1ee8",
+   "name": "Pygmalien's Loft",
+   "internal": "Pygmalien's Loft (Start Skill)",
+   "tier": "Bronze",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "1005cb9f-87f3-4087-a695-a54b7315d586",
+   "name": "Pyre",
+   "internal": "Pyre (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Mak",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "4afc594c-9213-47e2-b869-82bab1882490",
+   "name": "Pyre",
+   "internal": "Pyre (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Mak",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "731fdecd-bc3f-48a7-bdf9-4096f3eaa963",
+   "name": "Pyre",
+   "internal": "Pyre (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Mak",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "733355b4-4e6e-4255-9e62-b60eef2f9864",
+   "name": "Pyre",
+   "internal": "Tutorial Day 5 Hour 2 - Free Item",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "904bd867-a3e8-444f-94e1-0f13acef8536",
+   "name": "Pyre",
+   "internal": "Pyre (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Mak",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "323e2c05-f077-4774-84a5-9e89d8d1c9b9",
+   "name": "Quixel",
+   "internal": "Quixel",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "342fcc56-26a4-479b-8707-46ddfb5adef2",
+   "name": "Quixel",
+   "internal": "Tutorial Day 3 Hour 4 - Quixel",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e7cac33d-864c-45c9-8a3e-c3218aa0febe",
+   "name": "Quixel",
+   "internal": "Quixel Tutorial Day 2 Hour 2",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "31ba6532-0fea-47ba-8102-96560740206a",
+   "name": "Racetrack",
+   "internal": "Tutorial Day 4 Hour 2 - Free Item",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "406a9513-35b3-4a12-96ab-48c0710b415b",
+   "name": "Racetrack",
+   "internal": "Racetrack (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ab256aab-9578-4eb8-a821-85b5c9e892d8",
+   "name": "Racetrack",
+   "internal": "Racetrack (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ae4a5d1a-edc7-4a0a-b357-65e051e6a80e",
+   "name": "Racetrack",
+   "internal": "Racetrack (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "bfc22038-04da-41a1-97c9-7cb8c3608747",
+   "name": "Racetrack",
+   "internal": "Racetrack (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "1f2bb7f7-16d1-4138-9729-6b5ec8e03851",
+   "name": "Rageforge",
+   "internal": "Rageforge (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "38aa9f76-d287-4c45-a591-87c5a0b82f34",
+   "name": "Rageforge",
+   "internal": "Rageforge (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "58c0b58e-2179-4c54-91cf-ac43b317ef73",
+   "name": "Rageforge",
+   "internal": "Rageforge (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "f85a7e3e-1a0b-41cc-b8ea-f7068d68ccb0",
+   "name": "Rageforge",
+   "internal": "Rageforge (Bronze) (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Karnok"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "4e683fef-313e-40ba-9aa9-b2848d7b6b72",
+   "name": "Reagent Harvesting",
+   "internal": "Reagent Harvesting (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "52e66fe1-78f0-4ee1-a3fe-2f2fe21efbb7",
+   "name": "Reagent Harvesting",
+   "internal": "Reagent Harvesting (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "bdd66fcc-98dc-47aa-81df-1282a4bbef05",
+   "name": "Reagent Harvesting",
+   "internal": "Reagent Harvesting (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d637adc9-3b1d-4aef-b238-07c3bafe057f",
+   "name": "Reagent Harvesting",
+   "internal": "Reagent Harvesting (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "27215a21-0c15-4476-bb8c-25b50b8fd7d3",
+   "name": "Reagent Shelf",
+   "internal": "Reagent Shelf (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c5dae6cf-f294-4658-b538-752b06860373",
+   "name": "Reagent Shelf",
+   "internal": "Reagent Shelf (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c7cb78a1-744e-4636-bce5-bf13340be11e",
+   "name": "Reagent Shelf",
+   "internal": "Reagent Shelf (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e9f2758a-2751-4de7-aceb-2511ad78e05f",
+   "name": "Reagent Shelf",
+   "internal": "Reagent Shelf (Bronze) (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c9628182-3be1-4ba0-92bc-4850a44540d9",
+   "name": "Rebel Hideout",
+   "internal": "Rebel Hideout Upgrade (Day 5+)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "12a50b2d-340f-4603-a5a4-a3d63d80c504",
+   "name": "Recycling Center",
+   "internal": "Recycling Center (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "42a96476-afc7-420f-bc06-34872b57b534",
+   "name": "Recycling Center",
+   "internal": "Recycling Center (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "4e4c3fd4-666d-4796-8ef1-43e2aa771f42",
+   "name": "Recycling Center",
+   "internal": "Recycling Center (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ea7f99f9-a143-43d8-a74d-933a439a4b60",
+   "name": "Recycling Center",
+   "internal": "Recycling Center (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "778c3493-54c3-45bd-8c1b-f410c5ceb937",
+   "name": "Reflecting Pool",
+   "internal": "Reflecting Pool",
+   "tier": "Diamond",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b46b862e-ba64-4e05-ad5e-b8dbc90517c9",
+   "name": "Regenald",
+   "internal": "Regenald (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Pygmalien",
+    "Mak",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "fe756e73-bedb-4700-901f-07ef13b3c512",
+   "name": "Regenerative Tincture",
+   "internal": "Regenerative Tincture",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "90e47f27-241c-4769-a6c6-a100d2a33421",
+   "name": "Rest",
+   "internal": "Rest",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "578479a7-4a5d-4a0e-8cee-4cd7b2191ae0",
+   "name": "Rit",
+   "internal": "Rit",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "63a890d2-3b12-459a-8bbf-88f811a3606d",
+   "name": "Rit",
+   "internal": "Rit (Return)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "77fd1cb0-4e77-47f0-903d-228f136fc8c7",
+   "name": "Rit",
+   "internal": "Rit - Item Spawn",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "218d4cae-2813-4414-a5ab-1138cb064961",
+   "name": "Roadside Crate",
+   "internal": "Tutorial Day 1 Hour 4 - Pick Event",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "874fa28f-c349-463c-aec6-b3572a71b6ee",
+   "name": "Robotics Factory",
+   "internal": "Robotics Factory (Encounter)",
+   "tier": "Diamond",
+   "heroes": [
+    "Dooley",
+    "Stelle"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "8d037166-d665-4260-aabd-e73f146e3f7f",
+   "name": "Run",
+   "internal": "Greenheart Ambush Run Gold",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "c67a8619-a0de-4953-ac6c-94a2ed15f090",
+   "name": "Run",
+   "internal": "Greenheart Ambush Run Speed",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "46e8ebad-6c00-4153-87da-b65b67442d01",
+   "name": "Run a Race",
+   "internal": "Run a Race",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "bfe9db96-a189-4bdf-84e5-fc1743ff8569",
+   "name": "Ryukon",
+   "internal": "Ryukon (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "35f8d6cf-82b1-49d9-b15e-65e9790f6ad0",
+   "name": "Salesmanship",
+   "internal": "Fierce Competition - Sales - Bronze-tier Value",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "6cc96b5f-57df-46db-bcc8-983e048a1dfe",
+   "name": "Salesmanship",
+   "internal": "Fierce Competition - Sales - Left Value",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "a79a4688-752d-4b4f-90b3-c92b3a4d1a92",
+   "name": "Salvage Yard",
+   "internal": "Salvage Yard (Encounter)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "1d08f4e5-146f-415d-958f-5a93a84dfbc2",
+   "name": "Scrap Salvage",
+   "internal": "Scrap Salvage (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Pygmalien",
+    "Stelle",
+    "Dooley",
+    "Karnok",
+    "Jules",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "3db126be-6a4f-48b7-81e0-793287e9eeeb",
+   "name": "Scrap Salvage",
+   "internal": "Scrap Salvage (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien",
+    "Stelle",
+    "Dooley",
+    "Karnok",
+    "Jules",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "65ff28de-67a6-4c51-adf4-f3f9379ff96a",
+   "name": "Scrap Salvage",
+   "internal": "Scrap Salvage (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien",
+    "Stelle",
+    "Dooley",
+    "Karnok",
+    "Jules",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d0c544fe-36a7-4887-98c0-bfa949a0f472",
+   "name": "Scrap Salvage",
+   "internal": "Scrap Salvage (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Pygmalien",
+    "Stelle",
+    "Dooley",
+    "Karnok",
+    "Jules",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "0370b2b5-e856-457e-a8dc-b7fd0ab098fc",
+   "name": "Security Center",
+   "internal": "Security Center (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Pygmalien",
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8445b23f-b1ed-48bc-aeec-0b70be4e4030",
+   "name": "Security Center",
+   "internal": "Security Center (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Pygmalien",
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "bbd7fab5-9bf1-4de4-bd27-bed7f7fd5c97",
+   "name": "Security Center",
+   "internal": "Security Center (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien",
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d2167751-e2ce-439c-995a-3282452e2f14",
+   "name": "Security Center",
+   "internal": "Security Center (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien",
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ea510bb8-0ded-48ee-b0e2-750d26bf1587",
+   "name": "Security Center",
+   "internal": "Tutorial Day 3 Hour 5 - Free Item",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c006e3eb-79b8-4bd8-b0fb-9002bd637f1f",
+   "name": "Seminar",
+   "internal": "Financial District - Seminar - Premium - Reward",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "f3f5d238-991b-4a8c-a3ef-0d45cfd4d644",
+   "name": "Seminar",
+   "internal": "Financial District - Economic Seminar - Basic - Reward",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "b690812d-108b-49ce-82f3-e1a41379022c",
+   "name": "Serafina",
+   "internal": "Serafina",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "ee6887f7-4bde-4a54-a7ab-540eb43d46a1",
+   "name": "Seraphim",
+   "internal": "Seraphim",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "79557839-d5cc-4638-ba7b-234f0142a38a",
+   "name": "Sharpening Kit",
+   "internal": "Sharpening Kit (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b6634697-588b-4131-883b-c9cf20967760",
+   "name": "Sharpening Kit",
+   "internal": "Sharpening Kit (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d0a0f491-e1f2-433b-b2d9-caee00202e09",
+   "name": "Sharpening Kit",
+   "internal": "Sharpening Kit (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "fab18db9-38b4-438a-a87f-3dfc931ae679",
+   "name": "Sharpening Kit",
+   "internal": "Sharpening Kit (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "9459a01b-edf5-432b-81cd-1fd2cacfadad",
+   "name": "Shelter Shelby",
+   "internal": "Shelter Shelby (Merchant)",
+   "tier": "Silver",
+   "heroes": [
+    "Karnok",
+    "Vanessa",
+    "Hero8"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "818fcd1d-4cfd-4629-b83f-8d5e753dd8f4",
+   "name": "Shrouded Figure",
+   "internal": "Shrouded Figure",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "56eb7fa9-5a5f-4056-8e75-ec2a5a5c3433",
+   "name": "Shrouded Figure's Chest",
+   "internal": "[Shrouded Figure] Legendary Chest",
+   "tier": "Legendary",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "62376974-7a34-4d47-a34a-6611f58230d0",
+   "name": "Shrouded Figure's Chest",
+   "internal": "[Shrouded Figure] Gold Chest",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d81bae8a-4322-4314-ac3d-c2c1313445fb",
+   "name": "Shrouded Figure's Chest",
+   "internal": "[Shrouded Figure] XP Only Chest",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "5fcd3081-0daa-4e50-b749-c884b405ef9c",
+   "name": "Silvia",
+   "internal": "Tutorial Day 4 Hour 2 - Silvia",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ec81a27c-590c-43a1-a353-804a23b5e5d9",
+   "name": "Silvia",
+   "internal": "Silvia",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "18f8471a-3914-419a-9296-14e624e86ac6",
+   "name": "Slohmor Lumbra",
+   "internal": "Slohmor Lumbra (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Jules",
+    "Stelle",
+    "Mak",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e6b0bc78-4284-4bc7-b130-f5d04007ccf6",
+   "name": "Snack Time",
+   "internal": "Snack Time",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b6eb3178-f7ed-4d98-bc82-e03bc727ea08",
+   "name": "Sparring Partner",
+   "internal": "Sparring Partner (Encounter)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "7799fa37-567f-4356-bfa7-83e0fd0dd467",
+   "name": "Spawning Test",
+   "internal": "[DEBUG] Spawning Test",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "34c27d0d-2aa2-40a1-8276-791ee7086da1",
+   "name": "Star Chart Treasure",
+   "internal": "Star Chart Treasure",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "7f2c3a0d-7675-44dd-8667-77b08455eec8",
+   "name": "Statia",
+   "internal": "Statia",
+   "tier": "Legendary",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e48b3243-1e7e-4a97-bf4f-0699fd0b4616",
+   "name": "Stelle",
+   "internal": "Stelle (Hero Merchant)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Mak",
+    "Pygmalien",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "d6c69fd2-7493-4b55-af18-eab0695cf16a",
+   "name": "Stelle's Workshop",
+   "internal": "Stelle's Workshop (Start Run)",
+   "tier": "Bronze",
+   "heroes": [
+    "Stelle"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d0276b47-be8a-4bbc-ab55-9f92b352480a",
+   "name": "Stickybeans",
+   "internal": "Stickybeans",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "2ee65e2b-c679-41b6-812d-5dd59a5cb27a",
+   "name": "Street Festival",
+   "internal": "Street Festival",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "48e598a5-5e37-4ffc-ac66-b80f08a5af62",
+   "name": "Street Festival",
+   "internal": "DEFUNCT - Street Festival (Dooley)",
+   "tier": "Gold",
+   "heroes": [
+    "Dooley"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "224c96ea-da68-4761-bd9d-ecbe46759bb4",
+   "name": "Strength Training",
+   "internal": "Strength Training",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "ce38f4a2-f156-4082-b8ce-e8956c71fc0d",
+   "name": "Study",
+   "internal": "Study (Default Option)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "1ce9bfd6-77a7-44c7-827a-252a9dbe5ab9",
+   "name": "Supply Drop",
+   "internal": "Supply Drop (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "8c9e7731-42bf-4c22-8839-8ec7cc4277e5",
+   "name": "Supply Drop",
+   "internal": "Supply Drop (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "c2f2e526-dd0b-443f-a6e2-411fb06afab8",
+   "name": "Supply Drop",
+   "internal": "Supply Drop (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "dc6691fe-78d9-4f7d-94bd-4a9ba175744a",
+   "name": "Supply Drop",
+   "internal": "Supply Drop (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "21dd4607-cf31-465d-9be8-89abddfa45cd",
+   "name": "Suprise Mushroom - Stronger",
+   "internal": "Suprise Mushroom - Stronger",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "01939fcd-bf53-4516-a50d-0800677252a3",
+   "name": "Take Flight",
+   "internal": "Take Flight (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Stelle"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "6a20972e-3477-45a7-a417-eccb6eff8375",
+   "name": "Take Flight",
+   "internal": "Take Flight (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Stelle"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "6afa0d17-bae9-4622-9441-424916b39693",
+   "name": "Take Flight",
+   "internal": "Take Flight (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Stelle"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ee531c7a-a92a-4646-9f3d-2ddb83b3fe14",
+   "name": "Take Flight",
+   "internal": "Take Flight (Bronze) (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Stelle"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "22bb0004-5131-4588-a567-03ee3c96003b",
+   "name": "Tatiana",
+   "internal": "Tatiana",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "5e607777-7ce3-467a-9eaf-fab0ee41e905",
+   "name": "Tech Salvage",
+   "internal": "Tech Salvage (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Dooley",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "8998de52-cc59-4588-885c-39a60ca3faf7",
+   "name": "Tech Salvage",
+   "internal": "Tech Salvage (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Dooley",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a8c7d852-f117-43d2-b7a6-76d78866321e",
+   "name": "Tech Salvage",
+   "internal": "Tech Salvage (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Dooley",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "cdb02a2a-603c-416e-bcb1-9fc71632b08a",
+   "name": "Tech Salvage",
+   "internal": "Tech Salvage (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Dooley",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "91287d25-7f63-4826-8c42-06ed1bf83213",
+   "name": "Temple Expedition",
+   "internal": "[Jungle Expedition] Temple Expedition",
+   "tier": "Legendary",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "5852a0ba-c097-419b-98b7-dadd8bd7ae6e",
+   "name": "Temple Reliquary",
+   "internal": "[Jungle Expedition] Temple Reliquary",
+   "tier": "Legendary",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "7a6ce8eb-3098-403f-96d4-faa47048272b",
+   "name": "Temple Vault",
+   "internal": "[Jungle Expedition] Temple Vault (Obsidian)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "810acb8e-e60a-4a84-b773-431d4d10a071",
+   "name": "Temple Vault",
+   "internal": "[Jungle Expedition] Temple Vault (Toxic)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a1d43a69-6798-41a2-b356-211a726eee9d",
+   "name": "Temple Vault",
+   "internal": "[Jungle Expedition] Temple Vault (Fiery)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e5847a60-f078-4e70-9132-943dc5cab596",
+   "name": "Tempo Up",
+   "internal": "Tempo Up (Bronze) (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e650b3ec-940a-4a59-97f6-dde24f2938d8",
+   "name": "Tempo Up",
+   "internal": "Tempo Up (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ea3b377c-abc5-4509-a8ef-a5df7fb9ed9c",
+   "name": "Tempo Up",
+   "internal": "Tempo Up (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "ef82e124-dc18-44dc-89bb-c6d88a97f164",
+   "name": "Tempo Up",
+   "internal": "Tempo Up (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "4e7cfe8c-2943-45db-9b8e-4465a8598f6c",
+   "name": "Thanks",
+   "internal": "Greenheart Help Merchant Help Free Weapon",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "406bae80-6dec-4b11-a010-9ca2d4679027",
+   "name": "Thanks!",
+   "internal": "Greenheart Help Merchant Help Thanks Upgrade Weapon",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "e840f7a3-0a04-455d-852c-286dc5011efc",
+   "name": "The Antiquarian",
+   "internal": "The Antiquarian",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa",
+    "Pygmalien",
+    "Dooley",
+    "Mak",
+    "Karnok"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "bf1594cc-7f65-4236-b95f-ed2f521739de",
+   "name": "The Cult",
+   "internal": "The Cult",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "11287697-dd45-4edc-9539-780a26001043",
+   "name": "The Docks",
+   "internal": "The Docks",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "fc00c3ca-3231-4c8e-ac0e-19bff8cd5f65",
+   "name": "The Docks",
+   "internal": "[DEBUG] Sequential Prerequisites Test",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "85cdd52b-12c2-4b64-b308-a5788f791b81",
+   "name": "The Dragons",
+   "internal": "The Dragons (Hero Merchant)",
+   "tier": "Diamond",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Mak",
+    "Pygmalien",
+    "Jules",
+    "Stelle",
+    "Karnok"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "d33129a9-5df2-47e5-9b6a-7469743fe5a8",
+   "name": "The Dragons' Hideout",
+   "internal": "The Dragons' Hideout",
+   "tier": "Diamond",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "7676de25-e0eb-4aa2-a33c-0570ddf4777a",
+   "name": "The Financial District",
+   "internal": "The Financial District - Blacksmith Investment",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "54c74654-8dd6-4dd8-aa14-9ea34d786be3",
+   "name": "The Greenheart",
+   "internal": "Greenheart Help Jules Start",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "bdc30c60-764a-4d3d-8bcc-dc3b1d9e2a6f",
+   "name": "The Greenheart",
+   "internal": "Greenheart Help Merchant",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "87c6a586-fea5-4bbd-9296-2b2883bcac24",
+   "name": "The Lost Crate",
+   "internal": "The Lost Crate",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "41cdf4ee-7790-4da1-96f8-a46d3391a0d9",
+   "name": "The Tester",
+   "internal": "The Tester",
+   "tier": "Silver",
+   "heroes": [
+    "Dooley",
+    "Stelle",
+    "Hero8"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "002d8f6d-0e36-4921-89ed-3f0f28682d7b",
+   "name": "The Travel Agent",
+   "internal": "The Travel Agent",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e792b6a6-2f85-4190-8e3c-002d2736d03d",
+   "name": "Thieves Guild",
+   "internal": "Thieves Guild",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b1b1f445-e625-4397-b4e2-ee4feeb729fa",
+   "name": "Tinker",
+   "internal": "Tinker",
+   "tier": "Silver",
+   "heroes": [
+    "Dooley"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "54b6cf27-ab0f-4a57-bb0a-83c08de10d5a",
+   "name": "Tiny Furry Monster",
+   "internal": "Tiny Furry Creature",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "3e871bbb-fb25-417f-8643-cb43456c3fc7",
+   "name": "Tok's Clocks",
+   "internal": "Tok's Clocks",
+   "tier": "Silver",
+   "heroes": [
+    "Dooley",
+    "Vanessa",
+    "Mak",
+    "Jules",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "87bf88f6-8b57-4edf-84b6-f0623de24f6c",
+   "name": "Tok's Clocks",
+   "internal": "Tok's Clocks (Charged Up More)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "385dab86-65c1-40e8-8798-49865ad2353a",
+   "name": "Tomb of the Ancients",
+   "internal": "Tomb of the Ancients (Encounter)",
+   "tier": "Diamond",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "246054ea-2c7f-4e04-943d-0397c75abc8a",
+   "name": "Tool Up",
+   "internal": "Tool Up (Diamond) (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Dooley",
+    "Mak",
+    "Stelle",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "3b6964e3-1ff3-40ec-8bb9-f780a3c01172",
+   "name": "Tool Up",
+   "internal": "Tool Up (Bronze) (Level Up)",
+   "tier": "Bronze",
+   "heroes": [
+    "Dooley",
+    "Mak",
+    "Stelle",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "96b8e48d-1717-49d0-9acb-3b906b65928b",
+   "name": "Tool Up",
+   "internal": "Tool Up (Gold) (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Dooley",
+    "Mak",
+    "Stelle",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c7d1e360-836e-4c80-992f-6dbbe4640364",
+   "name": "Tool Up",
+   "internal": "Tool Up (Silver) (Level Up)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "41a161c7-c4a2-4f4c-bfbf-ca395b682c0f",
+   "name": "Toxic Spoils",
+   "internal": "Toxic Spoils (Day 7-9)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "57468447-1384-46e8-bd8b-5822f6620ebc",
+   "name": "Toxic Spoils",
+   "internal": "Toxic Spoils (Day 4-6)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "9a090e87-4791-4b16-9e7b-c00d7e4427de",
+   "name": "Toxic Spoils",
+   "internal": "Toxic Spoils (Day 10)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "fb1ec259-1dd0-4dff-8a07-cd9d60df26bb",
+   "name": "Toxic Spoils",
+   "internal": "Toxic Spoils (Day 1-3)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "4af83484-7d84-4e00-b2ab-fc4c0446ff04",
+   "name": "Track",
+   "internal": "Greenheart Monster Lair Track Gold",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "213c6a72-de3d-445c-8950-3c922f0fff46",
+   "name": "Treasure Chest",
+   "internal": "Treasure Chest (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "246ba7e6-f593-4a3c-a57a-c23c77b9532b",
+   "name": "Treasure Chest",
+   "internal": "Treasure Chest (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "59eee473-a870-43ef-9a87-ac26c99474c1",
+   "name": "Treasure Chest",
+   "internal": "Treasure Chest (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "71e387b6-bcb5-4c39-aa65-957ee5f6fbec",
+   "name": "Treasure Chest",
+   "internal": "Treasure Chest (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "a8500ea3-2235-410e-bc51-bb0355857408",
+   "name": "Treasure Chest",
+   "internal": "Mimic DEBUG",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "58e800bd-a2ae-4135-a8c3-2eca839c17d2",
+   "name": "Trophy Hunt",
+   "internal": "Trophy Hunt (Day 4-6)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "754ff658-3032-46ab-91f3-a2ce3a1cb1da",
+   "name": "Trophy Hunt",
+   "internal": "Trophy Hunt (Day 7-9)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "9ddb3457-d4a5-45ec-913e-ae52fce9cb22",
+   "name": "Trophy Hunt",
+   "internal": "Trophy Hunt (Day 1-3)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d6030236-2a1b-4209-9e61-1a00ac236b0b",
+   "name": "Trophy Hunt",
+   "internal": "Trophy Hunt",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "0cd9ac04-bd59-45f1-b997-3e06a495b5e3",
+   "name": "Truffle Farming",
+   "internal": "Truffle Farming (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "76f58c75-f822-4d06-bcba-f4d39529fa99",
+   "name": "Truffle Farming",
+   "internal": "Truffle Farming (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c1d4c505-4c97-47b5-b205-ae28c1415cd2",
+   "name": "Truffle Farming",
+   "internal": "Truffle Farming (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c2a5bdf3-bc7f-466a-93c3-ee02d45e4ac0",
+   "name": "Truffle Farming",
+   "internal": "Truffle Farming (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Pygmalien"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "c5a68a92-9932-40bd-a45f-e1c902807814",
+   "name": "Uitar Center",
+   "internal": "Uitar Center",
+   "tier": "Silver",
+   "heroes": [
+    "Hero8"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "3e0f0266-e92b-4a9a-b0b8-dba816e51647",
+   "name": "Uncle Odi",
+   "internal": "Uncle Odi (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Stelle"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "972e6031-4036-47ef-8e6e-1b8feb53fe47",
+   "name": "Underground Resistance",
+   "internal": "Underground Resistance",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "46f665ff-c67b-4b8f-9ea1-4fceb086ceb5",
+   "name": "Utility Box",
+   "internal": "Utility Box (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d70c7e92-3eff-4cb3-ba01-f9e8c179e407",
+   "name": "Utility Box",
+   "internal": "Utility Box (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e016221d-cc17-4a93-aabb-00155bbbeb46",
+   "name": "Utility Box",
+   "internal": "Utility Box (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "f531a553-d578-40d5-a3da-1159ab2a096f",
+   "name": "Utility Box",
+   "internal": "Utility Box (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "42bd0dae-7215-48cf-a526-437289e7f8d1",
+   "name": "Valpak",
+   "internal": "Tutorial Day 3 Hour 2 - Valpak",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "e3b894b0-a078-4b1d-8793-ac6459a8361a",
+   "name": "Valpak",
+   "internal": "Valpak",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "580ba494-a852-4d80-a82d-5cd66fcfd2f3",
+   "name": "Vanessa",
+   "internal": "Vanessa (Hero Merchant)",
+   "tier": "Diamond",
+   "heroes": [
+    "Stelle",
+    "Dooley",
+    "Mak",
+    "Pygmalien",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always"
+  },
+  {
+   "guid": "6e33409d-d390-4764-969f-f96e96629213",
+   "name": "Vanessa's Quarters",
+   "internal": "Vanessa's Quarters (Start Skill)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b10b084f-4704-4d0c-ae62-299c1c58d52c",
+   "name": "Vanessa's Quarters",
+   "internal": "Vanessa's Quarters (Start Run)",
+   "tier": "Bronze",
+   "heroes": [
+    "Vanessa"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "922b9031-c859-479c-95c4-18234a366c63",
+   "name": "Vermir",
+   "internal": "Vermir (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Mak",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "98197afb-62d3-4efe-986a-4f5d5cda5ed3",
+   "name": "Visit the Docks",
+   "internal": "Tutorial Day 2 Hour 5 - Pick Event",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "39ea83a9-0cd2-47af-b1d0-37fa8384c966",
+   "name": "Vox",
+   "internal": "Vox",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "15e09f93-d52b-4147-b230-4368fec59dcf",
+   "name": "Watch",
+   "internal": "Greenheart Help Merchant Watch Merchant Run item",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "5e3c0e4f-4e7f-4e7f-9d3a-2753ba6b8aef",
+   "name": "Watch",
+   "internal": "Greenheart Help Merchant Watch drop Gold",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "3e4c4f1a-fe5d-4e38-887a-08666ce36e71",
+   "name": "Wink",
+   "internal": "Wink",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "3212ade4-8e23-49cd-b9b5-f729280ba0b5",
+   "name": "Wishing Fountain",
+   "internal": "Wishing Fountain",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "011b22fa-4a25-48a6-93e0-7602ceffcd13",
+   "name": "Workshop",
+   "internal": "Workshop (Silver)",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "08111534-157d-4603-b157-03ac0f6d02cf",
+   "name": "Workshop",
+   "internal": "Workshop (Bronze)",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "79dc6e4f-1e05-43af-b6e8-b8ac8c791f3f",
+   "name": "Workshop",
+   "internal": "Workshop (Diamond)",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "d8733ee2-22f0-498d-ac26-11f93d84fef3",
+   "name": "Workshop",
+   "internal": "Workshop (Gold)",
+   "tier": "Gold",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "4147db3e-f264-4ecc-9c21-49c6fbc652e2",
+   "name": "Yum!",
+   "internal": "Furry Return - Small - Feed - Yum",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "86907ad1-f67a-48db-ac30-e5afe2de237a",
+   "name": "Zara",
+   "internal": "Zara (Level Up)",
+   "tier": "Gold",
+   "heroes": [
+    "Vanessa",
+    "Dooley",
+    "Mak",
+    "Stelle",
+    "Jules",
+    "Karnok",
+    "Hero8"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "054e937d-553e-41a5-951b-62550f870f93",
+   "name": "Zosima",
+   "internal": "Zosima (Level Up)",
+   "tier": "Diamond",
+   "heroes": [
+    "Mak"
+   ],
+   "tags": [],
+   "spawns": "GuidOnly"
+  },
+  {
+   "guid": "b81a1c81-0a16-462a-8247-04653354b79d",
+   "name": "Zurphin's Safari",
+   "internal": "Zurphin's Safari",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Always"
+  },
+  {
+   "guid": "2f80f1fe-462b-4a8d-8819-d211d11904d1",
+   "name": "[DEBUG] Burn Merchant",
+   "internal": "[DEBUG] Burn Merchant",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Never"
+  },
+  {
+   "guid": "3f99df7b-5c30-4da5-98e4-89ff5409a777",
+   "name": "[DEBUG] Crit Merchant",
+   "internal": "[DEBUG] Crit Merchant",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Never"
+  },
+  {
+   "guid": "fe0aff36-c0d4-46ba-81dd-51881891b958",
+   "name": "[DEBUG] Economic Merchant",
+   "internal": "[DEBUG] Economic Merchant",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Never"
+  },
+  {
+   "guid": "ba7960c6-9352-4795-9844-bdecc25fdb9f",
+   "name": "[DEBUG] Flying Merchant",
+   "internal": "[DEBUG] Flying Merchant",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Never"
+  },
+  {
+   "guid": "4657a8ab-6f39-4ec9-97d3-cfc7d193dabb",
+   "name": "[DEBUG] Freeze Merchant",
+   "internal": "[DEBUG] Freeze Merchant",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Never"
+  },
+  {
+   "guid": "b2de7a98-b63a-4c53-81aa-b5e09efc245a",
+   "name": "[DEBUG] Haste, Slow and Cooldown Merchant",
+   "internal": "[DEBUG] Haste/Slow/Cooldown Merchant",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Never"
+  },
+  {
+   "guid": "cffe0e90-ea71-4ab8-94af-c7c8edb4c4fa",
+   "name": "[DEBUG] Heal or Regen Merchant",
+   "internal": "[DEBUG] Heal or Regen Merchant",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Never"
+  },
+  {
+   "guid": "673b01a4-da04-47ea-8ee5-ef18c9d8dedf",
+   "name": "[DEBUG] Merchant All Item Cost increase",
+   "internal": "[DEBUG] Merchant All Item Cost increase",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Never"
+  },
+  {
+   "guid": "c00377f2-0683-42b4-94a5-db9b9a1eef86",
+   "name": "[DEBUG] Merchant Discount",
+   "internal": "[DEBUG] Merchant Discount",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Never"
+  },
+  {
+   "guid": "b072d8ae-ee3e-44cb-b047-4608e77e3174",
+   "name": "[DEBUG] Poison Merchant",
+   "internal": "[DEBUG] Poison Merchant",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Never"
+  },
+  {
+   "guid": "81ad4a6f-a953-4a10-bdb9-f9a857579aa4",
+   "name": "[DEBUG] Shield and Heakth Merchant",
+   "internal": "[DEBUG] Shield and Health Merchant",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Never"
+  },
+  {
+   "guid": "51522257-bb4d-46f0-be24-79d16cafe79f",
+   "name": "[DEBUG] The Artists PEDESTAL MERCHANT",
+   "internal": "[DEBUG] The Artists PEDESTAL MERCHANT",
+   "tier": "Bronze",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  },
+  {
+   "guid": "634ad92f-a1b4-43c6-8e15-3031ffe7dd16",
+   "name": "[DEBUG] Weapon and Damage Merchant",
+   "internal": "[DEBUG] Weapon and Damage Merchant",
+   "tier": "Silver",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Never"
+  },
+  {
+   "guid": "f2f973b6-133a-4aed-b020-4c7c52e09871",
+   "name": "[EVENT TEMPLATE]",
+   "internal": "[EVENT TEMPLATE]",
+   "tier": "Diamond",
+   "heroes": [
+    "Common"
+   ],
+   "tags": [],
+   "spawns": "Never"
+  }
  ]
 }

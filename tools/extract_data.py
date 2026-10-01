@@ -1,8 +1,9 @@
 """
 Build bazaar/data/bazaar_data.json from The Bazaar's local card cache.
 
-FROZEN (2026-09-29): don't run this. Reading GameData.db is data mining under the game's EULA; see
-DEVELOPERS.md "Card data is frozen". Kept for reference until a permitted data source replaces it.
+Owner, 2026-10-01: "re-extract the event data from the game files" - the 2026-09-29 freeze is lifted (Tempo's mod
+policy is the only rulebook the owner counts). Run with --i-have-permission. It must not renumber anything: check
+`git diff bazaar/data/bazaar_data.json` after every run.
 
 Run this after a game patch (launch the game once first so its cache refreshes):
     python tools/extract_data.py
@@ -90,6 +91,9 @@ def main() -> None:
     # Events and steps (level-up choices, "Enchanted item", ...) that hand you a choice of items.
     offers = []
     monsters = []  # hour-3 monster fights: tier = rarity shown in game (level is NOT the day it shows up)
+    # Every event (merchants included): the choice-screen cards. Facts only - which are lockable is the world's call
+    # (owner, 2026-10-01: merchant and event locks; "least rare" needs the tier).
+    events = []
     for (data,) in db.execute("SELECT Data FROM cards"):
         card = json.loads(data if isinstance(data, str) else data.decode("utf-8"))
         if card.get("Type") == "Item":
@@ -99,10 +103,14 @@ def main() -> None:
             monsters.append({"guid": card["Id"].lower(), "name": card_name(card), "tier": card.get("StartingTier"),
                              "level": (card.get("CombatantType") or {}).get("Level"),
                              "spawns": card.get("SpawningEligibility") == "Always"})
-        elif card.get("Type") == "EventEncounter" and "Merchant" in (card.get("Tags") or []):
+        if card.get("Type") == "EventEncounter":
+            events.append({"guid": card["Id"].lower(), "name": card_name(card), "internal": card.get("InternalName"),
+                           "tier": card.get("StartingTier"), "heroes": card.get("Heroes") or ["Common"],
+                           "tags": sorted(card.get("Tags") or []), "spawns": card.get("SpawningEligibility")})
+        if card.get("Type") == "EventEncounter" and "Merchant" in (card.get("Tags") or []):
             merchants.append({"guid": card["Id"].lower(), "name": card_name(card),
                               "stock": (card.get("SelectionContext") or {}).get("SpawnContext")})
-        elif card.get("Type") in ("EventEncounter", "EncounterStep", "PedestalEncounter"):
+        elif card.get("Type") in ("EventEncounter", "EncounterStep", "PedestalEncounter"):  # (not a merchant)
             # Every deal that lays items out for you to take (pick one, pick several or leave them): the warning
             # lets you skip a locked one. Deals can sit anywhere - in an ability, nested in a TActionAnd (Hidden
             # Lake's "Fight the Beast"), and so on - so the whole card is searched. Direct grants
@@ -203,7 +211,8 @@ def main() -> None:
            "heroes": HEROES, "cards": sorted(cards, key=lambda c: c["ap_id"]), "packs": packs,
            "merchants": sorted(merchants, key=lambda m: m["name"]),
            "offers": sorted(offers, key=lambda m: m["name"]),
-           "monsters": sorted(monsters, key=lambda m: (m["level"] or 0, m["name"]))}
+           "monsters": sorted(monsters, key=lambda m: (m["level"] or 0, m["name"])),
+           "events": sorted(events, key=lambda e: (e["name"], e["guid"]))}
     OUT.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
 
     per_hero = {}
@@ -211,14 +220,13 @@ def main() -> None:
         if c["shop"]:
             per_hero[c["hero"]] = per_hero.get(c["hero"], 0) + 1
     print(f"wrote {OUT}: {len(cards)} cards, {len(packs)} packs, {len(out['merchants'])} merchants, "
-          f"{len(out['offers'])} item choices, {len(out['monsters'])} monsters")
+          f"{len(out['offers'])} item choices, {len(out['monsters'])} monsters, {len(out['events'])} events")
     print("shop items per hero:", dict(sorted(per_hero.items())))
     if unknown_heroes:
         print(f"WARNING: unknown hero names {sorted(unknown_heroes)} - add them to HEROES/HERO_ALIASES")
 
 
 if __name__ == "__main__":
-    if "--i-have-permission" not in sys.argv:  # frozen: reading GameData.db is data mining (see the docstring)
-        sys.exit("Card data is frozen (The Bazaar's EULA forbids data mining) - see docs/UPDATING-GAME-DATA.md. "
-                 "Only run this with written permission, adding --i-have-permission.")
+    if "--i-have-permission" not in sys.argv:  # a deliberate step: see the docstring and docs/UPDATING-GAME-DATA.md
+        sys.exit("Run with --i-have-permission (owner's go-ahead 2026-10-01); see docs/UPDATING-GAME-DATA.md.")
     main()

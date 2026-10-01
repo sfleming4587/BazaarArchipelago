@@ -1,9 +1,8 @@
 # Updating the game data after a Bazaar patch
 
-> ⚠️ **FROZEN since 2026-09-29: don't run the extractor.** Reading the game's `GameData.db` is data mining,
-> which The Bazaar's EULA forbids (section 3). The data stays at game version 1.0.12293 until a community card
-> database gives permission to use its data. See DEVELOPERS.md, "Card data is frozen". The steps below are kept
-> for reference only.
+> ⚠️ **Frozen 2026-09-29 (EULA), lifted 2026-10-01 by the owner** ("re-extract the event data from the game
+> files"; Tempo's mod policy is the only rulebook). Run the extractor with `--i-have-permission`. See DEVELOPERS.md,
+> "Game data comes from the extractor".
 
 **The apworld keeps working after a patch; updating only adds what the patch introduced.** The client tells you
 when it's time: it warns once that the game version is newer than the data, or that it saw a card, hero or monster
@@ -16,6 +15,7 @@ it doesn't know (new cards are never locked, new heroes aren't in the seed, new 
 | Cards (items), tiers, sizes, tags | the game's local card database, via the extractor | `bazaar/data/bazaar_data.json` |
 | Merchants and item-choice events (what they can offer) | same | same |
 | Monsters and their rarity | same (`CombatEncounter` cards, `StartingTier`) | same |
+| Every event (choice-screen cards: merchants and plain events) with rarity, heroes, tags, spawn rule | same (`EventEncounter` cards) | same, `events` |
 | Game build the data came from | the newest `[VersionShow]` line in `Player.log` | `game_version` in the same file |
 | First day each monster rarity appears | **observed in game** - the server decides this, it's not in local data | `FIRST_DAY_OF_TIER` in `bazaar/data/__init__.py` |
 | Heroes (display names, order) | hand-kept list | `HEROES` / `HERO_ALIASES` in `tools/extract_data.py` |
@@ -26,7 +26,7 @@ it doesn't know (new cards are never locked, new heroes aren't in the seed, new 
 
 1. **Refresh the game's cache:** start The Bazaar, wait for the main menu, close it. This updates
    `%USERPROFILE%\AppData\LocalLow\Tempo Storm\The Bazaar\prod\cache\GameData.db`.
-2. **Extract:** from the repo root run `python tools/extract_data.py`. It opens the database read-only (it never
+2. **Extract:** from the repo root run `python tools/extract_data.py --i-have-permission`. It opens the database read-only (it never
    changes game files, even with the game running) and prints counts, e.g.
    `1157 cards, 10 packs, 107 merchants, 379 item choices, 179 monsters`.
 3. **New hero?** The extractor prints `WARNING: unknown hero names [...]`. Then:
@@ -53,5 +53,5 @@ A patch changed the log. Play a short run, open the new `Player.log`, and compar
 top of `bazaar/logparser.py`; update the regexes and the tests in `bazaar/test/test_logparser.py`.
 
 ⚠️ Never add card data by scraping bazaardb.gg or other sites (bazaardb blocks bots and disallows it in robots.txt).
-Card data comes only from the extractor above (frozen, see the top). Card *pictures* are separate: Bazaar DB's
+Card data comes only from the extractor above. Card *pictures* are separate: Bazaar DB's
 image set, turned into the Shop Guide's picture zip by `tools/make_card_art.py` (see DEVELOPERS.md).
