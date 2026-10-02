@@ -22,6 +22,7 @@ from NetUtils import ClientStatus
 
 from .data import (CARDS, CARDS_BY_GUID, EVENT_NAMES, EVENTS, GAME_VERSION, HEROES, MERCHANT_DATA, MONSTERS,
                    OFFER_DATA, TIERS)
+from .deathlink_lines import deathlink_message
 from .encounters import let_through, locked_events, rarity_bypasses
 from .items import (ENCOUNTER_UNLOCKS, EVENT_RARITY_ID, GAME, HERO_ITEM_IDS, LOCK_BYPASS_ID, SELL_TRAP, SELL_TRAP_ID,
                     UNLOCKS, hero_item, item_id_to_name, item_name_to_id, lock_items_by_hero)
@@ -254,8 +255,8 @@ class BazaarContext(CommonContext):
                     logger.info(f"Unlocked: {name}", extra=FILE_ONLY)
                     if self.overlay and args.get("index", 0) > 0:  # index 0 = the full list resent on connect
                         cards = sorted(UNLOCKS.get(item.item, ()), key=lambda g: CARDS_BY_GUID[g].name)
-                        self.overlay.toast(f"UNLOCKED: {HERO_ITEM_IDS.get(item.item, name)}  (from {self.who(item.player)})",
-                                           cards=cards)
+                        what = HERO_ITEM_IDS.get(item.item, name)
+                        self.overlay.toast(f"UNLOCKED: {what}  (from {self.who(item.player)})", cards=cards)
                 elif item.item == LOCK_BYPASS_ID and args.get("index", 0) > 0:
                     self.event("Lock Bypass received: use it on a locked card you're holding (the button next to it).")
                     self.toast(f"LOCK BYPASS from {self.who(item.player)}! Use it on a locked card you're holding.",
@@ -921,28 +922,29 @@ class BazaarContext(CommonContext):
             self.event("Run over. DeathLink paid off.")
         elif event.conceded:
             if self.setting("death_link_on_concede"):
-                await self.maybe_send_death(f"conceded on day {event.day}")
+                await self.maybe_send_death(event.day, conceded=True)
             else:
                 self.event("Run conceded. Conceding doesn't send a DeathLink.")
         else:
-            await self.maybe_send_death(f"ran out of prestige on day {event.day}")
+            await self.maybe_send_death(event.day)
         self.save_state()
 
-    async def maybe_send_death(self, what: str) -> None:
+    async def maybe_send_death(self, day: int, conceded: bool = False) -> None:
         """Send a DeathLink unless it's off, the run doesn't count (locked hero / DeathLink owed) or amnesty applies."""
         legal = self.run.get("legal", True) and not self.run.get("deathlink_owed")
         if "DeathLink" not in self.tags or not legal:
             return
         if self.quiet:  # hours late, it would kill your friends for nothing they can see
-            self.event(f"Your {self.run.get('hero', 'hero')} run {what} while the client wasn't connected: "
-                       f"no DeathLink sent.")
+            what = "was conceded" if conceded else "was lost"
+            self.event(f"Your {self.run.get('hero', 'hero')} run {what} on day {day} while the client wasn't "
+                       f"connected: no DeathLink sent.")
             return
         self.defeats_since_death += 1
         amnesty = self.setting("death_link_amnesty")
         if self.defeats_since_death > amnesty:
             self.defeats_since_death = 0
             player = self.player_names.get(self.slot, "A Bazaar player")
-            await self.send_death(f"{player}'s {self.run.get('hero', 'hero')} {what}.")
+            await self.send_death(deathlink_message(player, self.run.get("hero"), day, conceded))
             self.event("DeathLink sent.")
         else:
             self.event(f"Forgiven by DeathLink amnesty ({self.defeats_since_death}/{amnesty}).")

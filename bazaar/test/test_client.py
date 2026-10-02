@@ -330,6 +330,13 @@ class TestDeathLinkTriggers(ClientTestBase):
         self.play(RunStarted("Vanessa"), RunEnded(False, 3, conceded=True))
         self.assertEqual(len(self.deaths), 1)
 
+    def test_message_names_the_player_and_fits_the_hero_and_situation(self) -> None:
+        from ..deathlink_lines import HEROES, SHARED
+        self.ctx.player_names = {self.ctx.slot: "Sulldog"}
+        self.play(RunStarted("Vanessa"), PvPFought(10, False), RunEnded(False, 10))
+        late = [line.format(player="Sulldog", day=10) for line in HEROES["Vanessa"]["late"] + SHARED["late"]]
+        self.assertIn(self.deaths[0], late)
+
     def test_run_lost_sends_once(self) -> None:
         self.play(RunStarted("Vanessa"), PvPFought(2, False), PvPFought(3, False), RunEnded(False, 3))
         self.assertEqual(len(self.deaths), 1)

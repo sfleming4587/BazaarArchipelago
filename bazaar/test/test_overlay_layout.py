@@ -149,7 +149,9 @@ class TestUnlockPopupPictures(unittest.TestCase):
         from .. import cardart
         from ..overlay import MAX_TOAST_PICTURES, _Screen
         cards = [c for c in CARDS if c.shop and c.size == "Small"][:MAX_TOAST_PICTURES + 2]
-        with mock.patch.dict(sys.modules, {"PIL": None}), tempfile.TemporaryDirectory() as tmp,                 mock.patch.object(cardart, "Decoder", side_effect=OSError("no SDL2 in this test")):
+        with mock.patch.dict(sys.modules, {"PIL": None}), \
+                tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp, \
+                mock.patch.object(cardart, "Decoder", side_effect=OSError("no SDL2 in this test")):
             root = tkinter.Tk()
             try:
                 fake = types.SimpleNamespace(only_over_game=False, game_window=(0, 0, 1920, 1080), art_cache_dir=tmp,

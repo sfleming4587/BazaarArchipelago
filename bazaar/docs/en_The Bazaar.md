@@ -141,6 +141,8 @@ name (such as Make a Wish) still count as held and must be sold.
   fight never sends one.
 - `death_link_on_concede`: conceding also sends a DeathLink (off by default). Conceding because you received a
   DeathLink never sends one.
+- What everyone else reads depends on your hero and how the run ended (early, late, or conceded) - Vanessa
+  players get thrown overboard, Mak players fumble their potions. The Bazaar's a crazy place, right?
 
 ## Game updates
 
