@@ -281,6 +281,35 @@ class TestEventPadlocksOnHover(unittest.TestCase):
         self.assertEqual(alpha(), 0.0)  # the Esc menu
 
 
+class TestPadlocksOnReveal(unittest.TestCase):
+    """Owner, 2026-10-02: padlocks a little sooner on a reveal. The first one waits for the flip to end; once its
+    length is known, they show FLIP_LEAD before the end."""
+
+    def test_first_reveal_waits_for_the_end_later_ones_show_just_before(self) -> None:
+        import types
+        from unittest import mock
+        from .. import overlay
+        from ..memreader import BoardUI
+        now = [100.0]
+        flipping, still = BoardUI(False, False, False, False, True), BoardUI(False, False, False, False, False)
+        screen = types.SimpleNamespace(board_ui=None, reveal_began=0.0, reveal_seconds=0.0, reveal_started=False,
+                                       pending_padlocks=None, state={"padlocks": None})
+        new_ui = lambda ui: overlay._Screen.new_board_ui(screen, ui)
+        due = lambda: overlay._Screen.show_due_padlocks(screen)
+        screen.show_due_padlocks = due
+        with mock.patch.object(overlay.time, "monotonic", lambda: now[0]):
+            for first in (True, False):
+                screen.pending_padlocks, screen.reveal_started = ("locks", now[0], True), False
+                new_ui(flipping)
+                now[0] += 1.0 - overlay.FLIP_LEAD + 0.01  # most of a 1 s flip
+                self.assertEqual(due(), not first)
+                now[0] += overlay.FLIP_LEAD
+                new_ui(still)
+                self.assertEqual(screen.state["padlocks"], "locks")
+                self.assertAlmostEqual(screen.reveal_seconds, 1.01, places=2)
+                screen.state["padlocks"] = None
+
+
 class TestRowGaps(unittest.TestCase):
     def test_level_up_small_cards_land_where_they_were_measured(self) -> None:
         """Owner's level-up screenshot (1919x1079): three Small cards centred near x 779, 960, 1140."""

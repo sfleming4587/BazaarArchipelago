@@ -28,7 +28,7 @@ The information comes from `Player.log` and the game's memory (`bazaar/memreader
 |---|---|---|---|
 | Header | top of the left column | run progress ("Vanessa day 4, 8 checks left"), or on the menu the heroes you may pick; buttons: Shop Guide / Hide guide, Tracker, Hide heroes (menu) | the server's items and checks; the log's hero pick |
 | Shop Guide | the rest of the left column (until you drag it elsewhere) | **On offer now** (gold frames): the cards on screen right now; under it what the chosen merchant could stock for your hero, allowed first or locked first (the shorter part on top); Search, Size, Rarity and Merchant filters | memory (what's on offer, any screen); the game data (what a merchant can stock) |
-| Notices | top of the right column | DEATHLINK (with Done); "CHECKS ARE BLOCKED" and each locked card you hold, with Use Bypass when one is ready; Sell Traps, drawn as a skull in flickering flames (also on the trap's pop-up; owner 2026-10-01: "more menacing") | the log (cards gained/sold/transformed), the server (DeathLink, traps, bypasses) |
+| Notices | top of the right column | DEATHLINK, up until that run ends - no Done button (owner 2026-10-02: "only goes away on concede"), back after a client restart mid-run; "CHECKS ARE BLOCKED" and each locked card you hold, with Use Bypass when one is ready; Sell Traps, drawn as a skull in flickering flames (also on the trap's pop-up; owner 2026-10-01: "more menacing") | the log (cards gained/sold/transformed), the server (DeathLink, traps, bypasses) |
 | Pop-ups | bottom of the right column | items received and sent, unlocks (UNLOCKED shows up to 3 of the cards' pictures, the Shop Guide's art, then "+ N more"; owner 2026-10-02). 6 s each (Lock Bypass ones 12 s); as many as fit under the notices (up to 8; owner 2026-10-02: "as much as it can without overflowing"), newest at the bottom, whole old ones dropped when they don't fit. FOUND for items from your own world, RECEIVED ... from <player> for anyone else's (owner 2026-10-02) | the server |
 | Padlocks | on the locked cards themselves | a red padlock on each locked card offered (shops, level-ups, single-card loot, events' items), in your open stash, and on each locked merchant/event on a choice screen (3 or 4 hourly, 3 in a line; see `docs/ENCOUNTER-LOCKS.md`) | memory |
 | Tracker | its own window, anywhere | each hero's checks | the server |
@@ -73,7 +73,7 @@ follow those rules"), from the game's own flags in memory:
 | a card's tooltip is showing, or you're dragging a card | 30% see-through |
 | the Esc menu or a dialog is open | hidden (not just see-through: an invisible window would still catch clicks) |
 | your stash is sliding open or shut | hidden; once open, padlocks move onto the stash's own locked cards |
-| new cards are flipping over | their padlocks wait until the flip ends |
+| new cards are flipping over | their padlocks wait until the flip ends; once a flip has been timed this session, they show 0.3 s before it ends (owner 2026-10-02: "a little sooner"). The flags reach the padlocks every 60 ms, not through the 250 ms queue |
 | you click away from The Bazaar | everything hides; it comes back when you click into the game |
 
 If those flags can't be read (a game patch), padlocks fall back to the mouse's position and a fixed 1 s wait, and

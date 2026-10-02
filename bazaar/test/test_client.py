@@ -383,6 +383,17 @@ class TestDeathLinkTriggers(ClientTestBase):
         self.play(RunStarted("Vanessa"), PvPFought(1, False))  # lost: prestige lost, run goes on
         self.assertEqual(self.deaths, [])
 
+    def test_deathlink_notice_stays_until_the_run_ends(self) -> None:
+        """Owner, 2026-10-02: no Done button - the notice "only goes away on concede"."""
+        self.ctx.overlay = mock.Mock()
+        self.play(RunStarted("Vanessa"))
+        self.ctx.on_deathlink({"time": 1.0, "source": "Friend", "cause": "Friend fell."})
+        self.play(DayReached(2))
+        shown = [c.args[0] for c in self.ctx.overlay.show_deathlink.call_args_list]
+        self.assertEqual(shown, ["Friend fell."])  # once, and nothing took it down mid-run
+        self.play(RunEnded(False, 2, conceded=True))
+        self.assertIsNone(self.ctx.overlay.show_deathlink.call_args.args[0])
+
     def test_conceding_because_of_a_received_deathlink_never_echoes(self) -> None:
         self.ctx.slot_data["death_link_on_concede"] = True
         self.play(RunStarted("Vanessa"))

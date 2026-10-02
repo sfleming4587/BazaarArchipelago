@@ -233,6 +233,7 @@ class BazaarContext(CommonContext):
         # instead of judging the run again with today's unlocks (review 2026-09-30)
         self.position: Dict[str, Any] = {}
         self.caught_up = False  # the log has been read up to now since connecting: received Sell Traps can start
+        self.deathlink_shown: Optional[str] = None  # the DEATHLINK notice's text on the overlay now
         self.death_link_override: Optional[bool] = None  # /deathlink's choice for this session, over the YAML's
         self.quiet = False  # replaying runs that ended while the client wasn't watching: no alerts, no DeathLinks
         self.encounter: Optional[EncounterEntered] = None  # the merchant or event you're at, if any
@@ -639,7 +640,18 @@ class BazaarContext(CommonContext):
         self.save_state()
         self.update_block_banner()
 
+    def update_deathlink_notice(self) -> None:
+        """The DEATHLINK notice: up for as long as the run that got it lasts, gone once it ends (owner, 2026-10-02:
+        no Done button, "only goes away on concede"). Also back after a client restart mid-run."""
+        if self.overlay:
+            owed = self.run.get("active") and self.run.get("deathlink_owed")
+            text = self.run.get("deathlink_cause", "Someone died.") if owed else None
+            if text != self.deathlink_shown:
+                self.deathlink_shown = text
+                self.overlay.show_deathlink(text)
+
     def update_block_banner(self) -> None:
+        self.update_deathlink_notice()
         if self.overlay:
             reason = self.blocked_reason()
             held = self.run.get("held", {}) if self.run.get("active") else {}
@@ -990,12 +1002,11 @@ class BazaarContext(CommonContext):
         beep()
         if self.run.get("active"):
             self.run["deathlink_owed"] = True
+            self.run["deathlink_cause"] = data.get("cause") or f"{data.get('source', 'Someone')} died."
             self.save_state()
             self.update_block_banner()
             self.event("DEATHLINK! Abandon your current run now (Settings > Abandon Run). "
                        "No more checks count from this run.", warning=True)
-            if self.overlay:
-                self.overlay.show_deathlink(data.get("cause") or f"{data.get('source', 'Someone')} died.")
         else:
             self.event("DeathLink received while you weren't in a run. You're safe this time.")
 
@@ -1122,6 +1133,7 @@ class BazaarContext(CommonContext):
         return f" · Lock Bypass{'es' if ready != 1 else ''}: {ready}" if ready > 0 else ""
 
     def update_status(self) -> None:
+        self.update_deathlink_notice()
         if self.overlay:
             self.overlay.show_status(*self.status_line())
             self.overlay.show_menu(self.menu_data())

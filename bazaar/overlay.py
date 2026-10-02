@@ -89,6 +89,7 @@ HOVERED_ALPHA = 0.3  # a padlock while a card is hovered: see-through, so the to
 FADE_STEPS, FADE_MS = 6, 25  # opening and closing the Shop Guide: a short fade (owner: "a simple transition")
 FLIP_SECONDS = 1.0  # new cards flip over first: if the game's reveal flag doesn't start by then, show anyway
 FLIP_MAX = 3.0  # and never wait longer than this for a reveal to end
+FLIP_LEAD = 0.3  # once a reveal's length is known, padlocks show this long before it ends (owner, 2026-10-02: sooner)
 HOVER_MS = 60  # how often the mouse is checked while padlocks are up
 SLOTS = {"Small": 1, "Medium": 2, "Large": 3, "Empty": 1}  # Empty: a free slot in a row laid out by slot (the stash)
 PADLOCK = 56  # the mark's size
@@ -306,6 +307,7 @@ class Overlay:
         self.guide_file = guide_file  # where the Shop Guide remembers whether it's closed and where you put it
         self.art_cache_dir = art_cache_dir
         self.on_bypass: Optional[Callable[[str], None]] = None  # the client: use a Lock Bypass on a held card
+        self.latest_board_ui = None  # the newest board flags (see show_board_ui)
         self.commands: "queue.Queue" = queue.Queue()
         self.available = True  # False if the windows can't open (no tkinter, or Tk can't start)
         self.ready = threading.Event()  # set once the windows are up (or failed to come up)
@@ -333,7 +335,9 @@ class Overlay:
     def show_board_ui(self, ui) -> None:
         """The board's on-screen flags (memreader.BoardUI), or None when they can't be read: then the padlocks
         fall back to the mouse's position and a fixed wait."""
-        self.commands.put(("board_ui", ui))
+        # picked up every HOVER_MS by the Tk thread, not queued: the queue is only emptied every POLL_MS, which made
+        # padlocks show up to a quarter second after a reveal ended (and a queued older reading could undo a newer)
+        self.latest_board_ui = ui
 
     def show_board(self, title: Optional[str], offered: List[str], merchant: Optional[str]) -> None:
         """Shop Guide: what's on offer on screen (card guids, first, framed in gold) and the merchant you're at (its
@@ -419,6 +423,8 @@ class _Screen:
         self.padlocks_wanted = 0  # how many of them are in use
         self.pending_padlocks = None  # (padlocks, since, wait for the reveal) while new cards are still flipping
         self.reveal_started = False  # the game's reveal began since those padlocks came in
+        self.reveal_began = 0.0  # when the game's current (or last) reveal began
+        self.reveal_seconds = 0.0  # how long the last whole reveal took; 0 until one has been seen
         self.board_ui = None  # memreader.BoardUI, or None (unreadable: fall back to the mouse)
         self.padlock_cards: List[tuple] = []  # where hovering makes the padlocks see-through (see card_rects)
         self.event_options: List[tuple] = []  # an event choice screen's options: hovering one keeps them solid
@@ -464,7 +470,6 @@ class _Screen:
                for kind in ("locked", "deathlink", "status")},
             "menu": self.new_menu,
             "padlocks": self.new_padlocks,
-            "board_ui": self.new_board_ui,
         }
 
     def overlay_factor(self) -> float:
@@ -509,6 +514,9 @@ class _Screen:
     def fade_padlocks(self) -> None:
         """Every HOVER_MS: the padlocks' see-through-ness follows padlock_alpha; one still waiting checks if it's due."""
         try:
+            ui = getattr(self.overlay, "latest_board_ui", self.board_ui)
+            if ui is not self.board_ui and self.new_board_ui(ui):  # a reveal ending is seen within HOVER_MS
+                self.render()
             if self.pending_padlocks and self.show_due_padlocks():
                 self.render()
             alpha = self.padlock_alpha() if self.padlocks_wanted else 1.0
@@ -859,7 +867,6 @@ class _Screen:
                      justify="left").pack(anchor="w")
             tk.Label(frame, text="Abandon your current run (Settings > Abandon Run).", fg=FG, bg=bg,
                      font=f(11, "bold"), wraplength=inner_w, justify="left").pack(anchor="w", pady=(2, 6))
-            tk.Button(frame, text="Done", command=self.dismiss_deathlink).pack(anchor="e")
         if state["locked"]:
             title, cards, blocked, _ = state["locked"]
             head = tk.Frame(frame, bg=bg)
@@ -971,10 +978,6 @@ class _Screen:
         padlock_shape(canvas, 0, 0, s)
         padlock.drawn_size = s
 
-    def dismiss_deathlink(self) -> None:
-        self.state["deathlink"] = None
-        self.render()
-
     # --- commands and the loop --------------------------------------------------------------------------------
 
     def set_state(self, kind: str, value) -> bool:
@@ -988,6 +991,12 @@ class _Screen:
         return True
 
     def new_board_ui(self, ui) -> bool:
+        now = time.monotonic()
+        was = self.board_ui is not None and self.board_ui.revealing
+        if ui is not None and ui.revealing and not was:
+            self.reveal_began = now
+        elif was and not (ui is not None and ui.revealing) and self.reveal_began:
+            self.reveal_seconds = now - self.reveal_began  # how long the game's flip takes, for next time
         self.board_ui = ui
         return self.show_due_padlocks()
 
@@ -1003,7 +1012,10 @@ class _Screen:
             self.reveal_started = True
         if reveal and waited < FLIP_MAX:
             if self.reveal_started and ui and ui.revealing:
-                return False
+                # a little before the flip ends, once a flip has been timed (a first one waits for its end)
+                almost = self.reveal_seconds and time.monotonic() - self.reveal_began >= self.reveal_seconds - FLIP_LEAD
+                if not almost:
+                    return False
             if not self.reveal_started and waited < FLIP_SECONDS:
                 return False
         self.state["padlocks"], self.pending_padlocks = value, None
