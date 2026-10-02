@@ -670,9 +670,8 @@ class BazaarContext(CommonContext):
     def handle_gain(self, event: CardGained) -> None:
         if self.run.get("active"):
             self.run.setdefault("inventory", {})[event.instance] = event.guid
-        if event.guid not in CARDS_BY_GUID:
-            self.notice("card", "You got a card this apworld doesn't track (a special item like Midsworth's Package, "
-                                "or one added by a patch). It's never locked.")
+        # A card that isn't in the data (Pelt, Midsworth's Package: items only one event or monster hands out) is
+        # simply never locked - nothing to tell the player (owner, 2026-10-02). A patch is the version notice's job.
         if not self.run.get("active"):
             return
         shop = self.encounter.guid if self.encounter and self.encounter.guid in self.run_locked_events() else None

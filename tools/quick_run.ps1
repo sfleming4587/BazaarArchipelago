@@ -3,9 +3,11 @@
 param(
     [string]$Name = "Sulldog",
     [string]$StartingHero = "any",   # any, vanessa, pygmalien, dooley, mak, stelle, jules, karnok, the_dragons
-    [int]$Port = 38281
+    [int]$Port = 38281,
+    [switch]$DeathLink               # DeathLink on, conceding included
 )
 $ErrorActionPreference = "Stop"
+$dl = if ($DeathLink) { "true" } else { "false" }
 $root = Split-Path $PSScriptRoot -Parent
 $ap = Join-Path $root "Archipelago"
 $python = Join-Path $root ".venv\Scripts\python.exe"
@@ -29,7 +31,8 @@ The Bazaar:
   heroes_required: 1
   max_day: 13
   legacy_card_packs: true
-  death_link: false
+  death_link: $dl
+  death_link_on_concede: $dl
 "@ | Set-Content -Encoding utf8 (Join-Path $players "$Name.yaml")
 
 Push-Location $ap

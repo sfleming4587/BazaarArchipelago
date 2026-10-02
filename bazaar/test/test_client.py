@@ -402,7 +402,7 @@ class TestPatchTolerance(ClientTestBase):
         self.play(RunStarted("Vanessa"), CardGained("99999999-9999-9999-9999-999999999999", "itm_new", True),
                   DayReached(2))
         self.assertIsNone(self.ctx.blocked_reason())
-        self.assertIn("card", self.ctx.notices_shown)
+        self.assertEqual(self.ctx.notices_shown, set())  # owner, 2026-10-02: nothing to say about it
 
     def test_newer_game_version_warns_once(self) -> None:
         from ..logparser import GameVersion
