@@ -156,6 +156,7 @@ PvP wins count automatically - nothing to answer.
 | `/locked [hero]` | cards that are still locked (and where they are, if you have a hint for them) |
 | `/where <card>` | where a locked card is - only if you already got a hint for it |
 | `/tracker` | open or close the Tracker |
+| `/deathlink` | turn DeathLink on or off until you close the client (whatever your YAML says) |
 | `/logpath [path]` | show or change where the client looks for The Bazaar's log |
 | `/unblock` | emergency only: shows what's blocking checks; `/unblock confirm` clears it if something broke |
 

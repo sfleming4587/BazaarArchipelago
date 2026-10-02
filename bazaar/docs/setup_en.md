@@ -57,7 +57,7 @@ card a second copy in the multiworld, so there are about half as many locked car
    finish 10-win runs.
 
 Handy commands: `/tracker` (opens the tracker), `/status`, `/locked [hero]` (with hints: where each locked card
-is), `/where <card>` (your hint for a locked card, if you already have one), `/logpath`, and `/unblock` (emergency
+is), `/where <card>` (your hint for a locked card, if you already have one), `/logpath`, `/deathlink` (turns DeathLink on or off until you close the client), and `/unblock` (emergency
 only: shows what's blocking checks; `/unblock confirm` clears it if something broke).
 
 ## Your helpers while you play

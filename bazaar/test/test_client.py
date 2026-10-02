@@ -565,6 +565,37 @@ class TestUnblockCommand(ClientTestBase):
         self.assertTrue(self.was_sent(day_location("Vanessa", 2)))
 
 
+class TestDeathLinkCommand(ClientTestBase):
+    """Owner, 2026-10-02: /deathlink turns DeathLink on or off from the client, like other games' clients."""
+
+    def settle(self) -> None:
+        for _ in range(3):
+            self.await_(asyncio.sleep(0))
+
+    def test_toggles_and_outlives_a_reconnect(self) -> None:
+        from ..client import BazaarCommandProcessor
+        processor = BazaarCommandProcessor(self.ctx)
+
+        def commands(text: str) -> None:  # typed commands run inside the client's event loop
+            async def run():
+                processor(text)
+            self.await_(run())
+        commands("/deathlink")
+        self.settle()
+        self.assertIn("DeathLink", self.ctx.tags)
+        self.ctx.send_death = mock.AsyncMock()
+        self.play(RunStarted("Vanessa"), RunEnded(False, 7))
+        self.ctx.send_death.assert_called_once()  # the lost run's DeathLink went out
+        commands("/deathlink")
+        self.settle()
+        self.assertNotIn("DeathLink", self.ctx.tags)
+        async def reconnect():  # packages arrive inside the event loop too
+            self.ctx.on_package("Connected", {"slot_data": {**self.ctx.slot_data, "death_link": True}})
+        self.await_(reconnect())
+        self.settle()
+        self.assertNotIn("DeathLink", self.ctx.tags)  # the YAML says on, but /deathlink said off this session
+
+
 class TestHints(ClientTestBase):
     def test_hint_for_a_locked_card_is_shown(self) -> None:
         self.ctx.team, self.ctx.slot = 0, 1

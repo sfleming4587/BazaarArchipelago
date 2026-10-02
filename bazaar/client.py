@@ -162,6 +162,16 @@ class BazaarCommandProcessor(ClientCommandProcessor):
         self.output("All blocks for this run were cleared by hand.")
         return True
 
+    def _cmd_deathlink(self) -> bool:
+        """Turn DeathLink on or off for this session (overrides your YAML until you close the client)."""
+        if not self.ctx.slot_data:
+            self.output("Connect first.")
+            return False
+        self.ctx.death_link_override = "DeathLink" not in self.ctx.tags
+        Utils.async_start(self.ctx.update_death_link(self.ctx.death_link_override))
+        self.output(f"DeathLink is now {'ON' if self.ctx.death_link_override else 'OFF'} until you close the client.")
+        return True
+
     def _cmd_guide(self) -> bool:
         """Open or close the Shop Guide: card pictures with filters (also the Shop Guide button on the overlay)."""
         if not self.ctx.overlay or not self.ctx.overlay.available or not self.ctx.shop_guide:
@@ -216,6 +226,7 @@ class BazaarContext(CommonContext):
         # instead of judging the run again with today's unlocks (review 2026-09-30)
         self.position: Dict[str, Any] = {}
         self.caught_up = False  # the log has been read up to now since connecting: received Sell Traps can start
+        self.death_link_override: Optional[bool] = None  # /deathlink's choice for this session, over the YAML's
         self.quiet = False  # replaying runs that ended while the client wasn't watching: no alerts, no DeathLinks
         self.encounter: Optional[EncounterEntered] = None  # the merchant or event you're at, if any
         self.memory: Optional[Snapshot] = None  # what memory says is on screen now; None while the reader is off
@@ -245,7 +256,8 @@ class BazaarContext(CommonContext):
             self.slot_data = args.get("slot_data") or {}
             self.load_state()
             self.update_status()  # the "not connected" warning goes
-            Utils.async_start(self.update_death_link(bool(self.setting("death_link"))))
+            on = self.setting("death_link") if self.death_link_override is None else self.death_link_override
+            Utils.async_start(self.update_death_link(bool(on)))
             logger.info(f"Watching {self.log_path}", extra=FILE_ONLY)
         elif cmd == "ReceivedItems":
             for item in args["items"]:
