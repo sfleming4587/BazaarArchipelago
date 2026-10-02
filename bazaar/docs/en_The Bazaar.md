@@ -152,7 +152,8 @@ locked, new heroes aren't part of the seed, and a new monster counts as Bronze. 
 
 - Only play heroes you've received.
 - Don't keep locked cards. Events, loot and level-ups can hand you one; that's fine, just sell it before
-  your next fight. The client puts a padlock on each locked card you're offered (shops, level-ups, loot, events) and
+  your next fight. The client puts a padlock on each locked card you're offered (shops, level-ups, loot, events),
+  and on each locked merchant or event on a choice screen, and
   pops up a warning whenever you end up with one anyway. The warning clears
   itself once you sell it. Use `/locked` to see what's locked.
 - DeathLink: when someone else dies, abandon your current run.

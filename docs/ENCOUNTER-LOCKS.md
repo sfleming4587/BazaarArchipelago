@@ -3,9 +3,9 @@
 Merchants and events (the cards on the hourly choice screen) can be locked like cards, and Diamond/Legendary ones
 sit behind a progressive item. Designed with the owner 2026-10-01 and 2026-10-02.
 
-> ⚠️ **Status 2026-10-02:** world side and client enforcement built and unit-tested, **not yet tested in game**.
-> Event padlocks are not built yet (next step): the client enforces the locks but doesn't mark locked events on
-> the choice screen.
+> ⚠️ **Status 2026-10-02:** world side, client enforcement and event padlocks built and unit-tested, **not yet
+> tested in game**. A line of 2 options (the Mysterious Portal without its item bubble) gets no padlocks: its layout
+> hasn't been seen.
 
 ## The owner's rulings
 
@@ -80,11 +80,20 @@ conceded, like a held locked card).
 ⚠️ _Unverified:_ events the game puts you in without a choice are assumed to write no `Card Purchased: enc_` line,
 so they're never judged. Check this in game.
 
-## Screens (for the padlocks, still to build)
+## Screens and padlocks
+
+Positions are `overlay.EVENT_ROWS`: each option's centre at 1080p, x from the window's centre (scaled like the
+shop row), y as a share of the window's height. The client picks the row from memory (`client.event_screen`):
+screen `Choice` with N options is `Choice-N`, screen `Encounter` with event options is `Line-N`. A count that isn't
+in `EVENT_ROWS` gets no padlocks rather than misplaced ones.
 
 - **Hourly choice:** 3 events at the same positions as the monster pick (owner, 2026-10-02; `Event3.jpg`, the middle
   one lower). Memory screen `Choice`.
 - **Ticket day:** 4 events, the usual three plus the expedition, the middle two lower (`OffCenter4Event.jpg`).
-- **An event leading to events:** its options in a straight line in a panel (`EventToEvents.webp`, the Mysterious
-  Portal). Memory screen `Encounter`. The portal's left bubble isn't an event.
+- **An event leading to events:** its options in a straight line in a panel, 282 px apart (`EventToEvents.webp`,
+  the Mysterious Portal). Memory screen `Encounter`. The portal's left bubble isn't an event, so it never gets a
+  padlock, but it keeps its place in the row.
+
+⚠️ The 4-option row was measured on a small crop (571x350), scaled by the board's width: the pitch matches the
+3-option row exactly; the heights are taken from it (the crop's own read was within about 15 px).
 - The screenshots are local reference files in the repo root (ignored by git).

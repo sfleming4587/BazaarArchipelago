@@ -1115,3 +1115,45 @@ class TestAllLockedChoice(ClientTestBase):
         bubble = next(c.guid for c in CARDS if c.shop)
         snapshot = self.screen((self.a, "EventEncounter"), (bubble, "Item"))
         self.assertIsNone(let_through(snapshot.offers, self.ctx.locked_event_guids()))
+
+
+class TestEventPadlocks(ClientTestBase):
+    """A padlock on each locked merchant/event on a choice screen whose layout is measured (docs/ENCOUNTER-LOCKS.md)."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.ctx.slot_data.update(encounter_locks=[], event_rarity=2, exempt_expeditions=True)
+        self.ctx.overlay = mock.Mock()
+        self.play(RunStarted("Vanessa"), DayReached(1))
+        self.locked, self.free = _event("Diamond"), _event("Bronze")
+
+    def screen(self, state, *offers):
+        from ..memreader import Offer, Snapshot
+        return Snapshot(state, None, tuple(Offer(f"enc_{i}", t, k) for i, (t, k) in enumerate(offers)))
+
+    def padlocks(self):
+        call = self.ctx.overlay.show_padlocks.call_args
+        return call.args[0], call.args[2]
+
+    def test_hourly_choice(self) -> None:
+        self.ctx.handle_snapshot(self.screen("Choice", (self.free, "EventEncounter"), (self.locked, "EventEncounter"),
+                                             (self.free, "EventEncounter")))
+        self.assertEqual(self.padlocks(), ("Choice-3", [1]))
+
+    def test_ticket_day_has_four(self) -> None:
+        self.ctx.handle_snapshot(self.screen("Choice", *[(self.free, "EventEncounter")] * 3,
+                                             (self.locked, "EventEncounter")))
+        self.assertEqual(self.padlocks(), ("Choice-4", [3]))
+
+    def test_a_line_with_the_portal_bubble(self) -> None:
+        bubble = next(c.guid for c in CARDS if c.shop)
+        self.ctx.handle_snapshot(self.screen("Encounter", (bubble, "Item"), (self.free, "EventEncounter"),
+                                             (self.locked, "EventEncounter")))
+        self.assertEqual(self.padlocks(), ("Line-3", [2]))
+
+    def test_monsters_and_unmeasured_counts_get_none(self) -> None:
+        self.ctx.handle_snapshot(self.screen("Choice", (BRONZE_MONSTER, "CombatEncounter")))
+        self.assertEqual(self.padlocks(), (None, []))
+        self.ctx.handle_snapshot(self.screen("Encounter", (self.free, "EventEncounter"),
+                                             (self.locked, "EventEncounter")))
+        self.assertEqual(self.padlocks(), (None, []))

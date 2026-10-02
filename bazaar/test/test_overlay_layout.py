@@ -266,3 +266,31 @@ class TestTrackerOverMenu(unittest.TestCase):
         self.assertTrue(overlaps(panel, (500, 200, 300, 200)))  # the Tracker's corner on the panel
         self.assertFalse(overlaps(panel, (1300, 300, 400, 400)))  # dragged off to the right: touching isn't covering
         self.assertFalse(overlaps(panel, (0, 0, 200, 200)))
+
+
+class TestEventCentres(unittest.TestCase):
+    """Event padlocks sit on the options' centres, measured on the owner's screenshots 2026-10-02."""
+
+    def test_hourly_three_match_the_screenshot(self) -> None:
+        from ..overlay import event_centres
+        # Event3.jpg (1920x1080): frames centred at about (715, 303), (960, 364), (1205, 303)
+        for (x, y), (ex, ey) in zip(event_centres(0, 0, 1920, 1080, "Choice-3"), ((715, 303), (960, 364), (1205, 303))):
+            self.assertAlmostEqual(x, ex, delta=3)
+            self.assertAlmostEqual(y, ey, delta=3)
+
+    def test_scales_with_the_window(self) -> None:
+        from ..overlay import event_centres
+        small = event_centres(0, 0, 1920, 1080, "Choice-4")
+        big = event_centres(100, 50, 2560, 1440, "Choice-4")
+        for (x1, y1), (x2, y2) in zip(small, big):
+            self.assertAlmostEqual(x2 - 100, x1 * 4 / 3, delta=1)
+            self.assertAlmostEqual(y2 - 50, y1 * 4 / 3, delta=1)
+
+    def test_hover_area_covers_each_option_and_stays_off_the_strips(self) -> None:
+        from ..overlay import EVENT_ROWS, event_centres, event_rects
+        for screen in EVENT_ROWS:
+            rects = event_rects(0, 0, 1920, 1080, screen)
+            for x, y in event_centres(0, 0, 1920, 1080, screen):
+                self.assertTrue(any(r[0] <= x < r[2] and r[1] <= y < r[3] for r in rects))
+            strip_left, strip_right, _ = strips(0, 0, 1920, 1080)
+            self.assertTrue(all(r[0] >= strip_left[0] + strip_left[2] and r[2] <= strip_right[0] for r in rects))

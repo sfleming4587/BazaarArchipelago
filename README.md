@@ -56,7 +56,8 @@ until you put it right (see [House rules](#house-rules)).
 Everything sits beside the board, never on it, apart from the padlocks, which you can click straight through. It
 only shows while The Bazaar is the active window, and it fades while you read a card's tooltip or drag a card.
 
-- **Padlocks:** a red padlock on every locked card you're offered (in shops, level-ups, loot and events) and on
+- **Padlocks:** a red padlock on every locked card you're offered (in shops, level-ups, loot and events), on every
+  locked merchant or event you're offered a choice of, and on
   the locked cards in your open stash.
 - **The header (top left):** your hero, day, goal progress and Lock Bypasses, with buttons for the Shop Guide
   and the Tracker.

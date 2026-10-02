@@ -33,7 +33,7 @@ from .logparser import (DEFAULT_LOG_PATH, HERO_ALIASES, PREV_LOG, HeroSelected, 
                         RunEnded, RunStarted, UnrecognizedRun, log_session)
 from .memreader import NotReady, Reader, ReaderOff, Snapshot, game_pid
 from .merchants import possible_stock
-from .overlay import FILE_ONLY, ROW_GAPS
+from .overlay import EVENT_ROWS, FILE_ONLY, ROW_GAPS
 from .tracker import hero_order
 # the heroes Random can roll, by the game's own names (PlayerPreferences keys them like this; "Hero8" = The Dragons)
 HEROES_IN_GAME = ("Dooley", "Pygmalien", "Vanessa", "Mak", "Stelle", "Jules", "Karnok", "Hero8")  # FILE_ONLY: to the log file only, not the console or the client window
@@ -69,6 +69,16 @@ def items_on_screen(snapshot: Optional[Snapshot]) -> Optional[tuple]:
     if any(offer.kind != "Item" or offer.template is None for offer in snapshot.offers):
         return None
     return snapshot.offers
+
+
+def event_screen(snapshot: Optional[Snapshot]) -> Optional[tuple]:
+    """(EVENT_ROWS key, offers) when the screen is a choice of events whose layout is known: the hourly choice
+    ("Choice-N") or an event's own options in a row ("Line-N"); None otherwise (monsters, PvP, an unmeasured count)."""
+    if not snapshot or snapshot.state not in ("Choice", "Encounter") or not snapshot.offers \
+            or not any(o.kind == "EventEncounter" for o in snapshot.offers):
+        return None
+    key = f"{'Choice' if snapshot.state == 'Choice' else 'Line'}-{len(snapshot.offers)}"
+    return (key, snapshot.offers) if key in EVENT_ROWS else None
 
 
 def offers_at(snapshot: Optional[Snapshot], guid: str) -> Optional[tuple]:
@@ -700,7 +710,7 @@ class BazaarContext(CommonContext):
         before, self.memory = self.memory, snapshot
         if (before and before.offers) != (snapshot and snapshot.offers):
             self.check_choice_screen(snapshot)
-        seen = lambda s: (s.state, items_on_screen(s), s.level, s.stash) if s else None
+        seen = lambda s: (s.state, items_on_screen(s), event_screen(s), s.level, s.stash) if s else None
         if seen(before) != seen(snapshot):
             self.refresh_padlocks()
         if self.encounter and offers_at(before, self.encounter.guid) != offers_at(snapshot, self.encounter.guid):
@@ -718,6 +728,16 @@ class BazaarContext(CommonContext):
             self.show_stash_padlocks()  # your stash covers the offers while it's open
             return
         snapshot, items = self.memory, items_on_screen(self.memory) if self.run.get("active") else None
+        events = event_screen(snapshot) if self.run.get("active") else None
+        if events:  # a choice of merchants/events: a padlock on each locked one (docs/ENCOUNTER-LOCKS.md)
+            key, offers = events
+            new = self.padlock_rows.get(key) != tuple(o.instance for o in offers)
+            self.padlock_rows[key] = tuple(o.instance for o in offers)
+            locked = self.run_locked_events()
+            self.overlay.show_padlocks(key, ["Event"] * len(offers),
+                                       [i for i, o in enumerate(offers) if o.kind == "EventEncounter"
+                                        and o.template in locked], reveal=new, level=snapshot.level)
+            return
         if not items:
             self.overlay.show_padlocks(None, [], [])
             return

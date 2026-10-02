@@ -66,6 +66,16 @@ ROW_GAPS = {"Encounter": 0, "LevelUp": 68, "Stash": 0, "Loot": 0}
 # Screens only measured with one card (a loot's single card sits centred, owner's screenshot 2026-10-01): with more
 # than one, the spacing is unknown, so no padlocks rather than misplaced ones.
 ONE_CARD_ONLY = {"Loot"}
+# Padlocks on locked merchants/events (docs/ENCOUNTER-LOCKS.md): each option's centre at 1080p, (x from the window's
+# centre, y from its top), by screen - "Choice-N" is the hourly choice with N options, "Line-N" an event's own options
+# in a row. Measured 2026-10-02 on the owner's screenshots: the hourly 3 sit where the monster pick's do (Event3.jpg,
+# owner: "they show the same positions the monsters are in"), 245 apart, the middle one 61 lower; the ticket day's 4
+# keep that pitch and those heights (OffCenter4Event.jpg); a line is 282 apart (EventToEvents.webp). A count not
+# listed gets no padlocks: its layout hasn't been measured.
+EVENT_ROWS = {"Choice-3": ((-245, 303), (0, 364), (245, 303)),
+              "Choice-4": ((-367, 303), (-122, 364), (122, 364), (367, 303)),
+              "Line-3": ((-282, 420), (0, 420), (282, 420))}
+EVENT_FRAME = (205, 175)  # an option's frame, 1080p (the 3-choice screenshot's left one, x 614-815 y 217-390)
 CARD_HEIGHT = 220  # measured on the same screenshot (the cards' frames, y 322-541 at 1080p)
 YOUR_ROW = (548, 785)  # your own board's cards, top and bottom (their tooltips can open over the shop row too)
 BOARD_SLOTS = {1: 4, 2: 6, 3: 8}  # your board's width by level (owner, 2026-10-01); 10 from level 4 on
@@ -128,13 +138,33 @@ def card_rects(x: int, y: int, w: int, h: int, sizes: List[Optional[str]], gap: 
     if not centres:
         return []
     across = min(h / 1080, w / 1920)
-    half_height, mid = CARD_HEIGHT * across / 2, x + w / 2
+    half_height = CARD_HEIGHT * across / 2
     rects = [(round(cx - SLOTS[size] * SLOT_WIDTH * across / 2), round(cy - half_height),
               round(cx + SLOTS[size] * SLOT_WIDTH * across / 2), round(cy + half_height))
              for (cx, cy), size in zip(centres, sizes) if size != "Empty"]
+    return rects + [board_rect(x, y, w, h, level)]
+
+
+def board_rect(x: int, y: int, w: int, h: int, level: Optional[int]) -> tuple:
+    """Your own board, at its width for your level, as if full (where your cards sit isn't read)."""
+    across, mid = min(h / 1080, w / 1920), x + w / 2
     board = BOARD_SLOTS.get(level or 0, 10) * SLOT_WIDTH * across / 2  # unknown level: the widest board
-    return rects + [(round(mid - board), y + round(YOUR_ROW[0] * h / 1080), round(mid + board),
-                     y + round(YOUR_ROW[1] * h / 1080))]
+    return (round(mid - board), y + round(YOUR_ROW[0] * h / 1080), round(mid + board),
+            y + round(YOUR_ROW[1] * h / 1080))
+
+
+def event_centres(x: int, y: int, w: int, h: int, screen: str) -> List[tuple]:
+    """Screen centre (x, y) of each option on an event choice screen (an EVENT_ROWS key), left to right."""
+    across = min(h / 1080, w / 1920)
+    return [(round(x + w / 2 + dx * across), round(y + h * cy / 1080)) for dx, cy in EVENT_ROWS[screen]]
+
+
+def event_rects(x: int, y: int, w: int, h: int, screen: str, level: Optional[int] = None) -> List[tuple]:
+    """Where hovering shows a tooltip on an event choice screen: each option's frame, and your board."""
+    across = min(h / 1080, w / 1920)
+    half_w, half_h = EVENT_FRAME[0] * across / 2, EVENT_FRAME[1] * across / 2
+    return [(round(cx - half_w), round(cy - half_h), round(cx + half_w), round(cy + half_h))
+            for cx, cy in event_centres(x, y, w, h, screen)] + [board_rect(x, y, w, h, level)]
 
 
 def mouse_on(rects: List[tuple]) -> bool:
@@ -285,7 +315,7 @@ class Overlay:
         """A padlock on each locked card on offer: the screen showing them (a ROW_GAPS key), sizes of the row's
         cards left to right (gaps included), and the positions (0-based) of the locked ones. No locked positions
         hides them (at once). reveal: these are new cards, so wait until they've flipped over. level: yours."""
-        measured = screen in ROW_GAPS and not (screen in ONE_CARD_ONLY and len(sizes) > 1)
+        measured = screen in EVENT_ROWS or screen in ROW_GAPS and not (screen in ONE_CARD_ONLY and len(sizes) > 1)
         value = (screen, tuple(sizes), tuple(locked), level) if locked and measured else None
         self.commands.put(("padlocks", (value, time.monotonic(), reveal and value is not None)))
 
@@ -840,9 +870,13 @@ class _Screen:
         """Moves a padlock onto the centre of each locked card on offer (see card_centres)."""
         layout, value = self.layout, self.state["padlocks"]
         screen, sizes, locked, level = value or (None, (), (), None)
-        gap = ROW_GAPS.get(screen, 0)
-        centres = card_centres(*layout["window"], sizes, gap) if value else None
-        self.padlock_cards = card_rects(*layout["window"], sizes, gap, level) if value else []
+        if screen in EVENT_ROWS:
+            centres = event_centres(*layout["window"], screen)
+            self.padlock_cards = event_rects(*layout["window"], screen, level)
+        else:
+            gap = ROW_GAPS.get(screen, 0)
+            centres = card_centres(*layout["window"], sizes, gap) if value else None
+            self.padlock_cards = card_rects(*layout["window"], sizes, gap, level) if value else []
         spots = [centres[i] for i in locked if i < len(centres)] if centres else []
         size = max(MIN_PADLOCK, round(PADLOCK * layout["k"]))
         while len(self.padlocks) < len(spots):

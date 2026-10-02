@@ -53,7 +53,7 @@ Plus a 10-win run with each hero.
 * '''Lock Bypass''': lets the player keep one locked card, or use one locked event, for the rest of a run.
 
 === Client ===
-* Red padlocks on every locked card the player is offered (shops, level-ups, loot, events) and in the stash.
+* Red padlocks on every locked card the player is offered (shops, level-ups, loot, events), in the stash, and on locked merchants and events.
 * A Shop Guide with pictures of the cards on offer and everything a merchant can stock, locked cards crossed out.
 * A panel on the main menu with every hero's checks, warning when the picked hero (or Random) can't be played.
 * A built-in tracker, and [[DeathLink]] (sent when a run is lost; optionally on concede).
