@@ -79,7 +79,6 @@ FLIP_SECONDS = 1.0  # new cards flip over first: if the game's reveal flag doesn
 FLIP_MAX = 3.0  # and never wait longer than this for a reveal to end
 HOVER_MS = 60  # how often the mouse is checked while padlocks are up
 SLOTS = {"Small": 1, "Medium": 2, "Large": 3, "Empty": 1}  # Empty: a free slot in a row laid out by slot (the stash)
-STASH_SLOTS = 10  # the stash is always 10 slots wide, over the shop row (owner's screenshot, 2026-10-01)
 PADLOCK = 56  # the mark's size
 MIN_PADLOCK = 24  # real pixels, however small the window
 PADLOCK_KEY = "#010203"  # the padlock window's see-through colour

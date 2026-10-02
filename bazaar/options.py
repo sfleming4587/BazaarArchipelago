@@ -2,7 +2,7 @@ import types
 from dataclasses import dataclass, make_dataclass
 
 from Options import (Choice, DeathLink, DefaultOnToggle, ItemSet, OptionGroup, OptionSet, PerGameCommonOptions,
-                     Range, Removed, StartInventoryPool, Toggle, Visibility)
+                     Range, StartInventoryPool, Toggle, Visibility)
 
 from .data import CARDS, DLC_HEROES, HEROES, PACKS, TIERS, hero_key
 
@@ -130,11 +130,6 @@ def _max_monster_tier_body(namespace: dict) -> None:
 
 
 MaxMonsterTier = types.new_class("MaxMonsterTier", (Choice,), exec_body=_max_monster_tier_body)
-
-
-class LockedCards(Removed):
-    """Removed in 0.3.1: replaced by locked_cards_percent."""
-    display_name = "Locked Cards"
 
 
 class LockedCardsPercent(Range):
@@ -302,11 +297,6 @@ class LegacyCardPacks(Toggle):
     display_name = "Legacy Card Packs"
 
 
-class LockEnforcement(Removed):
-    """Removed in 0.2.5: checks are now always blocked while you hold a locked card or play a locked hero."""
-    display_name = "Locked Card Enforcement"
-
-
 class BazaarDeathLink(DeathLink):
     """
     When you lose a run (your last PvP fight takes the last of your prestige), everyone else with DeathLink dies.
@@ -314,11 +304,6 @@ class BazaarDeathLink(DeathLink):
     When someone else dies, you must abandon your current run (Settings > Abandon Run).
     The client can't do this for you: automating game input is against Tempo's modding policy.
     """
-
-
-class DeathLinkTrigger(Removed):
-    """Removed in 0.4.1: a DeathLink is only sent when a run is lost (or conceded, see death_link_on_concede)."""
-    display_name = "DeathLink Trigger"
 
 
 class DeathLinkOnConcede(Toggle):
@@ -346,7 +331,6 @@ class _BazaarOptions(PerGameCommonOptions):
     pvp_win_checks: PvPWinChecks
     monster_checks: MonsterChecks
     max_monster_tier: MaxMonsterTier
-    locked_cards: LockedCards
     locked_cards_percent: LockedCardsPercent
     lock_common_cards: LockCommonCards
     lock_loot_items: LockLootItems
@@ -363,9 +347,7 @@ class _BazaarOptions(PerGameCommonOptions):
     logic_diamond_cards: LogicDiamondCards
     logic_legendary_cards: LogicLegendaryCards
     legacy_card_packs: LegacyCardPacks
-    lock_enforcement: LockEnforcement
     death_link: BazaarDeathLink
-    death_link_trigger: DeathLinkTrigger
     death_link_on_concede: DeathLinkOnConcede
     death_link_amnesty: DeathLinkAmnesty
     start_inventory_from_pool: StartInventoryPool

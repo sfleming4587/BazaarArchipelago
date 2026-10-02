@@ -9,3 +9,12 @@ __pycache__/
 
 # quick_run.ps1 scratch files
 .quickrun/
+
+# local reference screenshots and image sources in the repo root (published images live in docs/images)
+/*.png
+/*.jpg
+/*.webp
+/*.xcf
+
+# local agent instructions
+/CLAUDE.md
