@@ -3,10 +3,9 @@ Build card-art.zip, the Shop Guide's pictures (see bazaar/cardart.py), from the 
 gave this project: a zip (sent in parts; join them first) with Item/<card guid>_<name>.png at full size.
 
 Each card in our data gets <guid>.webp at exactly the size the Shop Guide shows it (user 2026-09-30: no sharper
-than that - a smaller download). Pillow is needed here only (the client never needs it). Then attach the result
-to the GitHub release named in cardart.ART_SET:
-    .venv/Scripts/python.exe tools/make_card_art.py path/to/images.zip card-art.zip
-    gh release upload card-art-1 card-art.zip --repo sfleming4587/BazaarArchipelago
+than that - a smaller apworld). Pillow is needed here only (the client never needs it). The result ships inside the
+apworld; for a new set, also bump cardart.ART_SET:
+    .venv/Scripts/python.exe tools/make_card_art.py path/to/images.zip bazaar/data/card-art.zip
 """
 import io
 import json

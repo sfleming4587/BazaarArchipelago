@@ -107,8 +107,8 @@ A window with pictures (courtesy of [Bazaar DB](https://bazaardb.gg)) of every c
 - Open it any time with the **Shop Guide** button in the header (top left), not just in a shop; the same button or
   its **X** closes it. It fills the column left of the board, and it's a real window: drag it anywhere, even onto
   another monitor.
-- The pictures download once (about 3 MB) the first time the client starts. Until they're in, or if you're
-  offline, you'll see a "no picture" box of the card's size with its name under it.
+- The pictures come inside the apworld, so nothing is downloaded. The first time, they take a moment to get ready;
+  until a card's picture is in, you'll see a "no picture" box of the card's size with its name under it.
 
 Start the client with `--no-shop-guide` to turn it off completely.
 

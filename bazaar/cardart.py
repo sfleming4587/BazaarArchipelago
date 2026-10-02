@@ -2,29 +2,29 @@
 Card pictures for the Shop Guide, made without Pillow (Archipelago's Windows installer leaves Pillow out).
 
 The pictures come from Bazaar DB (bazaardb.gg), whose developer gave them to this project (2026-09-30). They're
-shrunk by tools/make_card_art.py into one zip of <card guid>.webp files, attached to this repo's GitHub release
-ART_SET; the client downloads that zip ONCE (one request, not one per card) into its cache and reads pictures from
-it. A new picture set = a new release tag in ART_SET (its own cache folder, so nothing old is reused). The game's own
-files are never read for art: its EULA forbids data mining (see DEVELOPERS.md, "Card data is frozen").
+shrunk by tools/make_card_art.py into one zip of <card guid>.webp files, data/card-art.zip, shipped inside the
+apworld: nothing is downloaded (owner, 2026-10-02: only what Archipelago strictly needs leaves the network). A new
+picture set = a new zip and a new ART_SET (its own cache folder, so nothing old is reused).
 
 Each picture is decoded by SDL2_image, which Archipelago ships for its GUI (it reads AVIF, WebP, PNG), called
 through ctypes - never by importing Kivy, which must be set up by Archipelago's GUI first. The picture is cropped
 to the card's in-game shape, scaled, and kept on this PC as two small PNGs (normal, and locked: greyed with a red
-cross) that Tk shows by itself. It's Tempo's art, so it is never bundled with the apworld. All shop cards are
+cross) that Tk shows by itself. All shop cards are
 preloaded in the background by ONE low-priority worker, so opening a shop never stalls the game.
 """
 import ctypes
 import ctypes.util
+import io
 import itertools
 import logging
 import os
+import pkgutil
 import queue
 import shutil
 import struct
 import sys
 import threading
 import time
-import urllib.request
 import zipfile
 import zlib
 from typing import Callable, Dict, Iterable, Optional, Tuple
@@ -32,9 +32,7 @@ from typing import Callable, Dict, Iterable, Optional, Tuple
 from .data import Card
 from .theme import LOCKED_X
 
-ART_SET = "card-art-1"  # the GitHub release holding the pictures; also this set's cache folder
-ART_URL = f"https://github.com/sfleming4587/BazaarArchipelago/releases/download/{ART_SET}/card-art.zip"
-USER_AGENT = "BazaarArchipelago-client (+https://github.com/sfleming4587/BazaarArchipelago)"
+ART_SET = "card-art-1"  # the picture set in data/card-art.zip; also its cache folder
 TIER_COLORS = {"Bronze": "#cd7f32", "Silver": "#c0c0c0", "Gold": "#ffd700", "Diamond": "#7fe7ff",
                "Legendary": "#c77dff"}
 URGENT, PRELOAD = 0, 1
@@ -245,24 +243,11 @@ class CardArt:
         logger.info(f"Shop Guide: {why}; cards show as name tiles.", extra=FILE_ONLY)
 
     def _pictures(self) -> Optional[zipfile.ZipFile]:
-        """The picture set, downloaded once and kept (None if that failed: name tiles, tried again next session)."""
-        path = self.zip_path = os.path.join(self.cache_dir, "card-art.zip")
-        if not os.path.exists(path):
-            try:
-                request = urllib.request.Request(ART_URL, headers={"User-Agent": USER_AGENT})
-                with urllib.request.urlopen(request, timeout=60) as response:
-                    data = response.read()
-                with open(path + ".part", "wb") as f:
-                    f.write(data)
-                os.replace(path + ".part", path)  # atomic: a cut-off download is never taken for the set
-            except Exception as error:
-                self._give_up(f"card pictures couldn't be downloaded ({error})")
-                return None
+        """The picture set shipped in the apworld (None if it can't be read: name tiles)."""
         try:
-            return zipfile.ZipFile(path)
-        except zipfile.BadZipFile:
-            os.remove(path)  # damaged: downloaded again next session
-            self._give_up("the card picture download was damaged")
+            return zipfile.ZipFile(io.BytesIO(pkgutil.get_data(__package__, "data/card-art.zip") or b""))
+        except (OSError, zipfile.BadZipFile) as error:
+            self._give_up(f"the card pictures couldn't be read ({error})")
             return None
 
     def _work(self) -> None:
@@ -295,13 +280,8 @@ class CardArt:
             except KeyError:  # the set has no picture of this card; don't look again
                 open(self._missing(guid), "w").close()
                 continue
-            except (zipfile.BadZipFile, zlib.error, OSError) as error:  # the download is damaged: fetch it again
-                pictures.close()
-                try:
-                    os.remove(self.zip_path)
-                except OSError:
-                    pass
-                self._give_up(f"the card picture download is damaged ({error}); it's fetched again next time")
+            except (zipfile.BadZipFile, zlib.error, OSError) as error:  # the shipped set is damaged
+                self._give_up(f"the card pictures are damaged ({error})")
                 return
             try:
                 self._save(card, decoder.decode(data))

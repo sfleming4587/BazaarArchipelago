@@ -114,7 +114,7 @@ class TestShopGuideCardShapes(unittest.TestCase):
 
 
 class TestCardArtWorker(unittest.TestCase):
-    """The picture worker, with the download and the decoder faked: one zip of <guid>.webp for every card."""
+    """The picture worker, with the shipped set and the decoder faked: one zip of <guid>.webp for every card."""
 
     @staticmethod
     def picture_set(guids) -> bytes:
@@ -126,19 +126,19 @@ class TestCardArtWorker(unittest.TestCase):
                 z.writestr(f"{guid}.webp", b"webp bytes")
         return data.getvalue()
 
-    def run_worker(self, respond, decoder, old_files=()) -> tuple:
+    def run_worker(self, shipped, decoder, old_files=()) -> tuple:
         import tempfile
         import threading
         from unittest import mock
         from .. import cardart
         card = next(c for c in CARDS if c.shop and c.size == "Medium")
         ready = threading.Event()
-        downloads = []
+        reads = []
 
-        def fake_urlopen(request, timeout):
-            downloads.append(request.full_url)
-            return respond(card)
-        with tempfile.TemporaryDirectory() as folder, mock.patch.object(cardart, "Decoder", decoder),                 mock.patch.object(cardart.urllib.request, "urlopen", fake_urlopen):
+        def fake_get_data(package, resource):
+            reads.append(resource)
+            return shipped(card)
+        with tempfile.TemporaryDirectory() as folder, mock.patch.object(cardart, "Decoder", decoder),                 mock.patch.object(cardart.pkgutil, "get_data", fake_get_data):
             for name in old_files:
                 open(os.path.join(folder, name), "w").close()
             art = cardart.CardArt(folder, 96, on_ready=lambda guid: ready.set())
@@ -149,67 +149,60 @@ class TestCardArtWorker(unittest.TestCase):
                     break
                 ready.wait(0.05)
             result = (ready.is_set(), art.working, art.picture(card, False), art.picture(card, True),
-                      os.path.exists(art._missing(card.guid)), downloads, sorted(os.listdir(folder)))
+                      os.path.exists(art._missing(card.guid)), reads, sorted(os.listdir(folder)))
             art.shutdown()
         return result
-
-    def response(self, data: bytes):
-        from unittest import mock
-        response = mock.MagicMock()
-        response.__enter__.return_value.read.return_value = data
-        return response
 
     def test_picture_from_the_set_is_saved_in_both_versions(self) -> None:
         from unittest import mock
         decoder = mock.MagicMock(return_value=mock.MagicMock(decode=lambda data: (8, 8, bytes([16]) * 192)))
-        ready, working, normal, locked_path, _, downloads, _ = self.run_worker(
-            lambda card: self.response(self.picture_set([card.guid])), decoder)
+        ready, working, normal, locked_path, _, reads, _ = self.run_worker(
+            lambda card: self.picture_set([card.guid]), decoder)
         self.assertTrue(ready and working)
         self.assertTrue(normal.endswith("_96x96.png") and locked_path.endswith("_96x96_locked.png"))
-        self.assertEqual(len(downloads), 1)  # the whole set, once
+        self.assertEqual(reads, ["data/card-art.zip"])  # the shipped set, read once
 
     def test_card_the_set_lacks_is_remembered(self) -> None:
         from unittest import mock
         _, working, normal, _, missing, _, _ = self.run_worker(
-            lambda card: self.response(self.picture_set(["someone-else"])), mock.MagicMock())
+            lambda card: self.picture_set(["someone-else"]), mock.MagicMock())
         self.assertTrue(missing and working)
         self.assertIsNone(normal)
 
-    def test_failed_download_means_name_tiles_this_session(self) -> None:
+    def test_unreadable_set_means_name_tiles(self) -> None:
         from unittest import mock
-
-        def offline(card):
-            raise OSError("offline")
-        _, working, normal, _, missing, _, _ = self.run_worker(offline, mock.MagicMock())
+        _, working, normal, _, missing, _, _ = self.run_worker(lambda card: None, mock.MagicMock())
         self.assertFalse(working)
-        self.assertFalse(missing)  # asked again next session
+        self.assertFalse(missing)
         self.assertIsNone(normal)
 
-    def test_damaged_download_is_thrown_away_not_fatal(self) -> None:
-        """Review 2026-09-30: a damaged picture killed the worker for good and the zip stayed on disk."""
-        import tempfile
-        import time
+    def test_damaged_picture_is_not_fatal(self) -> None:
+        """Review 2026-09-30: a damaged picture killed the worker for good."""
         from unittest import mock
-        from .. import cardart
-        card = next(c for c in CARDS if c.shop)
-        data = bytearray(self.picture_set([card.guid]))
-        data[data.find(b"webp bytes")] ^= 1  # one flipped bit: Bad CRC
         decoder = mock.MagicMock(return_value=mock.MagicMock(decode=lambda d: (8, 8, bytes(192))))
-        with tempfile.TemporaryDirectory() as folder, mock.patch.object(cardart, "Decoder", decoder),                 mock.patch.object(cardart.urllib.request, "urlopen", lambda r, timeout: self.response(bytes(data))):
-            art = cardart.CardArt(folder, 96, on_ready=lambda guid: None)
-            art.picture(card, False)
-            for _ in range(60):
-                if not art.working:
-                    break
-                time.sleep(0.05)
-            self.assertFalse(art.working)  # name tiles this session, and it says so in the log file
-            self.assertFalse(os.path.exists(os.path.join(folder, cardart.ART_SET, "card-art.zip")))  # fetched again
-            art.shutdown()
+
+        def damaged(card):
+            data = bytearray(self.picture_set([card.guid]))
+            data[data.find(b"webp bytes")] ^= 1  # one flipped bit: Bad CRC
+            return bytes(data)
+        _, working, normal, _, _, _, _ = self.run_worker(damaged, decoder)
+        self.assertFalse(working)  # name tiles, and it says so in the log file
+        self.assertIsNone(normal)
+
+    def test_shipped_set_is_in_the_world(self) -> None:
+        """The real zip is in the apworld and holds a picture for most shop cards."""
+        import io
+        import pkgutil
+        import zipfile
+        from .. import cardart
+        names = set(zipfile.ZipFile(io.BytesIO(pkgutil.get_data(cardart.__package__, "data/card-art.zip"))).namelist())
+        shop = [c for c in CARDS if c.shop]
+        self.assertGreater(sum(f"{c.guid}.webp" in names for c in shop), len(shop) * 0.9)
 
     def test_pictures_from_older_sources_are_cleared(self) -> None:
         from unittest import mock
         from ..cardart import ART_SET
-        *_, left = self.run_worker(lambda card: self.response(self.picture_set([])), mock.MagicMock(),
+        *_, left = self.run_worker(lambda card: self.picture_set([]), mock.MagicMock(),
                                    old_files=("abc_48x96.png", "abc.missing"))
         self.assertEqual(left, [ART_SET])
 
