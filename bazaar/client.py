@@ -891,7 +891,12 @@ class BazaarContext(CommonContext):
             await self.send_run_checks([monster_location(self.run["hero"], event.day, t) for t in beaten])
 
     async def handle_pvp(self, event: PvPFought) -> None:
-        if not self.run.get("active") or not self.setting("pvp_win_checks"):
+        if not self.run.get("active"):
+            return
+        if event.won:  # what a lost run's DeathLink says depends on how far it got (see deathlink_lines)
+            self.run["wins"] = self.run.get("wins", 0) + 1
+            self.save_state()
+        if not self.setting("pvp_win_checks"):
             return
         if event.day > self.setting("max_day"):
             return
@@ -922,14 +927,14 @@ class BazaarContext(CommonContext):
             self.event("Run over. DeathLink paid off.")
         elif event.conceded:
             if self.setting("death_link_on_concede"):
-                await self.maybe_send_death(event.day, conceded=True)
+                await self.maybe_send_death(event.day, self.run.get("wins", 0), conceded=True)
             else:
                 self.event("Run conceded. Conceding doesn't send a DeathLink.")
         else:
-            await self.maybe_send_death(event.day)
+            await self.maybe_send_death(event.day, self.run.get("wins", 0))
         self.save_state()
 
-    async def maybe_send_death(self, day: int, conceded: bool = False) -> None:
+    async def maybe_send_death(self, day: int, wins: int, conceded: bool = False) -> None:
         """Send a DeathLink unless it's off, the run doesn't count (locked hero / DeathLink owed) or amnesty applies."""
         legal = self.run.get("legal", True) and not self.run.get("deathlink_owed")
         if "DeathLink" not in self.tags or not legal:
@@ -944,7 +949,7 @@ class BazaarContext(CommonContext):
         if self.defeats_since_death > amnesty:
             self.defeats_since_death = 0
             player = self.player_names.get(self.slot, "A Bazaar player")
-            await self.send_death(deathlink_message(player, self.run.get("hero"), day, conceded))
+            await self.send_death(deathlink_message(player, self.run.get("hero"), day, wins, conceded))
             self.event("DeathLink sent.")
         else:
             self.event(f"Forgiven by DeathLink amnesty ({self.defeats_since_death}/{amnesty}).")

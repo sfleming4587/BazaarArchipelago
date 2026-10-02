@@ -333,10 +333,16 @@ class TestDeathLinkTriggers(ClientTestBase):
     def test_message_names_the_player_and_fits_the_hero_and_situation(self) -> None:
         from ..deathlink_lines import HEROES, SHARED
         self.ctx.player_names = {self.ctx.slot: "Sulldog"}
-        self.play(RunStarted("Vanessa"), PvPFought(10, False), RunEnded(False, 10))
-        late = [line.format(player="Sulldog", day=10) for line in HEROES["Vanessa"]["late"] + SHARED["late"]
+        wins = [PvPFought(day, True) for day in range(1, 9)]  # 8 wins: a "late" loss
+        self.play(RunStarted("Vanessa"), *wins, PvPFought(12, False), RunEnded(False, 12))
+        late = [line.format(player="Sulldog", day=12, wins="8 wins") for line in HEROES["Vanessa"]["late"] + SHARED["late"]
                 + SHARED["any"]]
         self.assertIn(self.deaths[0], late)
+
+    def test_a_run_lost_without_a_win_is_trash(self) -> None:
+        self.ctx.player_names = {self.ctx.slot: "Sulldog"}
+        self.play(RunStarted("Vanessa"), PvPFought(7, False), RunEnded(False, 7))
+        self.assertEqual(self.deaths, ["Trash is tragedy... so is Sulldog. 0 Wins."])
 
     def test_run_lost_sends_once(self) -> None:
         self.play(RunStarted("Vanessa"), PvPFought(2, False), PvPFought(3, False), RunEnded(False, 3))
