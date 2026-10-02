@@ -58,7 +58,7 @@ HEROES: Dict[str, Dict[str, List[str]]] = {
         "mid": ["{player} went bankrupt on day {day}.",
                  "{player}'s investments crashed on day {day}."],
         "late": ["{player} was one deal away from a fortune and lost it all on day {day}.",
-                 "Have you noticed {player} WAS huge... hmm? Not any more (day {day})."],
+                 "Have you noticed {player} was HUGE... hmm? Not any more (day {day})."],
         "conceded": ["{player} cashed out early on day {day}."],
     },
     "Dooley": {
