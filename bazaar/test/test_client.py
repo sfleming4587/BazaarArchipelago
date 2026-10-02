@@ -296,11 +296,22 @@ class TestItemPopUps(ClientTestBase):
         self.assertEqual(len(texts), 1)
         self.assertTrue(texts[0].startswith("SENT: ") and texts[0].endswith(" to Friend"))
 
+    def test_unlocks_say_found_from_your_world_and_received_from_whose(self) -> None:
+        """Owner, 2026-10-02: no "(from your own world)" - FOUND for yours, RECEIVED ... from X for anyone else's."""
+        self.send(1, 123)  # sets the slots up
+        self.ctx.overlay.reset_mock()
+        unlock = BASE_ID + LOCKED.ap_id
+        self.ctx.on_package("ReceivedItems", {"index": 1, "items": [NetworkItem(unlock, 1, 1, 0),
+                                                                     NetworkItem(unlock, 1, 2, 0)]})
+        calls = [c for c in self.ctx.overlay.toast.call_args_list]
+        self.assertEqual([c.args[0] for c in calls], [f"FOUND: {LOCKED.name}", f"RECEIVED: {LOCKED.name} from Friend"])
+        self.assertEqual(calls[0].kwargs["cards"], [LOCKED.guid])
+
     def test_own_unlock_is_not_announced_twice(self) -> None:
         self.assertEqual(self.send(1, BASE_ID + LOCKED.ap_id), [])  # the UNLOCKED pop-up covers it
 
     def test_own_filler_pops_up(self) -> None:
-        self.assertEqual(self.send(1, item_name_to_id["Spare Change"]), ["FOUND: Spare Change  (in your own world)"])
+        self.assertEqual(self.send(1, item_name_to_id["Spare Change"]), ["FOUND: Spare Change"])
 
     def test_item_received_from_another_player_names_them(self) -> None:
         self.ctx.overlay = mock.Mock()
@@ -311,7 +322,7 @@ class TestItemPopUps(ClientTestBase):
         self.ctx.on_print_json({"type": "ItemSend", "receiving": 1, "data": [{"text": "x"}],
                                 "item": NetworkItem(item_name_to_id["Spare Change"], 1, 2, 0)})
         self.assertEqual([c.args[0] for c in self.ctx.overlay.toast.call_args_list],
-                         ["RECEIVED: Spare Change  (from Friend)"])
+                         ["RECEIVED: Spare Change from Friend"])
 
 
 class TestNewRunIsACleanSlate(ClientTestBase):

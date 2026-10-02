@@ -186,6 +186,38 @@ class TestUnlockPopupPictures(unittest.TestCase):
                 root.destroy()
 
 
+class TestPopUpsFillTheRoom(unittest.TestCase):
+    """Owner, 2026-10-02: show as many pop-ups as fit, never past the top; whole ones go, oldest first."""
+
+    def test_too_many_keep_the_newest_whole_and_stay_under_the_notices(self) -> None:
+        import queue
+        import tkinter
+        import types
+        from ..overlay import _Screen
+        root = tkinter.Tk()
+        try:
+            fake = types.SimpleNamespace(only_over_game=False, game_window=(0, 0, 1280, 720), art_cache_dir=None,
+                                         guide_file=None, commands=queue.Queue(), on_bypass=None)
+            screen = _Screen(fake, tkinter, root)
+            screen.relayout((0, 0, 1280, 720))
+            screen.state["deathlink"] = "Friend fell."
+            for i in range(8):
+                screen.new_toast((f"RECEIVED: a rather long item name number {i} " + "and more words " * 12,
+                                  1e12, False, False, ()))
+            screen.render()
+            root.update()
+            rows = screen.toast_box.winfo_children()[0].winfo_children()
+            texts = [r.winfo_children()[0].cget("text") for r in rows]
+            self.assertIn("number 7", texts[0])  # the newest is kept
+            self.assertLess(len(rows), 8)  # some didn't fit and went whole
+            x, y, w, h = screen.layout["right"]
+            top = screen.toast_box.winfo_y()
+            self.assertGreaterEqual(top, y + screen.drawn["notices_height"])  # under the notices, never over them
+            self.assertEqual(screen.toast_box.winfo_height(), screen.toast_box.winfo_reqheight())  # nothing cut off
+        finally:
+            root.destroy()
+
+
 class TestCardCentres(unittest.TestCase):
     def test_row_is_centred_and_cards_follow_their_sizes(self) -> None:
         from ..overlay import SHOP_ROW_Y, SLOT_WIDTH, card_centres

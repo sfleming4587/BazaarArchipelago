@@ -3,8 +3,8 @@
 Merchants and events (the cards on the hourly choice screen) can be locked like cards, and Diamond/Legendary ones
 sit behind a progressive item. Designed with the owner 2026-10-01 and 2026-10-02.
 
-> ⚠️ **Status 2026-10-02:** world side, client enforcement and event padlocks built and unit-tested, **not yet
-> tested in game**.
+> ⚠️ **Status 2026-10-02:** world side, client enforcement and event padlocks built and unit-tested. In game
+> (owner, 2026-10-02): shop padlocks "look good"; event padlocks seen, hover rule changed (below).
 
 ## The owner's rulings
 
@@ -94,6 +94,9 @@ that isn't in `CHOICE_ROWS` gets no padlocks rather than misplaced ones; a line 
   without the portal's bubble "they move to the center", and other events can add such an option too, "so it needs
   to be a generic solution"). An extra option that isn't an event (the portal's left bubble) never gets a padlock,
   but it takes its place in the row.
+- **Hovering an event option keeps the padlocks solid** (owner, 2026-10-02: "dont make padlocks transparent on
+  events when hovering an event, in all other cases still hide/make transparent it"). Hovering your board, dragging,
+  the Esc menu and the stash still fade or hide them as everywhere else (`overlay.padlock_alpha`).
 
 ⚠️ The 4-option row was measured on a small crop (571x350), scaled by the board's width: the pitch matches the
 3-option row exactly; the heights are taken from it (the crop's own read was within about 15 px).

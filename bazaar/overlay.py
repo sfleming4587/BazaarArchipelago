@@ -45,8 +45,7 @@ BORDER = 2  # every panel's gold border
 WINDOW_GAP = 4  # between two panels that sit on top of each other
 ALERT_SHARE = 2  # the alert box takes at most 1/2 of the left strip (the rest is the list's)
 MAX_ALERT_LINES = 6  # held cards / trap lines shown in it; more become "+ N more" (review 2026-09-30)
-TOAST_SHARE = 3  # pop-ups take at most 1/3 of the right strip
-MAX_TOASTS = 4
+MAX_TOASTS = 8  # as many as fit above them, up to this many (owner, 2026-10-02: "as much as it can")
 MAX_TOAST_PICTURES = 3  # an UNLOCKED pop-up shows this many of its cards' pictures; more become "+ N more"
 MENU_WIDTH = 460  # the menu's centre panel, 1080p pixels (scaled with the window)
 MENU_TILE = 100  # one hero's tile
@@ -179,9 +178,9 @@ def event_rects(x: int, y: int, w: int, h: int, screen: str, level: Optional[int
             for cx, cy in event_centres(x, y, w, h, screen)] + [board_rect(x, y, w, h, level)]
 
 
-def mouse_on(rects: List[tuple]) -> bool:
-    """Is the mouse on one of the rects, or is its left button held (dragging a card shows its tooltip anywhere)?
-    Windows only; elsewhere always False."""
+def mouse_on(rects: List[tuple], held_counts: bool = True) -> bool:
+    """Is the mouse on one of the rects, or (held_counts) is its left button held (dragging a card shows its tooltip
+    anywhere)? Windows only; elsewhere always False."""
     if sys.platform != "win32" or not rects:
         return False
     import ctypes
@@ -190,7 +189,7 @@ def mouse_on(rects: List[tuple]) -> bool:
     if not ctypes.windll.user32.GetCursorPos(ctypes.byref(point)):
         return False
     held = ctypes.windll.user32.GetAsyncKeyState(0x01) & 0x8000  # VK_LBUTTON
-    return bool(held) or any(r[0] <= point.x < r[2] and r[1] <= point.y < r[3] for r in rects)
+    return bool(held and held_counts) or any(r[0] <= point.x < r[2] and r[1] <= point.y < r[3] for r in rects)
 
 
 def padlock_shape(canvas, x: float, y: float, s: int) -> None:
@@ -422,6 +421,7 @@ class _Screen:
         self.reveal_started = False  # the game's reveal began since those padlocks came in
         self.board_ui = None  # memreader.BoardUI, or None (unreadable: fall back to the mouse)
         self.padlock_cards: List[tuple] = []  # where hovering makes the padlocks see-through (see card_rects)
+        self.event_options: List[tuple] = []  # an event choice screen's options: hovering one keeps them solid
         self.padlocks_faded = 1.0  # the padlocks' alpha now (see padlock_alpha)
         self.overlay_faded = 1.0  # every other window's fade now (see overlay_factor)
         self.guide_fading = False  # the Shop Guide is fading in or out (a second click waits for it)
@@ -493,10 +493,13 @@ class _Screen:
         stash slides open or shut, see-through while a card's tooltip shows or a card is dragged. Unreadable flags:
         by the mouse."""
         ui = self.board_ui
+        if ui is not None and (ui.dialog or ui.stash_moving):  # the client swaps to the stash's own padlocks then
+            return 0.0
+        # owner, 2026-10-02: hovering an event's option keeps the padlocks solid; everything else still fades them
+        if self.event_options and self.game_in_front and mouse_on(self.event_options, held_counts=False):
+            return 1.0
         if ui is None:  # the mouse, but only while the game is in front (owner: nothing outside the game)
             return HOVERED_ALPHA if self.game_in_front and mouse_on(self.padlock_cards) else 1.0
-        if ui.dialog or ui.stash_moving:  # the client swaps to the stash's own padlocks once it's open
-            return 0.0
         return HOVERED_ALPHA if ui.hovering or ui.dragging else 1.0
 
     def fade_padlocks(self) -> None:
@@ -617,16 +620,17 @@ class _Screen:
     def _render(self) -> None:
         state, drawn, layout = self.state, self.drawn, self.layout
         moves: list = []
-        toasts = tuple((text, warning, trap, cards) for text, _, warning, trap, cards in state["toasts"])
-        if toasts != drawn["toasts"]:
-            drawn["toasts"] = toasts
-            drawn["toasts_height"] = self.render_toasts(moves)
-        x, y, width, height = layout["right"]  # the right column above the pop-ups
-        right = (x, y, width, height - (drawn["toasts_height"] + WINDOW_GAP if drawn["toasts_height"] else 0))
+        # the notices first (they matter more), then the pop-ups take all the room left under them
+        right = layout["right"]
         notices = (state["deathlink"], state["locked"], right)
         if notices != drawn["notices"]:
             drawn["notices"] = notices
             drawn["notices_height"] = self.render_notices(moves, right)
+        toasts = (tuple((text, warning, trap, cards) for text, _, warning, trap, cards in state["toasts"]),
+                  drawn["notices_height"])
+        if toasts != drawn["toasts"]:
+            drawn["toasts"] = toasts
+            drawn["toasts_height"] = self.render_toasts(moves)
         buttons = self.buttons()
         alerts = (state["status"], tuple(label for label, _ in buttons), state["deathlink"] is not None,
                   bool(state["locked"]), str(state["menu"]))
@@ -791,11 +795,12 @@ class _Screen:
             return 0
         frame, show = self.swap(self.toast_box, SEVERITY["info"])
         wrap = layout["right"][2] - 2 * (PAD + BORDER) - 16
-        # newest packed first from the bottom: if they don't all fit, the oldest are the ones cut off
+        rows = []  # newest first, packed up from the bottom
         for text, _, warning, trap, cards in reversed(self.state["toasts"]):
             if trap:
                 row = tk.Frame(frame, bg=TRAP_BG, padx=6, pady=4)
                 row.pack(side="bottom", fill="x", pady=2)
+                rows.append(row)
                 skull = draw_skull(tk, row, max(32, round(44 * layout["k"])), TRAP_BG)
                 skull.pack(side="left", padx=(0, 6))
                 tk.Label(row, text=text, fg=TRAP_TITLE, bg=TRAP_BG, font=self.font(11, "bold"),
@@ -804,6 +809,7 @@ class _Screen:
             bg = SEVERITY["critical" if warning else "ok"]
             row = tk.Frame(frame, bg=bg)
             row.pack(side="bottom", fill="x", pady=2)
+            rows.append(row)
             tk.Label(row, text=text, fg=FG, bg=bg, font=self.font(11, "bold"), wraplength=wrap, justify="left",
                      padx=8, pady=4).pack(anchor="w")
             pictures = [p for p in (self.toast_picture(guid) for guid in cards) if p is not None]
@@ -816,9 +822,15 @@ class _Screen:
                     tk.Label(strip, text=f"+ {len(cards) - MAX_TOAST_PICTURES} more", fg=FG, bg=bg,
                              font=self.font(10, "bold")).pack(side="left", padx=(4, 0))
         show()
-        self.toast_box.update_idletasks()
+        # all the room the notices above leave (owner, 2026-10-02); whole pop-ups that don't fit go, oldest first
         x, y, width, strip_height = layout["right"]
-        height = min(self.toast_box.winfo_reqheight(), strip_height // TOAST_SHARE)
+        notices = self.drawn["notices_height"]
+        room = strip_height - (notices + WINDOW_GAP if notices else 0)
+        self.toast_box.update_idletasks()
+        while len(rows) > 1 and self.toast_box.winfo_reqheight() > room:
+            rows.pop().destroy()
+            self.toast_box.update_idletasks()
+        height = min(self.toast_box.winfo_reqheight(), room)
         moves.append((self.toast_box, (x, y + strip_height - height, width, height)))
         return height
 
@@ -913,9 +925,11 @@ class _Screen:
         """Moves a padlock onto the centre of each locked card on offer (see card_centres)."""
         layout, value = self.layout, self.state["padlocks"]
         screen, sizes, locked, level = value or (None, (), (), None)
+        self.event_options = []
         if event_row(screen):
             centres = event_centres(*layout["window"], screen)
             self.padlock_cards = event_rects(*layout["window"], screen, level)
+            self.event_options = self.padlock_cards[:-1]  # the options alone, without your board
         else:
             gap = ROW_GAPS.get(screen, 0)
             centres = card_centres(*layout["window"], sizes, gap) if value else None

@@ -275,10 +275,11 @@ class BazaarContext(CommonContext):
                     if self.overlay and args.get("index", 0) > 0:  # index 0 = the full list resent on connect
                         cards = sorted(UNLOCKS.get(item.item, ()), key=lambda g: CARDS_BY_GUID[g].name)
                         what = HERO_ITEM_IDS.get(item.item, name)
-                        self.overlay.toast(f"UNLOCKED: {what}  (from {self.who(item.player)})", cards=cards)
+                        self.overlay.toast(f"{self.got(item.player)}: {what}{self.sender(item.player)}", cards=cards)
                 elif item.item == LOCK_BYPASS_ID and args.get("index", 0) > 0:
                     self.event("Lock Bypass received: use it on a locked card you're holding (the button next to it).")
-                    self.toast(f"LOCK BYPASS from {self.who(item.player)}! Use it on a locked card you're holding.",
+                    self.toast(f"{self.got(item.player)} a LOCK BYPASS{self.sender(item.player)}! Use it on a locked "
+                               f"card you're holding.",
                                seconds=12)
             self.refresh_held()
             if self.encounter:  # an unlock that arrives while you're in a shop takes it off the list at once
@@ -300,13 +301,21 @@ class BazaarContext(CommonContext):
             if receiver != self.slot:
                 self.overlay.toast(f"SENT: {name} to {self.who(receiver)}")
             elif not own_popup(item.item):
-                self.overlay.toast(f"FOUND: {name}  (in {self.who(self.slot)})")
+                self.overlay.toast(f"FOUND: {name}")
         elif self.overlay and args.get("type") == "ItemSend" and args["receiving"] == self.slot:
             # someone else found something for you; unlocks and Sell Traps have their own pop-ups
             item = args["item"]
             name = self.item_names.lookup_in_slot(item.item, self.slot)
             if not own_popup(item.item):
-                self.overlay.toast(f"RECEIVED: {name}  (from {self.who(item.player)})")
+                self.overlay.toast(f"RECEIVED: {name}{self.sender(item.player)}")
+
+    def got(self, slot: int) -> str:
+        """FOUND for an item from your own world, RECEIVED from anyone else's (owner, 2026-10-02)."""
+        return "FOUND" if slot == self.slot else "RECEIVED"
+
+    def sender(self, slot: int) -> str:
+        """ from <player> for an item from another world; nothing for your own (owner, 2026-10-02)."""
+        return "" if slot == self.slot else f" from {self.who(slot)}"
 
     def who(self, slot: int) -> str:
         """The other side of an item, from Archipelago's player list, for the pop-ups."""
@@ -550,18 +559,18 @@ class BazaarContext(CommonContext):
         traps = [item for item in self.items_received if item.item == item_name_to_id[SELL_TRAP]]
         while self.traps_seen < len(traps):
             self.traps_seen += 1
-            self.start_trap(self.who(traps[self.traps_seen - 1].player))
+            self.start_trap(self.sender(traps[self.traps_seen - 1].player))
         self.save_state()
 
-    def start_trap(self, sender: str = "another player") -> None:
-        """Pick a random item the player holds; it must be sold before the deadline day starts."""
+    def start_trap(self, sender: str = "") -> None:
+        """Pick a random item the player holds; it must be sold before the deadline day starts. sender: " from X"."""
         # never a locked card you hold: that one must be sold anyway (owner, 2026-10-01: "checks are blocked AND i can
         # wait to sell til I reach day 3, so what is it?")
         targeted = {t["instance"] for t in self.run.get("traps", [])} | set(self.run.get("held", {}))
         choices = [i for i in self.run.get("inventory", {}) if i not in targeted] if self.run.get("active") else []
         if not choices:  # not in a run, or holding nothing it can target: the trap misses
             self.event("Sell Trap DODGED - you had nothing it could make you sell.")
-            self.toast(f"Sell Trap from {sender} DODGED!")
+            self.toast(f"Sell Trap{sender} DODGED!")
             return
         instance = random.choice(choices)
         guid = self.run["inventory"][instance]
@@ -570,7 +579,7 @@ class BazaarContext(CommonContext):
         name = self.card_name(guid)
         self.event(f"SELL TRAP! Sell {name} before day {deadline} starts, or checks get blocked.", warning=True)
         self.beep()
-        self.toast(f"SELL TRAP from {sender}! Sell {name} before day {deadline} starts.", seconds=15, trap=True)
+        self.toast(f"SELL TRAP{sender}! Sell {name} before day {deadline} starts.", seconds=15, trap=True)
         self.update_block_banner()
 
     def trap_target(self, trap: dict) -> str:
