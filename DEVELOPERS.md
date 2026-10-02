@@ -42,8 +42,6 @@ nobody should risk their account to play a randomizer.
 | `docs/OVERLAY.md` | what the overlay shows where, when it fades or hides, with an example |
 | `docs/MEMORY-READER.md` | what the game's memory shows that `Player.log` doesn't, the reader's rules, and the shop padlocks |
 | `README.md` | for players only: what changes, how it works, setup, FAQ (shaped after other worlds' READMEs, 2026-10-01); its pictures live in `docs/images/` |
-| `docs/wiki/The_Bazaar.wiki` | the draft page for the community Archipelago wiki (archipelago.miraheze.org): third person, its `{{Infobox game}}` fields, kept in step with the README |
-| `docs/wiki/The_Bazaar.template.wiki` | the same page as a fill-in template (formatting, infobox, item and option tables done; the owner writes the text); once filled it replaces the draft |
 | `Archipelago/` (not in git) | an Archipelago 0.6.7 source checkout; `worlds/bazaar` is a junction to `bazaar/` |
 | `.venv/` (not in git) | Python 3.13 (Archipelago doesn't support 3.14 yet) |
 
