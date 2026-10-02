@@ -256,6 +256,31 @@ class TestPadlockHoverArea(unittest.TestCase):
         self.assertTrue(all(r[0] >= strip_left[0] + strip_left[2] and r[2] <= strip_right[0] for r in rects))
 
 
+class TestEventPadlocksOnHover(unittest.TestCase):
+    """Owner, 2026-10-02: hovering an event option keeps its padlocks solid - and they flashed see-through for a
+    moment on leaving one (the game's hover flag outlives the mouse)."""
+
+    def test_only_your_board_or_a_drag_fades_them_on_an_event_screen(self) -> None:
+        import types
+        from unittest import mock
+        from .. import overlay
+        from ..memreader import BoardUI
+        board = (0, 600, 100, 700)
+        screen = types.SimpleNamespace(event_options=[(0, 0, 10, 10)], padlock_cards=[(0, 0, 10, 10), board],
+                                       game_in_front=True, board_ui=BoardUI(True, False, False, False, False))
+        alpha = lambda: overlay._Screen.padlock_alpha(screen)
+        on = lambda where: mock.patch.object(overlay, "mouse_on", lambda rects, held_counts=True: where in rects)
+        with on("nowhere"):
+            self.assertEqual(alpha(), 1.0)  # just left an option, the game still says "hovering"
+        with on(board):
+            self.assertEqual(alpha(), overlay.HOVERED_ALPHA)
+        screen.board_ui = BoardUI(False, True, False, False, False)
+        with on("nowhere"):
+            self.assertEqual(alpha(), overlay.HOVERED_ALPHA)  # dragging
+        screen.board_ui = BoardUI(True, False, False, True, False)
+        self.assertEqual(alpha(), 0.0)  # the Esc menu
+
+
 class TestRowGaps(unittest.TestCase):
     def test_level_up_small_cards_land_where_they_were_measured(self) -> None:
         """Owner's level-up screenshot (1919x1079): three Small cards centred near x 779, 960, 1140."""

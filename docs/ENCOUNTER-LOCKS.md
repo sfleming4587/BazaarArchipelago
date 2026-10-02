@@ -96,7 +96,9 @@ that isn't in `CHOICE_ROWS` gets no padlocks rather than misplaced ones; a line 
   but it takes its place in the row.
 - **Hovering an event option keeps the padlocks solid** (owner, 2026-10-02: "dont make padlocks transparent on
   events when hovering an event, in all other cases still hide/make transparent it"). Hovering your board, dragging,
-  the Esc menu and the stash still fade or hide them as everywhere else (`overlay.padlock_alpha`).
+  the Esc menu and the stash still fade or hide them as everywhere else (`overlay.padlock_alpha`). ⚠️ Decided by
+  the mouse, not the game's hover flag: the flag stays on for a moment after leaving an option, which flashed the
+  padlocks see-through on the way out (owner's test, 2026-10-02).
 
 ⚠️ The 4-option row was measured on a small crop (571x350), scaled by the board's width: the pitch matches the
 3-option row exactly; the heights are taken from it (the crop's own read was within about 15 px).

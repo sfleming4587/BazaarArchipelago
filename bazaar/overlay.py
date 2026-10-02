@@ -495,9 +495,13 @@ class _Screen:
         ui = self.board_ui
         if ui is not None and (ui.dialog or ui.stash_moving):  # the client swaps to the stash's own padlocks then
             return 0.0
-        # owner, 2026-10-02: hovering an event's option keeps the padlocks solid; everything else still fades them
-        if self.event_options and self.game_in_front and mouse_on(self.event_options, held_counts=False):
-            return 1.0
+        # owner, 2026-10-02: hovering an event's option keeps the padlocks solid; everything else still fades them.
+        # By the mouse, not the game's hover flag: that one stays on for a moment after leaving an option, which
+        # flashed them see-through on the way out. So on an event screen only your board or a drag fades them.
+        if self.event_options and self.game_in_front:
+            if ui is not None and ui.dragging:
+                return HOVERED_ALPHA
+            return HOVERED_ALPHA if mouse_on(self.padlock_cards[-1:], held_counts=False) else 1.0
         if ui is None:  # the mouse, but only while the game is in front (owner: nothing outside the game)
             return HOVERED_ALPHA if self.game_in_front and mouse_on(self.padlock_cards) else 1.0
         return HOVERED_ALPHA if ui.hovering or ui.dragging else 1.0
