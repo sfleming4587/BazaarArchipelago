@@ -10,8 +10,15 @@ from typing import Dict, List, Optional
 EARLY_DAYS = 4  # lost on day 1-4: an "early" loss
 LATE_DAYS = 9  # lost on day 9 or later: a "late" loss (so close)
 
-# situation -> lines any hero can use
+# situation -> lines any hero can use ("any": every situation; owner's picks from the game's lines, 2026-10-02)
 SHARED: Dict[str, List[str]] = {
+    "any": [
+        "From the grand society of blahblahblah... {player} says byyyyye!",
+        "{player}: all cannon, no balls!",
+        "I suppose {player} should've bought a WEAPON instead.",
+        "ENTER. PURCHASE. LEAVE. {player} left on day {day}.",
+        "Trash is tragedy... so is {player}.",
+    ],
     "early": [
         "The Bazaar's a crazy place, right? {player} found out on day {day}.",
         "{player} didn't make it past day {day}. The Bazaar's a crazy place, right?",
@@ -41,18 +48,19 @@ HEROES: Dict[str, Dict[str, List[str]]] = {
         "conceded": ["{player} abandoned ship on day {day}."],
     },
     "Pygmalien": {
-        "early": ["{player} went bankrupt on day {day}. Not very business of them."],
+        "early": ["{player} went bankrupt on day {day}."],
         "lost": ["{player} went bankrupt on day {day}.",
                  "{player}'s investments crashed on day {day}."],
-        "late": ["{player} was one deal away from a fortune and lost it all on day {day}."],
+        "late": ["{player} was one deal away from a fortune and lost it all on day {day}.",
+                 "Have you noticed {player} WAS huge... hmm? Not any more (day {day})."],
         "conceded": ["{player} cashed out early on day {day}."],
     },
     "Dooley": {
-        "early": ["Beep boop... {player} short-circuited on day {day}."],
-        "lost": ["{player} short-circuited on day {day}.",
-                 "Beep. Boop. {player} has been powered down (day {day})."],
-        "late": ["{player}'s core overheated on day {day}, so close to the end."],
-        "conceded": ["{player} pulled the plug on day {day}."],
+        "early": ["{player}: BEEP BOOP BEEP BOOooo..."],
+        "lost": ["{player} beeped and booped their last on day {day}.",
+                 "{player}: BEEP BOOP BEEP BOOooo..."],
+        "late": ["{player}: BEEP BOOP BEEP... BEEP... BOOooo..."],
+        "conceded": ["{player}: BOOP. BOOP. BOOP."],
     },
     "Mak": {
         "early": ["{player} drank the wrong vial on day {day}."],
@@ -102,7 +110,10 @@ def situation(day: int, conceded: bool) -> str:
 
 def deathlink_message(player: str, hero: Optional[str], day: int, conceded: bool,
                       rng: Optional[random.Random] = None) -> str:
-    """A random line for this hero and situation, from the hero's own lines and the shared ones."""
+    """A random line for this hero and situation: the hero's own half the time (so the shared lines, which
+    outnumber them, don't drown them out), else a shared one."""
+    rng = rng or random
     kind = situation(day, conceded)
-    lines = HEROES.get(hero or "", {}).get(kind, []) + SHARED[kind]
-    return (rng or random).choice(lines).format(player=player, day=day)
+    own = HEROES.get(hero or "", {}).get(kind, [])
+    lines = own if own and rng.random() < 0.5 else SHARED[kind] + SHARED["any"]
+    return rng.choice(lines).format(player=player, day=day)

@@ -28,4 +28,4 @@ class TestDeathLinkLines(unittest.TestCase):
 
     def test_unknown_hero_gets_a_shared_line(self) -> None:
         text = deathlink_message("P", None, 6, False, random.Random(1))
-        self.assertIn(text, [l.format(player="P", day=6) for l in SHARED["lost"]])
+        self.assertIn(text, [l.format(player="P", day=6) for l in SHARED["lost"] + SHARED["any"]])

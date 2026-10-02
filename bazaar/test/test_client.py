@@ -334,7 +334,8 @@ class TestDeathLinkTriggers(ClientTestBase):
         from ..deathlink_lines import HEROES, SHARED
         self.ctx.player_names = {self.ctx.slot: "Sulldog"}
         self.play(RunStarted("Vanessa"), PvPFought(10, False), RunEnded(False, 10))
-        late = [line.format(player="Sulldog", day=10) for line in HEROES["Vanessa"]["late"] + SHARED["late"]]
+        late = [line.format(player="Sulldog", day=10) for line in HEROES["Vanessa"]["late"] + SHARED["late"]
+                + SHARED["any"]]
         self.assertIn(self.deaths[0], late)
 
     def test_run_lost_sends_once(self) -> None:
