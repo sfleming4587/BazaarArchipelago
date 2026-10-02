@@ -1,21 +1,10 @@
 import types
 from dataclasses import dataclass, make_dataclass
 
-from Options import (Choice, DeathLink, DefaultOnToggle, ItemSet, OptionGroup, OptionSet, PerGameCommonOptions,
-                     Range, StartInventoryPool, Toggle, Visibility)
+from Options import (Choice, DeathLink, DefaultOnToggle, ItemSet, OptionGroup, PerGameCommonOptions, Range,
+                     StartInventoryPool, Toggle)
 
 from .data import CARDS, DLC_HEROES, HEROES, PACKS, TIERS, hero_key
-
-
-class OwnedDLCHeroes(OptionSet):
-    """
-    Old way to list the DLC heroes you own (still accepted, so older YAMLs keep working). Use the "Own ..." options
-    instead: they're simple on/off switches.
-    """
-    display_name = "Owned DLC Heroes (old)"
-    valid_keys = frozenset(DLC_HEROES)
-    default = frozenset()
-    visibility = Visibility.none  # hidden from the website, the Options Creator and new templates
 
 
 def _switch(class_name: str, display_name: str, doc: str, on: bool = False) -> type:
@@ -46,17 +35,6 @@ PACK_SWITCHES = {name: _switch(f"Pack{p.key.replace('_', '')}", f"{p.hero}: {p.n
                                f"With legacy_card_packs on, lock {p.name} ({p.hero}) as one item. Off: its cards are "
                                f"locked one by one like any other card.", on=True)
                  for name, p in zip(PACK_OPTIONS, PACKS)}
-
-
-class ExcludedHeroes(OptionSet):
-    """
-    Old way to list heroes to leave out (still accepted, so older YAMLs keep working). Use the "Exclude ..."
-    options instead: they're simple on/off switches.
-    """
-    display_name = "Excluded Heroes (old)"
-    valid_keys = frozenset(HEROES)
-    default = frozenset()
-    visibility = Visibility.none  # hidden from the website, the Options Creator and new templates
 
 
 def _starting_hero_body(namespace: dict) -> None:
@@ -322,8 +300,6 @@ class DeathLinkAmnesty(Range):
 
 @dataclass
 class _BazaarOptions(PerGameCommonOptions):
-    owned_dlc_heroes: OwnedDLCHeroes
-    excluded_heroes: ExcludedHeroes
     starting_hero: StartingHero
     heroes_required: HeroesRequired
     early_hero_unlock: EarlyHeroUnlock

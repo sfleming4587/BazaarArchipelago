@@ -93,10 +93,8 @@ class BazaarWorld(World):
         if self.passthrough:
             self.rebuild_from_slot_data(self.passthrough)
             return
-        owned = set(BASE_HEROES) | set(self.options.owned_dlc_heroes.value) \
-            | {hero for option, hero in OWN_HERO_OPTIONS.items() if getattr(self.options, option)}
-        excluded = set(self.options.excluded_heroes.value) \
-            | {hero for option, hero in EXCLUDE_HERO_OPTIONS.items() if getattr(self.options, option)}
+        owned = set(BASE_HEROES) | {hero for option, hero in OWN_HERO_OPTIONS.items() if getattr(self.options, option)}
+        excluded = {hero for option, hero in EXCLUDE_HERO_OPTIONS.items() if getattr(self.options, option)}
         self.heroes = [h for h in HEROES if h in owned and h not in excluded]
         if not self.heroes:
             raise OptionError(f"{self.player_name}: every hero is excluded, at least one is needed.")

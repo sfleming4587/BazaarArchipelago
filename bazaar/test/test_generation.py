@@ -7,7 +7,7 @@ from BaseClasses import CollectionState
 
 from .bases import BazaarTestBase
 
-ALL_DLC = ["Mak", "Stelle", "Jules", "Karnok", "The Dragons"]
+ALL_DLC = {"own_mak": True, "own_stelle": True, "own_jules": True, "own_karnok": True, "own_the_dragons": True}
 
 
 class TestDefaults(BazaarTestBase):
@@ -91,7 +91,7 @@ class TestPackSwitchesMatchTheData(unittest.TestCase):
 
 class TestEverything(BazaarTestBase):
     options = {
-        "owned_dlc_heroes": ALL_DLC,
+        **ALL_DLC,
         "legacy_card_packs": True,
         "heroes_required": 8,
         "starting_hero": "the_dragons",
@@ -115,7 +115,8 @@ class TestEverything(BazaarTestBase):
 class TestTightSpace(BazaarTestBase):
     """One hero, few days, far more locks requested than there are checks."""
     options = {
-        "excluded_heroes": ["Pygmalien", "Dooley"],
+        "exclude_pygmalien": True,
+        "exclude_dooley": True,
         "max_day": 5,
         "locked_cards_percent": 100,
         "legacy_card_packs": True,
@@ -280,7 +281,7 @@ class TestLockBypassesInPool(BazaarTestBase):
 
 
 class TestOwnHeroSwitches(BazaarTestBase):
-    """DLC heroes are picked with on/off switches (user 2026-09-29); the old owned_dlc_heroes list still works."""
+    """DLC heroes are picked with on/off switches (user 2026-09-29)."""
     options = {"own_karnok": True, "own_the_dragons": True, "starting_hero": "karnok"}
 
     def test_switched_on_heroes_are_in(self) -> None:
@@ -297,7 +298,7 @@ class TestOwnHeroSwitches(BazaarTestBase):
 
 
 class TestExcludeHeroSwitches(BazaarTestBase):
-    """Heroes are left out with on/off switches too (user 2026-09-29); the old excluded_heroes list still works."""
+    """Heroes are left out with on/off switches too (user 2026-09-29)."""
     options = {"own_karnok": True, "exclude_karnok": True, "exclude_dooley": True, "starting_hero": "vanessa"}
 
     def test_switched_off_heroes_are_out(self) -> None:
@@ -326,7 +327,7 @@ class TestNoLegendaryItemsUnlock(BazaarTestBase):
 
 class TestUniversalTrackerRebuild(BazaarTestBase):
     """Universal Tracker rebuilds the world from slot_data with default options; it must match the real seed."""
-    options = {"owned_dlc_heroes": ["Mak", "Karnok"], "max_day": 12, "max_monster_tier": "diamond",
+    options = {"own_mak": True, "own_karnok": True, "max_day": 12, "max_monster_tier": "diamond",
                "logic_day_10_cards": 22, "logic_diamond_cards": 7, "logic_legendary_cards": 12,
                "legacy_card_packs": True, "starting_hero": "karnok"}
 
@@ -382,7 +383,7 @@ class TestOneUnlockPerCard(unittest.TestCase):
         {"legendary_items": 0, "expedition_tickets": 0},
         {"legendary_items": 3, "expedition_tickets": 3, "locked_cards_percent": 100, "lock_common_cards": True,
          "lock_loot_items": True, "starter_cards": 0},
-        {"owned_dlc_heroes": ALL_DLC, "legacy_card_packs": True, "heroes_required": 8, "locked_cards_percent": 100,
+        {**ALL_DLC, "legacy_card_packs": True, "heroes_required": 8, "locked_cards_percent": 100,
          "duplicate_cards": ["Cutlass", "Dooltron"]},
     ]
 
