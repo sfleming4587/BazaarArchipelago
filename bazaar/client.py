@@ -949,7 +949,7 @@ class BazaarContext(CommonContext):
         if self.defeats_since_death > amnesty:
             self.defeats_since_death = 0
             player = self.player_names.get(self.slot, "A Bazaar player")
-            await self.send_death(deathlink_message(player, self.run.get("hero"), day, wins, conceded))
+            await self.send_death(deathlink_message(player, self.run.get("hero"), wins, conceded))
             self.event("DeathLink sent.")
         else:
             self.event(f"Forgiven by DeathLink amnesty ({self.defeats_since_death}/{amnesty}).")

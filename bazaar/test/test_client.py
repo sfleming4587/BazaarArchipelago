@@ -335,7 +335,7 @@ class TestDeathLinkTriggers(ClientTestBase):
         self.ctx.player_names = {self.ctx.slot: "Sulldog"}
         wins = [PvPFought(day, True) for day in range(1, 9)]  # 8 wins: a "late" loss
         self.play(RunStarted("Vanessa"), *wins, PvPFought(12, False), RunEnded(False, 12))
-        late = [line.format(player="Sulldog", day=12, wins="8 wins") for line in HEROES["Vanessa"]["late"] + SHARED["late"]
+        late = [line.format(player="Sulldog", wins="8 wins") for line in HEROES["Vanessa"]["late"] + SHARED["late"]
                 + SHARED["any"]]
         self.assertIn(self.deaths[0], late)
 

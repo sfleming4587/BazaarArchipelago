@@ -16,7 +16,7 @@ class TestDeathLinkLines(unittest.TestCase):
     def test_every_line_fills_in_and_uses_no_pronouns(self) -> None:
         for lines in [*SHARED.values(), *(l for kinds in HEROES.values() for l in kinds.values())]:
             for line in lines:
-                text = line.format(player="P", day=7, wins="3 wins")
+                text = line.format(player="P", wins="3 wins")  # a {day} would fail here: wins only (owner)
                 self.assertIn("P", text)
                 self.assertFalse({"he", "she", "his", "her", "him"} & set(text.lower().replace(".", " ").split()), line)
 
@@ -29,9 +29,14 @@ class TestDeathLinkLines(unittest.TestCase):
 
     def test_no_wins_is_always_trash(self) -> None:
         for seed in range(20):
-            self.assertEqual(deathlink_message("P", "Vanessa", 7, 0, False, random.Random(seed)),
+            self.assertEqual(deathlink_message("P", "Vanessa", 0, False, random.Random(seed)),
                              "Trash is tragedy... so is P. 0 Wins.")
 
     def test_unknown_hero_gets_a_shared_line(self) -> None:
-        text = deathlink_message("P", None, 9, 5, False, random.Random(1))
-        self.assertIn(text, [l.format(player="P", day=9, wins="5 wins") for l in SHARED["mid"] + SHARED["any"]])
+        text = deathlink_message("P", None, 5, False, random.Random(1))
+        self.assertIn(text, [l.format(player="P", wins="5 wins") for l in SHARED["mid"] + SHARED["any"]])
+
+    def test_one_win_is_singular(self) -> None:
+        lines = [deathlink_message("P", "Mak", 1, False, random.Random(seed)) for seed in range(40)]
+        self.assertTrue(any("with 1 win." in line for line in lines))
+        self.assertFalse(any("1 wins" in line for line in lines))

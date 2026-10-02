@@ -1,9 +1,10 @@
 """What a DeathLink from The Bazaar says in everyone else's client (owner, 2026-10-02: per hero, different lines for
 different situations, the player's name rather than "Sulldog's Mak", and some fun with the game's own lines).
 
-How far the run got is told by its PvP wins, not its day (owner: the earliest possible loss is day 7).
-Lines name the player but never use he/she: we don't know anyone's pronouns. {player}, {day} and {wins} are filled
-in ({wins} reads "1 win" / "5 wins"). Adding a line is adding a string; a hero with no lines for a situation uses the shared ones.
+How far the run got is told by its PvP wins, never its day: the earliest possible loss is day 7, which means
+nothing to players of other games (owner, 2026-10-02). Lines name the player but never use he/she: we don't know
+anyone's pronouns. {player} and {wins} ("1 win" / "5 wins") are filled in. Adding a line is adding a string; a
+hero with no lines for a situation uses the shared ones.
 """
 import random
 from typing import Dict, List, Optional
@@ -17,7 +18,7 @@ SHARED: Dict[str, List[str]] = {
         "From the grand society of blahblahblah... {player} says byyyyye!",
         "{player}: all cannon, no balls!",
         "I suppose {player} should've bought a WEAPON instead.",
-        "ENTER. PURCHASE. LEAVE. {player} left on day {day}.",
+        "ENTER. PURCHASE. LEAVE. {player} left with {wins}.",
     ],
     # owner, 2026-10-02: the trash line, always, for a run lost without a single win
     "zero": [
@@ -25,83 +26,82 @@ SHARED: Dict[str, List[str]] = {
     ],
     "early": [
         "BOOOOORRRRRIIIINNNNGGGG... {player} went out with {wins}.",
-        "The Bazaar's a crazy place, right? {player} found out on day {day}.",
-        "{player} didn't make it past day {day}. The Bazaar's a crazy place, right?",
+        "The Bazaar's a crazy place, right? {player} found out with {wins}.",
+        "{player} didn't make it past {wins}. The Bazaar's a crazy place, right?",
     ],
     "mid": [
         "BOOOOORRRRRIIIINNNNGGGG... {player} went out with {wins}.",
-        "The Bazaar's a crazy place, right? {player} just ran out of prestige on day {day}.",
-        "{player} ran out of prestige on day {day}, {wins} in.",
+        "The Bazaar's a crazy place, right? {player} just ran out of prestige with {wins}.",
     ],
     "late": [
-        "{player} was so close... {wins}, then out of prestige on day {day}.",
-        "The Bazaar's a crazy place, right? Ask {player}, who lost it all on day {day}.",
+        "{player} was so close... {wins}, then out of prestige.",
+        "The Bazaar's a crazy place, right? Ask {player}, who lost it all with {wins}.",
     ],
     "conceded": [
-        "{player} walked out of the Bazaar on day {day}.",
-        "{player} gave up on day {day}. The Bazaar's a crazy place, right?",
+        "{player} walked out of the Bazaar with {wins}.",
+        "{player} gave up with {wins}. The Bazaar's a crazy place, right?",
     ],
 }
 
 # hero -> situation -> lines (heroes' themes from their cards)
 HEROES: Dict[str, Dict[str, List[str]]] = {
     "Vanessa": {
-        "early": ["{player} sank before leaving the harbour (day {day}).",
-                  "{player} was thrown overboard on day {day}."],
-        "mid": ["{player} was thrown overboard on day {day}.",
-                 "{player} walked the plank on day {day}."],
-        "late": ["{player} could see the treasure from the plank (day {day})."],
-        "conceded": ["{player} abandoned ship on day {day}."],
+        "early": ["{player} sank before leaving the harbour, with {wins}.",
+                  "{player} was thrown overboard with {wins}."],
+        "mid": ["{player} was thrown overboard with {wins}.",
+                "{player} walked the plank with {wins}."],
+        "late": ["{player} spotted treasure island with {wins}... then the ship went down."],
+        "conceded": ["{player} abandoned ship with {wins}."],
     },
     "Pygmalien": {
-        "early": ["{player} went bankrupt on day {day}."],
-        "mid": ["{player} went bankrupt on day {day}.",
-                 "{player}'s investments crashed on day {day}."],
-        "late": ["{player} was one deal away from a fortune and lost it all on day {day}.",
-                 "Have you noticed {player} was HUGE... hmm? Not any more (day {day})."],
-        "conceded": ["{player} cashed out early on day {day}."],
+        "early": ["{player} went bankrupt with {wins}."],
+        "mid": ["{player} went bankrupt with {wins}.",
+                "{player}'s investments crashed with {wins}."],
+        "late": ["{player} was one deal away from a fortune and lost it all with {wins}.",
+                 "Have you noticed {player} was HUGE... hmm? {wins}, and not any more."],
+        "conceded": ["{player} cashed out early with {wins}."],
     },
     "Dooley": {
         "early": ["{player}: BEEP BOOP BEEP BOOooo..."],
-        "mid": ["{player} beeped and booped their last on day {day}.",
-                 "{player}: BEEP BOOP BEEP BOOooo..."],
+        "mid": ["{player} beeped and booped their last with {wins}.",
+                "{player}: BEEP BOOP BEEP BOOooo..."],
         "late": ["{player}: BEEP BOOP BEEP... BEEP... BOOooo..."],
         "conceded": ["{player}: BOOP. BOOP. BOOP."],
     },
     "Mak": {
-        "early": ["{player} drank the wrong vial on day {day}."],
-        "mid": ["{player} fumbled the potions on day {day}.",
-                 "{player}'s cauldron boiled over on day {day}."],
-        "late": ["{player} spilled the final potion on day {day}."],
-        "conceded": ["{player} corked the bottles and left on day {day}."],
+        "early": ["{player} drank the wrong vial with {wins}."],
+        "mid": ["{player} fumbled the potions with {wins}.",
+                "{player}'s cauldron boiled over with {wins}."],
+        "late": ["{player} spilled the final potion with {wins}."],
+        "conceded": ["{player} corked the bottles and left with {wins}."],
     },
     "Stelle": {
-        "early": ["{player} never got off the ground (day {day})."],
-        "mid": ["{player} crash-landed on day {day}.",
-                 "{player} flew too close to the sun on day {day}."],
-        "late": ["{player} ran out of fuel within sight of the runway (day {day})."],
-        "conceded": ["{player} bailed out on day {day}."],
+        "early": ["{player} never got off the ground, with {wins}."],
+        "mid": ["{player} crash-landed with {wins}.",
+                "{player} flew too close to the sun with {wins}."],
+        "late": ["{player} ran out of fuel within sight of the runway, with {wins}."],
+        "conceded": ["{player} bailed out with {wins}."],
     },
     "Jules": {
-        "early": ["{player} burnt the first course on day {day}."],
-        "mid": ["{player} burnt the dinner on day {day}.",
-                 "{player} got kicked out of the kitchen on day {day}."],
-        "late": ["{player} dropped the cake on the way to the table (day {day})."],
-        "conceded": ["{player} hung up the apron on day {day}."],
+        "early": ["{player} burnt the first course with {wins}."],
+        "mid": ["{player} burnt the dinner with {wins}.",
+                "{player} got kicked out of the kitchen with {wins}."],
+        "late": ["{player} dropped the cake on the way to the table, with {wins}."],
+        "conceded": ["{player} hung up the apron with {wins}."],
     },
     "Karnok": {
-        "early": ["{player} became the hunted on day {day}."],
-        "mid": ["{player} was eaten by the wilds on day {day}.",
-                 "{player} stepped in a bear trap on day {day}."],
-        "late": ["{player} lost the trail on the final hunt (day {day})."],
-        "conceded": ["{player} retreated into the woods on day {day}."],
+        "early": ["{player} became the hunted with {wins}."],
+        "mid": ["{player} was eaten by the wilds with {wins}.",
+                "{player} stepped in a bear trap with {wins}."],
+        "late": ["{player} lost the trail on the final hunt, with {wins}."],
+        "conceded": ["{player} retreated into the woods with {wins}."],
     },
     "The Dragons": {
-        "early": ["{player} got booed off the stage on day {day}."],
-        "mid": ["{player}'s band broke up on day {day}.",
-                 "{player} missed the high note on day {day}."],
-        "late": ["{player}'s farewell tour ended on day {day}, one show short."],
-        "conceded": ["{player} cancelled the tour on day {day}."],
+        "early": ["{player} got booed off the stage with {wins}."],
+        "mid": ["{player}'s band broke up with {wins}.",
+                "{player} missed the high note with {wins}."],
+        "late": ["{player}'s farewell tour ended one show short, with {wins}."],
+        "conceded": ["{player} cancelled the tour with {wins}."],
     },
 }
 
@@ -116,13 +116,13 @@ def situation(wins: int, conceded: bool) -> str:
     return "late" if wins >= LATE_WINS else "mid"
 
 
-def deathlink_message(player: str, hero: Optional[str], day: int, wins: int, conceded: bool,
+def deathlink_message(player: str, hero: Optional[str], wins: int, conceded: bool,
                       rng: Optional[random.Random] = None) -> str:
     """A random line for this hero and situation: the hero's own half the time (so the shared lines, which
     outnumber them, don't drown them out), else a shared one."""
     rng = rng or random
     kind = situation(wins, conceded)
-    fill = {"player": player, "day": day, "wins": f"{wins} win" + ("" if wins == 1 else "s")}
+    fill = {"player": player, "wins": f"{wins} win" + ("" if wins == 1 else "s")}
     if kind == "zero":
         return rng.choice(SHARED["zero"]).format(**fill)
     own = HEROES.get(hero or "", {}).get(kind, [])
