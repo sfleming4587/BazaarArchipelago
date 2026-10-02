@@ -160,6 +160,45 @@ class ExpeditionTickets(Range):
     default = 2
 
 
+class LockedEncountersPercent(Range):
+    """
+    Percent of the merchants and events your heroes can meet that get their own lock item (0 = off). A locked
+    merchant can still be visited, but anything you buy there counts as a locked card. Going into any other locked
+    event blocks checks for the rest of the run, unless you press Use Bypass. Level-up rewards and monsters are never
+    locked. If every event offered is locked, the least rare one is let through.
+    """
+    display_name = "Locked Merchants and Events Percent"
+    range_start = 0
+    range_end = 100
+    default = 25
+
+
+class StarterMerchants(Range):
+    """Merchants your heroes can meet that are never locked, so there's always somewhere to shop."""
+    display_name = "Starter Merchants"
+    range_start = 0
+    range_end = 20
+    default = 5
+
+
+class EventRarityProgression(Range):
+    """
+    Copies of "Event Rarity Progression" in the multiworld (0 = off). Until you find the first, Diamond merchants
+    and events are locked; the second unlocks Legendary ones. Any copy past those two counts as a Lock Bypass.
+    Monsters and level-up rewards are never affected.
+    """
+    display_name = "Event Rarity Progression"
+    range_start = 0
+    range_end = 5
+    default = 3
+
+
+class ExemptExpeditions(DefaultOnToggle):
+    """Expeditions (Crash Site, Temple) and every event inside them are never locked by Event Rarity Progression.
+    The tickets themselves still need the Expedition Tickets unlock."""
+    display_name = "Exempt Expeditions"
+
+
 class DuplicateAllCards(Toggle):
     """
     Casual mode: the same number of checks, but only about half as many locked cards. Every locked card gets a
@@ -315,6 +354,10 @@ class _BazaarOptions(PerGameCommonOptions):
     expedition_tickets: ExpeditionTickets
     duplicate_all_cards: DuplicateAllCards
     duplicate_cards: DuplicateCards
+    locked_encounters_percent: LockedEncountersPercent
+    starter_merchants: StarterMerchants
+    event_rarity_progression: EventRarityProgression
+    exempt_expeditions: ExemptExpeditions
     sell_traps: SellTraps
     sell_trap_days: SellTrapDays
     lock_bypasses: LockBypasses
@@ -343,6 +386,7 @@ option_presets = {
     "Casual": {
         "heroes_required": 1, "early_hero_unlock": True, "max_day": 12, "max_monster_tier": "gold",
         "locked_cards_percent": 60, "starter_cards": 30, "legendary_items": 3, "expedition_tickets": 3,
+        "locked_encounters_percent": 10, "starter_merchants": 10,
         "sell_traps": 0, "lock_bypasses": 10,
         "logic_day_10_cards": 8, "logic_last_day_cards": 12, "logic_diamond_cards": 5, "logic_legendary_cards": 10,
         "death_link": False,
@@ -351,6 +395,7 @@ option_presets = {
     "Hardcore": {
         "heroes_required": 6, "max_day": 16, "max_monster_tier": "legendary", "locked_cards_percent": 100,
         "starter_cards": 10, "legendary_items": 1, "expedition_tickets": 1, "legacy_card_packs": True,
+        "locked_encounters_percent": 50, "starter_merchants": 2, "event_rarity_progression": 2,
         "sell_traps": 10, "sell_trap_days": 1, "lock_bypasses": 0,
         "logic_day_10_cards": 25, "logic_last_day_cards": 50, "logic_diamond_cards": 20, "logic_legendary_cards": 30,
         "death_link": True, "death_link_on_concede": True,
@@ -363,6 +408,8 @@ option_groups = [
     OptionGroup("Checks", [MaxDay, PvPWinChecks, MonsterChecks, MaxMonsterTier]),
     OptionGroup("Card Locks", [LockedCardsPercent, LockCommonCards, LockLootItems, StarterCards,
                                LegendaryItems, ExpeditionTickets, DuplicateAllCards, DuplicateCards]),
+    OptionGroup("Merchant and Event Locks", [LockedEncountersPercent, StarterMerchants, EventRarityProgression,
+                                              ExemptExpeditions]),
     OptionGroup("Legacy Card Packs", [LegacyCardPacks, *PACK_SWITCHES.values()]),
     OptionGroup("Traps and Buffs", [SellTraps, SellTrapDays, LockBypasses]),
     OptionGroup("Logic", [LogicDay10Cards, LogicLastDayCards, LogicDiamondCards, LogicLegendaryCards]),

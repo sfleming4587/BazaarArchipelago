@@ -89270,7 +89270,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "538290f0-a363-4c05-8efa-ff68932d43bb",
@@ -89282,7 +89284,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "6391c95c-1dc1-420e-ab5e-ab99c6db4267",
@@ -89294,7 +89298,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "db927fd4-b1b4-4587-b295-d0d1e4e15d0c",
@@ -89306,7 +89312,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "fed8adb8-8fc6-49be-88da-a6fa8496ad2f",
@@ -89317,7 +89325,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "a7b60dc3-36a1-46e8-ba7e-c34f255513c8",
@@ -89328,7 +89338,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "6a5e82cf-969c-432a-863a-1df6e7f56513",
@@ -89339,7 +89351,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "847b1294-649d-4f02-ab04-0ee9f838c462",
@@ -89352,7 +89366,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f1302d1d-24e4-4d17-a434-3550af908ba3",
@@ -89363,7 +89379,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "0cb20108-dcbb-48e2-8294-519d09c60b3e",
@@ -89376,7 +89394,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3155d09b-1440-4a95-a64e-68243735421d",
@@ -89389,7 +89409,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3e22799f-87df-4c9f-bd45-769e14753caa",
@@ -89402,7 +89424,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "47a149e6-a8e2-4e33-aa88-e76246c45696",
@@ -89415,7 +89439,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "97b6aca1-f1f5-492b-afd8-fcab7752ef7c",
@@ -89428,7 +89454,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9cac2384-2020-4ae9-8375-15c5d07da446",
@@ -89441,7 +89469,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "abf614d4-4700-41f3-a05a-68c7e843cb1a",
@@ -89454,7 +89484,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "dc12f4bd-6c33-41f0-b7ad-d62a0be09a47",
@@ -89467,7 +89499,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f22fd14f-7e00-40cb-9e44-a46f34d64764",
@@ -89480,7 +89514,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "0dc4e708-415a-4ee5-ba1f-4cda9b880ebd",
@@ -89491,7 +89527,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2ff9137c-1089-43f2-a389-120860aec5ea",
@@ -89502,7 +89540,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3016cd02-8221-4d9b-9572-89af7705184f",
@@ -89513,7 +89553,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "52419a5c-f565-4e6d-9827-baa65c6d9d92",
@@ -89524,7 +89566,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "78cf8b25-5812-4b9a-a9ff-9694c86e7a90",
@@ -89536,10 +89580,12 @@
     "Mak",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "33ff7845-b3c5-43f6-b9b9-dfbff4729ce9",
@@ -89550,7 +89596,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "8ae41204-4071-42be-9d6f-4aff260851b0",
@@ -89561,7 +89609,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "ba2f4ad0-ff5b-4959-9acb-224cb3b66898",
@@ -89572,7 +89622,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "60e67364-7aab-4ffa-9751-db5ec0caf452",
@@ -89585,7 +89637,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "705c0d8e-8513-49ce-82e8-81782cdac316",
@@ -89598,7 +89652,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "70915950-ad96-47c8-a139-48b913b80750",
@@ -89611,7 +89667,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b649cc9a-9ea4-46d3-9ee5-8d57626260cf",
@@ -89624,7 +89682,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e3bbe96b-7108-4343-9584-3bade7f004a5",
@@ -89637,7 +89697,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "04ac552f-c292-455e-bf5f-438119dfa196",
@@ -89648,7 +89710,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4c3d4b9d-e5b7-469c-be91-67b213c5a975",
@@ -89659,7 +89723,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "8d5c8a08-45cf-43d2-b1ec-a37d3bd5542b",
@@ -89670,7 +89736,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "7c179f37-5845-4041-b123-0c7da0fdabbd",
@@ -89681,7 +89749,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ae1d3ea7-71d8-498c-b607-9cb12e3555cd",
@@ -89692,7 +89762,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "bfa6d377-2fbe-4c8f-82ab-685e93dde1cb",
@@ -89703,7 +89775,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c9fe4d57-1e5e-40dc-b878-9243ac41d130",
@@ -89714,7 +89788,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d277e30d-2be8-4026-b0af-e1c11413e8a0",
@@ -89725,7 +89801,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "0174f95a-8aae-4074-84d2-124ea0dcfb96",
@@ -89738,10 +89816,12 @@
     "Stelle",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "16065716-b9f7-49db-931c-55f6097ff562",
@@ -89753,10 +89833,12 @@
     "Mak",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "a38bfa3d-2e09-4785-a2ec-0c73dac5cc91",
@@ -89769,10 +89851,12 @@
     "Stelle",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "a7686c79-a56c-4286-86ca-edb8eca85fee",
@@ -89785,10 +89869,12 @@
     "Stelle",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "a5b983cb-ee95-48bf-b84a-d25a74b9c1df",
@@ -89799,7 +89885,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "7495fc68-4444-4fef-96f0-000000000000",
@@ -89810,7 +89898,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1b164a15-cf5d-459d-a010-3bf86b25cde8",
@@ -89821,7 +89911,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8f0aea10-9894-4ded-a726-72b23142589c",
@@ -89834,7 +89926,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "488df2ed-b698-4fe6-814f-5adcde618208",
@@ -89845,7 +89939,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8e61f266-d58a-45ec-9560-76bf27afd1ca",
@@ -89856,7 +89952,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9037d88a-5e05-4ba6-8219-69360d402759",
@@ -89867,7 +89965,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9ba94af3-54c6-4e34-99eb-32d4309118ec",
@@ -89878,7 +89978,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "6e840bf1-1cda-4c20-9c6b-44b4523c31a1",
@@ -89889,7 +89991,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "bace3077-4de8-4f45-874d-c515e5327c64",
@@ -89899,10 +90003,12 @@
    "heroes": [
     "Dooley",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "bb166ad8-bd42-4ddc-9055-3ba3d9ff2faa",
@@ -89912,10 +90018,12 @@
    "heroes": [
     "Dooley",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "cbc4c504-73e7-43ad-b00a-2318e7e4c271",
@@ -89926,10 +90034,12 @@
     "Dooley",
     "Karnok",
     "Vanessa",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "da05e5ef-63b3-4306-adbb-75d67dfc60d4",
@@ -89939,10 +90049,12 @@
    "heroes": [
     "Dooley",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "34dc624d-1046-4e2d-906d-1fd8d19647d8",
@@ -89953,7 +90065,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "0417372b-77dc-4040-9f29-33d709c591a5",
@@ -89967,7 +90081,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "a64974ac-1250-41fe-aada-508b22c93ac4",
@@ -89978,7 +90094,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "57a90bd8-9ece-4917-a2e7-fb8925fe231a",
@@ -89989,10 +90107,12 @@
     "Vanessa",
     "Dooley",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "71c529a8-7366-4f69-b2ab-4f0eec8573b5",
@@ -90003,10 +90123,12 @@
     "Vanessa",
     "Dooley",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "db314574-3ebe-49e1-8b87-c6b3678a7368",
@@ -90017,10 +90139,12 @@
     "Vanessa",
     "Dooley",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "efdb2b8a-7475-47fe-ad84-8a40ab49c27e",
@@ -90031,10 +90155,12 @@
     "Vanessa",
     "Dooley",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "036ce025-fc8a-4924-b1bd-a4f6f470ebc7",
@@ -90045,7 +90171,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1bd4edc9-0cb9-49f7-bc03-703c36835de1",
@@ -90057,7 +90185,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8251155c-f8b0-4dbc-9a42-fd2448a30171",
@@ -90069,7 +90199,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b4d4dae0-708a-452e-87a2-cb87b308c1ac",
@@ -90081,7 +90213,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b6baa6f3-7321-4d14-9412-68acdab57d9c",
@@ -90093,7 +90227,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4751d02e-876e-47e3-bb23-d7675e4ee5c6",
@@ -90107,7 +90243,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1a508bee-0dba-4110-9402-f372bb6c6137",
@@ -90118,7 +90256,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9dea6b33-264c-4550-9282-80ec297fb070",
@@ -90129,7 +90269,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ec7fa0bf-dc6b-4019-b199-253a1475abf7",
@@ -90140,7 +90282,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "facaa0bc-ddb9-48dc-8be7-f44b8a07df00",
@@ -90151,7 +90295,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "0a46b7df-e0a2-4211-8529-0bfe91974a71",
@@ -90162,7 +90308,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "54e27892-1eb3-4b1d-9824-51f9fa0bf51a",
@@ -90173,7 +90321,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "0c77d216-69de-4a92-9893-5f4b154128dc",
@@ -90184,7 +90334,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3845dfe7-e077-46a4-9534-02ddb895060a",
@@ -90195,7 +90347,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "987abc50-90a5-416b-ac98-9220a31737e5",
@@ -90206,7 +90360,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f10a4289-ddb2-46e2-9985-dfefff459951",
@@ -90217,7 +90373,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "7d832f18-dd4c-4d67-8e4f-573618f7fa38",
@@ -90228,7 +90386,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "937489c5-22bf-4190-89b1-f396894c85f1",
@@ -90239,7 +90399,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "af188bbf-4e10-42c8-803c-12594f4d80d7",
@@ -90250,7 +90412,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "33a881fa-66fc-4a98-8744-de38c1d44baf",
@@ -90261,7 +90425,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "384bd291-99b1-4736-8cbc-ebdac4d11d63",
@@ -90272,7 +90438,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "cbcb84f9-631a-4d85-bed3-cfd2f86fb8d6",
@@ -90283,7 +90451,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e6e09e6a-ebe0-46f8-bfbb-716b74f78bc6",
@@ -90294,7 +90464,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "07139793-c844-4fbb-ad90-9f279843cdc8",
@@ -90305,7 +90477,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": true
   },
   {
    "guid": "c0733dee-bc0e-46ec-a1ac-291284444c36",
@@ -90316,7 +90490,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "4b9c8dd5-fa9c-47a1-bd26-3f043faa5e2a",
@@ -90325,10 +90501,12 @@
    "tier": "Gold",
    "heroes": [
     "Jules",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "7a4f9be7-9132-45a2-9885-6f2ce40a59be",
@@ -90339,7 +90517,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "3346b0d5-20a0-4aa4-a7d4-b86ad0109e59",
@@ -90352,7 +90532,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b1288f12-2cf9-4473-a43e-4dd521703990",
@@ -90365,7 +90547,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "168a04a9-d761-4df4-b9d9-0be88fe90f53",
@@ -90376,7 +90560,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "176ebe3f-4e14-4b8e-9704-98cd8e95190c",
@@ -90387,7 +90573,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3ee61d8b-775f-4d75-a043-1975e1cbb55f",
@@ -90398,7 +90586,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9c8fa101-03e7-4e29-aca6-01c05f47faf8",
@@ -90409,7 +90599,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2381e033-ae5a-4a8d-876d-4048fc4cd078",
@@ -90420,7 +90612,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b10f79af-da26-4b27-88da-3e7fea49a3b9",
@@ -90433,7 +90627,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ef25f92c-484a-48de-b6de-8fc6429823ca",
@@ -90446,7 +90642,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "816e6ba0-8f5f-412e-9756-8e1901dd9d49",
@@ -90459,7 +90657,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "91586550-41b0-4bc0-8739-d2268f04b703",
@@ -90472,7 +90672,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "db0dbc04-7652-46e6-84bf-a616f4a8e384",
@@ -90485,7 +90687,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "54a0e045-36fe-4de4-92fb-9254fa73c48f",
@@ -90496,7 +90700,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": true
   },
   {
    "guid": "a5bbdcf8-c1a3-41e3-898f-71a1819039d3",
@@ -90504,10 +90710,12 @@
    "internal": "Concert Hall (Encounter)",
    "tier": "Diamond",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1596d1df-e943-48b4-bfc6-df2edb9dfe55",
@@ -90518,7 +90726,9 @@
     "Dooley"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "0b39d34b-e0dd-429e-a7f3-216732f0f95a",
@@ -90529,7 +90739,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ead0a1ed-703e-445e-ba43-9a7df5d64f54",
@@ -90540,7 +90752,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": true
   },
   {
    "guid": "2950afee-ce0e-40c1-becb-735570e560c5",
@@ -90551,7 +90765,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": true
   },
   {
    "guid": "13b4c0cd-313d-4e0f-9a51-eb4d288f32a5",
@@ -90560,10 +90776,12 @@
    "tier": "Bronze",
    "heroes": [
     "Jules",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "6de772fb-6a02-4b8c-a2c2-26023472ca31",
@@ -90574,7 +90792,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "7421cca5-1d3e-4cf8-afa0-a3ce0c06e1c1",
@@ -90585,7 +90805,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f0a36d78-d446-4d57-81e0-9dfe942e4307",
@@ -90596,7 +90818,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c6cffe25-8e94-4a7b-a821-3e3c7093333b",
@@ -90609,7 +90833,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "77cd5ccd-be81-49fb-a697-58da76571c0a",
@@ -90620,7 +90846,9 @@
     "Dooley"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "bea81fd6-ae81-49b2-b733-40246d8e825f",
@@ -90633,10 +90861,12 @@
     "Stelle",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "5ea96339-6c5e-42b4-bc5f-028b780348e0",
@@ -90647,7 +90877,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "a120c614-233b-460f-8b54-1dd81d5e1db5",
@@ -90658,7 +90890,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ddecdf10-d7b5-475a-9c7b-d74e4cb51294",
@@ -90669,7 +90903,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "fc1960b0-ac02-4e3c-9b46-e421ae896724",
@@ -90680,7 +90916,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2584cba4-fa60-4132-9e46-40f7eb9ee95d",
@@ -90691,7 +90929,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "36b24aae-977a-40f4-a5d1-05deae478215",
@@ -90702,7 +90942,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "6a8a9d37-f88b-4da8-a1fa-3584a4bd5c3d",
@@ -90713,7 +90955,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9e3c43fe-0205-4bf6-9da9-2b9bbbef8a65",
@@ -90724,7 +90968,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4e6d3224-affa-49a8-90ef-c6c9c986f786",
@@ -90735,7 +90981,9 @@
     "Dooley"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "88416f83-e642-4a1f-82ad-d80d9a9a57bb",
@@ -90746,7 +90994,9 @@
     "Dooley"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ae81a2e5-66c3-4bda-82ad-f9657add738a",
@@ -90757,7 +91007,9 @@
     "Dooley"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f785c906-9f01-4641-80a6-b7cc360c271a",
@@ -90768,7 +91020,9 @@
     "Dooley"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8c053f67-7f6a-4f50-9ff8-b6ac59dc33ed",
@@ -90779,7 +91033,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4580fb31-b2ea-4f9b-9ab9-2979602f83d8",
@@ -90793,12 +91049,14 @@
     "Pygmalien",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2e0acd01-e0b2-4c0d-a7aa-84914c0cbb94",
@@ -90809,7 +91067,9 @@
     "Dooley"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "64fcc650-1266-4fcd-8f9a-7c64a38da056",
@@ -90820,7 +91080,9 @@
     "Dooley"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "69bc6d15-487a-43cd-9b7f-d0652853d991",
@@ -90831,7 +91093,9 @@
     "Dooley"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "095f7c1d-25b3-4fd3-9e10-6eeb949503ef",
@@ -90839,10 +91103,12 @@
    "internal": "Dragon Up (Silver) (Level Up)",
    "tier": "Silver",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "6a274350-32fc-4725-9981-376c8f525938",
@@ -90850,10 +91116,12 @@
    "internal": "Dragon Up (Diamond) (Level Up)",
    "tier": "Diamond",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "e9b4b8f2-a88a-417c-a092-b0f436a596e7",
@@ -90861,10 +91129,12 @@
    "internal": "Dragon Up (Bronze) (Level Up)",
    "tier": "Bronze",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "fda84272-0558-4f8d-a3b1-1d25b6f554e9",
@@ -90872,10 +91142,12 @@
    "internal": "Dragon Up (Gold) (Level Up)",
    "tier": "Gold",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "fadfae7c-94e2-4d89-800f-8df526970ba6",
@@ -90886,7 +91158,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d349b1d4-1dee-4893-b2ba-7493e20ecb4c",
@@ -90897,7 +91171,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "174d59d2-fb3e-4f41-8e5c-81b82a26a343",
@@ -90908,7 +91184,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "47704642-ae7a-4775-a26a-e5e5a8cff7bf",
@@ -90919,7 +91197,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9d0370fc-f091-4483-9e18-bde61a02212f",
@@ -90930,7 +91210,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "0ff275f7-60ef-4428-acb6-1a138d03152d",
@@ -90943,7 +91225,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2f50dc7e-8a03-41d9-82d0-dd956dfe4b50",
@@ -90954,7 +91238,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "58413cc6-7c39-45c7-aeb5-de0fd5e801eb",
@@ -90965,7 +91251,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d290146b-28d4-4aae-87c7-249d4e7c0a81",
@@ -90976,7 +91264,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "25e61e9e-2329-48e9-9f59-77026530cf05",
@@ -90984,10 +91274,12 @@
    "internal": "Equipment Van (Encounter) (Bronze)",
    "tier": "Bronze",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "48536b9e-bcca-4547-ac6f-9db888a94b86",
@@ -90995,10 +91287,12 @@
    "internal": "Equipment Van (Encounter) (Gold)",
    "tier": "Gold",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8058eadd-b2f1-4019-a437-f593af6ee076",
@@ -91006,10 +91300,12 @@
    "internal": "Equipment Van (Encounter) (Diamond)",
    "tier": "Diamond",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8205d118-b8d2-4040-b359-166bd1738fb3",
@@ -91017,10 +91313,12 @@
    "internal": "Equipment Van (Encounter) (Silver)",
    "tier": "Silver",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "287ff00b-37f3-4c58-aafe-70272b9b150f",
@@ -91031,7 +91329,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8f83e037-1420-4210-a2b0-b4d80f7d86f5",
@@ -91042,7 +91342,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "91b039eb-1478-4cc8-a44e-c0b0a2f3fd20",
@@ -91053,7 +91355,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "aebbf2cb-acbc-4cc7-86a8-ac9f49756d35",
@@ -91064,7 +91368,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c2ecd101-b69d-42ed-a0e9-f8bb84b0fa09",
@@ -91075,7 +91381,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "30101d11-aff6-430e-a2e4-57c261111933",
@@ -91089,7 +91397,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9ed55b8e-6ac3-4fdf-898e-30e181e6c88c",
@@ -91103,7 +91413,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "adeccad5-0430-4a3a-a305-d007788f7627",
@@ -91117,7 +91429,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d896d88c-91e8-4950-9670-0c42f9fd5a92",
@@ -91131,7 +91445,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d0697c4c-2b63-4505-a946-d396493ac8a6",
@@ -91142,7 +91458,9 @@
     "Stelle"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "412fb3ec-88de-40b4-a475-10e583189d8a",
@@ -91153,7 +91471,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4ba32835-093b-4623-806a-2c37e5037d80",
@@ -91164,7 +91484,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f40135ba-ddcb-405e-aefb-c085c4a397cd",
@@ -91175,7 +91497,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "0623cedd-f24b-4117-a6b8-5fc41064a00d",
@@ -91186,7 +91510,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f4347956-4eaf-4665-aa1b-addf8423588b",
@@ -91197,7 +91523,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "7bd967dd-4631-4252-bdff-ee0bd5e3ddb7",
@@ -91211,7 +91539,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "a72c9135-0869-4243-a689-cde06ad97dd0",
@@ -91222,7 +91552,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d3a78867-fd60-4a67-b03a-4200ba58674c",
@@ -91235,10 +91567,12 @@
     "Stelle",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "1b34f123-434c-4b88-bfc8-5fb2d245e1b1",
@@ -91251,7 +91585,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1f56ada9-2f87-469e-ad8b-29f7bc5754f2",
@@ -91264,7 +91600,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "24633cbe-9198-4d1c-be90-0108cd170fb2",
@@ -91277,7 +91615,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3b70cc4c-867d-4a04-a9c4-e09726d8b211",
@@ -91290,7 +91630,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c246ee53-51ea-40c1-ac2f-71435e179531",
@@ -91303,7 +91645,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "dac7e568-4b7d-487a-8564-ad37dcedde39",
@@ -91314,10 +91658,12 @@
     "Dooley",
     "Karnok",
     "Vanessa",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "086e814f-5525-4747-b783-3279f1e67880",
@@ -91330,10 +91676,12 @@
     "Jules",
     "Stelle",
     "Mak",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3f758597-56ae-400e-bc5b-92978fbe6b2c",
@@ -91346,10 +91694,12 @@
     "Jules",
     "Stelle",
     "Mak",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "69a2a91d-326d-44de-bfd6-a8ad68440a40",
@@ -91362,10 +91712,12 @@
     "Jules",
     "Stelle",
     "Mak",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8b4d74f6-6491-40d6-87da-023672144e03",
@@ -91378,10 +91730,12 @@
     "Jules",
     "Stelle",
     "Mak",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "aef5e7d8-ea0b-4e7e-8f3d-6e7ba492fa10",
@@ -91392,7 +91746,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9fc8b5a3-f522-4999-b310-26a0fadc7708",
@@ -91405,7 +91761,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c3d9c329-0db6-478e-ad0f-ef2ae78834ce",
@@ -91418,7 +91776,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "146907bc-135e-4d54-bf13-f530605ee673",
@@ -91431,10 +91791,12 @@
     "Stelle",
     "Vanessa",
     "Pygmalien",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "1453be13-1d81-45ea-82a5-7d1ef35ec78b",
@@ -91447,10 +91809,12 @@
     "Stelle",
     "Vanessa",
     "Pygmalien",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "e7491a78-b378-479e-bb27-f1c07d75e14b",
@@ -91461,7 +91825,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "496e1223-e240-4347-84da-42b87cdd8eb0",
@@ -91472,7 +91838,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "dc665019-00a8-4ae5-b192-9068ecfc3996",
@@ -91483,7 +91851,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "a07f89ee-2648-4f5e-9832-8a2db923a779",
@@ -91494,7 +91864,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "270c3ff7-507a-40e0-95bb-5c742ce9aa7a",
@@ -91505,7 +91877,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "fb57d860-8bf4-4a46-bb77-af7ccd4474dc",
@@ -91516,7 +91890,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "4a9ccdf5-8f2b-478f-9060-2b5dc14fc0f0",
@@ -91527,7 +91903,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "0615ce02-f9d9-44a8-8323-4feec73692fb",
@@ -91538,7 +91916,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "5ab62b4c-ab63-4ced-b2c2-0abec4814fc2",
@@ -91549,7 +91929,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "a4fbd0a5-9078-4c9f-9888-961cfd9eaf24",
@@ -91560,7 +91942,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "c8722e2b-0f4f-4532-8915-3b9fb9bbc105",
@@ -91571,7 +91955,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "fd017aa9-d8b9-4327-8832-2fbc56901f34",
@@ -91582,7 +91968,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4c213448-66a1-4cb0-a2b8-c38e1d742f4e",
@@ -91593,7 +91981,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1f72700a-fe11-4792-8a47-9e52b9387f29",
@@ -91606,7 +91996,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "50292930-5e68-47a2-8cc5-fde69aadc5aa",
@@ -91619,7 +92011,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "12fb92f0-b76c-4493-85eb-47a6d18bdf5f",
@@ -91630,7 +92024,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "97147e21-62ef-4067-b7d5-d0cb0736775f",
@@ -91644,10 +92040,12 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "bc1ed5b8-9603-41f2-9d03-b1ff423484aa",
@@ -91661,10 +92059,12 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f7467c4b-87c5-4e55-957b-813ac703a3c1",
@@ -91678,10 +92078,12 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "fbc087d9-f0d5-48a2-8c83-f9fccd572b4b",
@@ -91695,10 +92097,12 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8c69a3e3-8c82-4049-aa89-1836ccb6ebc4",
@@ -91709,7 +92113,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "af395a8a-f327-4ebf-96a3-58f6016976b7",
@@ -91720,7 +92126,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "55cb2028-845d-476b-8e28-8cba27cc22d9",
@@ -91733,7 +92141,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "57db7d4b-421a-4869-b7be-d969b494f508",
@@ -91746,7 +92156,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "acaf7c4f-ecd4-4af1-a79c-c5b0b20ee21f",
@@ -91759,7 +92171,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c22b85e7-3860-48b4-b639-8d55ac423b74",
@@ -91770,7 +92184,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "43dbd6ed-6989-4ae4-acdc-f8bfcb8a008f",
@@ -91783,7 +92199,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "55e0f929-071a-4e51-b60e-51fcc792f0b9",
@@ -91796,7 +92214,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2708055d-a8be-4c2f-a8d6-574e884a254e",
@@ -91812,7 +92232,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "0f34d701-1529-4dac-aa46-35d97d5a57a1",
@@ -91823,7 +92245,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "a5cde235-2d98-4cb4-bbd7-15068935722b",
@@ -91834,7 +92258,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "a79c70c6-44a8-4553-b715-2e25c83c3b8c",
@@ -91845,10 +92271,12 @@
     "Pygmalien",
     "Mak",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c1c4c655-4c5b-4873-bdce-3832c65e4d8e",
@@ -91859,10 +92287,12 @@
     "Pygmalien",
     "Mak",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d36cb96b-be1a-418c-985a-1a49cb5a7036",
@@ -91873,10 +92303,12 @@
     "Pygmalien",
     "Mak",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "faae3bd7-8d8f-4561-b127-78e6420a67a5",
@@ -91887,10 +92319,12 @@
     "Pygmalien",
     "Mak",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "07dabb08-156e-486e-96e2-c0d0e2aaa904",
@@ -91901,10 +92335,12 @@
     "Vanessa",
     "Dooley",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "25543cb9-e918-4e8b-98e3-10b07c475162",
@@ -91915,10 +92351,12 @@
     "Vanessa",
     "Dooley",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2b3bbe43-06b7-4dcd-b486-a9d9b337ace1",
@@ -91929,10 +92367,12 @@
     "Vanessa",
     "Dooley",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4ecd92f8-43d3-419d-9abf-95d3a53d3e0f",
@@ -91943,10 +92383,12 @@
     "Vanessa",
     "Dooley",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "61fb68dc-74dd-4ddc-8ff7-ad4c6565c2e0",
@@ -91957,7 +92399,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "08685a09-f7d6-4963-8537-f979ff17d94b",
@@ -91968,7 +92412,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "6caf92fe-048e-4362-b34b-55f06802a32e",
@@ -91979,7 +92425,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "a8e09b36-65b5-4a32-8a66-b3a369176163",
@@ -91990,7 +92438,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "fcac9b2d-acea-403e-99cc-c5e706fbe9b3",
@@ -92001,7 +92451,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "44a8c60d-5852-4398-b7b3-836353f4a760",
@@ -92009,10 +92461,12 @@
    "internal": "Instrument Up (Bronze) (Level Up)",
    "tier": "Bronze",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "bcca85f3-2d80-4296-b6bc-e834360d1604",
@@ -92020,10 +92474,12 @@
    "internal": "Instrument Up (Silver) (Level Up)",
    "tier": "Silver",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "cbe6fb40-262e-4e08-bf2b-8337dd079165",
@@ -92031,10 +92487,12 @@
    "internal": "Instrument Up (Diamond) (Level Up)",
    "tier": "Diamond",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "e30470a3-4a63-4559-8376-190ce706d0f1",
@@ -92042,10 +92500,12 @@
    "internal": "Instrument Up (Gold) (Level Up)",
    "tier": "Gold",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "8ece0ce0-1b20-41da-a3d9-262f2038af58",
@@ -92056,7 +92516,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b69e0b6d-d4c2-4017-a4b4-43e4369600b1",
@@ -92067,7 +92529,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f6430efe-8452-475b-8c8f-5d789b914a3f",
@@ -92078,7 +92542,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8375c937-5542-4d89-9a87-37c01673c611",
@@ -92089,7 +92555,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "00b9bc97-b751-48c3-b3ae-6d96adf7a929",
@@ -92102,7 +92570,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2f885e4a-bbb5-4233-8798-7224dd126f6e",
@@ -92115,7 +92585,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "5406f2e4-d22e-4aca-84c5-87fc81883d6e",
@@ -92128,7 +92600,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "74d81658-9f44-45e6-8f7c-fd6ced634e63",
@@ -92141,7 +92615,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "85db60ee-3619-4e39-bfb2-2f4ac56f172b",
@@ -92154,7 +92630,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "89d7bbcd-bf3e-48e5-a2ab-013d23452378",
@@ -92167,7 +92645,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "96cf61f6-9b9b-453c-9fc0-ea9268a0b71d",
@@ -92180,7 +92660,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e25617c8-7366-428d-a3c2-b721fb9aa722",
@@ -92193,7 +92675,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e34024e3-4380-4689-b9c6-b3db7faeaec5",
@@ -92206,7 +92690,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "eb1453e4-2307-4b6f-9a15-f8f30c849eb4",
@@ -92219,7 +92705,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "fa533c05-c89a-4849-8562-b560532f1431",
@@ -92232,7 +92720,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "7fdc233f-b81f-4216-a646-4c807c2240da",
@@ -92246,12 +92736,14 @@
     "Pygmalien",
     "Vanessa",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "185a03bc-2fb2-4366-bbe8-1b1c6f7d39fd",
@@ -92262,7 +92754,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1e511488-af8e-4852-a46a-0f27a2b07aac",
@@ -92273,7 +92767,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "379d881b-4524-4db9-a606-47bd35749f44",
@@ -92287,12 +92783,14 @@
     "Pygmalien",
     "Jules",
     "Stelle",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "de175e34-df34-4581-a13a-46767e1c7c6b",
@@ -92303,7 +92801,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "6f5c1ce2-19c1-4df8-bc5a-242a0f5b5189",
@@ -92316,7 +92816,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "a4fa13f8-6beb-4b6c-839b-60af167628d9",
@@ -92329,12 +92831,14 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3ab184ce-bdb8-4dee-9169-8b383a25eae6",
@@ -92347,7 +92851,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "5b7c5fc4-c942-44fe-9ca8-726dc36a2ad6",
@@ -92360,7 +92866,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "79fe1693-1e6d-4ed6-b376-794baca19262",
@@ -92373,7 +92881,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "7b598c89-fdf2-4e83-bc4c-6f16d86fbe04",
@@ -92386,7 +92896,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2745a661-095c-44a5-bb6e-8dc76e07bda2",
@@ -92399,7 +92911,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d86e22d9-b54d-4be9-8b5b-f3fe93d4c133",
@@ -92412,7 +92926,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "df8ff0c9-05cc-4797-aa70-f648e4b283df",
@@ -92423,7 +92939,9 @@
     "Stelle"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2d23952b-f0e4-4a7a-ac65-11c7def01679",
@@ -92434,7 +92952,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "adcc1a7a-c372-4563-b916-3735cacac82b",
@@ -92445,7 +92965,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "48a25657-baf6-440d-9085-bd7aeda1638a",
@@ -92456,7 +92978,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c28b6e9c-dd6d-4bb7-97e7-14aee53e528b",
@@ -92467,7 +92991,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1de89ac3-3d0c-4f27-94c8-3d190992b61a",
@@ -92478,7 +93004,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "377db915-c94b-407d-b558-6f3a88101b83",
@@ -92489,7 +93017,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "a8f01028-0321-4fd5-99ea-02c972379946",
@@ -92500,7 +93030,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "be0aa7d6-5be6-4b0c-9c1b-c4f0643725c6",
@@ -92511,7 +93043,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "39961216-13c2-4013-8da5-6435a86e0e76",
@@ -92522,7 +93056,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b3f47a45-98bd-4200-9e94-5ddbc32e60cf",
@@ -92533,7 +93069,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "cbe0d294-09db-47ea-a7e8-8127605c1173",
@@ -92544,7 +93082,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ef60b13f-35cb-49ef-bf9c-55847e3ab9ce",
@@ -92555,7 +93095,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1025eacf-efd6-4749-88a1-e1f7a2ce500e",
@@ -92566,7 +93108,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4ebea557-6912-4082-9e04-a4c02472fc45",
@@ -92577,7 +93121,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "592c3f31-a6a0-4b1a-a1d9-4016224f09ab",
@@ -92588,7 +93134,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9297f1eb-0435-4483-b530-5b1074210720",
@@ -92599,7 +93147,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ff66c76e-34aa-42fa-99b7-cbd0fba31ecb",
@@ -92610,7 +93160,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "892de564-d894-4e07-ab21-959e16e8cdf8",
@@ -92623,7 +93175,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1ff8a6be-5087-45f6-8e72-9e94dbfa0c2b",
@@ -92636,7 +93190,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "045c8751-0395-4b3b-b703-b11bc96a1944",
@@ -92645,10 +93201,12 @@
    "tier": "Bronze",
    "heroes": [
     "Dooley",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "17493eb4-2d8c-4bbd-9e9e-8220269dd323",
@@ -92657,10 +93215,12 @@
    "tier": "Silver",
    "heroes": [
     "Dooley",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1f14ebe7-5c23-4439-a787-3ca6933ee2ff",
@@ -92669,10 +93229,12 @@
    "tier": "Diamond",
    "heroes": [
     "Dooley",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "497c2eb4-2b38-4dd9-b41f-a2553416622c",
@@ -92681,10 +93243,12 @@
    "tier": "Gold",
    "heroes": [
     "Dooley",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3e07a32a-c304-4086-825b-8465436e9246",
@@ -92695,7 +93259,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4475cff5-6105-4f4a-978c-b282e36173eb",
@@ -92709,12 +93275,14 @@
     "Pygmalien",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "001a960b-7ffb-4156-9fc1-1121eb93fb9e",
@@ -92725,7 +93293,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "294f81dd-eb9f-47a9-9b9c-fa9766291485",
@@ -92736,7 +93306,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "386dd351-d08e-49a5-9a38-52c4e73d45b2",
@@ -92744,10 +93316,12 @@
    "internal": "Mama Bear (Level Up)",
    "tier": "Diamond",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "255ae0fa-f203-4e9f-855d-e090e6937b5b",
@@ -92758,7 +93332,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e80ebe4b-6bb3-480a-bc06-32973c84cf90",
@@ -92769,7 +93345,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "04e1aad5-e5e4-4864-b217-28e5ff00023b",
@@ -92780,7 +93358,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "71b59c65-e8b3-47bd-abb3-f5b019edb5c7",
@@ -92791,7 +93371,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "e3aac200-f30f-404f-83cf-27732bb6f927",
@@ -92802,7 +93384,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "0e0a056f-ad2f-4049-b17d-8031393402ec",
@@ -92813,10 +93397,12 @@
     "Pygmalien",
     "Mak",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "76da2ed3-caa0-4420-82a6-a4f5211d012c",
@@ -92827,10 +93413,12 @@
     "Pygmalien",
     "Mak",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "a5980f5b-4f19-4826-8919-8d88077d6ba0",
@@ -92841,10 +93429,12 @@
     "Pygmalien",
     "Mak",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d237472b-0d0e-47d2-b51d-37def1e201dd",
@@ -92855,10 +93445,12 @@
     "Pygmalien",
     "Mak",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "0e5caade-789e-4184-92dc-d1ab03fcf926",
@@ -92871,7 +93463,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "214fe1d5-c583-4766-99c5-c621598c83ce",
@@ -92884,7 +93478,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b8f55bb0-536e-4d5f-a328-d38f88c6d479",
@@ -92897,7 +93493,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "912c8b09-3b76-4aa1-8e21-245e0dfb5046",
@@ -92910,7 +93508,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ab14e395-2bef-42f1-a5ad-9947e56bb3f2",
@@ -92923,7 +93523,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "cca9281a-d259-4771-9747-ea7af6de8dcf",
@@ -92936,7 +93538,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e1e3e229-9806-4d2d-99e7-d25592fe14b6",
@@ -92949,7 +93553,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2ec26bc0-c7b9-41c8-961c-b78c48add586",
@@ -92960,7 +93566,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b4d5052c-7424-4062-b563-2c67d6d40b8d",
@@ -92971,7 +93579,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "617a3f2c-e964-4bc0-8929-d0524e269bc1",
@@ -92982,7 +93592,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3cb5a1a2-819e-433e-9f41-f5ed77cb04b0",
@@ -92994,7 +93606,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4d64d6cd-d42a-4a08-bac9-5f1563d6b7eb",
@@ -93006,7 +93620,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8d1dda63-1fb9-44e5-9ed6-e8050d4d65d7",
@@ -93018,7 +93634,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9178c378-9e59-4e92-9023-17105e0686d3",
@@ -93030,7 +93648,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "158b3bec-e4e1-4d5a-8e27-a82ba7fcb292",
@@ -93041,7 +93661,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1e590634-499a-43d0-9152-d9425cd380f6",
@@ -93052,7 +93674,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "721dc5f3-7146-46ca-85ac-116505f59b00",
@@ -93063,7 +93687,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "956e9c74-7d98-4a2b-b500-def577914945",
@@ -93074,7 +93700,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b66ed0c1-13ee-4ebb-ac35-9eeeaec5c2e3",
@@ -93085,7 +93713,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e64431ff-8979-4112-81e3-81fb7865be36",
@@ -93096,7 +93726,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e30d8bef-5bea-4e95-b4c2-e29e17325a82",
@@ -93109,7 +93741,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "35e74c18-1bd6-4c91-ab21-2fd64adf6cc6",
@@ -93120,7 +93754,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "b7acf32d-79f8-4040-810f-4fb44e16682b",
@@ -93131,7 +93767,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e78da732-de3f-443f-8e3e-94d0dcfb63dd",
@@ -93142,7 +93780,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1a21931f-6183-4251-914b-c8f83dc58a30",
@@ -93155,7 +93795,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2e2f894d-209c-47e0-905a-63b3b59c8aa8",
@@ -93168,7 +93810,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c4e01347-bcbc-e164-c848-544774f80599",
@@ -93179,7 +93823,9 @@
     "Jules"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "210003fa-a20d-4ad1-9ada-d5fad5bf9f89",
@@ -93190,7 +93836,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8d6dadfa-6517-4eca-8c79-5f7c3fc7e116",
@@ -93201,7 +93849,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3bb35f2f-3474-4edb-98a7-d7588fb20f74",
@@ -93213,10 +93863,12 @@
     "Dooley",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "6e4b782d-d4e4-43ac-93cd-4ee46d680d48",
@@ -93228,10 +93880,12 @@
     "Dooley",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "7077c578-f19e-483b-bc2c-db65b5e47e7c",
@@ -93242,7 +93896,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "7b5bd866-3b46-4bc0-b5dc-e5458c67cf9d",
@@ -93254,10 +93910,12 @@
     "Dooley",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d21fae9a-1cb4-40f2-8574-9c72b51a1ce1",
@@ -93269,10 +93927,12 @@
     "Dooley",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "845d2051-cca0-4533-947a-aa290f364e0a",
@@ -93283,7 +93943,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "d3727a3a-3dd2-4ea7-a396-515e2c41c1b0",
@@ -93296,7 +93958,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d61f942a-6da4-48bd-a4db-1bde45174aba",
@@ -93309,7 +93973,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "a07fbe69-c1d0-41a3-af72-d517e7706718",
@@ -93320,7 +93986,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "dbdf69f8-9bea-40e7-9098-209c8c475971",
@@ -93331,7 +93999,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "26164d27-60b8-4935-840c-816bbe535a64",
@@ -93342,7 +94012,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8b623bf7-d8ef-42ce-820d-8b23b3972094",
@@ -93350,10 +94022,12 @@
    "internal": "Piano (Encounter)",
    "tier": "Gold",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "7066e72e-40b7-4104-b521-159de457f2d0",
@@ -93371,7 +94045,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "61be3473-6546-427f-ac13-9dee4c43d23c",
@@ -93382,7 +94058,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "bc75676c-032f-441a-a6a2-35b1ccc2eb80",
@@ -93393,7 +94071,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "e2fc8bd4-b97d-485b-8bb6-5c966d336c4a",
@@ -93404,7 +94084,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "065f6793-8607-4f02-abfe-db6afb221ab2",
@@ -93422,7 +94104,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "bdf0a9ab-8bc2-4f1b-8f7d-614293ac2db2",
@@ -93435,7 +94119,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "11681158-9f70-4ed3-8bd4-dce4571b9fa6",
@@ -93446,7 +94132,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "6d6ae43f-fa0b-424b-b2dc-d70aa57273fa",
@@ -93457,7 +94145,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "a287f26a-5145-4665-a97b-8bfd07b98f82",
@@ -93468,7 +94158,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "e66a00c2-c34c-4b92-97ce-30bb488ed4a6",
@@ -93479,7 +94171,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "6c0c352b-255d-4e07-b58a-9233c7d1e2d4",
@@ -93489,10 +94183,12 @@
    "heroes": [
     "Dooley",
     "Stelle",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "a5c6d5b9-fd6d-4036-9513-a43c0aade6e7",
@@ -93502,10 +94198,12 @@
    "heroes": [
     "Dooley",
     "Stelle",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "a97dce09-c242-44be-8488-bbf18d48421e",
@@ -93515,10 +94213,12 @@
    "heroes": [
     "Dooley",
     "Stelle",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "cace10a4-6073-429d-a345-ec3a9de31df1",
@@ -93528,10 +94228,12 @@
    "heroes": [
     "Dooley",
     "Stelle",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "3cb6a52e-282d-4e17-adf6-300d4f97875a",
@@ -93542,7 +94244,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "15b88e74-024e-40a3-a811-aa5810e68ca2",
@@ -93555,7 +94259,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1ff79367-b005-43e2-81cc-a9f3b2e55b49",
@@ -93566,10 +94272,12 @@
     "Pygmalien",
     "Vanessa",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9f7cbbaf-aeed-4170-9400-e1da445fe101",
@@ -93580,10 +94288,12 @@
     "Pygmalien",
     "Vanessa",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "cb280097-2346-43e0-b6ef-bf7ba2b01b2f",
@@ -93594,10 +94304,12 @@
     "Pygmalien",
     "Vanessa",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e750af0e-60f1-4da1-838a-a0ac41ca6a73",
@@ -93608,10 +94320,12 @@
     "Pygmalien",
     "Vanessa",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f1892cf4-3dcb-4d41-b137-d670f44a65f8",
@@ -93625,7 +94339,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "bcdaa6d4-9057-4ea1-8110-a2dae217c55f",
@@ -93638,7 +94354,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c770d3da-3f41-41c2-91d9-4eb49a9e8ae5",
@@ -93649,7 +94367,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "be759478-d828-4bc2-8268-0596f2c731aa",
@@ -93660,7 +94380,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f9074804-1812-445a-8688-b8c86f9c7711",
@@ -93674,12 +94396,14 @@
     "Vanessa",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "0262e8cd-9f8d-4d01-9b6e-24acd4d28d98",
@@ -93690,7 +94414,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "5df1c571-e80e-492d-ae4c-78e4fb1e1ee8",
@@ -93701,7 +94427,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1005cb9f-87f3-4087-a695-a54b7315d586",
@@ -93714,10 +94442,12 @@
     "Jules",
     "Stelle",
     "Mak",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4afc594c-9213-47e2-b869-82bab1882490",
@@ -93730,10 +94460,12 @@
     "Jules",
     "Stelle",
     "Mak",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "731fdecd-bc3f-48a7-bdf9-4096f3eaa963",
@@ -93746,10 +94478,12 @@
     "Jules",
     "Stelle",
     "Mak",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "733355b4-4e6e-4255-9e62-b60eef2f9864",
@@ -93760,7 +94494,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "904bd867-a3e8-444f-94e1-0f13acef8536",
@@ -93773,10 +94509,12 @@
     "Jules",
     "Stelle",
     "Mak",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "323e2c05-f077-4774-84a5-9e89d8d1c9b9",
@@ -93789,7 +94527,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "342fcc56-26a4-479b-8707-46ddfb5adef2",
@@ -93802,7 +94542,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e7cac33d-864c-45c9-8a3e-c3218aa0febe",
@@ -93815,7 +94557,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "31ba6532-0fea-47ba-8102-96560740206a",
@@ -93826,7 +94570,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "406a9513-35b3-4a12-96ab-48c0710b415b",
@@ -93839,10 +94585,12 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ab256aab-9578-4eb8-a821-85b5c9e892d8",
@@ -93855,10 +94603,12 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ae4a5d1a-edc7-4a0a-b357-65e051e6a80e",
@@ -93871,10 +94621,12 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "bfc22038-04da-41a1-97c9-7cb8c3608747",
@@ -93887,10 +94639,12 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1f2bb7f7-16d1-4138-9729-6b5ec8e03851",
@@ -93901,7 +94655,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "38aa9f76-d287-4c45-a591-87c5a0b82f34",
@@ -93912,7 +94668,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "58c0b58e-2179-4c54-91cf-ac43b317ef73",
@@ -93923,7 +94681,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "f85a7e3e-1a0b-41cc-b8ea-f7068d68ccb0",
@@ -93934,7 +94694,9 @@
     "Karnok"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "4e683fef-313e-40ba-9aa9-b2848d7b6b72",
@@ -93945,7 +94707,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "52e66fe1-78f0-4ee1-a3fe-2f2fe21efbb7",
@@ -93956,7 +94720,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "bdd66fcc-98dc-47aa-81df-1282a4bbef05",
@@ -93967,7 +94733,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d637adc9-3b1d-4aef-b238-07c3bafe057f",
@@ -93978,7 +94746,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "27215a21-0c15-4476-bb8c-25b50b8fd7d3",
@@ -93989,7 +94759,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "c5dae6cf-f294-4658-b538-752b06860373",
@@ -94000,7 +94772,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "c7cb78a1-744e-4636-bce5-bf13340be11e",
@@ -94011,7 +94785,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "e9f2758a-2751-4de7-aceb-2511ad78e05f",
@@ -94022,7 +94798,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "c9628182-3be1-4ba0-92bc-4850a44540d9",
@@ -94033,7 +94811,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "12a50b2d-340f-4603-a5a4-a3d63d80c504",
@@ -94044,7 +94824,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "42a96476-afc7-420f-bc06-34872b57b534",
@@ -94055,7 +94837,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4e4c3fd4-666d-4796-8ef1-43e2aa771f42",
@@ -94066,7 +94850,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ea7f99f9-a143-43d8-a74d-933a439a4b60",
@@ -94077,7 +94863,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "778c3493-54c3-45bd-8c1b-f410c5ceb937",
@@ -94088,7 +94876,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b46b862e-ba64-4e05-ad5e-b8dbc90517c9",
@@ -94100,10 +94890,12 @@
     "Mak",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "fe756e73-bedb-4700-901f-07ef13b3c512",
@@ -94114,7 +94906,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "90e47f27-241c-4769-a6c6-a100d2a33421",
@@ -94125,7 +94919,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "578479a7-4a5d-4a0e-8cee-4cd7b2191ae0",
@@ -94136,7 +94932,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "63a890d2-3b12-459a-8bbf-88f811a3606d",
@@ -94147,7 +94945,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "77fd1cb0-4e77-47f0-903d-228f136fc8c7",
@@ -94158,7 +94958,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "218d4cae-2813-4414-a5ab-1138cb064961",
@@ -94169,7 +94971,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "874fa28f-c349-463c-aec6-b3572a71b6ee",
@@ -94181,7 +94985,9 @@
     "Stelle"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8d037166-d665-4260-aabd-e73f146e3f7f",
@@ -94192,7 +94998,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c67a8619-a0de-4953-ac6c-94a2ed15f090",
@@ -94203,7 +95011,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "46e8ebad-6c00-4153-87da-b65b67442d01",
@@ -94214,7 +95024,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "bfe9db96-a189-4bdf-84e5-fc1743ff8569",
@@ -94225,7 +95037,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "35f8d6cf-82b1-49d9-b15e-65e9790f6ad0",
@@ -94236,7 +95050,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "6cc96b5f-57df-46db-bcc8-983e048a1dfe",
@@ -94247,7 +95063,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "a79a4688-752d-4b4f-90b3-c92b3a4d1a92",
@@ -94258,7 +95076,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1d08f4e5-146f-415d-958f-5a93a84dfbc2",
@@ -94271,10 +95091,12 @@
     "Dooley",
     "Karnok",
     "Jules",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3db126be-6a4f-48b7-81e0-793287e9eeeb",
@@ -94287,10 +95109,12 @@
     "Dooley",
     "Karnok",
     "Jules",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "65ff28de-67a6-4c51-adf4-f3f9379ff96a",
@@ -94303,10 +95127,12 @@
     "Dooley",
     "Karnok",
     "Jules",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d0c544fe-36a7-4887-98c0-bfa949a0f472",
@@ -94319,10 +95145,12 @@
     "Dooley",
     "Karnok",
     "Jules",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "0370b2b5-e856-457e-a8dc-b7fd0ab098fc",
@@ -94336,10 +95164,12 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8445b23f-b1ed-48bc-aeec-0b70be4e4030",
@@ -94353,10 +95183,12 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "bbd7fab5-9bf1-4de4-bd27-bed7f7fd5c97",
@@ -94370,10 +95202,12 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d2167751-e2ce-439c-995a-3282452e2f14",
@@ -94387,10 +95221,12 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ea510bb8-0ded-48ee-b0e2-750d26bf1587",
@@ -94401,7 +95237,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c006e3eb-79b8-4bd8-b0fb-9002bd637f1f",
@@ -94412,7 +95250,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f3f5d238-991b-4a8c-a3ef-0d45cfd4d644",
@@ -94423,7 +95263,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b690812d-108b-49ce-82f3-e1a41379022c",
@@ -94436,7 +95278,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ee6887f7-4bde-4a54-a7ab-540eb43d46a1",
@@ -94447,7 +95291,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "79557839-d5cc-4638-ba7b-234f0142a38a",
@@ -94458,7 +95304,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b6634697-588b-4131-883b-c9cf20967760",
@@ -94469,7 +95317,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d0a0f491-e1f2-433b-b2d9-caee00202e09",
@@ -94480,7 +95330,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "fab18db9-38b4-438a-a87f-3dfc931ae679",
@@ -94491,7 +95343,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9459a01b-edf5-432b-81cd-1fd2cacfadad",
@@ -94501,12 +95355,14 @@
    "heroes": [
     "Karnok",
     "Vanessa",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "818fcd1d-4cfd-4629-b83f-8d5e753dd8f4",
@@ -94517,7 +95373,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "56eb7fa9-5a5f-4056-8e75-ec2a5a5c3433",
@@ -94528,7 +95386,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "62376974-7a34-4d47-a34a-6611f58230d0",
@@ -94539,7 +95399,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d81bae8a-4322-4314-ac3d-c2c1313445fb",
@@ -94550,7 +95412,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "5fcd3081-0daa-4e50-b749-c884b405ef9c",
@@ -94563,7 +95427,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ec81a27c-590c-43a1-a353-804a23b5e5d9",
@@ -94576,7 +95442,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "18f8471a-3914-419a-9296-14e624e86ac6",
@@ -94590,10 +95458,12 @@
     "Stelle",
     "Mak",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "e6b0bc78-4284-4bc7-b130-f5d04007ccf6",
@@ -94604,7 +95474,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b6eb3178-f7ed-4d98-bc82-e03bc727ea08",
@@ -94615,7 +95487,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "7799fa37-567f-4356-bfa7-83e0fd0dd467",
@@ -94626,7 +95500,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "34c27d0d-2aa2-40a1-8276-791ee7086da1",
@@ -94637,7 +95513,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "7f2c3a0d-7675-44dd-8667-77b08455eec8",
@@ -94648,7 +95526,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e48b3243-1e7e-4a97-bf4f-0699fd0b4616",
@@ -94662,12 +95542,14 @@
     "Pygmalien",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d6c69fd2-7493-4b55-af18-eab0695cf16a",
@@ -94678,7 +95560,9 @@
     "Stelle"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d0276b47-be8a-4bbc-ab55-9f92b352480a",
@@ -94691,7 +95575,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2ee65e2b-c679-41b6-812d-5dd59a5cb27a",
@@ -94702,7 +95588,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "48e598a5-5e37-4ffc-ac66-b80f08a5af62",
@@ -94713,7 +95601,9 @@
     "Dooley"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "224c96ea-da68-4761-bd9d-ecbe46759bb4",
@@ -94724,7 +95614,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ce38f4a2-f156-4082-b8ce-e8956c71fc0d",
@@ -94735,7 +95627,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "1ce9bfd6-77a7-44c7-827a-252a9dbe5ab9",
@@ -94746,7 +95640,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8c9e7731-42bf-4c22-8839-8ec7cc4277e5",
@@ -94757,7 +95653,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c2f2e526-dd0b-443f-a6e2-411fb06afab8",
@@ -94768,7 +95666,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "dc6691fe-78d9-4f7d-94bd-4a9ba175744a",
@@ -94779,7 +95679,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "21dd4607-cf31-465d-9be8-89abddfa45cd",
@@ -94790,7 +95692,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "01939fcd-bf53-4516-a50d-0800677252a3",
@@ -94801,7 +95705,9 @@
     "Stelle"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "6a20972e-3477-45a7-a417-eccb6eff8375",
@@ -94812,7 +95718,9 @@
     "Stelle"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "6afa0d17-bae9-4622-9441-424916b39693",
@@ -94823,7 +95731,9 @@
     "Stelle"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "ee531c7a-a92a-4646-9f3d-2ddb83b3fe14",
@@ -94834,7 +95744,9 @@
     "Stelle"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "22bb0004-5131-4588-a567-03ee3c96003b",
@@ -94847,7 +95759,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "5e607777-7ce3-467a-9eaf-fab0ee41e905",
@@ -94856,10 +95770,12 @@
    "tier": "Silver",
    "heroes": [
     "Dooley",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "8998de52-cc59-4588-885c-39a60ca3faf7",
@@ -94868,10 +95784,12 @@
    "tier": "Gold",
    "heroes": [
     "Dooley",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "a8c7d852-f117-43d2-b7a6-76d78866321e",
@@ -94880,10 +95798,12 @@
    "tier": "Bronze",
    "heroes": [
     "Dooley",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "cdb02a2a-603c-416e-bcb1-9fc71632b08a",
@@ -94892,10 +95812,12 @@
    "tier": "Diamond",
    "heroes": [
     "Dooley",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "91287d25-7f63-4826-8c42-06ed1bf83213",
@@ -94906,7 +95828,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": true
   },
   {
    "guid": "5852a0ba-c097-419b-98b7-dadd8bd7ae6e",
@@ -94917,7 +95841,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": true
   },
   {
    "guid": "7a6ce8eb-3098-403f-96d4-faa47048272b",
@@ -94928,7 +95854,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": true
   },
   {
    "guid": "810acb8e-e60a-4a84-b773-431d4d10a071",
@@ -94939,7 +95867,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": true
   },
   {
    "guid": "a1d43a69-6798-41a2-b356-211a726eee9d",
@@ -94950,7 +95880,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": true
   },
   {
    "guid": "e5847a60-f078-4e70-9132-943dc5cab596",
@@ -94958,10 +95890,12 @@
    "internal": "Tempo Up (Bronze) (Level Up)",
    "tier": "Bronze",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "e650b3ec-940a-4a59-97f6-dde24f2938d8",
@@ -94969,10 +95903,12 @@
    "internal": "Tempo Up (Silver) (Level Up)",
    "tier": "Silver",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "ea3b377c-abc5-4509-a8ef-a5df7fb9ed9c",
@@ -94980,10 +95916,12 @@
    "internal": "Tempo Up (Diamond) (Level Up)",
    "tier": "Diamond",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "ef82e124-dc18-44dc-89bb-c6d88a97f164",
@@ -94991,10 +95929,12 @@
    "internal": "Tempo Up (Gold) (Level Up)",
    "tier": "Gold",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "4e7cfe8c-2943-45db-9b8e-4465a8598f6c",
@@ -95005,7 +95945,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "406bae80-6dec-4b11-a010-9ca2d4679027",
@@ -95016,7 +95958,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e840f7a3-0a04-455d-852c-286dc5011efc",
@@ -95033,7 +95977,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "bf1594cc-7f65-4236-b95f-ed2f521739de",
@@ -95044,7 +95990,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "11287697-dd45-4edc-9539-780a26001043",
@@ -95055,7 +96003,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "fc00c3ca-3231-4c8e-ac0e-19bff8cd5f65",
@@ -95066,7 +96016,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "85cdd52b-12c2-4b64-b308-a5788f791b81",
@@ -95085,7 +96037,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d33129a9-5df2-47e5-9b6a-7469743fe5a8",
@@ -95093,10 +96047,12 @@
    "internal": "The Dragons' Hideout",
    "tier": "Diamond",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "7676de25-e0eb-4aa2-a33c-0570ddf4777a",
@@ -95107,7 +96063,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "54c74654-8dd6-4dd8-aa14-9ea34d786be3",
@@ -95118,7 +96076,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "bdc30c60-764a-4d3d-8bcc-dc3b1d9e2a6f",
@@ -95129,7 +96089,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "87c6a586-fea5-4bbd-9296-2b2883bcac24",
@@ -95140,7 +96102,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "41cdf4ee-7790-4da1-96f8-a46d3391a0d9",
@@ -95150,12 +96114,14 @@
    "heroes": [
     "Dooley",
     "Stelle",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "002d8f6d-0e36-4921-89ed-3f0f28682d7b",
@@ -95166,7 +96132,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e792b6a6-2f85-4190-8e3c-002d2736d03d",
@@ -95177,7 +96145,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b1b1f445-e625-4397-b4e2-ee4feeb729fa",
@@ -95190,7 +96160,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "54b6cf27-ab0f-4a57-bb0a-83c08de10d5a",
@@ -95201,7 +96173,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3e871bbb-fb25-417f-8643-cb43456c3fc7",
@@ -95215,12 +96189,14 @@
     "Jules",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "87bf88f6-8b57-4edf-84b6-f0623de24f6c",
@@ -95231,7 +96207,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "385dab86-65c1-40e8-8798-49865ad2353a",
@@ -95242,7 +96220,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "246054ea-2c7f-4e04-943d-0397c75abc8a",
@@ -95255,10 +96235,12 @@
     "Stelle",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "3b6964e3-1ff3-40ec-8bb9-f780a3c01172",
@@ -95270,10 +96252,12 @@
     "Mak",
     "Stelle",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "96b8e48d-1717-49d0-9acb-3b906b65928b",
@@ -95286,10 +96270,12 @@
     "Stelle",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "c7d1e360-836e-4c80-992f-6dbbe4640364",
@@ -95300,7 +96286,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "41a161c7-c4a2-4f4c-bfbf-ca395b682c0f",
@@ -95311,7 +96299,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "57468447-1384-46e8-bd8b-5822f6620ebc",
@@ -95322,7 +96312,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9a090e87-4791-4b16-9e7b-c00d7e4427de",
@@ -95333,7 +96325,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "fb1ec259-1dd0-4dff-8a07-cd9d60df26bb",
@@ -95344,7 +96338,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4af83484-7d84-4e00-b2ab-fc4c0446ff04",
@@ -95355,7 +96351,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "213c6a72-de3d-445c-8950-3c922f0fff46",
@@ -95366,7 +96364,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "246ba7e6-f593-4a3c-a57a-c23c77b9532b",
@@ -95377,7 +96377,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "59eee473-a870-43ef-9a87-ac26c99474c1",
@@ -95388,7 +96390,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "71e387b6-bcb5-4c39-aa65-957ee5f6fbec",
@@ -95399,7 +96403,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "a8500ea3-2235-410e-bc51-bb0355857408",
@@ -95410,7 +96416,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "58e800bd-a2ae-4135-a8c3-2eca839c17d2",
@@ -95421,7 +96429,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "754ff658-3032-46ab-91f3-a2ce3a1cb1da",
@@ -95432,7 +96442,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "9ddb3457-d4a5-45ec-913e-ae52fce9cb22",
@@ -95443,7 +96455,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d6030236-2a1b-4209-9e61-1a00ac236b0b",
@@ -95454,7 +96468,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "0cd9ac04-bd59-45f1-b997-3e06a495b5e3",
@@ -95465,7 +96481,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "76f58c75-f822-4d06-bcba-f4d39529fa99",
@@ -95476,7 +96494,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c1d4c505-4c97-47b5-b205-ae28c1415cd2",
@@ -95487,7 +96507,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c2a5bdf3-bc7f-466a-93c3-ee02d45e4ac0",
@@ -95498,7 +96520,9 @@
     "Pygmalien"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c5a68a92-9932-40bd-a45f-e1c902807814",
@@ -95506,12 +96530,14 @@
    "internal": "Uitar Center",
    "tier": "Silver",
    "heroes": [
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3e0f0266-e92b-4a9a-b0b8-dba816e51647",
@@ -95522,7 +96548,9 @@
     "Stelle"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "972e6031-4036-47ef-8e6e-1b8feb53fe47",
@@ -95533,7 +96561,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "46f665ff-c67b-4b8f-9ea1-4fceb086ceb5",
@@ -95544,7 +96574,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d70c7e92-3eff-4cb3-ba01-f9e8c179e407",
@@ -95555,7 +96587,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e016221d-cc17-4a93-aabb-00155bbbeb46",
@@ -95566,7 +96600,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f531a553-d578-40d5-a3da-1159ab2a096f",
@@ -95577,7 +96613,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "42bd0dae-7215-48cf-a526-437289e7f8d1",
@@ -95590,7 +96628,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "e3b894b0-a078-4b1d-8793-ac6459a8361a",
@@ -95603,7 +96643,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "580ba494-a852-4d80-a82d-5cd66fcfd2f3",
@@ -95617,12 +96659,14 @@
     "Pygmalien",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [
     "Merchant"
    ],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "6e33409d-d390-4764-969f-f96e96629213",
@@ -95633,7 +96677,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b10b084f-4704-4d0c-ae62-299c1c58d52c",
@@ -95644,7 +96690,9 @@
     "Vanessa"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "922b9031-c859-479c-95c4-18234a366c63",
@@ -95657,10 +96705,12 @@
     "Mak",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "98197afb-62d3-4efe-986a-4f5d5cda5ed3",
@@ -95671,7 +96721,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "39ea83a9-0cd2-47af-b1d0-37fa8384c966",
@@ -95682,7 +96734,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "15e09f93-d52b-4147-b230-4368fec59dcf",
@@ -95693,7 +96747,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "5e3c0e4f-4e7f-4e7f-9d3a-2753ba6b8aef",
@@ -95704,7 +96760,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3e4c4f1a-fe5d-4e38-887a-08666ce36e71",
@@ -95715,7 +96773,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3212ade4-8e23-49cd-b9b5-f729280ba0b5",
@@ -95726,7 +96786,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "011b22fa-4a25-48a6-93e0-7602ceffcd13",
@@ -95737,7 +96799,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "08111534-157d-4603-b157-03ac0f6d02cf",
@@ -95748,7 +96812,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "79dc6e4f-1e05-43af-b6e8-b8ac8c791f3f",
@@ -95759,7 +96825,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "d8733ee2-22f0-498d-ac26-11f93d84fef3",
@@ -95770,7 +96838,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4147db3e-f264-4ecc-9c21-49c6fbc652e2",
@@ -95781,7 +96851,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "86907ad1-f67a-48db-ac30-e5afe2de237a",
@@ -95795,10 +96867,12 @@
     "Stelle",
     "Jules",
     "Karnok",
-    "Hero8"
+    "The Dragons"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "054e937d-553e-41a5-951b-62550f870f93",
@@ -95809,7 +96883,9 @@
     "Mak"
    ],
    "tags": [],
-   "spawns": "GuidOnly"
+   "spawns": "GuidOnly",
+   "level_up": true,
+   "expedition": false
   },
   {
    "guid": "b81a1c81-0a16-462a-8247-04653354b79d",
@@ -95820,7 +96896,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Always"
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "2f80f1fe-462b-4a8d-8819-d211d11904d1",
@@ -95833,7 +96911,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "3f99df7b-5c30-4da5-98e4-89ff5409a777",
@@ -95846,7 +96926,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "fe0aff36-c0d4-46ba-81dd-51881891b958",
@@ -95859,7 +96941,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "ba7960c6-9352-4795-9844-bdecc25fdb9f",
@@ -95872,7 +96956,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "4657a8ab-6f39-4ec9-97d3-cfc7d193dabb",
@@ -95885,7 +96971,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b2de7a98-b63a-4c53-81aa-b5e09efc245a",
@@ -95898,7 +96986,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "cffe0e90-ea71-4ab8-94af-c7c8edb4c4fa",
@@ -95911,7 +97001,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "673b01a4-da04-47ea-8ee5-ef18c9d8dedf",
@@ -95924,7 +97016,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "c00377f2-0683-42b4-94a5-db9b9a1eef86",
@@ -95937,7 +97031,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "b072d8ae-ee3e-44cb-b047-4608e77e3174",
@@ -95950,7 +97046,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "81ad4a6f-a953-4a10-bdb9-f9a857579aa4",
@@ -95963,7 +97061,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "51522257-bb4d-46f0-be24-79d16cafe79f",
@@ -95974,7 +97074,9 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "634ad92f-a1b4-43c6-8e15-3031ffe7dd16",
@@ -95987,7 +97089,9 @@
    "tags": [
     "Merchant"
    ],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
   },
   {
    "guid": "f2f973b6-133a-4aed-b020-4c7c52e09871",
@@ -95998,7 +97102,1661 @@
     "Common"
    ],
    "tags": [],
-   "spawns": "Never"
+   "spawns": "Never",
+   "level_up": false,
+   "expedition": false
+  }
+ ],
+ "encounters": [
+  {
+   "ap_id": 5000,
+   "name": "A Strange Mushroom",
+   "guids": [
+    "c5326dd7-3e82-45c5-9a6c-81965a78bf89"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5001,
+   "name": "Abandoned Property",
+   "guids": [
+    "538290f0-a363-4c05-8efa-ff68932d43bb",
+    "6391c95c-1dc1-420e-ab5e-ab99c6db4267",
+    "db927fd4-b1b4-4587-b295-d0d1e4e15d0c",
+    "fed8adb8-8fc6-49be-88da-a6fa8496ad2f"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5002,
+   "name": "Advanced Training",
+   "guids": [
+    "6a5e82cf-969c-432a-863a-1df6e7f56513"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5003,
+   "name": "Aero",
+   "guids": [
+    "847b1294-649d-4f02-ab04-0ee9f838c462"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5004,
+   "name": "Aerodrome",
+   "guids": [
+    "f1302d1d-24e4-4d17-a434-3550af908ba3"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5005,
+   "name": "Aila",
+   "guids": [
+    "0cb20108-dcbb-48e2-8294-519d09c60b3e",
+    "3155d09b-1440-4a95-a64e-68243735421d",
+    "3e22799f-87df-4c9f-bd45-769e14753caa",
+    "47a149e6-a8e2-4e33-aa88-e76246c45696",
+    "97b6aca1-f1f5-492b-afd8-fcab7752ef7c",
+    "9cac2384-2020-4ae9-8375-15c5d07da446",
+    "abf614d4-4700-41f3-a05a-68c7e843cb1a",
+    "dc12f4bd-6c33-41f0-b7ad-d62a0be09a47"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5006,
+   "name": "Aimbot",
+   "guids": [
+    "f22fd14f-7e00-40cb-9e44-a46f34d64764"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5007,
+   "name": "Alchemy Lab",
+   "guids": [
+    "0dc4e708-415a-4ee5-ba1f-4cda9b880ebd",
+    "2ff9137c-1089-43f2-a389-120860aec5ea",
+    "3016cd02-8221-4d9b-9572-89af7705184f",
+    "52419a5c-f565-4e6d-9827-baa65c6d9d92"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5008,
+   "name": "Aldric",
+   "guids": [
+    "78cf8b25-5812-4b9a-a9ff-9694c86e7a90"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5009,
+   "name": "Ande",
+   "guids": [
+    "60e67364-7aab-4ffa-9751-db5ec0caf452",
+    "705c0d8e-8513-49ce-82e8-81782cdac316",
+    "70915950-ad96-47c8-a139-48b913b80750",
+    "b649cc9a-9ea4-46d3-9ee5-8d57626260cf",
+    "e3bbe96b-7108-4343-9584-3bade7f004a5"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5010,
+   "name": "Apothecary",
+   "guids": [
+    "04ac552f-c292-455e-bf5f-438119dfa196"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5011,
+   "name": "Armory",
+   "guids": [
+    "7c179f37-5845-4041-b123-0c7da0fdabbd",
+    "ae1d3ea7-71d8-498c-b607-9cb12e3555cd",
+    "bfa6d377-2fbe-4c8f-82ab-685e93dde1cb",
+    "c9fe4d57-1e5e-40dc-b878-9243ac41d130",
+    "d277e30d-2be8-4026-b0af-e1c11413e8a0"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5012,
+   "name": "Artisan Dunes",
+   "guids": [
+    "a5b983cb-ee95-48bf-b84a-d25a74b9c1df"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5013,
+   "name": "Aurora Dome",
+   "guids": [
+    "7495fc68-4444-4fef-96f0-000000000000"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5014,
+   "name": "Barkun",
+   "guids": [
+    "8f0aea10-9894-4ded-a726-72b23142589c"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5015,
+   "name": "Battlefield",
+   "guids": [
+    "488df2ed-b698-4fe6-814f-5adcde618208",
+    "8e61f266-d58a-45ec-9560-76bf27afd1ca",
+    "9037d88a-5e05-4ba6-8219-69360d402759",
+    "9ba94af3-54c6-4e34-99eb-32d4309118ec"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5016,
+   "name": "BazaarCON",
+   "guids": [
+    "6e840bf1-1cda-4c20-9c6b-44b4523c31a1"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5017,
+   "name": "Bex",
+   "guids": [
+    "34dc624d-1046-4e2d-906d-1fd8d19647d8"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5018,
+   "name": "Bjorn's Gift Exchange",
+   "guids": [
+    "a64974ac-1250-41fe-aada-508b22c93ac4"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5019,
+   "name": "Block Party",
+   "guids": [
+    "57a90bd8-9ece-4917-a2e7-fb8925fe231a",
+    "71c529a8-7366-4f69-b2ab-4f0eec8573b5",
+    "db314574-3ebe-49e1-8b87-c6b3678a7368",
+    "efdb2b8a-7475-47fe-ad84-8a40ab49c27e"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5020,
+   "name": "Borrow",
+   "guids": [
+    "036ce025-fc8a-4924-b1bd-a4f6f470ebc7"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5021,
+   "name": "Botanical Gardens",
+   "guids": [
+    "1bd4edc9-0cb9-49f7-bc03-703c36835de1",
+    "8251155c-f8b0-4dbc-9a42-fd2448a30171",
+    "b4d4dae0-708a-452e-87a2-cb87b308c1ac",
+    "b6baa6f3-7321-4d14-9412-68acdab57d9c"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5022,
+   "name": "Botul",
+   "guids": [
+    "4751d02e-876e-47e3-bb23-d7675e4ee5c6"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5023,
+   "name": "Bountiful Harvest",
+   "guids": [
+    "1a508bee-0dba-4110-9402-f372bb6c6137",
+    "9dea6b33-264c-4550-9282-80ec297fb070",
+    "ec7fa0bf-dc6b-4019-b199-253a1475abf7",
+    "facaa0bc-ddb9-48dc-8be7-f44b8a07df00"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5024,
+   "name": "Bounty Hunters",
+   "guids": [
+    "0a46b7df-e0a2-4211-8529-0bfe91974a71"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5025,
+   "name": "Cabin Fishing",
+   "guids": [
+    "0c77d216-69de-4a92-9893-5f4b154128dc",
+    "3845dfe7-e077-46a4-9534-02ddb895060a",
+    "987abc50-90a5-416b-ac98-9220a31737e5",
+    "f10a4289-ddb2-46e2-9985-dfefff459951"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5026,
+   "name": "Cache of Riches",
+   "guids": [
+    "7d832f18-dd4c-4d67-8e4f-573618f7fa38",
+    "937489c5-22bf-4190-89b1-f396894c85f1",
+    "af188bbf-4e10-42c8-803c-12594f4d80d7"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5027,
+   "name": "Candy Stash",
+   "guids": [
+    "33a881fa-66fc-4a98-8744-de38c1d44baf",
+    "384bd291-99b1-4736-8cbc-ebdac4d11d63",
+    "cbcb84f9-631a-4d85-bed3-cfd2f86fb8d6",
+    "e6e09e6a-ebe0-46f8-bfbb-716b74f78bc6"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5028,
+   "name": "Chronos",
+   "guids": [
+    "3346b0d5-20a0-4aa4-a7d4-b86ad0109e59",
+    "b1288f12-2cf9-4473-a43e-4dd521703990"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5029,
+   "name": "Cinder Chase",
+   "guids": [
+    "168a04a9-d761-4df4-b9d9-0be88fe90f53",
+    "176ebe3f-4e14-4b8e-9704-98cd8e95190c",
+    "3ee61d8b-775f-4d75-a043-1975e1cbb55f",
+    "9c8fa101-03e7-4e29-aca6-01c05f47faf8"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5030,
+   "name": "Cobweb",
+   "guids": [
+    "b10f79af-da26-4b27-88da-3e7fea49a3b9",
+    "ef25f92c-484a-48de-b6de-8fc6429823ca"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5031,
+   "name": "Colt",
+   "guids": [
+    "816e6ba0-8f5f-412e-9756-8e1901dd9d49",
+    "91586550-41b0-4bc0-8739-d2268f04b703",
+    "db0dbc04-7652-46e6-84bf-a616f4a8e384"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5032,
+   "name": "Concert Hall",
+   "guids": [
+    "a5bbdcf8-c1a3-41e3-898f-71a1819039d3"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5033,
+   "name": "Cupboard",
+   "guids": [
+    "13b4c0cd-313d-4e0f-9a51-eb4d288f32a5",
+    "6de772fb-6a02-4b8c-a2c2-26023472ca31",
+    "7421cca5-1d3e-4cf8-afa0-a3ce0c06e1c1",
+    "f0a36d78-d446-4d57-81e0-9dfe942e4307"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5034,
+   "name": "Curio",
+   "guids": [
+    "c6cffe25-8e94-4a7b-a821-3e3c7093333b"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5035,
+   "name": "D'flek",
+   "guids": [
+    "bea81fd6-ae81-49b2-b733-40246d8e825f"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5036,
+   "name": "Dabora",
+   "guids": [
+    "5ea96339-6c5e-42b4-bc5f-028b780348e0"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5037,
+   "name": "Deadly Duel",
+   "guids": [
+    "a120c614-233b-460f-8b54-1dd81d5e1db5",
+    "ddecdf10-d7b5-475a-9c7b-d74e4cb51294",
+    "fc1960b0-ac02-4e3c-9b46-e421ae896724"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5038,
+   "name": "Deep Sea Fishing",
+   "guids": [
+    "2584cba4-fa60-4132-9e46-40f7eb9ee95d",
+    "36b24aae-977a-40f4-a5d1-05deae478215",
+    "6a8a9d37-f88b-4da8-a1fa-3584a4bd5c3d",
+    "9e3c43fe-0205-4bf6-9da9-2b9bbbef8a65"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5039,
+   "name": "Dino Trapping",
+   "guids": [
+    "4e6d3224-affa-49a8-90ef-c6c9c986f786",
+    "88416f83-e642-4a1f-82ad-d80d9a9a57bb",
+    "f785c906-9f01-4641-80a6-b7cc360c271a"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5040,
+   "name": "Dooley",
+   "guids": [
+    "4580fb31-b2ea-4f9b-9ab9-2979602f83d8"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5041,
+   "name": "Dooley's Crib",
+   "guids": [
+    "2e0acd01-e0b2-4c0d-a7aa-84914c0cbb94",
+    "64fcc650-1266-4fcd-8f9a-7c64a38da056",
+    "69bc6d15-487a-43cd-9b7f-d0652853d991"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5042,
+   "name": "Eating Contest",
+   "guids": [
+    "47704642-ae7a-4775-a26a-e5e5a8cff7bf"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5043,
+   "name": "Economic Seminar",
+   "guids": [
+    "9d0370fc-f091-4483-9e18-bde61a02212f"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5044,
+   "name": "Eli",
+   "guids": [
+    "0ff275f7-60ef-4428-acb6-1a138d03152d"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5045,
+   "name": "Epic Battle",
+   "guids": [
+    "2f50dc7e-8a03-41d9-82d0-dd956dfe4b50",
+    "58413cc6-7c39-45c7-aeb5-de0fd5e801eb",
+    "d290146b-28d4-4aae-87c7-249d4e7c0a81"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5046,
+   "name": "Equipment Van",
+   "guids": [
+    "25e61e9e-2329-48e9-9f59-77026530cf05",
+    "48536b9e-bcca-4547-ac6f-9db888a94b86",
+    "8058eadd-b2f1-4019-a437-f593af6ee076",
+    "8205d118-b8d2-4040-b359-166bd1738fb3"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5047,
+   "name": "Excavation",
+   "guids": [
+    "287ff00b-37f3-4c58-aafe-70272b9b150f",
+    "8f83e037-1420-4210-a2b0-b4d80f7d86f5",
+    "91b039eb-1478-4cc8-a44e-c0b0a2f3fd20",
+    "aebbf2cb-acbc-4cc7-86a8-ac9f49756d35",
+    "c2ecd101-b69d-42ed-a0e9-f8bb84b0fa09"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5048,
+   "name": "Extract Extract",
+   "guids": [
+    "30101d11-aff6-430e-a2e4-57c261111933",
+    "9ed55b8e-6ac3-4fdf-898e-30e181e6c88c",
+    "adeccad5-0430-4a3a-a305-d007788f7627",
+    "d896d88c-91e8-4950-9670-0c42f9fd5a92"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5049,
+   "name": "Family Reunion",
+   "guids": [
+    "d0697c4c-2b63-4505-a946-d396493ac8a6"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5050,
+   "name": "Farai",
+   "guids": [
+    "412fb3ec-88de-40b4-a475-10e583189d8a"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5051,
+   "name": "Farmer's Market",
+   "guids": [
+    "f40135ba-ddcb-405e-aefb-c085c4a397cd"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5052,
+   "name": "Finn's Big Bite",
+   "guids": [
+    "0623cedd-f24b-4117-a6b8-5fc41064a00d"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5053,
+   "name": "Flambe",
+   "guids": [
+    "f4347956-4eaf-4665-aa1b-addf8423588b"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5054,
+   "name": "Flex",
+   "guids": [
+    "7bd967dd-4631-4252-bdff-ee0bd5e3ddb7"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5055,
+   "name": "Form",
+   "guids": [
+    "a72c9135-0869-4243-a689-cde06ad97dd0"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5056,
+   "name": "Freezer",
+   "guids": [
+    "1b34f123-434c-4b88-bfc8-5fb2d245e1b1",
+    "1f56ada9-2f87-469e-ad8b-29f7bc5754f2",
+    "3b70cc4c-867d-4a04-a9c4-e09726d8b211"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5057,
+   "name": "Freiya",
+   "guids": [
+    "c246ee53-51ea-40c1-ac2f-71435e179531"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5058,
+   "name": "Frog Hollow",
+   "guids": [
+    "dac7e568-4b7d-487a-8564-ad37dcedde39"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5059,
+   "name": "Furnace",
+   "guids": [
+    "086e814f-5525-4747-b783-3279f1e67880",
+    "3f758597-56ae-400e-bc5b-92978fbe6b2c",
+    "69a2a91d-326d-44de-bfd6-a8ad68440a40",
+    "8b4d74f6-6491-40d6-87da-023672144e03"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5060,
+   "name": "Futura",
+   "guids": [
+    "aef5e7d8-ea0b-4e7e-8f3d-6e7ba492fa10"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5061,
+   "name": "Gaseo",
+   "guids": [
+    "9fc8b5a3-f522-4999-b310-26a0fadc7708"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5062,
+   "name": "Gastro",
+   "guids": [
+    "c3d9c329-0db6-478e-ad0f-ef2ae78834ce"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5063,
+   "name": "Get Gold or Diamond Loot",
+   "guids": [
+    "270c3ff7-507a-40e0-95bb-5c742ce9aa7a"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5064,
+   "name": "Go Fishing",
+   "guids": [
+    "fd017aa9-d8b9-4327-8832-2fbc56901f34"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5065,
+   "name": "Gold or Diamond item",
+   "guids": [
+    "4c213448-66a1-4cb0-a2b8-c38e1d742f4e"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5066,
+   "name": "Goldie",
+   "guids": [
+    "1f72700a-fe11-4792-8a47-9e52b9387f29",
+    "50292930-5e68-47a2-8cc5-fde69aadc5aa"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5067,
+   "name": "Grandmaster",
+   "guids": [
+    "12fb92f0-b76c-4493-85eb-47a6d18bdf5f"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5068,
+   "name": "Guard Locker",
+   "guids": [
+    "97147e21-62ef-4067-b7d5-d0cb0736775f",
+    "bc1ed5b8-9603-41f2-9d03-b1ff423484aa",
+    "f7467c4b-87c5-4e55-957b-813ac703a3c1",
+    "fbc087d9-f0d5-48a2-8c83-f9fccd572b4b"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5069,
+   "name": "Gulch's Dive",
+   "guids": [
+    "8c69a3e3-8c82-4049-aa89-1836ccb6ebc4"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5070,
+   "name": "Gumball Machine",
+   "guids": [
+    "af395a8a-f327-4ebf-96a3-58f6016976b7"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5071,
+   "name": "Gunpowder Cache",
+   "guids": [
+    "55cb2028-845d-476b-8e28-8cba27cc22d9",
+    "57db7d4b-421a-4869-b7be-d969b494f508",
+    "acaf7c4f-ecd4-4af1-a79c-c5b0b20ee21f"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5072,
+   "name": "Haddy",
+   "guids": [
+    "c22b85e7-3860-48b4-b639-8d55ac423b74"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5073,
+   "name": "Hef",
+   "guids": [
+    "43dbd6ed-6989-4ae4-acdc-f8bfcb8a008f",
+    "55e0f929-071a-4e51-b60e-51fcc792f0b9"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5074,
+   "name": "Herma",
+   "guids": [
+    "2708055d-a8be-4c2f-a8d6-574e884a254e"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5075,
+   "name": "Hidden Lake",
+   "guids": [
+    "0f34d701-1529-4dac-aa46-35d97d5a57a1"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5076,
+   "name": "Hospital",
+   "guids": [
+    "a79c70c6-44a8-4553-b715-2e25c83c3b8c",
+    "c1c4c655-4c5b-4873-bdce-3832c65e4d8e",
+    "d36cb96b-be1a-418c-985a-1a49cb5a7036",
+    "faae3bd7-8d8f-4561-b127-78e6420a67a5"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5077,
+   "name": "House Party",
+   "guids": [
+    "07dabb08-156e-486e-96e2-c0d0e2aaa904",
+    "25543cb9-e918-4e8b-98e3-10b07c475162",
+    "2b3bbe43-06b7-4dcd-b486-a9d9b337ace1",
+    "4ecd92f8-43d3-419d-9abf-95d3a53d3e0f"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5078,
+   "name": "Invest in Yourself",
+   "guids": [
+    "8ece0ce0-1b20-41da-a3d9-262f2038af58",
+    "b69e0b6d-d4c2-4017-a4b4-43e4369600b1",
+    "f6430efe-8452-475b-8c8f-5d789b914a3f"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5079,
+   "name": "Investment Pitch",
+   "guids": [
+    "8375c937-5542-4d89-9a87-37c01673c611"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5080,
+   "name": "Jay Jay",
+   "guids": [
+    "00b9bc97-b751-48c3-b3ae-6d96adf7a929",
+    "2f885e4a-bbb5-4233-8798-7224dd126f6e",
+    "5406f2e4-d22e-4aca-84c5-87fc81883d6e",
+    "74d81658-9f44-45e6-8f7c-fd6ced634e63",
+    "85db60ee-3619-4e39-bfb2-2f4ac56f172b",
+    "89d7bbcd-bf3e-48e5-a2ab-013d23452378",
+    "96cf61f6-9b9b-453c-9fc0-ea9268a0b71d",
+    "e25617c8-7366-428d-a3c2-b721fb9aa722",
+    "e34024e3-4380-4689-b9c6-b3db7faeaec5",
+    "eb1453e4-2307-4b6f-9a15-f8f30c849eb4",
+    "fa533c05-c89a-4849-8562-b560532f1431"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5081,
+   "name": "Jules",
+   "guids": [
+    "7fdc233f-b81f-4216-a646-4c807c2240da"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5082,
+   "name": "Jules' Cafe",
+   "guids": [
+    "185a03bc-2fb2-4366-bbe8-1b1c6f7d39fd"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5083,
+   "name": "Jungle Ruins",
+   "guids": [
+    "1e511488-af8e-4852-a46a-0f27a2b07aac"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5084,
+   "name": "Karnok",
+   "guids": [
+    "379d881b-4524-4db9-a606-47bd35749f44"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5085,
+   "name": "Kev's Armory",
+   "guids": [
+    "6f5c1ce2-19c1-4df8-bc5a-242a0f5b5189",
+    "a4fa13f8-6beb-4b6c-839b-60af167628d9"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5086,
+   "name": "Kina",
+   "guids": [
+    "3ab184ce-bdb8-4dee-9169-8b383a25eae6",
+    "5b7c5fc4-c942-44fe-9ca8-726dc36a2ad6",
+    "79fe1693-1e6d-4ed6-b376-794baca19262",
+    "7b598c89-fdf2-4e83-bc4c-6f16d86fbe04"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5087,
+   "name": "Knightshade",
+   "guids": [
+    "2745a661-095c-44a5-bb6e-8dc76e07bda2",
+    "d86e22d9-b54d-4be9-8b5b-f3fe93d4c133"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5088,
+   "name": "Launch Tower",
+   "guids": [
+    "df8ff0c9-05cc-4797-aa70-f648e4b283df"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5089,
+   "name": "Laurel's Night Terrors",
+   "guids": [
+    "2d23952b-f0e4-4a7a-ac65-11c7def01679"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5090,
+   "name": "Ledger",
+   "guids": [
+    "adcc1a7a-c372-4563-b916-3735cacac82b"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5091,
+   "name": "Library",
+   "guids": [
+    "48a25657-baf6-440d-9085-bd7aeda1638a"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5092,
+   "name": "Likit",
+   "guids": [
+    "c28b6e9c-dd6d-4bb7-97e7-14aee53e528b"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5093,
+   "name": "Look for Spare Change",
+   "guids": [
+    "39961216-13c2-4013-8da5-6435a86e0e76",
+    "b3f47a45-98bd-4200-9e94-5ddbc32e60cf",
+    "cbe0d294-09db-47ea-a7e8-8127605c1173",
+    "ef60b13f-35cb-49ef-bf9c-55847e3ab9ce"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5094,
+   "name": "Lost and Found",
+   "guids": [
+    "4ebea557-6912-4082-9e04-a4c02472fc45",
+    "592c3f31-a6a0-4b1a-a1d9-4016224f09ab",
+    "9297f1eb-0435-4483-b530-5b1074210720",
+    "ff66c76e-34aa-42fa-99b7-cbd0fba31ecb"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5095,
+   "name": "Luxe",
+   "guids": [
+    "892de564-d894-4e07-ab21-959e16e8cdf8"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5096,
+   "name": "Mad Maddie",
+   "guids": [
+    "1ff8a6be-5087-45f6-8e72-9e94dbfa0c2b"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5097,
+   "name": "Mag Storage",
+   "guids": [
+    "045c8751-0395-4b3b-b703-b11bc96a1944",
+    "17493eb4-2d8c-4bbd-9e9e-8220269dd323",
+    "1f14ebe7-5c23-4439-a787-3ca6933ee2ff",
+    "497c2eb4-2b38-4dd9-b41f-a2553416622c"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5098,
+   "name": "Mak",
+   "guids": [
+    "4475cff5-6105-4f4a-978c-b282e36173eb"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5099,
+   "name": "Mak's Laboratory",
+   "guids": [
+    "001a960b-7ffb-4156-9fc1-1121eb93fb9e"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5100,
+   "name": "Mandala",
+   "guids": [
+    "255ae0fa-f203-4e9f-855d-e090e6937b5b"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5101,
+   "name": "Medicine Cabinet",
+   "guids": [
+    "0e0a056f-ad2f-4049-b17d-8031393402ec",
+    "76da2ed3-caa0-4420-82a6-a4f5211d012c",
+    "a5980f5b-4f19-4826-8919-8d88077d6ba0",
+    "d237472b-0d0e-47d2-b51d-37def1e201dd"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5102,
+   "name": "Midsworth",
+   "guids": [
+    "0e5caade-789e-4184-92dc-d1ab03fcf926",
+    "214fe1d5-c583-4766-99c5-c621598c83ce",
+    "b8f55bb0-536e-4d5f-a328-d38f88c6d479"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5103,
+   "name": "Mittel",
+   "guids": [
+    "912c8b09-3b76-4aa1-8e21-245e0dfb5046",
+    "ab14e395-2bef-42f1-a5ad-9947e56bb3f2",
+    "cca9281a-d259-4771-9747-ea7af6de8dcf",
+    "e1e3e229-9806-4d2d-99e7-d25592fe14b6"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5104,
+   "name": "Monster Ranch",
+   "guids": [
+    "617a3f2c-e964-4bc0-8929-d0524e269bc1"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5105,
+   "name": "Moonlit Meadow",
+   "guids": [
+    "3cb5a1a2-819e-433e-9f41-f5ed77cb04b0",
+    "4d64d6cd-d42a-4a08-bac9-5f1563d6b7eb",
+    "8d1dda63-1fb9-44e5-9ed6-e8050d4d65d7",
+    "9178c378-9e59-4e92-9023-17105e0686d3"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5106,
+   "name": "Mountain Pass",
+   "guids": [
+    "956e9c74-7d98-4a2b-b500-def577914945"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5107,
+   "name": "Mr. Morland",
+   "guids": [
+    "e30d8bef-5bea-4e95-b4c2-e29e17325a82"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5108,
+   "name": "Mysterious Portal",
+   "guids": [
+    "b7acf32d-79f8-4040-810f-4fb44e16682b"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5109,
+   "name": "Mystery Box",
+   "guids": [
+    "e78da732-de3f-443f-8e3e-94d0dcfb63dd"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5110,
+   "name": "Nautica",
+   "guids": [
+    "1a21931f-6183-4251-914b-c8f83dc58a30",
+    "2e2f894d-209c-47e0-905a-63b3b59c8aa8"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5111,
+   "name": "Nufu",
+   "guids": [
+    "210003fa-a20d-4ad1-9ada-d5fad5bf9f89"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5112,
+   "name": "Obstacle Course",
+   "guids": [
+    "3bb35f2f-3474-4edb-98a7-d7588fb20f74",
+    "6e4b782d-d4e4-43ac-93cd-4ee46d680d48",
+    "7077c578-f19e-483b-bc2c-db65b5e47e7c",
+    "7b5bd866-3b46-4bc0-b5dc-e5458c67cf9d",
+    "d21fae9a-1cb4-40f2-8574-9c72b51a1ce1"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5113,
+   "name": "Orion",
+   "guids": [
+    "d3727a3a-3dd2-4ea7-a396-515e2c41c1b0",
+    "d61f942a-6da4-48bd-a4db-1bde45174aba"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5114,
+   "name": "Pearl's Dig Site",
+   "guids": [
+    "dbdf69f8-9bea-40e7-9098-209c8c475971"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5115,
+   "name": "Photo Booth",
+   "guids": [
+    "26164d27-60b8-4935-840c-816bbe535a64"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5116,
+   "name": "Piano",
+   "guids": [
+    "8b623bf7-d8ef-42ce-820d-8b23b3972094"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5117,
+   "name": "Pinfeather",
+   "guids": [
+    "7066e72e-40b7-4104-b521-159de457f2d0"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5118,
+   "name": "Pol",
+   "guids": [
+    "065f6793-8607-4f02-abfe-db6afb221ab2",
+    "bdf0a9ab-8bc2-4f1b-8f7d-614293ac2db2"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5119,
+   "name": "Private Pitchfork",
+   "guids": [
+    "15b88e74-024e-40a3-a811-aa5810e68ca2"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5120,
+   "name": "Procure Medkit",
+   "guids": [
+    "1ff79367-b005-43e2-81cc-a9f3b2e55b49",
+    "9f7cbbaf-aeed-4170-9400-e1da445fe101",
+    "cb280097-2346-43e0-b6ef-bf7ba2b01b2f",
+    "e750af0e-60f1-4da1-838a-a0ac41ca6a73"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5121,
+   "name": "Prospero",
+   "guids": [
+    "bcdaa6d4-9057-4ea1-8110-a2dae217c55f"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5122,
+   "name": "Purrr",
+   "guids": [
+    "be759478-d828-4bc2-8268-0596f2c731aa"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5123,
+   "name": "Pygmalien",
+   "guids": [
+    "f9074804-1812-445a-8688-b8c86f9c7711"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5124,
+   "name": "Pygmalien's Loft",
+   "guids": [
+    "0262e8cd-9f8d-4d01-9b6e-24acd4d28d98",
+    "5df1c571-e80e-492d-ae4c-78e4fb1e1ee8"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5125,
+   "name": "Pyre",
+   "guids": [
+    "1005cb9f-87f3-4087-a695-a54b7315d586",
+    "4afc594c-9213-47e2-b869-82bab1882490",
+    "731fdecd-bc3f-48a7-bdf9-4096f3eaa963",
+    "733355b4-4e6e-4255-9e62-b60eef2f9864",
+    "904bd867-a3e8-444f-94e1-0f13acef8536"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5126,
+   "name": "Quixel",
+   "guids": [
+    "323e2c05-f077-4774-84a5-9e89d8d1c9b9",
+    "342fcc56-26a4-479b-8707-46ddfb5adef2",
+    "e7cac33d-864c-45c9-8a3e-c3218aa0febe"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5127,
+   "name": "Racetrack",
+   "guids": [
+    "31ba6532-0fea-47ba-8102-96560740206a",
+    "406a9513-35b3-4a12-96ab-48c0710b415b",
+    "ab256aab-9578-4eb8-a821-85b5c9e892d8",
+    "ae4a5d1a-edc7-4a0a-b357-65e051e6a80e",
+    "bfc22038-04da-41a1-97c9-7cb8c3608747"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5128,
+   "name": "Reagent Harvesting",
+   "guids": [
+    "4e683fef-313e-40ba-9aa9-b2848d7b6b72",
+    "52e66fe1-78f0-4ee1-a3fe-2f2fe21efbb7",
+    "bdd66fcc-98dc-47aa-81df-1282a4bbef05",
+    "d637adc9-3b1d-4aef-b238-07c3bafe057f"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5129,
+   "name": "Recycling Center",
+   "guids": [
+    "12a50b2d-340f-4603-a5a4-a3d63d80c504",
+    "42a96476-afc7-420f-bc06-34872b57b534",
+    "4e4c3fd4-666d-4796-8ef1-43e2aa771f42",
+    "ea7f99f9-a143-43d8-a74d-933a439a4b60"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5130,
+   "name": "Reflecting Pool",
+   "guids": [
+    "778c3493-54c3-45bd-8c1b-f410c5ceb937"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5131,
+   "name": "Regenerative Tincture",
+   "guids": [
+    "fe756e73-bedb-4700-901f-07ef13b3c512"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5132,
+   "name": "Rest",
+   "guids": [
+    "90e47f27-241c-4769-a6c6-a100d2a33421"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5133,
+   "name": "Roadside Crate",
+   "guids": [
+    "218d4cae-2813-4414-a5ab-1138cb064961"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5134,
+   "name": "Robotics Factory",
+   "guids": [
+    "874fa28f-c349-463c-aec6-b3572a71b6ee"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5135,
+   "name": "Salvage Yard",
+   "guids": [
+    "a79a4688-752d-4b4f-90b3-c92b3a4d1a92"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5136,
+   "name": "Scrap Salvage",
+   "guids": [
+    "1d08f4e5-146f-415d-958f-5a93a84dfbc2",
+    "3db126be-6a4f-48b7-81e0-793287e9eeeb",
+    "65ff28de-67a6-4c51-adf4-f3f9379ff96a",
+    "d0c544fe-36a7-4887-98c0-bfa949a0f472"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5137,
+   "name": "Security Center",
+   "guids": [
+    "0370b2b5-e856-457e-a8dc-b7fd0ab098fc",
+    "8445b23f-b1ed-48bc-aeec-0b70be4e4030",
+    "bbd7fab5-9bf1-4de4-bd27-bed7f7fd5c97",
+    "d2167751-e2ce-439c-995a-3282452e2f14",
+    "ea510bb8-0ded-48ee-b0e2-750d26bf1587"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5138,
+   "name": "Serafina",
+   "guids": [
+    "b690812d-108b-49ce-82f3-e1a41379022c"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5139,
+   "name": "Sharpening Kit",
+   "guids": [
+    "79557839-d5cc-4638-ba7b-234f0142a38a",
+    "b6634697-588b-4131-883b-c9cf20967760",
+    "d0a0f491-e1f2-433b-b2d9-caee00202e09",
+    "fab18db9-38b4-438a-a87f-3dfc931ae679"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5140,
+   "name": "Shelter Shelby",
+   "guids": [
+    "9459a01b-edf5-432b-81cd-1fd2cacfadad"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5141,
+   "name": "Shrouded Figure",
+   "guids": [
+    "818fcd1d-4cfd-4629-b83f-8d5e753dd8f4"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5142,
+   "name": "Shrouded Figure's Chest",
+   "guids": [
+    "56eb7fa9-5a5f-4056-8e75-ec2a5a5c3433",
+    "62376974-7a34-4d47-a34a-6611f58230d0",
+    "d81bae8a-4322-4314-ac3d-c2c1313445fb"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5143,
+   "name": "Silvia",
+   "guids": [
+    "5fcd3081-0daa-4e50-b749-c884b405ef9c",
+    "ec81a27c-590c-43a1-a353-804a23b5e5d9"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5144,
+   "name": "Snack Time",
+   "guids": [
+    "e6b0bc78-4284-4bc7-b130-f5d04007ccf6"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5145,
+   "name": "Spawning Test",
+   "guids": [
+    "7799fa37-567f-4356-bfa7-83e0fd0dd467"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5146,
+   "name": "Star Chart Treasure",
+   "guids": [
+    "34c27d0d-2aa2-40a1-8276-791ee7086da1"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5147,
+   "name": "Statia",
+   "guids": [
+    "7f2c3a0d-7675-44dd-8667-77b08455eec8"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5148,
+   "name": "Stelle",
+   "guids": [
+    "e48b3243-1e7e-4a97-bf4f-0699fd0b4616"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5149,
+   "name": "Stelle's Workshop",
+   "guids": [
+    "d6c69fd2-7493-4b55-af18-eab0695cf16a"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5150,
+   "name": "Stickybeans",
+   "guids": [
+    "d0276b47-be8a-4bbc-ab55-9f92b352480a"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5151,
+   "name": "Street Festival",
+   "guids": [
+    "2ee65e2b-c679-41b6-812d-5dd59a5cb27a"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5152,
+   "name": "Study",
+   "guids": [
+    "ce38f4a2-f156-4082-b8ce-e8956c71fc0d"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5153,
+   "name": "Tatiana",
+   "guids": [
+    "22bb0004-5131-4588-a567-03ee3c96003b"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5154,
+   "name": "Tech Salvage",
+   "guids": [
+    "5e607777-7ce3-467a-9eaf-fab0ee41e905",
+    "8998de52-cc59-4588-885c-39a60ca3faf7",
+    "a8c7d852-f117-43d2-b7a6-76d78866321e",
+    "cdb02a2a-603c-416e-bcb1-9fc71632b08a"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5155,
+   "name": "The Antiquarian",
+   "guids": [
+    "e840f7a3-0a04-455d-852c-286dc5011efc"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5156,
+   "name": "The Cult",
+   "guids": [
+    "bf1594cc-7f65-4236-b95f-ed2f521739de"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5157,
+   "name": "The Docks",
+   "guids": [
+    "11287697-dd45-4edc-9539-780a26001043"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5158,
+   "name": "The Dragons",
+   "guids": [
+    "85cdd52b-12c2-4b64-b308-a5788f791b81"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5159,
+   "name": "The Dragons' Hideout",
+   "guids": [
+    "d33129a9-5df2-47e5-9b6a-7469743fe5a8"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5160,
+   "name": "The Financial District",
+   "guids": [
+    "7676de25-e0eb-4aa2-a33c-0570ddf4777a"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5161,
+   "name": "The Lost Crate",
+   "guids": [
+    "87c6a586-fea5-4bbd-9296-2b2883bcac24"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5162,
+   "name": "The Tester",
+   "guids": [
+    "41cdf4ee-7790-4da1-96f8-a46d3391a0d9"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5163,
+   "name": "The Travel Agent",
+   "guids": [
+    "002d8f6d-0e36-4921-89ed-3f0f28682d7b"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5164,
+   "name": "Thieves Guild",
+   "guids": [
+    "e792b6a6-2f85-4190-8e3c-002d2736d03d"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5165,
+   "name": "Tinker",
+   "guids": [
+    "b1b1f445-e625-4397-b4e2-ee4feeb729fa"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5166,
+   "name": "Tiny Furry Monster",
+   "guids": [
+    "54b6cf27-ab0f-4a57-bb0a-83c08de10d5a"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5167,
+   "name": "Tok's Clocks",
+   "guids": [
+    "3e871bbb-fb25-417f-8643-cb43456c3fc7"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5168,
+   "name": "Tomb of the Ancients",
+   "guids": [
+    "385dab86-65c1-40e8-8798-49865ad2353a"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5169,
+   "name": "Treasure Chest",
+   "guids": [
+    "213c6a72-de3d-445c-8950-3c922f0fff46",
+    "246ba7e6-f593-4a3c-a57a-c23c77b9532b",
+    "59eee473-a870-43ef-9a87-ac26c99474c1",
+    "71e387b6-bcb5-4c39-aa65-957ee5f6fbec"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5170,
+   "name": "Trophy Hunt",
+   "guids": [
+    "58e800bd-a2ae-4135-a8c3-2eca839c17d2",
+    "754ff658-3032-46ab-91f3-a2ce3a1cb1da",
+    "9ddb3457-d4a5-45ec-913e-ae52fce9cb22"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5171,
+   "name": "Truffle Farming",
+   "guids": [
+    "0cd9ac04-bd59-45f1-b997-3e06a495b5e3",
+    "76f58c75-f822-4d06-bcba-f4d39529fa99",
+    "c1d4c505-4c97-47b5-b205-ae28c1415cd2",
+    "c2a5bdf3-bc7f-466a-93c3-ee02d45e4ac0"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5172,
+   "name": "Uitar Center",
+   "guids": [
+    "c5a68a92-9932-40bd-a45f-e1c902807814"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5173,
+   "name": "Underground Resistance",
+   "guids": [
+    "972e6031-4036-47ef-8e6e-1b8feb53fe47"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5174,
+   "name": "Utility Box",
+   "guids": [
+    "46f665ff-c67b-4b8f-9ea1-4fceb086ceb5",
+    "d70c7e92-3eff-4cb3-ba01-f9e8c179e407",
+    "e016221d-cc17-4a93-aabb-00155bbbeb46",
+    "f531a553-d578-40d5-a3da-1159ab2a096f"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5175,
+   "name": "Valpak",
+   "guids": [
+    "42bd0dae-7215-48cf-a526-437289e7f8d1",
+    "e3b894b0-a078-4b1d-8793-ac6459a8361a"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5176,
+   "name": "Vanessa",
+   "guids": [
+    "580ba494-a852-4d80-a82d-5cd66fcfd2f3"
+   ],
+   "merchant": true
+  },
+  {
+   "ap_id": 5177,
+   "name": "Vanessa's Quarters",
+   "guids": [
+    "6e33409d-d390-4764-969f-f96e96629213",
+    "b10b084f-4704-4d0c-ae62-299c1c58d52c"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5178,
+   "name": "Visit the Docks",
+   "guids": [
+    "98197afb-62d3-4efe-986a-4f5d5cda5ed3"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5179,
+   "name": "Wink",
+   "guids": [
+    "3e4c4f1a-fe5d-4e38-887a-08666ce36e71"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5180,
+   "name": "Wishing Fountain",
+   "guids": [
+    "3212ade4-8e23-49cd-b9b5-f729280ba0b5"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5181,
+   "name": "Workshop",
+   "guids": [
+    "011b22fa-4a25-48a6-93e0-7602ceffcd13",
+    "08111534-157d-4603-b157-03ac0f6d02cf",
+    "79dc6e4f-1e05-43af-b6e8-b8ac8c791f3f",
+    "d8733ee2-22f0-498d-ac26-11f93d84fef3"
+   ],
+   "merchant": false
+  },
+  {
+   "ap_id": 5182,
+   "name": "Zurphin's Safari",
+   "guids": [
+    "b81a1c81-0a16-462a-8247-04653354b79d"
+   ],
+   "merchant": false
   }
  ]
 }

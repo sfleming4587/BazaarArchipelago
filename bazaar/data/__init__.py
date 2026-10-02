@@ -21,6 +21,15 @@ class Card:
 
 
 @dataclass(frozen=True)
+class Encounter:
+    """A merchant or event that can be locked: one lock item for every template of it (see docs/ENCOUNTER-LOCKS.md)."""
+    ap_id: int
+    name: str
+    guids: Tuple[str, ...]
+    merchant: bool  # a shop: entering is fine, what you buy there counts as locked
+
+
+@dataclass(frozen=True)
 class Pack:
     key: str
     ap_id: int
@@ -56,6 +65,10 @@ MERCHANT_DATA: Dict[str, dict] = {m["guid"]: m for m in _raw.get("merchants", []
 # events / steps that let you take an item for free: guid -> {"name": ..., "stock": SpawnContext}
 OFFER_DATA: Dict[str, dict] = {m["guid"]: m for m in _raw.get("offers", [])}
 EVENT_NAMES: Dict[str, str] = {e["guid"]: e["name"] for e in _raw.get("events", [])}  # every event, merchants too
+# every event template: guid -> {"name", "tier", "heroes", "level_up", "expedition", ...}
+EVENTS: Dict[str, dict] = {e["guid"]: e for e in _raw.get("events", [])}
+ENCOUNTERS: List[Encounter] = [Encounter(e["ap_id"], e["name"], tuple(e["guids"]), e["merchant"])
+                               for e in _raw.get("encounters", [])]
 
 TIERS = ("Bronze", "Silver", "Gold", "Diamond", "Legendary")
 

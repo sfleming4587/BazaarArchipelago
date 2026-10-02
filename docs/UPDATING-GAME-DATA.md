@@ -16,6 +16,8 @@ it doesn't know (new cards are never locked, new heroes aren't in the seed, new 
 | Merchants and item-choice events (what they can offer) | same | same |
 | Monsters and their rarity | same (`CombatEncounter` cards, `StartingTier`) | same |
 | Every event (choice-screen cards: merchants and plain events) with rarity, heroes, tags, spawn rule | same (`EventEncounter` cards) | same, `events` |
+| Which events are level-up rewards / part of an expedition | same (`level_ups` table; `[... Expedition]` InternalName prefix) | same, `events` (`level_up`, `expedition`) |
+| Lockable merchants/events, one per name, with their lock item `ap_id` (from 5000) | worked out by the extractor (see `docs/ENCOUNTER-LOCKS.md`) | same, `encounters` |
 | Game build the data came from | the newest `[VersionShow]` line in `Player.log` | `game_version` in the same file |
 | First day each monster rarity appears | **observed in game** - the server decides this, it's not in local data | `FIRST_DAY_OF_TIER` in `bazaar/data/__init__.py` |
 | Heroes (display names, order) | hand-kept list | `HEROES` / `HERO_ALIASES` in `tools/extract_data.py` |

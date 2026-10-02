@@ -47,6 +47,8 @@ LEGACY_PACK_NAMES = {
 
 CARD_ID_START = 1000
 PACK_ID_START = 100
+ENCOUNTER_ID_START = 5000  # merchant/event lock items (item id = BASE + ap_id, like cards)
+EXPEDITION = re.compile(r"^\[[^\]]*Expedition\]")  # the game's own InternalName prefix for an expedition's events
 
 
 def item_deals(node):
@@ -77,6 +79,7 @@ def main() -> None:
         sys.exit(f"Game database not found at {GAME_DB}. Launch The Bazaar once, then retry.")
 
     old = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else {"cards": [], "packs": []}
+    old_encounter_ids = {e["name"]: e["ap_id"] for e in old.get("encounters", [])}
     old_card_ids = {c["guid"]: c["ap_id"] for c in old["cards"]}
     old_pack_ids = {p["key"]: p["ap_id"] for p in old["packs"]}
     next_card_id = max(old_card_ids.values(), default=CARD_ID_START - 1) + 1
@@ -94,6 +97,9 @@ def main() -> None:
     # Every event (merchants included): the choice-screen cards. Facts only - which are lockable is the world's call
     # (owner, 2026-10-01: merchant and event locks; "least rare" needs the tier).
     events = []
+    # events a level-up hands you: never on the map, so never a merchant/event lock (owner, 2026-10-02)
+    level_up = set(re.findall(r"[0-9a-f-]{36}", json.dumps([json.loads(d if isinstance(d, str) else d.decode("utf-8"))
+                                                              for (d,) in db.execute("SELECT Data FROM level_ups")]).lower()))
     for (data,) in db.execute("SELECT Data FROM cards"):
         card = json.loads(data if isinstance(data, str) else data.decode("utf-8"))
         if card.get("Type") == "Item":
@@ -105,8 +111,11 @@ def main() -> None:
                              "spawns": card.get("SpawningEligibility") == "Always"})
         if card.get("Type") == "EventEncounter":
             events.append({"guid": card["Id"].lower(), "name": card_name(card), "internal": card.get("InternalName"),
-                           "tier": card.get("StartingTier"), "heroes": card.get("Heroes") or ["Common"],
-                           "tags": sorted(card.get("Tags") or []), "spawns": card.get("SpawningEligibility")})
+                           "tier": card.get("StartingTier"),
+                           "heroes": [HERO_ALIASES.get(h, h) for h in card.get("Heroes") or ["Common"]],
+                           "tags": sorted(card.get("Tags") or []), "spawns": card.get("SpawningEligibility"),
+                           "level_up": card["Id"].lower() in level_up,
+                           "expedition": bool(EXPEDITION.match(card.get("InternalName") or ""))})
         if card.get("Type") == "EventEncounter" and "Merchant" in (card.get("Tags") or []):
             merchants.append({"guid": card["Id"].lower(), "name": card_name(card),
                               "stock": (card.get("SelectionContext") or {}).get("SpawnContext")})
@@ -204,6 +213,24 @@ def main() -> None:
         packs.append({"key": key, "ap_id": old_pack_ids[key], "name": display, "hero": hero,
                       "cards": [g for g in guids if g in known or g in old_card_ids]})
 
+    # One lock item per merchant/event name, covering every template of it (Sharpening Kit has one per rarity).
+    # Names group the templates here, once; everything after works on the guid lists. Expedition events are only
+    # ever locked through the Expedition Tickets unlock. Ids are kept by name and never reused.
+    lockable = {}
+    for e in events:
+        if not (e["level_up"] or e["expedition"] or e["spawns"] == "Never"):
+            lockable.setdefault(e["name"], []).append(e["guid"])
+    next_encounter_id = max(old_encounter_ids.values(), default=ENCOUNTER_ID_START - 1) + 1
+    for name in sorted(lockable):
+        if name not in old_encounter_ids:
+            old_encounter_ids[name] = next_encounter_id
+            next_encounter_id += 1
+    merchant_guids = {m["guid"] for m in merchants}
+    encounters = [{"ap_id": old_encounter_ids[name], "name": name, "guids": sorted(guids),
+                   "merchant": any(g in merchant_guids for g in guids)} for name, guids in lockable.items()]
+    gone = old_encounter_ids.keys() - lockable.keys()  # vanished from the game: keep the id and name reserved
+    encounters += [e for e in old.get("encounters", []) if e["name"] in gone]
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
     versions = re.findall(r"\[VersionShow\]\s+Version: (\d+\.\d+\.\d+)", (CACHE / "Player.log").read_text(
         encoding="utf-8", errors="replace")) if (CACHE / "Player.log").exists() else []
@@ -212,7 +239,8 @@ def main() -> None:
            "merchants": sorted(merchants, key=lambda m: m["name"]),
            "offers": sorted(offers, key=lambda m: m["name"]),
            "monsters": sorted(monsters, key=lambda m: (m["level"] or 0, m["name"])),
-           "events": sorted(events, key=lambda e: (e["name"], e["guid"]))}
+           "events": sorted(events, key=lambda e: (e["name"], e["guid"])),
+           "encounters": sorted(encounters, key=lambda e: e["ap_id"])}
     OUT.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
 
     per_hero = {}
@@ -220,7 +248,8 @@ def main() -> None:
         if c["shop"]:
             per_hero[c["hero"]] = per_hero.get(c["hero"], 0) + 1
     print(f"wrote {OUT}: {len(cards)} cards, {len(packs)} packs, {len(out['merchants'])} merchants, "
-          f"{len(out['offers'])} item choices, {len(out['monsters'])} monsters, {len(out['events'])} events")
+          f"{len(out['offers'])} item choices, {len(out['monsters'])} monsters, {len(out['events'])} events, "
+          f"{len(encounters)} lockable merchants/events")
     print("shop items per hero:", dict(sorted(per_hero.items())))
     if unknown_heroes:
         print(f"WARNING: unknown hero names {sorted(unknown_heroes)} - add them to HEROES/HERO_ALIASES")

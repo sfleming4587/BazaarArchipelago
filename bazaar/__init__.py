@@ -7,9 +7,11 @@ from Options import OptionError
 from worlds.AutoWorld import WebWorld, World
 from worlds.LauncherComponents import Component, Type, components, launch
 
-from .data import BASE_HEROES, CARDS, CARDS_BY_NAME, HEROES, LEGENDARY_GUIDS, PACKS, TIERS, hero_key, tiers_on_day
-from .items import (EXPEDITION_TICKETS, FILLER_ITEMS, GAME, GROUP_ITEMS, LEGENDARY_ITEMS, LOCK_BYPASS, SELL_TRAP,
-                    BazaarItem, hero_item, item_name_groups, item_name_to_id, lock_items_by_hero, pack_item)
+from .data import (BASE_HEROES, CARDS, CARDS_BY_NAME, ENCOUNTERS, EVENTS, HEROES, LEGENDARY_GUIDS, PACKS, TIERS, Encounter,
+                   hero_key, tiers_on_day)
+from .items import (ENCOUNTERS_BY_ITEM, EVENT_RARITY, EXPEDITION_TICKETS, FILLER_ITEMS, GAME, GROUP_ITEMS,
+                    LEGENDARY_ITEMS, LOCK_BYPASS, SELL_TRAP, BazaarItem, encounter_item, hero_item, item_id_to_name,
+                    item_name_groups, item_name_to_id, lock_items_by_hero, pack_item)
 from .locations import (BazaarLocation, card_requirements, champion_event, hero_checks, location_name_groups,
                         location_name_to_id, win_location)
 from .options import (EXCLUDE_HERO_OPTIONS, OWN_HERO_OPTIONS, PACK_OPTIONS, BazaarOptions, option_groups,
@@ -81,6 +83,9 @@ class BazaarWorld(World):
     lock_items: Dict[str, List[str]]  # hero (or "Common") -> lock item names placed in the pool
     group_items: List[str]  # group unlocks (Legendary Items, Expedition Tickets) in the pool
     starters: Dict[str, List[str]]  # pool -> Bronze cards never locked
+    encounter_locks: List[str]  # merchant/event lock items in the pool (see docs/ENCOUNTER-LOCKS.md)
+    starter_merchants: List[str]  # merchants never locked
+    event_rarity: int  # copies of Event Rarity Progression in the pool
     passthrough: Optional[Dict[str, Any]]  # Universal Tracker: the real seed's slot_data
 
     @staticmethod
@@ -111,6 +116,7 @@ class BazaarWorld(World):
             logging.warning(f"{self.player_name} (The Bazaar): heroes_required lowered to {self.goal_count}, "
                             f"the number of heroes available (owned DLC heroes minus excluded ones).")
         self.starters = {}
+        self.encounter_locks, self.starter_merchants, self.event_rarity = [], [], 0
         self.logic = {"day_10": self.options.logic_day_10_cards.value,
                       "last_day": self.options.logic_last_day_cards.value,
                       "diamond": self.options.logic_diamond_cards.value,
@@ -149,6 +155,7 @@ class BazaarWorld(World):
         self.options.pvp_win_checks.value = int(data.get("pvp_win_checks", True))
         self.logic = data.get("logic", DEFAULT_LOGIC)
         self.starters = {}
+        self.encounter_locks, self.starter_merchants, self.event_rarity = [], [], 0
         self.multiworld.push_precollected(self.create_item(hero_item(self.starting_hero)))
 
     def create_regions(self) -> None:
@@ -182,8 +189,8 @@ class BazaarWorld(World):
             classification = ItemClassification.trap
         elif name == LOCK_BYPASS:
             classification = ItemClassification.useful  # a buff, never required by logic
-        elif name in GROUP_ITEMS or (name in CARDS_BY_NAME and CARDS_BY_NAME[name].hero == "Common"):
-            classification = ItemClassification.useful  # never required by logic
+        elif name in GROUP_ITEMS or name == EVENT_RARITY or name in ENCOUNTERS_BY_ITEM                 or (name in CARDS_BY_NAME and CARDS_BY_NAME[name].hero == "Common"):
+            classification = ItemClassification.useful  # never required by logic: a choice screen always has a way on
         else:
             classification = ItemClassification.progression
         return BazaarItem(name, classification, item_name_to_id[name], self.player)
@@ -217,8 +224,12 @@ class BazaarWorld(World):
         # no room) they're simply never locked, as the option says - never one by one (review 2026-09-29)
         excluded |= LEGENDARY_GUIDS
         pool += groups
+        self.event_rarity = min(self.options.event_rarity_progression.value, max(0, slots - len(pool)))
+        pool += [EVENT_RARITY] * self.event_rarity
         pool += [SELL_TRAP] * min(self.options.sell_traps.value, max(0, slots - len(pool)))
         pool += [LOCK_BYPASS] * min(self.options.lock_bypasses.value, max(0, slots - len(pool)))
+        self.encounter_locks = self.pick_encounters(max(0, slots - len(pool)))
+        pool += self.encounter_locks
 
         budget = (slots - len(pool)) * self.options.locked_cards_percent.value // 100
         duplicated = self.options.duplicate_cards.value
@@ -256,8 +267,11 @@ class BazaarWorld(World):
     def create_items_from_slot_data(self, data: Dict[str, Any]) -> None:
         """Universal Tracker only needs the same locations and rules; the item pool just has to be the right size."""
         self.lock_items, self.group_items = lock_items_by_hero(data["lock_items"])
+        self.encounter_locks = [item_id_to_name[i] for i in data.get("encounter_locks", [])]
+        self.event_rarity = data.get("event_rarity", 0)
         pool = [hero_item(h) for h in self.heroes if h != self.starting_hero]
         pool += [name for names_ in self.lock_items.values() for name in names_] + self.group_items
+        pool += self.encounter_locks + [EVENT_RARITY] * self.event_rarity
         slots = len(self.multiworld.get_unfilled_locations(self.player))
         self.multiworld.itempool += [self.create_item(name) for name in pool[:slots]]
         self.multiworld.itempool += [self.create_filler() for _ in range(slots - min(slots, len(pool)))]
@@ -278,6 +292,21 @@ class BazaarWorld(World):
                         extra.append(name)
                         progressing = True
         return extra
+
+    def pick_encounters(self, free: int) -> List[str]:
+        """Merchant/event lock items: locked_encounters_percent of those your heroes can meet, after setting aside
+        starter_merchants merchants that never get a lock item. Starters come from merchants with a version below
+        Diamond, so Event Rarity Progression leaves at least that version open."""
+        def meets(encounter: Encounter) -> bool:
+            heroes = {h for g in encounter.guids for h in EVENTS[g]["heroes"]}
+            return "Common" in heroes or bool(heroes & set(self.heroes))
+        candidates = [encounter_item(e) for e in ENCOUNTERS if meets(e)]
+        self.random.shuffle(candidates)
+        early = [name for name in candidates if ENCOUNTERS_BY_ITEM[name].merchant
+                 and any(EVENTS[g]["tier"] in TIERS[:3] for g in ENCOUNTERS_BY_ITEM[name].guids)]
+        self.starter_merchants = sorted(early[:self.options.starter_merchants.value])
+        candidates = [name for name in candidates if name not in self.starter_merchants]
+        return candidates[:min(free, len(candidates) * self.options.locked_encounters_percent.value // 100)]
 
     def pick_cards(self, count: int, excluded_guids: set) -> List[str]:
         """
@@ -327,6 +356,12 @@ class BazaarWorld(World):
             lines.append(f"  Common: {len(self.lock_items['Common'])} locked cards")
         if self.group_items:
             lines.append(f"  Group unlocks: {', '.join(self.group_items)}")
+        if self.encounter_locks:
+            lines.append(f"  Locked merchants/events: {', '.join(sorted(self.encounter_locks))}")
+        if self.starter_merchants:
+            lines.append(f"  Starter merchants (never locked): {', '.join(self.starter_merchants)}")
+        if self.event_rarity:
+            lines.append(f"  Event Rarity Progression: {self.event_rarity} copies")
         for group, starters in sorted(self.starters.items()):
             lines.append(f"  Starter cards ({group}, never locked): {', '.join(starters)}")
         days = [f"day {d}: {' / '.join(self.monster_tiers(d))}" for d in range(1, self.options.max_day.value + 1)
@@ -350,4 +385,7 @@ class BazaarWorld(World):
             "sell_trap_days": self.options.sell_trap_days.value,
             "logic": self.logic,
             "death_link_on_concede": bool(self.options.death_link_on_concede.value),
+            "encounter_locks": sorted(item_name_to_id[name] for name in self.encounter_locks),
+            "event_rarity": self.event_rarity,
+            "exempt_expeditions": bool(self.options.exempt_expeditions.value),
         }

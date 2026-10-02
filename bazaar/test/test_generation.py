@@ -7,6 +7,8 @@ from BaseClasses import CollectionState
 
 from .bases import BazaarTestBase
 
+# merchant/event locks take slots card locks would get; tests about card locks and logic fitting leave them out
+NO_ENCOUNTER_LOCKS = {"locked_encounters_percent": 0, "event_rarity_progression": 0}
 ALL_DLC = {"own_mak": True, "own_stelle": True, "own_jules": True, "own_karnok": True, "own_the_dragons": True}
 
 
@@ -134,7 +136,7 @@ class TestTightSpace(BazaarTestBase):
 
 class TestNoLocks(BazaarTestBase):
     options = {"locked_cards_percent": 0, "lock_common_cards": False, "pvp_win_checks": False,
-               "monster_checks": False}
+               "monster_checks": False, **NO_ENCOUNTER_LOCKS}
 
     def test_duplicates_before_filler(self) -> None:
         names = [i.name for i in self.multiworld.itempool if i.player == self.player]
@@ -308,7 +310,7 @@ class TestExcludeHeroSwitches(BazaarTestBase):
 class TestOnlyDayChecks(BazaarTestBase):
     """PvP and monster checks both off leaves each hero 7 checks that need no cards; logic used to expect 8 of its
     cards before day 8 and generation failed on some seeds (review 2026-09-29). The world lowers logic to fit."""
-    options = {"pvp_win_checks": False, "monster_checks": False}
+    options = {"pvp_win_checks": False, "monster_checks": False, **NO_ENCOUNTER_LOCKS}
 
     def test_logic_fits_the_free_checks(self) -> None:
         self.assertLessEqual(-(-self.world.logic["day_10"] // 2), 7 - 2)
@@ -460,7 +462,8 @@ class TestHardcoreLogicGenerates(BazaarTestBase):
 
 # Review 2026-09-30: these option mixes are allowed but generation failed on every seed; fit_logic now lowers logic
 # per hero until it fits. Each class gets Archipelago's own fill/beatable tests.
-TIGHT = {"locked_cards_percent": 100, "lock_common_cards": False, "sell_traps": 0, "lock_bypasses": 0}
+TIGHT = {"locked_cards_percent": 100, "lock_common_cards": False, "sell_traps": 0, "lock_bypasses": 0,
+         **NO_ENCOUNTER_LOCKS}
 ONE_HERO = {"exclude_pygmalien": True, "exclude_dooley": True, "starting_hero": "vanessa"}
 
 
@@ -495,3 +498,77 @@ class TestDuplicateAllHasNoFiller(BazaarTestBase):
         self.assertFalse([n for n in names if n in FILLER_ITEMS])
         cards = {n for n in names if n in CARDS_BY_NAME}
         self.assertTrue(cards and all(names.count(n) == 2 for n in cards))
+
+
+class TestEncounterLocks(BazaarTestBase):
+    """Merchant/event locks (owner, 2026-10-02): 25% of those your heroes can meet, 5 starter merchants, 3 copies of
+    Event Rarity Progression, none of them needed by logic."""
+
+    def test_a_quarter_of_the_meetable_ones_are_locked(self) -> None:
+        from ..data import ENCOUNTERS, EVENTS
+        from ..items import encounter_item
+        heroes = set(self.world.heroes) | {"Common"}
+        meetable = [encounter_item(e) for e in ENCOUNTERS
+                    if heroes & {h for g in e.guids for h in EVENTS[g]["heroes"]}]
+        self.assertEqual(len(self.world.encounter_locks), (len(meetable) - 5) * 25 // 100)
+        self.assertTrue(set(self.world.encounter_locks) <= set(meetable))
+
+    def test_starters_are_low_tier_merchants_never_locked(self) -> None:
+        from ..data import EVENTS
+        from ..items import ENCOUNTERS_BY_ITEM
+        self.assertEqual(len(self.world.starter_merchants), 5)
+        self.assertFalse(set(self.world.starter_merchants) & set(self.world.encounter_locks))
+        for name in self.world.starter_merchants:
+            encounter = ENCOUNTERS_BY_ITEM[name]
+            self.assertTrue(encounter.merchant)
+            self.assertTrue(any(EVENTS[g]["tier"] in ("Bronze", "Silver", "Gold") for g in encounter.guids))
+
+    def test_items_are_in_the_pool_and_never_progression(self) -> None:
+        items = [i for i in self.multiworld.itempool if i.player == self.player]
+        names = [i.name for i in items]
+        self.assertEqual(names.count("Event Rarity Progression"), 3)
+        for name in self.world.encounter_locks:
+            self.assertEqual(names.count(name), 1)
+        self.assertFalse([i.name for i in items if i.advancement
+                          and (i.name == "Event Rarity Progression" or i.name in self.world.encounter_locks)])
+
+    def test_slot_data_carries_them(self) -> None:
+        from ..items import item_name_to_id
+        data = self.world.fill_slot_data()
+        self.assertEqual(data["encounter_locks"], sorted(item_name_to_id[n] for n in self.world.encounter_locks))
+        self.assertEqual(data["event_rarity"], 3)
+        self.assertTrue(data["exempt_expeditions"])
+
+
+class TestEncounterLocksMeetOnlySeedHeroes(BazaarTestBase):
+    """With only Vanessa, an event only other heroes can meet is never locked."""
+    options = {"exclude_pygmalien": True, "exclude_dooley": True, "starting_hero": "vanessa",
+               "locked_encounters_percent": 100}
+
+    def test_only_vanessa_or_common_encounters(self) -> None:
+        from ..data import EVENTS
+        from ..items import ENCOUNTERS_BY_ITEM
+        for name in self.world.encounter_locks:
+            heroes = {h for g in ENCOUNTERS_BY_ITEM[name].guids for h in EVENTS[g]["heroes"]}
+            self.assertTrue(heroes & {"Vanessa", "Common"}, name)
+
+
+class TestEncounterData(unittest.TestCase):
+    def test_lockable_encounters_exclude_level_ups_expeditions_and_never(self) -> None:
+        """Level-up rewards never appear on the map; expeditions are locked through their tickets (owner, 2026-10-02)."""
+        from ..data import ENCOUNTERS, EVENTS
+        for encounter in ENCOUNTERS:
+            for guid in encounter.guids:
+                event = EVENTS[guid]
+                self.assertFalse(event["level_up"] or event["expedition"] or event["spawns"] == "Never", event["name"])
+
+    def test_ids_are_unique_and_in_their_own_range(self) -> None:
+        from ..data import CARDS, ENCOUNTERS
+        ids = [e.ap_id for e in ENCOUNTERS]
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertGreater(min(ids), max(c.ap_id for c in CARDS))
+
+    def test_every_expedition_event_is_marked(self) -> None:
+        from ..data import EVENTS
+        marked = {e["name"] for e in EVENTS.values() if e["expedition"]}
+        self.assertTrue({"Crash Site Expedition", "Temple Expedition", "Temple Vault", "Temple Reliquary"} <= marked)
