@@ -253,7 +253,9 @@ class BazaarContext(CommonContext):
                         or item.item == EVENT_RARITY_ID:
                     logger.info(f"Unlocked: {name}", extra=FILE_ONLY)
                     if self.overlay and args.get("index", 0) > 0:  # index 0 = the full list resent on connect
-                        self.overlay.toast(f"UNLOCKED: {HERO_ITEM_IDS.get(item.item, name)}  (from {self.who(item.player)})")
+                        cards = sorted(UNLOCKS.get(item.item, ()), key=lambda g: CARDS_BY_GUID[g].name)
+                        self.overlay.toast(f"UNLOCKED: {HERO_ITEM_IDS.get(item.item, name)}  (from {self.who(item.player)})",
+                                           cards=cards)
                 elif item.item == LOCK_BYPASS_ID and args.get("index", 0) > 0:
                     self.event("Lock Bypass received: use it on a locked card you're holding (the button next to it).")
                     self.toast(f"LOCK BYPASS from {self.who(item.player)}! Use it on a locked card you're holding.",

@@ -13,9 +13,10 @@ import queue
 import sys
 import threading
 import time
-from typing import Callable, Dict, List, Optional, Set
+from typing import Callable, Dict, List, Optional, Sequence, Set
 
 from . import screens
+from .data import CARDS_BY_GUID
 from .shop_guide import ShopGuide
 from .theme import (ACCENT, BONE, DIM, FG, FLAMES, FONT, LOCKED_X, MUTED, OUTLINE, SEVERITY, TRAP_BG, TRAP_TITLE,
                     WARN)
@@ -46,6 +47,7 @@ ALERT_SHARE = 2  # the alert box takes at most 1/2 of the left strip (the rest i
 MAX_ALERT_LINES = 6  # held cards / trap lines shown in it; more become "+ N more" (review 2026-09-30)
 TOAST_SHARE = 3  # pop-ups take at most 1/3 of the right strip
 MAX_TOASTS = 4
+MAX_TOAST_PICTURES = 3  # an UNLOCKED pop-up shows this many of its cards' pictures; more become "+ N more"
 MENU_WIDTH = 460  # the menu's centre panel, 1080p pixels (scaled with the window)
 MENU_TILE = 100  # one hero's tile
 MENU_COLUMNS = 4  # heroes per row, like the hero select
@@ -346,9 +348,11 @@ class Overlay:
     def toggle_guide(self) -> None:
         self.commands.put(("guide_toggle", None))
 
-    def toast(self, text: str, seconds: float = 6, warning: bool = False, trap: bool = False) -> None:
-        """A short pop-up (bottom right) that disappears by itself. trap: a Sell Trap's, with its skull."""
-        self.commands.put(("toast", (text, time.monotonic() + seconds, warning, trap)))
+    def toast(self, text: str, seconds: float = 6, warning: bool = False, trap: bool = False,
+              cards: Sequence[str] = ()) -> None:
+        """A short pop-up (bottom right) that disappears by itself. trap: a Sell Trap's, with its skull. cards: guids
+        whose pictures it shows (an unlock's)."""
+        self.commands.put(("toast", (text, time.monotonic() + seconds, warning, trap, tuple(cards))))
 
     def show_menu(self, data: Optional[dict]) -> None:
         """The menu's centre panel (see client.menu_data); None hides it."""
@@ -427,6 +431,7 @@ class _Screen:
         self.state = {"locked": None, "deathlink": None, "toasts": [], "status": None,
                       "padlocks": None, "menu": None}
         self.hero_pictures: Dict[str, object] = {}  # the menu panel's portraits (Tk drops an image Python lets go)
+        self.toast_pictures: Dict[tuple, object] = {}  # UNLOCKED pop-ups' card pictures, (guid, halved) -> image
         # the player hid the menu's hero panel, e.g. over character select, which the game gives no sign of
         # (owner, 2026-10-01: a button, option 3)
         self.menu_hidden = False
@@ -447,7 +452,7 @@ class _Screen:
             on_close_click=lambda: overlay.commands.put(("guide_toggle", None)))
         self.tracker = Tracker(tk, root, lambda: self.layout["screen"])
         self.handlers: Dict[str, Callable] = {
-            "art": lambda guid: self.guide and self.guide.refresh(guid),
+            "art": self.new_art,
             "board": lambda value: self.guide and self.guide.show_offer(value),
             "guide_context": lambda value: self.guide and self.guide.set_context(*value),
             "guide_toggle": self.toggle_guide,
@@ -612,7 +617,7 @@ class _Screen:
     def _render(self) -> None:
         state, drawn, layout = self.state, self.drawn, self.layout
         moves: list = []
-        toasts = tuple((text, warning, trap) for text, _, warning, trap in state["toasts"])
+        toasts = tuple((text, warning, trap, cards) for text, _, warning, trap, cards in state["toasts"])
         if toasts != drawn["toasts"]:
             drawn["toasts"] = toasts
             drawn["toasts_height"] = self.render_toasts(moves)
@@ -763,6 +768,21 @@ class _Screen:
                 self.hero_pictures[key] = self.hero_pictures[key].subsample(2)
         return self.hero_pictures[key]
 
+    def toast_picture(self, guid: str):
+        """A card's picture for an UNLOCKED pop-up (the Shop Guide's, halved on small windows); None while there
+        isn't one yet - the "art" command redraws the pop-up once it's made."""
+        card = CARDS_BY_GUID.get(guid)
+        if not (self.guide and card):
+            return None
+        small = self.layout["k"] < 0.9
+        key = (guid, small)
+        if key not in self.toast_pictures:
+            picture = self.guide.picture(card, False)
+            if picture is None:
+                return None
+            self.toast_pictures[key] = picture.subsample(2) if small else picture
+        return self.toast_pictures[key]
+
     def render_toasts(self, moves: list) -> int:
         """Pop-ups at the bottom of the right strip, newest at the bottom; returns their height."""
         tk, layout = self.tk, self.layout
@@ -771,17 +791,30 @@ class _Screen:
             return 0
         frame, show = self.swap(self.toast_box, SEVERITY["info"])
         wrap = layout["right"][2] - 2 * (PAD + BORDER) - 16
-        for text, _, warning, trap in self.state["toasts"]:
+        # newest packed first from the bottom: if they don't all fit, the oldest are the ones cut off
+        for text, _, warning, trap, cards in reversed(self.state["toasts"]):
             if trap:
                 row = tk.Frame(frame, bg=TRAP_BG, padx=6, pady=4)
-                row.pack(fill="x", pady=2)
+                row.pack(side="bottom", fill="x", pady=2)
                 skull = draw_skull(tk, row, max(32, round(44 * layout["k"])), TRAP_BG)
                 skull.pack(side="left", padx=(0, 6))
                 tk.Label(row, text=text, fg=TRAP_TITLE, bg=TRAP_BG, font=self.font(11, "bold"),
                          wraplength=wrap - skull.winfo_reqwidth() - 12, justify="left").pack(side="left", anchor="w")
                 continue
-            tk.Label(frame, text=text, fg=FG, bg=SEVERITY["critical" if warning else "ok"],
-                     font=self.font(11, "bold"), wraplength=wrap, justify="left", padx=8, pady=4).pack(fill="x", pady=2)
+            bg = SEVERITY["critical" if warning else "ok"]
+            row = tk.Frame(frame, bg=bg)
+            row.pack(side="bottom", fill="x", pady=2)
+            tk.Label(row, text=text, fg=FG, bg=bg, font=self.font(11, "bold"), wraplength=wrap, justify="left",
+                     padx=8, pady=4).pack(anchor="w")
+            pictures = [p for p in (self.toast_picture(guid) for guid in cards) if p is not None]
+            if pictures:
+                strip = tk.Frame(row, bg=bg, padx=8)
+                strip.pack(anchor="w", pady=(0, 6))
+                for picture in pictures[:MAX_TOAST_PICTURES]:
+                    tk.Label(strip, image=picture, bg=bg, bd=0).pack(side="left", padx=(0, 4))
+                if len(cards) > MAX_TOAST_PICTURES:
+                    tk.Label(strip, text=f"+ {len(cards) - MAX_TOAST_PICTURES} more", fg=FG, bg=bg,
+                             font=self.font(10, "bold")).pack(side="left", padx=(4, 0))
         show()
         self.toast_box.update_idletasks()
         x, y, width, strip_height = layout["right"]
@@ -958,7 +991,16 @@ class _Screen:
         self.state["padlocks"], self.pending_padlocks = value, None
         return True
 
-    def new_toast(self, value) -> bool:  # (text, expires, warning, trap)
+    def new_art(self, guid: str) -> bool:
+        """A card's pictures are ready: the guide shows them, and so does a pop-up still waiting for them."""
+        if self.guide:
+            self.guide.refresh(guid)
+        if any(guid in t[4] for t in self.state["toasts"]):
+            self.drawn["toasts"] = None
+            return True
+        return False
+
+    def new_toast(self, value) -> bool:  # (text, expires, warning, trap, card guids)
         self.state["toasts"] = (self.state["toasts"] + [value])[-MAX_TOASTS:]
         return True
 
@@ -1001,6 +1043,7 @@ class _Screen:
                 if self.guide:
                     self.guide.shutdown()
                 self.hero_pictures.clear()  # images are freed here, in Tk's own thread, not at exit from another
+                self.toast_pictures.clear()
                 self.root.destroy()
                 return "quit"
             changed = bool(self.handlers[kind](value)) or changed

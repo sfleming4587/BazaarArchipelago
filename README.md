@@ -62,7 +62,8 @@ only shows while The Bazaar is the active window, and it fades while you read a 
   It turns red if the client isn't connected to the multiworld.
 - **Notices (top right):** **CHECKS ARE BLOCKED** and why, any locked card you're holding (with a **Use Bypass**
   button when you have one), Sell Traps (you'll know them by the flaming skull) and DeathLinks.
-- **Pop-ups (bottom right):** everything you receive, send or find, always with the other player's name.
+- **Pop-ups (bottom right):** everything you receive, send or find, always with the other player's name - and
+  pictures of the cards you just unlocked.
 - **Shop Guide (left column):** pictures of the cards on offer right now, framed in gold, then everything a
   merchant could stock, with the locked ones crossed out. Open it any time; search it or filter it by size,
   rarity or merchant.

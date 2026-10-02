@@ -136,6 +136,54 @@ class TestAlertBoxWithManyHeldCards(unittest.TestCase):
             root.destroy()
 
 
+class TestUnlockPopupPictures(unittest.TestCase):
+    """Owner, 2026-10-02: an UNLOCKED pop-up shows the unlocked cards' pictures."""
+
+    def test_pictures_show_once_ready_and_the_newest_popup_stays_at_the_bottom(self) -> None:
+        import queue
+        import sys
+        import tempfile
+        import tkinter
+        import types
+        from unittest import mock
+        from .. import cardart
+        from ..overlay import MAX_TOAST_PICTURES, _Screen
+        cards = [c for c in CARDS if c.shop and c.size == "Small"][:MAX_TOAST_PICTURES + 2]
+        with mock.patch.dict(sys.modules, {"PIL": None}), tempfile.TemporaryDirectory() as tmp,                 mock.patch.object(cardart, "Decoder", side_effect=OSError("no SDL2 in this test")):
+            root = tkinter.Tk()
+            try:
+                fake = types.SimpleNamespace(only_over_game=False, game_window=(0, 0, 1920, 1080), art_cache_dir=tmp,
+                                             guide_file=None, commands=queue.Queue(), on_bypass=None)
+                screen = _Screen(fake, tkinter, root)
+                screen.relayout((0, 0, 1920, 1080))
+                guids = tuple(c.guid for c in cards)
+                screen.new_toast(("UNLOCKED: a pack", 1e12, False, False, guids))
+                screen.new_toast(("FOUND: something", 1e12, False, False, ()))
+                screen.render()
+                root.update()
+
+                def pictures():
+                    return [w for w in _all_widgets(screen.toast_box)
+                            if isinstance(w, tkinter.Label) and w.cget("image")]
+                self.assertEqual(pictures(), [])  # none made yet: text only, nothing breaks
+                for card in cards:
+                    with open(screen.guide.art.path(card, False), "wb") as f:
+                        f.write(cardart.png((48, 96, bytes(48 * 96 * 3))))
+                self.assertTrue(screen.new_art(cards[0].guid))  # the waiting pop-up is redrawn
+                self.assertFalse(screen.new_art("not-in-a-pop-up"))
+                screen.render()
+                root.update()
+                self.assertEqual(len(pictures()), MAX_TOAST_PICTURES)
+                labels = [w.cget("text") for w in _all_widgets(screen.toast_box) if isinstance(w, tkinter.Label)]
+                self.assertIn("+ 2 more", labels)
+                rows = sorted((w.winfo_y(), w.winfo_children()[0].cget("text"))
+                              for w in screen.toast_box.winfo_children()[0].winfo_children())
+                self.assertEqual([text for _, text in rows], ["UNLOCKED: a pack", "FOUND: something"])
+                screen.guide.shutdown()
+            finally:
+                root.destroy()
+
+
 class TestCardCentres(unittest.TestCase):
     def test_row_is_centred_and_cards_follow_their_sizes(self) -> None:
         from ..overlay import SHOP_ROW_Y, SLOT_WIDTH, card_centres
