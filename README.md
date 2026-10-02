@@ -21,6 +21,9 @@ reached their goal. You can play solo too.
 - **You start with one hero.** The others are out in the multiworld, and you only play the heroes you've received.
 - **Most cards start locked.** Each hero keeps a set of Bronze starter cards (20 by default), and the rest of the
   cards merchants sell turn up one by one as items. Until a card is unlocked, you leave it on the shelf.
+- **Some merchants and events are locked too** (a quarter by default). Visiting a locked merchant is fine, but what
+  you take there counts as locked; stepping into any other locked event costs you that run's checks. Diamond and
+  Legendary ones wait for **Event Rarity Progression**.
 - **Your progress sends items to others.** Each hero has checks for:
   - reaching each day;
   - winning that day's PvP fight;
@@ -134,8 +137,11 @@ checks and the notices box says **CHECKS ARE BLOCKED** and why.
   moment the game logs the sale. Items the game makes for you by itself (from another item, a Shovel, a
   transformation) are always fine.
 - **Sell Traps** (3 by default): sell the item it names before the day shown.
-- **Lock Bypasses** (5 by default): holding a locked card? Press **Use Bypass** next to it and it's yours for the
-  rest of that run. A bypass is never used by itself.
+- **Don't step into locked events.** Going into one pauses your checks for the rest of that run. A locked merchant
+  is fine to visit, but anything you take there has to be sold. If every event on offer is locked, the client lets
+  the least rare one through and tells you which.
+- **Lock Bypasses** (5 by default): holding a locked card, or went into a locked event? Press **Use Bypass** next to
+  it and it's yours for the rest of that run. A bypass is never used by itself.
 - **DeathLink** (off unless you turn it on): when someone else dies, abandon your current run (Settings > Abandon
   Run). Losing a run sends a DeathLink to everyone else; conceding only does if you turn on
   `death_link_on_concede`.

@@ -3,9 +3,9 @@
 Merchants and events (the cards on the hourly choice screen) can be locked like cards, and Diamond/Legendary ones
 sit behind a progressive item. Designed with the owner 2026-10-01 and 2026-10-02.
 
-> ⚠️ **Status 2026-10-02:** the world side is built (data, items, options, pool, slot_data, tests). The client
-> does **not** enforce anything yet and draws no padlocks on events: a seed generated now has encounter lock items
-> that change nothing in game. Client enforcement and the event padlocks are the next two steps.
+> ⚠️ **Status 2026-10-02:** world side and client enforcement built and unit-tested, **not yet tested in game**.
+> Event padlocks are not built yet (next step): the client enforces the locks but doesn't mark locked events on
+> the choice screen.
 
 ## The owner's rulings
 
@@ -53,6 +53,32 @@ sit behind a progressive item. Designed with the owner 2026-10-01 and 2026-10-02
 some locked names may never be offered in a given run. That wastes a slot, never blocks anyone.
 
 ⚠️ **The game's `SpawningEligibility` is no filter.** In the recorded run 42 of the offered events were `GuidOnly`.
+
+## How the client enforces it
+
+- **Locked right now** (`encounters.locked_events`): every template of a lock item not received, plus Diamond
+  (until one Event Rarity Progression) and Legendary (until two) templates when the seed has the item - never
+  level-up rewards, and not expeditions while `exempt_expeditions` is on. Minus, for the run, events bypassed
+  (`run["bypassed_events"]`) or let through (`run["let_through"]`).
+- **Entering** is the log's `Card Purchased: enc_...` line (`EncounterEntered`), which is a pick from a choice
+  screen. A merchant, or an event in `OFFER_DATA` (it hands out items), only gets a warning; what you take there is
+  held with `run["held_at"]` = that merchant, and stays held until sold, its card or the merchant is unlocked, or a
+  bypass is used on the card. Any other locked event goes into `run["event_blocks"]`: `blocked_reason` names it
+  until its unlock arrives or Use Bypass spends a bypass on it.
+- **All locked:** on every new `Choice`/`Encounter` reading from memory, `encounters.let_through` checks the offers.
+  Only events, every one locked: the lowest rarity wins; a tie is picked from a SHA-256 of the screen's instance
+  ids, so every reading and reconnect picks the same one. That template is let through for the rest of the run.
+- **Extra Event Rarity copies** are added to `bypasses_ready`.
+
+⚠️ **Let-through lasts the run, by template.** The log line doesn't carry the screen, so the event can't be tied to
+one screen; the same event offered later that run is allowed too. Lenient by design, never a false block.
+
+⚠️ **The all-locked rule needs memory.** With the reader off, or the client closed when that screen was up, the
+client can't see the offers, so going into a locked event blocks as usual (and a run caught up that way must be
+conceded, like a held locked card).
+
+⚠️ _Unverified:_ events the game puts you in without a choice are assumed to write no `Card Purchased: enc_` line,
+so they're never judged. Check this in game.
 
 ## Screens (for the padlocks, still to build)
 

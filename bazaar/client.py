@@ -20,10 +20,11 @@ from CommonClient import (ClientCommandProcessor, CommonContext, get_base_parser
 from MultiServer import mark_raw
 from NetUtils import ClientStatus
 
-from .data import (CARDS, CARDS_BY_GUID, EVENT_NAMES, GAME_VERSION, HEROES, MERCHANT_DATA, MONSTERS, OFFER_DATA,
-                   TIERS)
-from .items import (GAME, HERO_ITEM_IDS, LOCK_BYPASS_ID, SELL_TRAP, SELL_TRAP_ID, UNLOCKS, hero_item,
-                    item_id_to_name, item_name_to_id, lock_items_by_hero)
+from .data import (CARDS, CARDS_BY_GUID, EVENT_NAMES, EVENTS, GAME_VERSION, HEROES, MERCHANT_DATA, MONSTERS,
+                   OFFER_DATA, TIERS)
+from .encounters import let_through, locked_events, rarity_bypasses
+from .items import (ENCOUNTER_UNLOCKS, EVENT_RARITY_ID, GAME, HERO_ITEM_IDS, LOCK_BYPASS_ID, SELL_TRAP, SELL_TRAP_ID,
+                    UNLOCKS, hero_item, item_id_to_name, item_name_to_id, lock_items_by_hero)
 from .locations import (card_requirements, day_location, hero_checks, location_name_to_id, monster_location,
                         pvp_location, win_location)
 from .logparser import (DEFAULT_LOG_PATH, HERO_ALIASES, PREV_LOG, HeroSelected, CardGained, CardSold, CardTransformed, DayReached,
@@ -50,12 +51,14 @@ SCREEN_TITLES = {"LevelUp": "Level-up", "Loot": "Loot"}  # the Shop Guide's titl
 # what the client assumes when a seed's slot_data lacks a setting (older apworlds); read through BazaarContext.setting()
 SLOT_DEFAULTS = {"heroes": [], "max_day": 15, "pvp_win_checks": False, "monster_tiers": {}, "heroes_required": 1,
                  "lock_items": [], "logic": None, "death_link": False, "death_link_amnesty": 0, "sell_trap_days": 2,
-                 "death_link_on_concede": False}
+                 "death_link_on_concede": False, "encounter_locks": [], "event_rarity": 0,
+                 "exempt_expeditions": True}
 
 
 def own_popup(item_id: int) -> bool:
     """Items announced by their own pop-up (UNLOCKED, a Sell Trap, a Lock Bypass) rather than the generic ones."""
-    return item_id in UNLOCKS or item_id in HERO_ITEM_IDS or item_id in (SELL_TRAP_ID, LOCK_BYPASS_ID)
+    return item_id in UNLOCKS or item_id in HERO_ITEM_IDS or item_id in ENCOUNTER_UNLOCKS \
+        or item_id in (SELL_TRAP_ID, LOCK_BYPASS_ID, EVENT_RARITY_ID)
 
 
 def items_on_screen(snapshot: Optional[Snapshot]) -> Optional[tuple]:
@@ -235,7 +238,8 @@ class BazaarContext(CommonContext):
         elif cmd == "ReceivedItems":
             for item in args["items"]:
                 name = self.item_names.lookup_in_game(item.item)
-                if item.item in UNLOCKS or item.item in HERO_ITEM_IDS:
+                if item.item in UNLOCKS or item.item in HERO_ITEM_IDS or item.item in ENCOUNTER_UNLOCKS \
+                        or item.item == EVENT_RARITY_ID:
                     logger.info(f"Unlocked: {name}", extra=FILE_ONLY)
                     if self.overlay and args.get("index", 0) > 0:  # index 0 = the full list resent on connect
                         self.overlay.toast(f"UNLOCKED: {HERO_ITEM_IDS.get(item.item, name)}  (from {self.who(item.player)})")
@@ -369,13 +373,40 @@ class BazaarContext(CommonContext):
         return locked
 
     def bypasses_ready(self) -> int:
-        return sum(item.item == LOCK_BYPASS_ID for item in self.items_received) - self.bypasses_used
+        """Lock Bypasses received, plus Event Rarity Progression copies past its two stages, minus those spent."""
+        return sum(item.item == LOCK_BYPASS_ID for item in self.items_received) \
+            + rarity_bypasses(self.rarity_received()) - self.bypasses_used
+
+    def rarity_received(self) -> int:
+        return sum(item.item == EVENT_RARITY_ID for item in self.items_received)
+
+    def locked_event_guids(self) -> Set[str]:
+        """Merchant/event templates locked right now (see docs/ENCOUNTER-LOCKS.md)."""
+        return locked_events(self.setting("encounter_locks"), self.received_ids(), self.setting("event_rarity"),
+                             self.rarity_received(), bool(self.setting("exempt_expeditions")))
+
+    def run_locked_events(self) -> Set[str]:
+        """...minus those this run may use anyway: bypassed, or let through by an all-locked choice screen."""
+        return self.locked_event_guids() - set(self.run.get("bypassed_events", [])) \
+            - set(self.run.get("let_through", []))
+
+    def event_name(self, guid: str) -> str:
+        return EVENTS[guid]["name"] if guid in EVENTS else "that event"
 
     def use_bypass(self, guid: str) -> None:
         """The "Use Bypass" button next to a locked card you're holding: that card (its copies and upgrades too) is
         allowed for the rest of the run, using up one Lock Bypass. The only way a bypass is spent, and only on a card
         that's blocking checks (user, 2026-09-30) - never automatically, so one isn't lost on a card you didn't
         realise was locked. Checked again here: the button may be a moment behind."""
+        if self.run.get("active") and self.bypasses_ready() > 0 and guid in self.run.get("event_blocks", []):
+            self.bypasses_used += 1
+            self.run["event_blocks"].remove(guid)
+            self.run.setdefault("bypassed_events", []).append(guid)
+            self.event(f"Lock Bypass used: {self.event_name(guid)} is allowed for the rest of this run.")
+            self.toast(f"LOCK BYPASS USED: {self.event_name(guid)} is allowed for this run", seconds=12)
+            self.refresh_held()
+            self.update_status()
+            return
         if not self.run.get("active") or self.bypasses_ready() <= 0 or guid not in self.run.get("held", {}).values():
             self.event("That Lock Bypass doesn't apply any more (no bypass ready, or the card isn't held).")
             return
@@ -461,11 +492,19 @@ class BazaarContext(CommonContext):
     def refresh_held(self) -> None:
         """Drop held cards that got unlocked in the meantime, then update the overlay and save."""
         held = self.run.get("held", {})
-        locked = self.run_locked_guids()
+        locked, events = self.run_locked_guids(), self.run_locked_events()
+        shops = self.run.get("held_at", {})  # instance -> the locked merchant it was taken at
         for instance, guid in list(held.items()):
-            if guid not in locked:
+            from_locked_shop = shops.get(instance) in events and guid not in self.run.get("bypassed", [])
+            if guid not in locked and not from_locked_shop:
                 del held[instance]
+                shops.pop(instance, None)
                 self.event(f"{CARDS_BY_GUID[guid].name} is unlocked now, you can keep it.")
+        blocks = self.run.get("event_blocks", [])
+        for guid in list(blocks):
+            if guid not in events:
+                blocks.remove(guid)
+                self.event(f"{self.event_name(guid)} is unlocked now.")
         self.update_block_banner()
         if self.run:
             self.save_state()
@@ -540,6 +579,9 @@ class BazaarContext(CommonContext):
             return self.run["concede_reason"]
         if not self.run.get("counting"):
             return f"- {self.run.get('hero', 'this hero').upper()} IS LOCKED: ABANDON THIS RUN"
+        events = sorted({self.event_name(g).upper() for g in self.run.get("event_blocks", [])})
+        if events:
+            return f"- YOU WENT INTO {' AND '.join(events)}, WHICH {'IS' if len(events) == 1 else 'ARE'} LOCKED"
         names = sorted({CARDS_BY_GUID[g].name.upper() for g in self.run.get("held", {}).values()}
                        | {self.trap_target(t).upper() for t in self.overdue_traps()})
         if names:
@@ -550,7 +592,8 @@ class BazaarContext(CommonContext):
         """/unblock confirm: an escape hatch if tracking breaks. Logged so it's never silent."""
         logger.warning(f"Blocks cleared by hand (/unblock): {self.blocked_reason()}")
         allowed = self.run.get("hero") in self.setting("heroes")  # a hero outside the seed never counts
-        self.run.update(held={}, traps=[], deathlink_owed=False, counting=allowed, legal=allowed, concede_reason=None)
+        self.run.update(held={}, traps=[], deathlink_owed=False, counting=allowed, legal=allowed, concede_reason=None,
+                        event_blocks=[])
         self.save_state()
         self.update_block_banner()
 
@@ -561,6 +604,9 @@ class BazaarContext(CommonContext):
             bypass = self.bypasses_ready() > 0  # each held card gets a "Use Bypass" button
             lines = [(f"{self.held_text(g)} - SELL OR USE BYPASS", g) if bypass else self.held_text(g)
                      for g in held.values()]
+            for g in self.run.get("event_blocks", []) if self.run.get("active") else []:
+                text = f"{self.event_name(g)} (locked event)"
+                lines.append((f"{text} - USE BYPASS OR ABANDON", g) if bypass else f"{text} - ABANDON THIS RUN")
             upcoming = [t for t in self.run.get("traps", []) if t not in self.overdue_traps()] \
                 if self.run.get("active") else []
             lines += [f"Sell Trap: sell {self.trap_target(t)} before day {t['deadline']} starts"
@@ -585,7 +631,12 @@ class BazaarContext(CommonContext):
         if event.guid not in CARDS_BY_GUID:
             self.notice("card", "You got a card this apworld doesn't track (a special item like Midsworth's Package, "
                                 "or one added by a patch). It's never locked.")
-        if not self.run.get("active") or event.guid not in self.run_locked_guids():
+        if not self.run.get("active"):
+            return
+        shop = self.encounter.guid if self.encounter and self.encounter.guid in self.run_locked_events() else None
+        if shop and event.guid in CARDS_BY_GUID and event.guid not in self.run.get("bypassed", []):
+            self.run.setdefault("held_at", {})[event.instance] = shop  # anything taken at a locked merchant
+        elif event.guid not in self.run_locked_guids():
             return
         self.run.setdefault("held", {})[event.instance] = event.guid
         how = "bought" if event.bought else "got"
@@ -608,6 +659,7 @@ class BazaarContext(CommonContext):
             if trap["instance"] == event.old:
                 trap.update(instance=event.new, transformed=True)
                 self.update_block_banner()
+        self.run.get("held_at", {}).pop(event.old, None)
         guid = self.run.get("held", {}).pop(event.old, None)
         if guid:
             self.event(f"{CARDS_BY_GUID[guid].name} transformed into another card - transformed cards are allowed."
@@ -626,6 +678,7 @@ class BazaarContext(CommonContext):
             self.toast("Sell Trap done!")
             self.update_block_banner()
             self.save_state()
+        self.run.get("held_at", {}).pop(event.instance, None)
         guid = self.run.get("held", {}).pop(event.instance, None)
         if guid:
             self.event(f"Sold {CARDS_BY_GUID[guid].name}." + ("" if self.run.get("held") else " Checks unblocked."))
@@ -645,6 +698,8 @@ class BazaarContext(CommonContext):
         changed; the shop warning when what's on offer at the current merchant did (you bought a card, rerolled, or
         memory caught up with the log)."""
         before, self.memory = self.memory, snapshot
+        if (before and before.offers) != (snapshot and snapshot.offers):
+            self.check_choice_screen(snapshot)
         seen = lambda s: (s.state, items_on_screen(s), s.level, s.stash) if s else None
         if seen(before) != seen(snapshot):
             self.refresh_padlocks()
@@ -739,6 +794,40 @@ class BazaarContext(CommonContext):
                 self.overlay.show_board_ui(ui)
                 if opened:
                     self.refresh_padlocks()
+
+    def judge_event(self, event: EncounterEntered) -> None:
+        """You picked a merchant or event. A locked merchant (or an event that hands out items) is fine to visit,
+        but what you take there counts as locked (handle_gain); any other locked event blocks checks for the rest
+        of the run, until a Lock Bypass is used on it (owner, 2026-10-01)."""
+        if not self.run.get("active") or event.guid not in self.run_locked_events():
+            return
+        name = self.event_name(event.guid)
+        if event.guid in MERCHANT_DATA or event.guid in OFFER_DATA:
+            self.event(f"{name} is locked: anything you take here blocks checks until you sell it.", warning=True)
+            self.toast(f"{name.upper()} IS LOCKED: anything you take here blocks checks", seconds=12, warning=True)
+            return
+        if event.guid not in self.run.setdefault("event_blocks", []):
+            self.run["event_blocks"].append(event.guid)
+        bypass = self.bypasses_ready() > 0
+        self.event(f"You went into {name}, which is locked! CHECKS ARE BLOCKED for the rest of this run"
+                   + (" unless you use a Lock Bypass." if bypass else "."), warning=True)
+        self.beep()
+        self.toast(f"{'USE BYPASS OR ABANDON' if bypass else 'ABANDON THIS RUN'}: {name} is locked", seconds=12,
+                   warning=True)
+        self.update_block_banner()
+        self.save_state()
+
+    def check_choice_screen(self, snapshot: Optional[Snapshot]) -> None:
+        """A choice screen where every option is a locked event lets the least rare one through (owner, 2026-10-01),
+        with a message saying so."""
+        if not (snapshot and self.run.get("active") and snapshot.state in ("Choice", "Encounter")):
+            return
+        guid = let_through(snapshot.offers, self.run_locked_events())
+        if guid:
+            self.run.setdefault("let_through", []).append(guid)
+            self.event(f"Every event here is locked, so {self.event_name(guid)} is let through.")
+            self.toast(f"ALL EVENTS LOCKED: {self.event_name(guid)} is let through", seconds=12)
+            self.save_state()
 
     def handle_encounter(self, event: EncounterEntered) -> None:
         merchant = MERCHANT_DATA.get(event.guid) or OFFER_DATA.get(event.guid)
@@ -1054,6 +1143,7 @@ async def dispatch(ctx: BazaarContext, event) -> None:
     elif isinstance(event, FightStarted):
         ctx.handle_fight(event)
     elif isinstance(event, EncounterEntered):
+        ctx.judge_event(event)
         ctx.handle_encounter(event)
     elif isinstance(event, EncounterLeft):
         ctx.handle_encounter_left()

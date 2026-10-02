@@ -985,3 +985,133 @@ class TestTransforms(ClientTestBase):
         self.assertIsNone(self.ctx.blocked_reason())
         self.assertTrue(self.was_sent(day_location("Vanessa", 2)))
         self.assertIn("itm_y", self.ctx.run["transformed"])
+
+
+def _encounter(merchant: bool):
+    """A lockable merchant, or a plain event (one that hands out no items), from the data - below Diamond, so
+    Event Rarity Progression doesn't lock it as well."""
+    from ..data import ENCOUNTERS, EVENTS, MERCHANT_DATA, OFFER_DATA
+    return next(e for e in ENCOUNTERS if e.merchant == merchant
+                and all(EVENTS[g]["tier"] in ("Bronze", "Silver", "Gold") for g in e.guids)
+                and (merchant or not any(g in OFFER_DATA or g in MERCHANT_DATA for g in e.guids)))
+
+
+def _event(tier: str, **flags):
+    """An event template of this rarity (level_up / expedition flags as given, False otherwise), no merchant."""
+    from ..data import EVENTS, MERCHANT_DATA, OFFER_DATA
+    want = {"level_up": False, "expedition": False, **flags}
+    return next(g for g, e in EVENTS.items() if e["tier"] == tier and g not in MERCHANT_DATA and g not in OFFER_DATA
+                and all(e[k] == v for k, v in want.items()))
+
+
+class TestEncounterLocks(ClientTestBase):
+    """Merchant and event locks, enforced by the client (owner's rulings in docs/ENCOUNTER-LOCKS.md)."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        from ..items import encounter_item
+        self.event_lock, self.shop_lock = _encounter(False), _encounter(True)
+        self.event_id = item_name_to_id[encounter_item(self.event_lock)]
+        self.shop_id = item_name_to_id[encounter_item(self.shop_lock)]
+        self.ctx.slot_data.update(encounter_locks=[self.event_id, self.shop_id], event_rarity=3,
+                                  exempt_expeditions=True)
+
+    def receive(self, item_id: int) -> None:
+        self.ctx.items_received.append(NetworkItem(item_id, 0, 0, 0))
+        self.ctx.on_package("ReceivedItems", {"index": 1, "items": [NetworkItem(item_id, 0, 0, 0)]})
+
+    def test_a_locked_event_blocks_checks_for_the_rest_of_the_run(self) -> None:
+        from ..logparser import EncounterEntered
+        self.play(RunStarted("Vanessa"), DayReached(1), EncounterEntered(self.event_lock.guids[0]), DayReached(2))
+        self.assertIn("LOCKED", self.ctx.blocked_reason())
+        self.assertFalse(self.was_sent(day_location("Vanessa", 2)))
+        self.receive(self.event_id)  # its unlock arrives: the block goes
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def test_a_bypass_lets_a_locked_event_through(self) -> None:
+        from ..items import LOCK_BYPASS_ID
+        from ..logparser import EncounterEntered
+        guid = self.event_lock.guids[0]
+        self.play(RunStarted("Vanessa"), DayReached(1), EncounterEntered(guid))
+        self.receive(LOCK_BYPASS_ID)
+        self.ctx.use_bypass(guid)
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.assertEqual(self.ctx.bypasses_ready(), 0)
+        self.play(EncounterEntered(guid), DayReached(2))  # allowed for the rest of the run
+        self.assertTrue(self.was_sent(day_location("Vanessa", 2)))
+
+    def test_a_locked_merchant_only_blocks_what_you_take_there(self) -> None:
+        from ..logparser import EncounterEntered, EncounterLeft
+        unlocked = next(c for c in CARDS if c.shop and c.hero == "Common")
+        guid = self.shop_lock.guids[0]
+        self.play(RunStarted("Vanessa"), DayReached(1), EncounterEntered(guid))
+        self.assertIsNone(self.ctx.blocked_reason())  # visiting is fine
+        self.play(CardGained(unlocked.guid, "itm_s", True))
+        self.assertIn("UNTIL", self.ctx.blocked_reason())
+        self.play(CardSold("itm_s"), EncounterLeft())
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.play(EncounterEntered(guid), CardGained(unlocked.guid, "itm_t", True))
+        self.receive(self.shop_id)  # the merchant's unlock arrives: you can keep it
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def test_rarity_stages_and_the_extra_copy(self) -> None:
+        from ..items import EVENT_RARITY_ID
+        diamond, legendary = _event("Diamond"), _event("Legendary")
+        self.assertTrue({diamond, legendary} <= self.ctx.locked_event_guids())
+        self.receive(EVENT_RARITY_ID)
+        self.assertNotIn(diamond, self.ctx.locked_event_guids())
+        self.assertIn(legendary, self.ctx.locked_event_guids())
+        self.receive(EVENT_RARITY_ID)
+        self.assertNotIn(legendary, self.ctx.locked_event_guids())
+        self.assertEqual(self.ctx.bypasses_ready(), 0)
+        self.receive(EVENT_RARITY_ID)  # past the two stages: a Lock Bypass
+        self.assertEqual(self.ctx.bypasses_ready(), 1)
+
+    def test_level_ups_and_exempt_expeditions_are_never_rarity_locked(self) -> None:
+        expedition = _event("Legendary", expedition=True)
+        self.assertNotIn(_event("Diamond", level_up=True), self.ctx.locked_event_guids())
+        self.assertNotIn(expedition, self.ctx.locked_event_guids())
+        self.ctx.slot_data["exempt_expeditions"] = False
+        self.assertIn(expedition, self.ctx.locked_event_guids())
+
+    def test_no_rarity_lock_without_the_item_in_the_seed(self) -> None:
+        self.ctx.slot_data["event_rarity"] = 0
+        self.assertNotIn(_event("Diamond"), self.ctx.locked_event_guids())
+
+
+class TestAllLockedChoice(ClientTestBase):
+    """Every event offered is locked: the least rare is let through, the same one every time (owner, 2026-10-01)."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.ctx.slot_data.update(encounter_locks=[], event_rarity=2, exempt_expeditions=True)
+        from ..data import EVENTS
+        diamonds = [g for g, e in EVENTS.items() if e["tier"] == "Diamond" and not e["level_up"] and not e["expedition"]]
+        self.a, self.b = diamonds[0], diamonds[1]
+        self.legendary = _event("Legendary")
+
+    def screen(self, *offers):
+        from ..memreader import Offer, Snapshot
+        return Snapshot("Choice", None, tuple(Offer(f"enc_{i}", t, k) for i, (t, k) in enumerate(offers)))
+
+    def test_least_rare_is_let_through_and_entering_it_is_fine(self) -> None:
+        from ..logparser import EncounterEntered
+        self.play(RunStarted("Vanessa"), DayReached(1))
+        self.ctx.handle_snapshot(self.screen((self.legendary, "EventEncounter"), (self.a, "EventEncounter")))
+        self.assertEqual(self.ctx.run["let_through"], [self.a])
+        self.play(EncounterEntered(self.a), DayReached(2))
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def test_a_tie_picks_the_same_one_every_time(self) -> None:
+        from ..encounters import let_through
+        snapshot = self.screen((self.a, "EventEncounter"), (self.b, "EventEncounter"))
+        locked = self.ctx.locked_event_guids()
+        picks = {let_through(snapshot.offers, locked) for _ in range(20)}
+        self.assertEqual(len(picks), 1)
+        self.assertIn(picks.pop(), (self.a, self.b))
+
+    def test_not_when_an_allowed_option_is_on_screen(self) -> None:
+        from ..encounters import let_through
+        bubble = next(c.guid for c in CARDS if c.shop)
+        snapshot = self.screen((self.a, "EventEncounter"), (bubble, "Item"))
+        self.assertIsNone(let_through(snapshot.offers, self.ctx.locked_event_guids()))

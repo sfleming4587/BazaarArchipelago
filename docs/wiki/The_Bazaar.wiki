@@ -29,8 +29,9 @@ breaks a lock. It runs on Windows only.
 * The player starts with one hero; the others are items.
 * Most cards merchants sell are locked until received. Each hero keeps a set of Bronze starter cards (20 by
   default) that are never locked.
+* Some merchants and events are locked too; Diamond and Legendary ones wait for Event Rarity Progression.
 * Nothing in the game changes: locks are enforced by the client, which blocks all checks while the player plays a
-  locked hero or holds a locked card, until the card is sold.
+  locked hero or holds a locked card (until it's sold), or for the rest of a run after entering a locked event.
 
 == Features ==
 === Goal ===
@@ -47,8 +48,9 @@ Plus a 10-win run with each hero.
 * Hero unlocks, one per hero.
 * Single card unlocks, and optionally one item per original hero expansion pack that unlocks all of its cards.
 * Legendary Items and Expedition Tickets unlocks.
+* Merchant and event unlocks, and '''Event Rarity Progression''' (Diamond, then Legendary; extra copies are Lock Bypasses).
 * '''Sell Trap''' (trap): the player must sell a random item they hold within a few days, or checks are blocked.
-* '''Lock Bypass''': lets the player keep one locked card for the rest of a run.
+* '''Lock Bypass''': lets the player keep one locked card, or use one locked event, for the rest of a run.
 
 === Client ===
 * Red padlocks on every locked card the player is offered (shops, level-ups, loot, events) and in the stash.

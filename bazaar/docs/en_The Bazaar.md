@@ -2,8 +2,9 @@
 
 ## What does randomization do to this game?
 
-You start with one hero. Every other hero, plus a set of locked cards, is shuffled into the multiworld.
-Until you receive a hero you may not play them, and until you receive a locked card you may not buy it.
+You start with one hero. Every other hero, plus a set of locked cards, merchants and events, is shuffled into the
+multiworld. Until you receive a hero you may not play them, until you receive a locked card you may not buy it, and
+until you receive a locked merchant or event you may not use it.
 
 The game itself is never modified. The client reads the log file the game writes on your PC and, read-only, a
 little of the game's memory (your run's screen and the cards on offer, to put padlocks on locked ones). Locks are
@@ -51,6 +52,26 @@ traps and bypasses - that hold a different locked card. The rest hold duplicates
 `duplicate_cards` keep their two copies. With `duplicate_all_cards` (casual mode) the percent doesn't apply: every
 spare check holds a locked card, each with a second copy somewhere in the multiworld.
 
+## Locked merchants and events
+
+`locked_encounters_percent` (default 25; 0 turns it off) of the merchants and events your heroes can meet get their
+own unlock, **Merchant: X** or **Event: X** (one item covers every rarity version of it). `starter_merchants`
+(default 5) merchants are never locked, so there's always somewhere to shop.
+
+- **A locked merchant** (or an event that hands you items) can still be visited. Anything you take there counts as
+  a locked card: sell it, receive the merchant's unlock, or use a Lock Bypass on it.
+- **Any other locked event:** going in blocks checks for the rest of that run, unless you press **Use Bypass** next
+  to it in the alert. Receiving its unlock clears the block too.
+- **Event Rarity Progression** (`event_rarity_progression`, default 3 copies; 0 turns it off): until you find the
+  first copy, Diamond merchants and events are locked; the second unlocks Legendary ones. Every copy past those two
+  counts as a Lock Bypass. With `exempt_expeditions` (on by default) the expeditions and every event inside them are
+  never locked this way; the tickets themselves still need **Expedition Tickets**.
+- **Only your choices count.** Monster fights, level-up rewards and events the game puts you in without a choice are
+  never locked. If every event offered is locked, the least rare one is let through (a tie is picked at random, and a
+  pop-up says which) - unless the screen also has an option that isn't an event.
+
+None of these items are needed by logic: there's always a way on.
+
 ## What is the goal?
 
 Get 10 wins with a number of different heroes (`heroes_required`, default 3, up to the number of heroes
@@ -68,6 +89,8 @@ you have enabled).
   Deep or Dooltron. Unlocks all of its cards at once. Every pack has its own switch (`pack_dooley_dooltron` and so
   on), all on by default, so you can keep just the packs you like. Packs lock a lot more cards in total (10 per
   check), so turning on **Duplicate All Cards (casual)** as well is a good idea.
+- **Merchant: X** / **Event: X** - you may now use that merchant or event (see above).
+- **Event Rarity Progression** - first Diamond, then Legendary merchants and events; extra copies are Lock Bypasses.
 - **Sell Trap** / **Lock Bypass** (see below).
 - Filler items with no effect (only if the pool somehow runs out of anything else).
 
@@ -76,8 +99,9 @@ you have enabled).
 The client refuses to send **any** check (days, PvP, monsters, 10 wins) while:
 
 - you're playing a hero you haven't received - for the whole run;
-- you're holding a locked card - until the game's log shows you sold it, you receive it as an item, or you use a
-  Lock Bypass on it;
+- you're holding a locked card, or anything you took at a locked merchant - until the game's log shows you sold it,
+  you receive its unlock, or you use a Lock Bypass on it;
+- you went into a locked event - for the rest of that run, unless you receive its unlock or use a Lock Bypass on it;
 - a Sell Trap's deadline has passed and you still hold its item - until you sell it;
 - you've received a DeathLink - for the rest of that run, including the fight you're in;
 - a run started while the client was off or disconnected was already holding a locked card when the client caught
@@ -99,7 +123,8 @@ The friendly opposite of a Sell Trap: the multiworld contains `lock_bypasses` Lo
 off). A bypass is for the moment you're holding a locked card: next to that card, the alert says **SELL OR USE
 BYPASS** and has a **Use Bypass** button. Press it and the card is yours for the rest of the run - more copies of it
 too, so you can upgrade it, and selling it and buying it back is fine. Checks unblock straight away. The card is
-locked again when the run ends.
+locked again when the run ends. The same button shows next to a locked event you went into: press it and that
+event is allowed for the rest of the run.
 
 A bypass is never used by itself, so buying a card you didn't realise was locked can't waste one - you decide.
 Unused bypasses wait for later runs, and the header (top left) always shows how many you have. Like a trap, each bypass
