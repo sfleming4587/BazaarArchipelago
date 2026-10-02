@@ -41,7 +41,7 @@ nobody should risk their account to play a randomizer.
 | `docs/ENCOUNTER-LOCKS.md` | merchant and event locks and Event Rarity Progression: the owner's rulings, how the pool is built, what's built so far |
 | `docs/OVERLAY.md` | what the overlay shows where, when it fades or hides, with an example |
 | `docs/MEMORY-READER.md` | what the game's memory shows that `Player.log` doesn't, the reader's rules, and the shop padlocks |
-| `README.md` | for players only: what changes, how it works, setup, FAQ (shaped after other worlds' READMEs, 2026-10-01); its pictures live in `docs/images/` |
+| `README.md` | for players only: what changes, how it works, setup, FAQ (shaped after other worlds' READMEs, 2026-10-01) |
 | `Archipelago/` (not in git) | an Archipelago 0.6.7 source checkout; `worlds/bazaar` is a junction to `bazaar/` |
 | `.venv/` (not in git) | Python 3.13 (Archipelago doesn't support 3.14 yet) |
 

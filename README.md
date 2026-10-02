@@ -2,8 +2,6 @@
 
 **The Bazaar** for [Archipelago](https://archipelago.gg), the multiworld randomizer.
 
-![A shop with the Archipelago overlay: run progress top left, a Sell Trap's flaming skull top right](docs/images/sell-trap.jpg)
-
 **Status:** playable, actively developed - [latest release](https://github.com/sfleming4587/BazaarArchipelago/releases/latest).
 Windows only. Needs Archipelago 0.6.4 or newer; last tested with The Bazaar 1.0.12293.
 
