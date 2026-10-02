@@ -278,6 +278,15 @@ class TestEventCentres(unittest.TestCase):
             self.assertAlmostEqual(x, ex, delta=3)
             self.assertAlmostEqual(y, ey, delta=3)
 
+    def test_a_line_is_centred_whatever_its_count(self) -> None:
+        """Owner, 2026-10-02: without the portal's bubble its two events move to the centre."""
+        from ..overlay import event_centres, event_row
+        self.assertEqual(event_centres(0, 0, 1920, 1080, "Line-3"), [(678, 420), (960, 420), (1242, 420)])
+        self.assertEqual(event_centres(0, 0, 1920, 1080, "Line-2"), [(819, 420), (1101, 420)])
+        self.assertEqual(event_centres(0, 0, 1920, 1080, "Line-1"), [(960, 420)])
+        self.assertIsNone(event_row("Choice-2"))  # an hourly count never measured
+        self.assertIsNone(event_row("Line-0"))
+
     def test_scales_with_the_window(self) -> None:
         from ..overlay import event_centres
         small = event_centres(0, 0, 1920, 1080, "Choice-4")
@@ -287,8 +296,8 @@ class TestEventCentres(unittest.TestCase):
             self.assertAlmostEqual(y2 - 50, y1 * 4 / 3, delta=1)
 
     def test_hover_area_covers_each_option_and_stays_off_the_strips(self) -> None:
-        from ..overlay import EVENT_ROWS, event_centres, event_rects
-        for screen in EVENT_ROWS:
+        from ..overlay import CHOICE_ROWS, event_centres, event_rects
+        for screen in [*CHOICE_ROWS, "Line-2", "Line-3", "Line-4"]:
             rects = event_rects(0, 0, 1920, 1080, screen)
             for x, y in event_centres(0, 0, 1920, 1080, screen):
                 self.assertTrue(any(r[0] <= x < r[2] and r[1] <= y < r[3] for r in rects))

@@ -1151,9 +1151,14 @@ class TestEventPadlocks(ClientTestBase):
                                              (self.locked, "EventEncounter")))
         self.assertEqual(self.padlocks(), ("Line-3", [2]))
 
+    def test_a_line_without_the_bubble(self) -> None:
+        self.ctx.handle_snapshot(self.screen("Encounter", (self.free, "EventEncounter"),
+                                             (self.locked, "EventEncounter")))
+        self.assertEqual(self.padlocks(), ("Line-2", [1]))
+
     def test_monsters_and_unmeasured_counts_get_none(self) -> None:
         self.ctx.handle_snapshot(self.screen("Choice", (BRONZE_MONSTER, "CombatEncounter")))
         self.assertEqual(self.padlocks(), (None, []))
-        self.ctx.handle_snapshot(self.screen("Encounter", (self.free, "EventEncounter"),
+        self.ctx.handle_snapshot(self.screen("Choice", (self.free, "EventEncounter"),
                                              (self.locked, "EventEncounter")))
         self.assertEqual(self.padlocks(), (None, []))

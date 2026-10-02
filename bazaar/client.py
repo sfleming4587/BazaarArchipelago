@@ -33,7 +33,7 @@ from .logparser import (DEFAULT_LOG_PATH, HERO_ALIASES, PREV_LOG, HeroSelected, 
                         RunEnded, RunStarted, UnrecognizedRun, log_session)
 from .memreader import NotReady, Reader, ReaderOff, Snapshot, game_pid
 from .merchants import possible_stock
-from .overlay import EVENT_ROWS, FILE_ONLY, ROW_GAPS
+from .overlay import FILE_ONLY, ROW_GAPS, event_row
 from .tracker import hero_order
 # the heroes Random can roll, by the game's own names (PlayerPreferences keys them like this; "Hero8" = The Dragons)
 HEROES_IN_GAME = ("Dooley", "Pygmalien", "Vanessa", "Mak", "Stelle", "Jules", "Karnok", "Hero8")  # FILE_ONLY: to the log file only, not the console or the client window
@@ -72,13 +72,14 @@ def items_on_screen(snapshot: Optional[Snapshot]) -> Optional[tuple]:
 
 
 def event_screen(snapshot: Optional[Snapshot]) -> Optional[tuple]:
-    """(EVENT_ROWS key, offers) when the screen is a choice of events whose layout is known: the hourly choice
-    ("Choice-N") or an event's own options in a row ("Line-N"); None otherwise (monsters, PvP, an unmeasured count)."""
+    """(screen, offers) when the screen is a choice of events whose layout is known (overlay.event_row): the hourly
+    choice ("Choice-N") or an event's own options in a row ("Line-N"); None otherwise (monsters, PvP, an unmeasured
+    hourly count)."""
     if not snapshot or snapshot.state not in ("Choice", "Encounter") or not snapshot.offers \
             or not any(o.kind == "EventEncounter" for o in snapshot.offers):
         return None
     key = f"{'Choice' if snapshot.state == 'Choice' else 'Line'}-{len(snapshot.offers)}"
-    return (key, snapshot.offers) if key in EVENT_ROWS else None
+    return (key, snapshot.offers) if event_row(key) else None
 
 
 def offers_at(snapshot: Optional[Snapshot], guid: str) -> Optional[tuple]:

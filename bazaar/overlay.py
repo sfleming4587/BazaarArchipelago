@@ -70,11 +70,12 @@ ONE_CARD_ONLY = {"Loot"}
 # centre, y from its top), by screen - "Choice-N" is the hourly choice with N options, "Line-N" an event's own options
 # in a row. Measured 2026-10-02 on the owner's screenshots: the hourly 3 sit where the monster pick's do (Event3.jpg,
 # owner: "they show the same positions the monsters are in"), 245 apart, the middle one 61 lower; the ticket day's 4
-# keep that pitch and those heights (OffCenter4Event.jpg); a line is 282 apart (EventToEvents.webp). A count not
-# listed gets no padlocks: its layout hasn't been measured.
-EVENT_ROWS = {"Choice-3": ((-245, 303), (0, 364), (245, 303)),
-              "Choice-4": ((-367, 303), (-122, 364), (122, 364), (367, 303)),
-              "Line-3": ((-282, 420), (0, 420), (282, 420))}
+# keep that pitch and those heights (OffCenter4Event.jpg). A line is 282 apart (EventToEvents.webp) and centred
+# whatever its count (owner, 2026-10-02: without the portal's extra bubble its events move to the centre, and other
+# events can add such options too). A hourly count not listed gets no padlocks: its layout hasn't been measured.
+CHOICE_ROWS = {"Choice-3": ((-245, 303), (0, 364), (245, 303)),
+               "Choice-4": ((-367, 303), (-122, 364), (122, 364), (367, 303))}
+LINE_PITCH, LINE_Y = 282, 420
 EVENT_FRAME = (205, 175)  # an option's frame, 1080p (the 3-choice screenshot's left one, x 614-815 y 217-390)
 CARD_HEIGHT = 220  # measured on the same screenshot (the cards' frames, y 322-541 at 1080p)
 YOUR_ROW = (548, 785)  # your own board's cards, top and bottom (their tooltips can open over the shop row too)
@@ -153,10 +154,19 @@ def board_rect(x: int, y: int, w: int, h: int, level: Optional[int]) -> tuple:
             y + round(YOUR_ROW[1] * h / 1080))
 
 
+def event_row(screen: Optional[str]) -> Optional[tuple]:
+    """Each option's centre at 1080p on an event screen ("Choice-N" or "Line-N"), left to right; None when that
+    layout isn't known."""
+    kind, _, count = (screen or "").partition("-")
+    if kind == "Line" and count.isdigit() and int(count) > 0:
+        return tuple(((i - (int(count) - 1) / 2) * LINE_PITCH, LINE_Y) for i in range(int(count)))
+    return CHOICE_ROWS.get(screen)
+
+
 def event_centres(x: int, y: int, w: int, h: int, screen: str) -> List[tuple]:
-    """Screen centre (x, y) of each option on an event choice screen (an EVENT_ROWS key), left to right."""
+    """Screen centre (x, y) of each option on an event choice screen (see event_row), left to right."""
     across = min(h / 1080, w / 1920)
-    return [(round(x + w / 2 + dx * across), round(y + h * cy / 1080)) for dx, cy in EVENT_ROWS[screen]]
+    return [(round(x + w / 2 + dx * across), round(y + h * cy / 1080)) for dx, cy in event_row(screen)]
 
 
 def event_rects(x: int, y: int, w: int, h: int, screen: str, level: Optional[int] = None) -> List[tuple]:
@@ -315,7 +325,7 @@ class Overlay:
         """A padlock on each locked card on offer: the screen showing them (a ROW_GAPS key), sizes of the row's
         cards left to right (gaps included), and the positions (0-based) of the locked ones. No locked positions
         hides them (at once). reveal: these are new cards, so wait until they've flipped over. level: yours."""
-        measured = screen in EVENT_ROWS or screen in ROW_GAPS and not (screen in ONE_CARD_ONLY and len(sizes) > 1)
+        measured = event_row(screen) or screen in ROW_GAPS and not (screen in ONE_CARD_ONLY and len(sizes) > 1)
         value = (screen, tuple(sizes), tuple(locked), level) if locked and measured else None
         self.commands.put(("padlocks", (value, time.monotonic(), reveal and value is not None)))
 
@@ -870,7 +880,7 @@ class _Screen:
         """Moves a padlock onto the centre of each locked card on offer (see card_centres)."""
         layout, value = self.layout, self.state["padlocks"]
         screen, sizes, locked, level = value or (None, (), (), None)
-        if screen in EVENT_ROWS:
+        if event_row(screen):
             centres = event_centres(*layout["window"], screen)
             self.padlock_cards = event_rects(*layout["window"], screen, level)
         else:
