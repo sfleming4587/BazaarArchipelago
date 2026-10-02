@@ -173,6 +173,26 @@ class TestSavedState(ClientTestBase):
 
 
 class TestStatusLine(ClientTestBase):
+    def setUp(self) -> None:
+        super().setUp()
+        from ..memreader import Snapshot
+        self.ctx.memory = Snapshot(None, None, ())  # the reader is on, at the menu
+
+    def test_menu_panel_hides_while_the_reader_is_off_and_on_a_runs_end_screen(self) -> None:
+        """Owner, 2026-10-02: it stayed up over character select and settings with the reader off, and showed on
+        the win/lose screen."""
+        from ..memreader import Snapshot
+        self.play(HeroSelected("Vanessa"))
+        self.assertIsNotNone(self.ctx.menu_data())
+        self.ctx.overlay = mock.Mock()
+        for state in ("EndRunDefeat", "EndRunVictory"):
+            self.ctx.handle_snapshot(Snapshot(state, None, ()))
+            self.assertIsNone(self.ctx.menu_data(), state)
+        self.ctx.handle_snapshot(Snapshot(None, None, ()))  # back on the menu
+        self.assertIsNotNone(self.ctx.overlay.show_menu.call_args.args[0])
+        self.ctx.handle_snapshot(None)  # the reader went off
+        self.assertIsNone(self.ctx.overlay.show_menu.call_args.args[0])
+
     def test_run_shows_hero_day_and_goal(self) -> None:
         self.play(RunStarted("Vanessa"), DayReached(2))
         text, warning, _ = self.ctx.status_line()

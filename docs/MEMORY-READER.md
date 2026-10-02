@@ -267,6 +267,10 @@ of guessing. Offsets found on 2026-09-30: assembly list +0xA0, class cache +0x4D
 - **K-mem7 (2026-10-01):** `ECardSize` doesn't count from 0, so naming enum values by declaration order read every
   card one size too big. Sizes come from `bazaar_data.json`; only `ECardType` (which does count from 0) is named
   by order.
+- **K-mem9 (2026-10-02):** a game that is still loading fails other checks too, not just the assembly list:
+  "MonoImage.class_cache not found" 5 s after "still loading" turned the reader off for the whole session (no
+  padlocks, menu panel never hidden); it attached fine once loaded. Any failed attach within `LOADING_SECONDS` of
+  first seeing the game is now "still loading"; only after that is it a failed check.
 
 ## Padlocks on locked offers (passed in the game 2026-10-01, released in v0.8.0)
 

@@ -62,6 +62,13 @@ def own_popup(item_id: int) -> bool:
         or item_id in (SELL_TRAP_ID, LOCK_BYPASS_ID, EVENT_RARITY_ID)
 
 
+def menu_hidden(snapshot: Optional[Snapshot]) -> bool:
+    """The menu's hero panel stays hidden while the reader is off (nothing would say when the game's own screens
+    cover the menu) and on a run's win/lose screen, which the log already counts as out of the run (owner,
+    2026-10-02: it showed on both)."""
+    return snapshot is None or snapshot.state in ("EndRunDefeat", "EndRunVictory")
+
+
 def items_on_screen(snapshot: Optional[Snapshot]) -> Optional[tuple]:
     """The items offered on screen right now, left to right, as read from memory; None unless it's a row of items on
     a screen whose layout is known (ROW_GAPS) - e.g. a skill choice, or memory being off."""
@@ -724,6 +731,8 @@ class BazaarContext(CommonContext):
         changed; the shop warning when what's on offer at the current merchant did (you bought a card, rerolled, or
         memory caught up with the log)."""
         before, self.memory = self.memory, snapshot
+        if menu_hidden(before) != menu_hidden(snapshot) and self.overlay:
+            self.overlay.show_menu(self.menu_data())  # the reader came on or off, or a run's end screen came or went
         if (before and before.offers) != (snapshot and snapshot.offers):
             self.check_choice_screen(snapshot)
         seen = lambda s: (s.state, items_on_screen(s), event_screen(s), s.level, s.stash) if s else None
@@ -1113,7 +1122,7 @@ class BazaarContext(CommonContext):
         """The menu's centre panel (owner, 2026-10-01): every hero in this multiworld with their checks, the one
         you picked, and a warning when it can't be played (locked, or Random, which can roll a locked one). None
         outside the menu (in a run, not connected, no hero picked yet)."""
-        if not self.slot_data or self.run.get("active") or not self.menu_hero:
+        if not self.slot_data or self.run.get("active") or not self.menu_hero or menu_hidden(self.memory):
             return None
         heroes, locked = [], self.locked_guids()
         for hero in hero_order():

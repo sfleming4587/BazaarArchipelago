@@ -525,16 +525,14 @@ class Reader:
             base = mono.static_data(data, {"_dataInstance": "Data", "Entities": "Dictionary`2",
                                            "<CurrentState>k__BackingField": "RunState",
                                            "<Run>k__BackingField": "Run"})
-        except NoAssemblies:
+        except Exception as error:  # a failed check, or a read that made no sense
             memory.close()
+            # Early on, the game may still be filling these structures in (2026-10-02: "class_cache not found" 5 s
+            # after "still loading" turned the reader off for the session; it attached fine once loaded).
             if time.monotonic() - self.first_look[1] < LOADING_SECONDS:
                 raise NotReady("the game is still loading")
-            raise
-        except ReaderOff:
-            memory.close()
-            raise
-        except Exception as error:  # a read that made no sense: same as a failed check
-            memory.close()
+            if isinstance(error, ReaderOff):
+                raise
             raise ReaderOff(f"unexpected memory layout ({error!r})")
         self.memory, self.mono = memory, mono
         self.statics = {n: base + statics[n] for n in ALLOWED_STATICS if n in statics}
