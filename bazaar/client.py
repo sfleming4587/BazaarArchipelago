@@ -960,10 +960,9 @@ class BazaarContext(CommonContext):
         deathlink_owed = self.run.get("deathlink_owed")
         if event.victory:
             self.event(f"10 wins with {hero}!")
-            # every day check and the 10-win check, plus PvP and monster checks of the days the run never reached
+            # every check that hero has, even monsters skipped or lost on days the run did play (owner, 2026-10-05)
             await self.send_run_checks([c.name for c in hero_checks(hero, self.setting("max_day"), self.setting("pvp_win_checks"),
-                                                                    self.tiers)
-                                        if c.kind in ("day", "win") or c.day > event.day])
+                                                                    self.tiers)])
         self.run = {**self.run, "active": False, "held": {}}
         self.refresh_held()
         self.handle_encounter_left()

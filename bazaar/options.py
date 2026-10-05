@@ -71,8 +71,7 @@ class HeroesRequired(Range):
 class MaxDay(Range):
     """
     Day-based checks (reach day, PvP win, monsters) exist for every day from 1 up to this number.
-    Getting 10 wins with a hero sends all of that hero's "Reach Day" checks, plus the PvP and monster
-    checks for the days that run never got to.
+    Getting 10 wins with a hero sends every check that hero has left.
     Days after 16 only happen through specific events, so 16 is the highest.
     """
     display_name = "Max Day Check"

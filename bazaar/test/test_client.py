@@ -170,6 +170,18 @@ class TestDeathLinksBeforeConcede(ClientTestBase):
         self.assertEqual(self.ctx.deathlinks_received, 1)
 
 
+class TestTenWins(ClientTestBase):
+    def test_ten_wins_sends_every_check_of_that_hero(self) -> None:
+        """A friend's report (2026-10-05): monsters missed on days the run did play stayed unsent. Owner: a 10-win
+        run sends every check that hero has."""
+        from ..locations import hero_checks
+        self.play(RunStarted("Vanessa"), DayReached(1), DayReached(4), MonsterFought(BRONZE_MONSTER, 4, False),
+                  PvPFought(4, True), RunEnded(True, 10))
+        everything = {location_name_to_id[c.name] for c in hero_checks("Vanessa", 15, True, self.ctx.tiers)}
+        self.assertEqual(self.sent, everything)
+        self.assertTrue(self.was_sent(monster_location("Vanessa", 4, "Bronze")))
+
+
 class TestLockedHero(ClientTestBase):
     def test_locked_hero_blocks_everything(self) -> None:
         self.play(RunStarted("Dooley"), DayReached(1), MonsterFought(BRONZE_MONSTER, 1, True), PvPFought(1, True),

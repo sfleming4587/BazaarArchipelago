@@ -21,8 +21,8 @@ Per hero, for each day from 1 up to `max_day` (default 13, at most 16):
   Beating a monster sends its rarity and every rarity below it for that day. Monsters from events don't count.
   `max_monster_tier` caps the highest rarity with a check (default Diamond, so no Legendary monster checks).
 
-Plus **10 Wins** with each hero. Getting 10 wins sends all of that hero's "Reach Day" checks, plus the PvP and
-monster checks for the days that run never reached (winning fast ends a run early).
+Plus **10 Wins** with each hero. Getting 10 wins sends every check that hero has left: every day, PvP and monster
+check, even a monster you skipped or lost to earlier in that run.
 
 PvP wins are counted automatically: after a won fight the game's log always writes "Waiting for N exit tasks",
 and never after a lost one (checked against a full run's answers).

@@ -44,3 +44,20 @@ class TestLoadingGame(unittest.TestCase):
             with self.assertRaises(ReaderOff) as caught:
                 self.attach(1000 + memreader.LOADING_SECONDS + 1, error)
             self.assertNotIsInstance(caught.exception, NotReady)
+
+
+class TestRunTornDown(unittest.TestCase):
+    """2026-10-02 (and a friend's v0.9.0 game): "field Attributes not found" 8 s after a concede switched the reader
+    off for the session - padlocks were gone until the client restarted."""
+
+    def test_a_run_mid_change_reads_as_no_level_and_stash_not_a_failed_check(self) -> None:
+        reader = Reader()
+        reader.memory, reader.mono = mock.Mock(), mock.Mock()
+        reader.statics = {"<CurrentState>k__BackingField": 1, "<Run>k__BackingField": 2}
+        reader.memory.ptr.return_value = 1
+        reader.mono.is_a.return_value = True
+        fields = {"StateName": "Encounter", "CurrentEncounterId": "guid", "SelectionSet": 0}
+        with mock.patch.object(Reader, "_get", lambda self, obj, name: fields[name]),                 mock.patch.object(Reader, "_level", side_effect=ReaderOff("field Attributes not found")):
+            snapshot = reader.snapshot()
+        self.assertEqual(snapshot, memreader.Snapshot("Encounter", "guid", (), None, ()))
+

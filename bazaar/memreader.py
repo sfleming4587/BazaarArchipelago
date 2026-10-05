@@ -724,7 +724,17 @@ class Reader:
                     offers.append(Offer(instance, None, None))
                     continue
                 offers.append(Offer(instance, self._get(card, "TemplateId"), self._get(card, "Type")))
-        return Snapshot(name, encounter, tuple(offers), self._level(), self._stash())
+        return Snapshot(name, encounter, tuple(offers), *self._run_parts())
+
+    def _run_parts(self) -> Tuple[Optional[int], tuple]:
+        """Your level and stash, or (None, ()) when they make no sense this time. They're read through the Run, which
+        the game tears down and replaces around a run's end: 8 s after a concede (2026-10-02) Run.Player had no
+        Attributes for a moment, and the reader switched off for the whole game session - no padlocks until the
+        client restarted. Attach already checked the layout, so this is never a patch: the next look tries again."""
+        try:
+            return self._level(), self._stash()
+        except Exception:
+            return None, ()
 
     def _stash(self) -> Tuple[Tuple[int, Optional[str]], ...]:
         """Your stash's cards and the slot each starts in, from Run.Player.Stash.Container.Sockets (10 slots; a card
