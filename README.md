@@ -143,8 +143,8 @@ checks and the notices box says **CHECKS ARE BLOCKED** and why.
   the least rare one through and tells you which.
 - **Lock Bypasses** (5 by default): holding a locked card, or went into a locked event? Press **Use Bypass** next to
   it and it's yours for the rest of that run. A bypass is never used by itself.
-- **DeathLink** (off unless you turn it on): the second DeathLink you receive (set by
-  `death_links_before_concede`, counted across runs) means abandoning your current run (Settings > Abandon Run).
+- **DeathLink** (off unless you turn it on): the second DeathLink you receive in a run (set by
+  `death_links_before_concede` and `death_links_same_run`) means abandoning your current run (Settings > Abandon Run).
   Losing a run sends a DeathLink to everyone else; conceding only does if you turn on `death_link_on_concede`.
 
 PvP wins count automatically - nothing to answer.

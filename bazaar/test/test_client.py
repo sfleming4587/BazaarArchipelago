@@ -131,6 +131,7 @@ class TestDeathLinksBeforeConcede(ClientTestBase):
         self.ctx.on_deathlink({"time": 1.0, "source": "Friend", "cause": "Friend fell."})
 
     def test_the_second_one_forces_a_concede_even_in_a_later_run(self) -> None:
+        self.ctx.slot_data["death_links_same_run"] = False
         self.play(RunStarted("Vanessa"))
         self.die()
         self.assertIsNone(self.ctx.blocked_reason())  # survived: checks still count
@@ -139,6 +140,7 @@ class TestDeathLinksBeforeConcede(ClientTestBase):
         self.assertIn("DEATHLINK", self.ctx.blocked_reason())
 
     def test_dodges_dont_count_and_the_count_starts_over(self) -> None:
+        self.ctx.slot_data["death_links_same_run"] = False
         self.die()  # not in a run: a dodge
         self.play(RunStarted("Vanessa"))
         self.die()

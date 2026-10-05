@@ -336,7 +336,8 @@ class DeathLinkAmnesty(Range):
 
 class DeathLinksBeforeConcede(Range):
     """Number of DeathLinks you must receive before you have to concede a run (1 = every one does).
-    They add up across runs unless death_links_same_run is on, and the count starts over once one makes you concede.
+    They must all arrive in the same run unless death_links_same_run is off (then they add up across runs). The count
+    starts over once one makes you concede.
     A DeathLink that arrives while you're not in a run (a dodge) doesn't count."""
     display_name = "DeathLinks Before Concede"
     range_start = 1
@@ -344,9 +345,9 @@ class DeathLinksBeforeConcede(Range):
     default = 2
 
 
-class DeathLinksSameRun(Toggle):
+class DeathLinksSameRun(DefaultOnToggle):
     """The DeathLinks counted by death_links_before_concede must all arrive during the same run: the count starts
-    over with every new run. Off by default (they add up across runs)."""
+    over with every new run. On by default; off, they add up across runs."""
     display_name = "DeathLinks In The Same Run"
 
 

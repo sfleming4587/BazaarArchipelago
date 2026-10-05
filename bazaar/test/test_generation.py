@@ -300,6 +300,11 @@ class TestIncludedHeroSwitches(BazaarTestBase):
         self.assertFalse(self.world.options.death_link)
         self.assertFalse(self.world.options.death_link_on_concede)
 
+    def test_received_deathlinks_default_to_two_in_the_same_run(self) -> None:
+        """User, 2026-10-05: 2 DeathLinks before a forced concede, same run on by default."""
+        self.assertEqual(self.world.options.death_links_before_concede.value, 2)
+        self.assertTrue(self.world.options.death_links_same_run)
+
 
 class TestUntickedHeroesAreOut(BazaarTestBase):
     """A hero left unticked, base hero or not, isn't in the seed (user 2026-10-05)."""

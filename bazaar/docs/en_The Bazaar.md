@@ -142,10 +142,10 @@ name (such as Make a Wish) still count as held and must be sold.
 - `death_link_on_concede`: conceding also sends a DeathLink (off by default). Conceding because you received a
   DeathLink never sends one.
 - `death_links_before_concede`: how many DeathLinks you have to receive before you must concede (2 by default).
-  They add up across runs, and the count starts over once one makes you concede. One that arrives while you're
-  not in a run is dodged and doesn't count.
-- `death_links_same_run`: those DeathLinks must all arrive during one run - the count starts over every run (off
-  by default).
+  The count starts over once one makes you concede. One that arrives while you're not in a run is dodged and
+  doesn't count.
+- `death_links_same_run`: those DeathLinks must all arrive during one run - the count starts over every run (on
+  by default). Turn it off and they add up across runs.
 - What everyone else reads depends on your hero and how far the run got (its wins - "with 5 wins", never a day), or whether you conceded -
   Vanessa players get thrown overboard, Mak players fumble their potions, and a run with no wins at all is
   trash. The Bazaar's a crazy place, right?
