@@ -4,7 +4,7 @@ from dataclasses import dataclass, make_dataclass
 from Options import (Choice, DeathLink, DefaultOnToggle, ItemSet, OptionGroup, PerGameCommonOptions, Range,
                      StartInventoryPool, Toggle)
 
-from .data import CARDS, DLC_HEROES, HEROES, PACKS, TIERS, hero_key
+from .data import BASE_HEROES, CARDS, HEROES, PACKS, TIERS, hero_key
 
 
 def _switch(class_name: str, display_name: str, doc: str, on: bool = False) -> type:
@@ -16,18 +16,15 @@ def _switch(class_name: str, display_name: str, doc: str, on: bool = False) -> t
     return option
 
 
-# Heroes are picked by ticking, never by typing names (user 2026-09-29). Built from data.HEROES, so a hero added
-# by a patch gets its switches automatically. option name -> hero.
-OWN_HERO_OPTIONS = {f"own_{hero_key(h)}": h for h in DLC_HEROES}
-EXCLUDE_HERO_OPTIONS = {f"exclude_{hero_key(h)}": h for h in HEROES}
-OWN_SWITCHES = {name: _switch(f"Own{hero.replace(' ', '')}", f"Own {hero}",
-                              f"You own {hero} (DLC hero). Vanessa, Pygmalien and Dooley come with the base game "
-                              f"and are always in.")
-                for name, hero in OWN_HERO_OPTIONS.items()}
-EXCLUDE_SWITCHES = {name: _switch(f"Exclude{hero.replace(' ', '')}", f"Exclude {hero}",
-                                  f"Leave {hero} out of this multiworld even if you own them: no {hero} checks, "
-                                  f"cards or unlock.")
-                    for name, hero in EXCLUDE_HERO_OPTIONS.items()}
+# Heroes are picked by ticking, never by typing names (user 2026-09-29), in one "Included Heroes (Must own)" list
+# (user 2026-10-05): a hero left unticked isn't in the seed. Built from data.HEROES, so a hero added by a patch gets
+# its switch automatically. option name -> hero.
+INCLUDE_HERO_OPTIONS = {f"include_{hero_key(h)}": h for h in HEROES}
+INCLUDE_SWITCHES = {name: _switch(f"Include{hero.replace(' ', '')}", hero,
+                                  f"Play {hero} in this multiworld" + ("." if hero in BASE_HEROES else
+                                                                       f" - DLC hero, you must own {hero}.")
+                                  + f" Unticked: no {hero} checks, cards or unlock.", on=hero in BASE_HEROES)
+                    for name, hero in INCLUDE_HERO_OPTIONS.items()}
 # One switch per legacy pack (user 2026-09-30: "doesn't have to be all or none"), named from the pack's data key so a
 # renamed pack keeps its option. On by default: legacy_card_packs alone still means every pack. option name -> key.
 PACK_OPTIONS = {f"pack_{p.key.lower()}": p.key for p in PACKS}
@@ -41,7 +38,7 @@ def _starting_hero_body(namespace: dict) -> None:
     namespace.update(
         __doc__="""
     The hero you start with. Every other hero has to be found as an item.
-    If the chosen hero isn't available (not owned or excluded), a random available hero is used instead.
+    If the chosen hero isn't one of your included heroes, a random included hero is used instead.
     """,
         display_name="Starting Hero", default=0, __module__=__name__, option_any=0,
         # values follow data.HEROES, which is append-only, so a saved choice never changes meaning
@@ -63,7 +60,7 @@ class EarlyHeroUnlock(Toggle):
 class HeroesRequired(Range):
     """
     How many different heroes need a 10-win run to finish your goal.
-    Capped at the number of heroes you have available (base heroes plus owned DLC heroes, minus excluded ones).
+    Capped at the number of included heroes.
     """
     display_name = "Heroes Required"
     range_start = 1
@@ -337,6 +334,22 @@ class DeathLinkAmnesty(Range):
     default = 0
 
 
+class DeathLinksBeforeConcede(Range):
+    """Number of DeathLinks you must receive before you have to concede a run (1 = every one does).
+    They add up across runs unless death_links_same_run is on, and the count starts over once one makes you concede.
+    A DeathLink that arrives while you're not in a run (a dodge) doesn't count."""
+    display_name = "DeathLinks Before Concede"
+    range_start = 1
+    range_end = 10
+    default = 2
+
+
+class DeathLinksSameRun(Toggle):
+    """The DeathLinks counted by death_links_before_concede must all arrive during the same run: the count starts
+    over with every new run. Off by default (they add up across runs)."""
+    display_name = "DeathLinks In The Same Run"
+
+
 @dataclass
 class _BazaarOptions(PerGameCommonOptions):
     starting_hero: StartingHero
@@ -369,19 +382,20 @@ class _BazaarOptions(PerGameCommonOptions):
     death_link: BazaarDeathLink
     death_link_on_concede: DeathLinkOnConcede
     death_link_amnesty: DeathLinkAmnesty
+    death_links_before_concede: DeathLinksBeforeConcede
+    death_links_same_run: DeathLinksSameRun
     start_inventory_from_pool: StartInventoryPool
 
 
 # the hero and pack switches are generated (see above), so they're added to the options here
-BazaarOptions = make_dataclass("BazaarOptions", [(name, option) for name, option in {**OWN_SWITCHES,
-                                                                                     **EXCLUDE_SWITCHES,
+BazaarOptions = make_dataclass("BazaarOptions", [(name, option) for name, option in {**INCLUDE_SWITCHES,
                                                                                      **PACK_SWITCHES}.items()],
                                bases=(_BazaarOptions,))
 
 
 # One-click setups: the website's options page and the Launcher's "Generate Template Options" (Players/Templates/
 # Presets). Standard is the option defaults and nothing else (user, 2026-09-30): change a default and Standard follows.
-# Owned DLC heroes are never set by a preset.
+# Included heroes are never set by a preset.
 option_presets = {
     "Casual": {
         "heroes_required": 1, "early_hero_unlock": True, "max_day": 12, "max_monster_tier": "gold",
@@ -398,13 +412,13 @@ option_presets = {
         "locked_encounters_percent": 50, "starter_merchants": 2, "event_rarity_progression": 2,
         "sell_traps": 10, "sell_trap_days": 1, "lock_bypasses": 0,
         "logic_day_10_cards": 25, "logic_last_day_cards": 50, "logic_diamond_cards": 20, "logic_legendary_cards": 30,
-        "death_link": True, "death_link_on_concede": True,
+        "death_link": True, "death_link_on_concede": True, "death_links_before_concede": 1,
     },
 }
 
 option_groups = [
-    OptionGroup("Heroes", [*OWN_SWITCHES.values(), StartingHero, HeroesRequired, EarlyHeroUnlock]),
-    OptionGroup("Excluded Heroes", list(EXCLUDE_SWITCHES.values())),
+    OptionGroup("Included Heroes (Must own)", list(INCLUDE_SWITCHES.values())),
+    OptionGroup("Heroes", [StartingHero, HeroesRequired, EarlyHeroUnlock]),
     OptionGroup("Checks", [MaxDay, PvPWinChecks, MonsterChecks, MaxMonsterTier]),
     OptionGroup("Card Locks", [LockedCardsPercent, LockCommonCards, LockLootItems, StarterCards,
                                LegendaryItems, ExpeditionTickets, DuplicateAllCards, DuplicateCards]),
@@ -413,5 +427,6 @@ option_groups = [
     OptionGroup("Legacy Card Packs", [LegacyCardPacks, *PACK_SWITCHES.values()]),
     OptionGroup("Traps and Buffs", [SellTraps, SellTrapDays, LockBypasses]),
     OptionGroup("Logic", [LogicDay10Cards, LogicLastDayCards, LogicDiamondCards, LogicLegendaryCards]),
-    OptionGroup("DeathLink", [BazaarDeathLink, DeathLinkOnConcede, DeathLinkAmnesty]),
+    OptionGroup("DeathLink", [BazaarDeathLink, DeathLinkOnConcede, DeathLinkAmnesty,
+                                   DeathLinksBeforeConcede, DeathLinksSameRun]),
 ]

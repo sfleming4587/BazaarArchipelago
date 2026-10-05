@@ -22,11 +22,11 @@ New-Item -ItemType Directory -Force $players, $output | Out-Null
 name: $Name
 game: The Bazaar
 The Bazaar:
-  own_mak: true
-  own_stelle: true
-  own_jules: true
-  own_karnok: true
-  own_the_dragons: true
+  include_mak: true
+  include_stelle: true
+  include_jules: true
+  include_karnok: true
+  include_the_dragons: true
   starting_hero: $StartingHero
   heroes_required: 1
   max_day: 13

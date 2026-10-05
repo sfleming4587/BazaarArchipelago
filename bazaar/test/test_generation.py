@@ -9,7 +9,8 @@ from .bases import BazaarTestBase
 
 # merchant/event locks take slots card locks would get; tests about card locks and logic fitting leave them out
 NO_ENCOUNTER_LOCKS = {"locked_encounters_percent": 0, "event_rarity_progression": 0}
-ALL_DLC = {"own_mak": True, "own_stelle": True, "own_jules": True, "own_karnok": True, "own_the_dragons": True}
+ALL_DLC = {"include_mak": True, "include_stelle": True, "include_jules": True, "include_karnok": True,
+           "include_the_dragons": True}
 
 
 class TestDefaults(BazaarTestBase):
@@ -117,8 +118,8 @@ class TestEverything(BazaarTestBase):
 class TestTightSpace(BazaarTestBase):
     """One hero, few days, far more locks requested than there are checks."""
     options = {
-        "exclude_pygmalien": True,
-        "exclude_dooley": True,
+        "include_pygmalien": False,
+        "include_dooley": False,
         "max_day": 5,
         "locked_cards_percent": 100,
         "legacy_card_packs": True,
@@ -282,9 +283,10 @@ class TestLockBypassesInPool(BazaarTestBase):
         self.assertEqual(names.count("Sell Trap"), 2)
 
 
-class TestOwnHeroSwitches(BazaarTestBase):
-    """DLC heroes are picked with on/off switches (user 2026-09-29)."""
-    options = {"own_karnok": True, "own_the_dragons": True, "starting_hero": "karnok"}
+class TestIncludedHeroSwitches(BazaarTestBase):
+    """Heroes are picked with one on/off switch each (user 2026-09-29), all under "Included Heroes (Must own)"
+    (user 2026-10-05). The base heroes are ticked by default."""
+    options = {"include_karnok": True, "include_the_dragons": True, "starting_hero": "karnok"}
 
     def test_switched_on_heroes_are_in(self) -> None:
         self.assertEqual(set(self.world.heroes), {"Vanessa", "Pygmalien", "Dooley", "Karnok", "The Dragons"})
@@ -299,9 +301,9 @@ class TestOwnHeroSwitches(BazaarTestBase):
         self.assertFalse(self.world.options.death_link_on_concede)
 
 
-class TestExcludeHeroSwitches(BazaarTestBase):
-    """Heroes are left out with on/off switches too (user 2026-09-29)."""
-    options = {"own_karnok": True, "exclude_karnok": True, "exclude_dooley": True, "starting_hero": "vanessa"}
+class TestUntickedHeroesAreOut(BazaarTestBase):
+    """A hero left unticked, base hero or not, isn't in the seed (user 2026-10-05)."""
+    options = {"include_dooley": False, "starting_hero": "vanessa"}
 
     def test_switched_off_heroes_are_out(self) -> None:
         self.assertEqual(set(self.world.heroes), {"Vanessa", "Pygmalien"})
@@ -329,7 +331,7 @@ class TestNoLegendaryItemsUnlock(BazaarTestBase):
 
 class TestUniversalTrackerRebuild(BazaarTestBase):
     """Universal Tracker rebuilds the world from slot_data with default options; it must match the real seed."""
-    options = {"own_mak": True, "own_karnok": True, "max_day": 12, "max_monster_tier": "diamond",
+    options = {"include_mak": True, "include_karnok": True, "max_day": 12, "max_monster_tier": "diamond",
                "logic_day_10_cards": 22, "logic_diamond_cards": 7, "logic_legendary_cards": 12,
                "legacy_card_packs": True, "starting_hero": "karnok"}
 
@@ -464,7 +466,7 @@ class TestHardcoreLogicGenerates(BazaarTestBase):
 # per hero until it fits. Each class gets Archipelago's own fill/beatable tests.
 TIGHT = {"locked_cards_percent": 100, "lock_common_cards": False, "sell_traps": 0, "lock_bypasses": 0,
          **NO_ENCOUNTER_LOCKS}
-ONE_HERO = {"exclude_pygmalien": True, "exclude_dooley": True, "starting_hero": "vanessa"}
+ONE_HERO = {"include_pygmalien": False, "include_dooley": False, "starting_hero": "vanessa"}
 
 
 class TestTightOneHeroDaysOnly(BazaarTestBase):
@@ -542,7 +544,7 @@ class TestEncounterLocks(BazaarTestBase):
 
 class TestEncounterLocksMeetOnlySeedHeroes(BazaarTestBase):
     """With only Vanessa, an event only other heroes can meet is never locked."""
-    options = {"exclude_pygmalien": True, "exclude_dooley": True, "starting_hero": "vanessa",
+    options = {"include_pygmalien": False, "include_dooley": False, "starting_hero": "vanessa",
                "locked_encounters_percent": 100}
 
     def test_only_vanessa_or_common_encounters(self) -> None:

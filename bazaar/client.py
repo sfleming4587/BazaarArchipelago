@@ -52,8 +52,9 @@ SCREEN_TITLES = {"LevelUp": "Level-up", "Loot": "Loot"}  # the Shop Guide's titl
 # what the client assumes when a seed's slot_data lacks a setting (older apworlds); read through BazaarContext.setting()
 SLOT_DEFAULTS = {"heroes": [], "max_day": 15, "pvp_win_checks": False, "monster_tiers": {}, "heroes_required": 1,
                  "lock_items": [], "logic": None, "death_link": False, "death_link_amnesty": 0, "sell_trap_days": 2,
-                 "death_link_on_concede": False, "encounter_locks": [], "event_rarity": 0,
-                 "exempt_expeditions": True}
+                 "death_link_on_concede": False, "death_links_before_concede": 1, "death_links_same_run": False,
+                 "encounter_locks": [],
+                 "event_rarity": 0, "exempt_expeditions": True}
 
 
 def own_popup(item_id: int) -> bool:
@@ -222,6 +223,7 @@ class BazaarContext(CommonContext):
         self.restart_watcher = False
         self.run: Dict[str, Any] = {}  # persisted: hero, day, counting, tainted, deathlink_owed
         self.defeats_since_death = 0
+        self.deathlinks_received = 0  # toward death_links_before_concede, across runs; dodges don't count
         self.goal_sent = False
         self.overlay = None
         self.shop_guide = True  # the picture window next to the game; --no-shop-guide turns it off
@@ -355,6 +357,7 @@ class BazaarContext(CommonContext):
             saved = {}
         self.run = saved.get("run", {})
         self.defeats_since_death = saved.get("defeats_since_death", 0)
+        self.deathlinks_received = saved.get("deathlinks_received", 0)
         self.traps_seen = saved.get("traps_seen", 0)  # Sell Traps already handled (items_received is resent)
         self.bypasses_used = saved.get("bypasses_used", 0)
         # state saved before "watched" existed: the tracked run is the last one seen
@@ -370,6 +373,7 @@ class BazaarContext(CommonContext):
         except (FileNotFoundError, ValueError):
             everything = {}
         everything[self.state_key()] = {"run": self.run, "defeats_since_death": self.defeats_since_death,
+                                        "deathlinks_received": self.deathlinks_received,
                                         "traps_seen": self.traps_seen, "bypasses_used": self.bypasses_used,
                                         "watched": self.watched, "position": self.position}
         with open(path + ".tmp", "w", encoding="utf-8") as f:
@@ -509,6 +513,8 @@ class BazaarContext(CommonContext):
         # run you were told to abandon shouldn't kill your friends.
         # A new run is a clean slate: nothing from an earlier run (held cards, DeathLink, PvP questions) carries over.
         self.watched = {"log": self.log_session, "runs": event.index + 1}
+        if self.setting("death_links_same_run"):
+            self.deathlinks_received = 0
         self.run = {"active": True, "hero": event.hero, "day": 1, "counting": counting, "legal": counting,
                     "deathlink_owed": False, "held": {}, "inventory": {}, "traps": [],
                     "log": self.log_session, "run_index": event.index, "day_offset": 0}
@@ -1000,9 +1006,21 @@ class BazaarContext(CommonContext):
     def on_deathlink(self, data: Dict[str, Any]) -> None:
         super().on_deathlink(data)
         beep()
+        cause = data.get("cause") or f"{data.get('source', 'Someone')} died."
+        if self.run.get("active") and not self.run.get("deathlink_owed"):
+            self.deathlinks_received += 1
+            needed = self.setting("death_links_before_concede")
+            if self.deathlinks_received < needed:
+                self.save_state()
+                self.event(f"DeathLink survived ({self.deathlinks_received}/{needed}): {cause} Keep playing.",
+                           warning=True)
+                self.toast(f"DEATHLINK SURVIVED ({self.deathlinks_received}/{needed}): {cause}", seconds=12,
+                           warning=True)
+                return
+            self.deathlinks_received = 0
         if self.run.get("active"):
             self.run["deathlink_owed"] = True
-            self.run["deathlink_cause"] = data.get("cause") or f"{data.get('source', 'Someone')} died."
+            self.run["deathlink_cause"] = cause
             self.save_state()
             self.update_block_banner()
             self.event("DEATHLINK! Abandon your current run now (Settings > Abandon Run). "

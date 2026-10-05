@@ -83,6 +83,21 @@ class TestBlocking(ClientTestBase):
                   RunEnded(True, 10))
         self.assertFalse(self.was_sent(win_location("Vanessa")))
 
+    def test_unlock_arriving_from_the_server_while_holding_unblocks(self) -> None:
+        """User, 2026-10-05: receiving the unlock for a locked card you hold removes the check blocker - through the
+        real server message, and checks count again from then on."""
+        from CommonClient import process_server_cmd
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", False), DayReached(1))
+        self.assertIn("UNTIL", self.ctx.blocked_reason())
+        self.assertFalse(self.was_sent(day_location("Vanessa", 1)))
+        index = len(self.ctx.items_received)
+        self.await_(process_server_cmd(self.ctx, {"cmd": "ReceivedItems", "index": index,
+                                                  "items": [NetworkItem(BASE_ID + LOCKED.ap_id, 0, 0, 0)]}))
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.assertEqual(self.ctx.run["held"], {})
+        self.play(DayReached(2))
+        self.assertTrue(self.was_sent(day_location("Vanessa", 2)))
+
     def test_unlock_while_holding_unblocks(self) -> None:
         self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", False))
         self.ctx.items_received.append(NetworkItem(BASE_ID + LOCKED.ap_id, 0, 0, 0))
@@ -102,6 +117,55 @@ class TestDeathLink(ClientTestBase):
         self.ctx.on_deathlink({"time": 1.0, "source": "Friend", "cause": "Friend fell."})
         self.play(RunEnded(False, 1), RunStarted("Vanessa"), DayReached(1))
         self.assertTrue(self.was_sent(day_location("Vanessa", 1)))
+
+
+class TestDeathLinksBeforeConcede(ClientTestBase):
+    """User, 2026-10-05: N DeathLinks received before a forced concede, not necessarily in the same run; DeathLinks
+    that arrive outside a run (dodges) don't count."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.ctx.slot_data["death_links_before_concede"] = 2
+
+    def die(self) -> None:
+        self.ctx.on_deathlink({"time": 1.0, "source": "Friend", "cause": "Friend fell."})
+
+    def test_the_second_one_forces_a_concede_even_in_a_later_run(self) -> None:
+        self.play(RunStarted("Vanessa"))
+        self.die()
+        self.assertIsNone(self.ctx.blocked_reason())  # survived: checks still count
+        self.play(DayReached(1), RunEnded(False, 1, conceded=True), RunStarted("Vanessa"))
+        self.die()
+        self.assertIn("DEATHLINK", self.ctx.blocked_reason())
+
+    def test_dodges_dont_count_and_the_count_starts_over(self) -> None:
+        self.die()  # not in a run: a dodge
+        self.play(RunStarted("Vanessa"))
+        self.die()
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.die()
+        self.assertIn("DEATHLINK", self.ctx.blocked_reason())
+        self.die()  # already conceding: doesn't count toward the next one
+        self.play(RunEnded(False, 1, conceded=True), RunStarted("Vanessa"))
+        self.die()
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def test_same_run_starts_the_count_over_each_run(self) -> None:
+        self.ctx.slot_data["death_links_same_run"] = True
+        self.play(RunStarted("Vanessa"))
+        self.die()
+        self.play(RunEnded(False, 1, conceded=True), RunStarted("Vanessa"))
+        self.die()
+        self.assertIsNone(self.ctx.blocked_reason())  # 1/2 in this run
+        self.die()
+        self.assertIn("DEATHLINK", self.ctx.blocked_reason())
+
+    def test_the_count_survives_a_client_restart(self) -> None:
+        self.play(RunStarted("Vanessa"))
+        self.die()
+        self.ctx.deathlinks_received = 0
+        self.ctx.load_state()
+        self.assertEqual(self.ctx.deathlinks_received, 1)
 
 
 class TestLockedHero(ClientTestBase):

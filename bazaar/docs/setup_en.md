@@ -29,13 +29,14 @@ Your YAML file holds your options for the game. See the
 [basic multiworld setup guide](/tutorial/Archipelago/setup/en) to learn more.
 
 ### Where do I get a YAML?
-Open the Launcher, click **Generate Template Options**, and edit `The Bazaar.yaml`. Switch on each DLC hero you
-own (in the Options Creator or on a player options page they're simple on/off switches):
+Open the Launcher, click **Generate Template Options**, and edit `The Bazaar.yaml`. Under **Included Heroes
+(Must own)**, tick each DLC hero you own (in the Options Creator or on a player options page they're simple on/off
+switches). Vanessa, Pygmalien and Dooley are ticked already; untick any hero you want to sit out:
 
 ```yaml
 The Bazaar:
-  own_mak: true
-  own_karnok: true
+  include_mak: true
+  include_karnok: true
   heroes_required: 3
 ```
 

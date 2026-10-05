@@ -7,14 +7,14 @@ from Options import OptionError
 from worlds.AutoWorld import WebWorld, World
 from worlds.LauncherComponents import Component, Type, components, launch
 
-from .data import (BASE_HEROES, CARDS, CARDS_BY_NAME, ENCOUNTERS, EVENTS, HEROES, LEGENDARY_GUIDS, PACKS, TIERS, Encounter,
+from .data import (CARDS, CARDS_BY_NAME, ENCOUNTERS, EVENTS, HEROES, LEGENDARY_GUIDS, PACKS, TIERS, Encounter,
                    hero_key, tiers_on_day)
 from .items import (ENCOUNTERS_BY_ITEM, EVENT_RARITY, EXPEDITION_TICKETS, FILLER_ITEMS, GAME, GROUP_ITEMS,
                     LEGENDARY_ITEMS, LOCK_BYPASS, SELL_TRAP, BazaarItem, encounter_item, hero_item, item_id_to_name,
                     item_name_groups, item_name_to_id, lock_items_by_hero, pack_item)
 from .locations import (BazaarLocation, card_requirements, champion_event, hero_checks, location_name_groups,
                         location_name_to_id, win_location)
-from .options import (EXCLUDE_HERO_OPTIONS, OWN_HERO_OPTIONS, PACK_OPTIONS, BazaarOptions, option_groups,
+from .options import (INCLUDE_HERO_OPTIONS, PACK_OPTIONS, BazaarOptions, option_groups,
                       option_presets)
 
 
@@ -98,11 +98,10 @@ class BazaarWorld(World):
         if self.passthrough:
             self.rebuild_from_slot_data(self.passthrough)
             return
-        owned = set(BASE_HEROES) | {hero for option, hero in OWN_HERO_OPTIONS.items() if getattr(self.options, option)}
-        excluded = {hero for option, hero in EXCLUDE_HERO_OPTIONS.items() if getattr(self.options, option)}
-        self.heroes = [h for h in HEROES if h in owned and h not in excluded]
+        included = {hero for option, hero in INCLUDE_HERO_OPTIONS.items() if getattr(self.options, option)}
+        self.heroes = [h for h in HEROES if h in included]
         if not self.heroes:
-            raise OptionError(f"{self.player_name}: every hero is excluded, at least one is needed.")
+            raise OptionError(f"{self.player_name}: no hero is included, at least one is needed.")
 
         matches = [h for h in self.heroes if hero_key(h) == self.options.starting_hero.current_key]
         self.starting_hero = matches[0] if matches else self.random.choice(self.heroes)
@@ -114,7 +113,7 @@ class BazaarWorld(World):
         self.goal_count = min(self.options.heroes_required.value, len(self.heroes))
         if self.goal_count < self.options.heroes_required.value:
             logging.warning(f"{self.player_name} (The Bazaar): heroes_required lowered to {self.goal_count}, "
-                            f"the number of heroes available (owned DLC heroes minus excluded ones).")
+                            f"the number of included heroes.")
         self.starters = {}
         self.encounter_locks, self.starter_merchants, self.event_rarity = [], [], 0
         self.logic = {"day_10": self.options.logic_day_10_cards.value,
@@ -382,6 +381,8 @@ class BazaarWorld(World):
                                  | {item_name_to_id[name] for name in self.group_items}),
             "death_link": bool(self.options.death_link.value),
             "death_link_amnesty": self.options.death_link_amnesty.value,
+            "death_links_before_concede": self.options.death_links_before_concede.value,
+            "death_links_same_run": bool(self.options.death_links_same_run.value),
             "sell_trap_days": self.options.sell_trap_days.value,
             "logic": self.logic,
             "death_link_on_concede": bool(self.options.death_link_on_concede.value),

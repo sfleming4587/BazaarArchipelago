@@ -101,9 +101,10 @@ New to Archipelago? Just follow the steps in order. It takes about ten minutes t
 1. In the Launcher, click **Generate Template Options**. A folder opens with `The Bazaar.yaml` in it.
 2. Copy it somewhere handy and open it in Notepad. The essentials:
    - `name:` - your player name, e.g. `name: YourName`.
-   - `own_mak:`, `own_stelle:`, `own_jules:`, `own_karnok:`, `own_the_dragons:` - set `true` for each DLC hero
-     you own. Vanessa, Pygmalien and Dooley are always in.
-   - `exclude_<hero>:` (e.g. `exclude_dooley: true`) - optional, to sit a hero out.
+   - **Included Heroes (Must own):** `include_mak:`, `include_stelle:`, `include_jules:`, `include_karnok:`,
+     `include_the_dragons:` - set `true` for each DLC hero you own. Vanessa, Pygmalien and Dooley are in by
+     default; set one to `false` (e.g. `include_dooley: false`) to sit them out. Any hero not included isn't in
+     your seed.
    - `heroes_required:` - how many heroes need a 10-win run to finish (default 3).
 
 **Want a gentler game?** Turn on `duplicate_all_cards` (**Duplicate All Cards (casual)**). Every locked card gets
@@ -142,9 +143,9 @@ checks and the notices box says **CHECKS ARE BLOCKED** and why.
   the least rare one through and tells you which.
 - **Lock Bypasses** (5 by default): holding a locked card, or went into a locked event? Press **Use Bypass** next to
   it and it's yours for the rest of that run. A bypass is never used by itself.
-- **DeathLink** (off unless you turn it on): when someone else dies, abandon your current run (Settings > Abandon
-  Run). Losing a run sends a DeathLink to everyone else; conceding only does if you turn on
-  `death_link_on_concede`.
+- **DeathLink** (off unless you turn it on): the second DeathLink you receive (set by
+  `death_links_before_concede`, counted across runs) means abandoning your current run (Settings > Abandon Run).
+  Losing a run sends a DeathLink to everyone else; conceding only does if you turn on `death_link_on_concede`.
 
 PvP wins count automatically - nothing to answer.
 
