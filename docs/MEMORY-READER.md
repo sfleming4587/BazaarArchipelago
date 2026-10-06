@@ -61,9 +61,17 @@ A reader that attaches mid-fight has no `losses_before_fight`: that loss goes ou
 The log's run end still sends it if memory missed it (reader off) and sends nothing if memory already did
 (`run["lost_sent"]`), also when the run then ends as a concede. A DeathLink received after the loss is a dodge
 (the run is over). Nothing is judged while disconnected (no slot_data).
-⚠️ The `PVPCombat` condition only keeps a concede OUTSIDE a fight from counting as a loss; whether conceding
-during a PvP fight touches `Losses`/prestige was never checked (in-game test). ⚠️ Not yet seen against a real
-lost run in game.
+The game greys out Concede during a fight (owner, in game 2026-10-06), so a concede can never be read as a loss.
+⚠️ Not yet seen against a real lost run in game.
+
+**Game closed mid-fight (owner, in game 2026-10-06):** the server finishes the fight; the game comes back on the
+NEXT day with the result counted (memory: Day 2, Hour 0, Victories 1) and Player.log never says so. A run resumed
+after a game restart is resynced from memory (`BazaarContext.resync_run`, `run["resync"]`): the new log's days
+count from `Run.Day`, missed days are sent, and one extra `Run.Victories` with the day one ahead is the last day's
+PvP win. Verified in game the same day: "Resumed ... day 1" then "moved on to day 2", Day 1 PvP Win + Reach Day 2
+sent. ⚠️ More than one missed win (never seen) only updates the win count: which days they were is unknown.
+⚠️ Closing the game while the reader is attaching once crashed the reader with OverflowError
+(CreateToolhelp32Snapshot gave INVALID_HANDLE_VALUE); `find_module` now says "still loading" instead.
 
 Prestige moved with the loss counter every time: 25 → 24 (Day 1), 24 → 22, 22 → 14 (Day 8), 14 → 5 (Day 9),
 5 → 1 (Day 10), 1 → 0 (Day 11). Monster losses did **not** cost prestige.

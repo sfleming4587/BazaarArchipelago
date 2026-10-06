@@ -858,6 +858,27 @@ class TestRunIdentity(ClientTestBase):
         self.assertTrue(self.was_sent("Vanessa - Day 7 PvP Win"))
         self.assertFalse(self.was_sent("Vanessa - Day 2 PvP Win"))
 
+    def test_a_game_closed_mid_fight_comes_back_a_day_later_and_the_client_catches_up(self) -> None:
+        """Owner, 2026-10-06: closed the game during the day-1 PvP fight; it resumed on day 2 with the win counted
+        (memory: Day 2, Victories 1) while the client said "Resumed your Karnok run on day 1"."""
+        from ..memreader import Snapshot
+        self.play(RunStarted("Vanessa", 0), DayReached(1))
+        self.write_prev_log(["[10:00:01.000] [StartRunAppState] Run initialization finalized."])
+        self.ctx.log_session = "11:00:00.000"
+        self.sent.clear()
+        self.play(RunStarted("Vanessa", 0), DayReached(1))
+
+        async def reading():
+            self.ctx.handle_snapshot(Snapshot("Choice", None, (), losses=0, prestige=25, day=2, victories=1))
+            await asyncio.sleep(0.05)
+        self.await_(reading())
+        self.assertTrue(self.was_sent("Vanessa - Day 1 PvP Win"))
+        self.assertTrue(self.was_sent(day_location("Vanessa", 2)))
+        self.assertEqual((self.ctx.run["day"], self.ctx.run["wins"]), (2, 1))
+        self.play(DayReached(2))  # the new log's next day is the game's day 3
+        self.assertEqual(self.ctx.run["day"], 3)
+        self.assertTrue(self.was_sent(day_location("Vanessa", 3)))
+
     def test_after_a_restart_a_finished_old_run_means_a_new_run(self) -> None:
         self.play(RunStarted("Vanessa", 0), *[DayReached(d) for d in range(1, 7)])
         self.ctx.on_deathlink({"time": 1.0, "source": "Friend", "cause": "Friend fell."})

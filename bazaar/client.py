@@ -488,7 +488,8 @@ class BazaarContext(CommonContext):
     def handle_run_started(self, event: RunStarted) -> None:
         if self.resumes(event):
             if self.run["log"] != self.log_session:  # a restarted game: the new log counts days from 1 again
-                self.run.update(log=self.log_session, run_index=event.index, day_offset=self.run["day"] - 1)
+                self.run.update(log=self.log_session, run_index=event.index, day_offset=self.run["day"] - 1,
+                                resync=True)  # the game may have moved on while it was closed: memory says
                 self.watched = {"log": self.log_session, "runs": event.index + 1}
             self.event(f"Resumed your {event.hero} run on day {self.run['day']}.")
             return
@@ -769,6 +770,29 @@ class BazaarContext(CommonContext):
         if self.encounter and offers_at(before, self.encounter.guid) != offers_at(snapshot, self.encounter.guid):
             self.handle_encounter(self.encounter)
         self.check_run_lost(snapshot)
+        if snapshot and self.slot_data and self.run.get("active") and self.run.get("resync")                 and snapshot.day and snapshot.victories is not None:
+            self.run.pop("resync")
+            Utils.async_start(self.resync_run(snapshot.day, snapshot.victories))
+
+    async def resync_run(self, day: int, victories: int) -> None:
+        """A run resumed after a game restart: the game may have moved on while it was closed (2026-10-06: closed
+        during the day-1 PvP fight, it came back on day 2 with the win counted, and the log never said so). Memory's
+        Run.Day and Run.Victories say where it really is: the missed PvP win and days are sent, and the new log's
+        days are counted from the real day."""
+        hero, last = self.run["hero"], self.run["day"]
+        if day <= last:
+            return
+        self.run["day_offset"] = day - 1  # the new log counts its days from 1 again, from the day the game is on
+        missed = victories - self.run.get("wins", 0)
+        if missed > 0:
+            self.run["wins"] = victories
+            # a game closed mid-fight finishes that fight: one more win and the next day means the last day's fight
+            if missed == 1 and day == last + 1 and self.setting("pvp_win_checks") and last <= self.setting("max_day"):
+                await self.send_run_checks([pvp_location(hero, last)])
+        self.event(f"The game moved on to day {day} while it was closed: catching up.")
+        for missed_day in range(last + 1, day + 1):
+            await self.handle_day(DayReached(missed_day))
+        self.save_state()
 
     def check_run_lost(self, snapshot: Optional[Snapshot]) -> None:
         """DeathLink the moment the run-ending PvP fight is lost, not when Continue is pressed (owner 2026-09-30: the

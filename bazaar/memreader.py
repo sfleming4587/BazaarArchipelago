@@ -83,6 +83,8 @@ class Snapshot(NamedTuple):
     stash: Tuple[Tuple[int, Optional[str], Optional[str]], ...] = ()  # your stash: (first slot 0-9, template, instance id)
     losses: Optional[int] = None  # Run.Losses: PvP fights lost this run, up the moment the fight's replay ends
     prestige: Optional[int] = None  # 0 or less: the run is lost (docs/MEMORY-READER.md, "A lost run is known ...")
+    day: Optional[int] = None  # Run.Day: the game's own day, right after a game restart too
+    victories: Optional[int] = None  # Run.Victories: PvP fights won this run
 
 
 def blocked(name: Optional[str]) -> bool:
@@ -147,6 +149,8 @@ def game_pid() -> Optional[int]:
 
 def find_module(pid: int, name: str) -> Optional[Tuple[int, int]]:
     snap = k32.CreateToolhelp32Snapshot(0x8 | 0x10, pid)  # TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32
+    if not snap or snap == C.c_void_p(-1).value:  # INVALID_HANDLE_VALUE: the game is starting or closing (2026-10-06)
+        return None
     entry = _ModuleEntry()
     entry.dwSize = C.sizeof(entry)
     try:
@@ -729,21 +733,22 @@ class Reader:
                 offers.append(Offer(instance, self._get(card, "TemplateId"), self._get(card, "Type")))
         return Snapshot(name, encounter, tuple(offers), *self._run_parts())
 
-    def _run_parts(self) -> Tuple[Optional[int], tuple, Optional[int], Optional[int]]:
-        """Your level, stash, losses and prestige, or None/() for any that make no sense this time. They're read through the Run, which
+    def _run_parts(self) -> tuple:
+        """Your level, stash, losses, prestige, day and victories, or None/() for any that make no sense this time. They're read through the Run, which
         the game tears down and replaces around a run's end: 8 s after a concede (2026-10-02) Run.Player had no
         Attributes for a moment, and the reader switched off for the whole game session - no padlocks until the
         client restarted. So a failed read here never turns the reader off: the next look tries again. Losses is
-        read on its own, so a patch that renames it only costs the DeathLink-on-loss, never level or stash."""
+        read on its own (with day and victories), so a patch that renames it never costs level or stash."""
         try:
             run = self.memory.ptr(self.statics["<Run>k__BackingField"])
-            losses = self._get(run, "Losses") if run else None
+            counts = tuple(self._get(run, name) if run else None for name in ("Losses", "Day", "Victories"))
         except Exception:
-            losses = None
+            counts = (None, None, None)
+        losses, day, victories = counts
         try:
-            return self._stat(LEVEL_STAT), self._stash(), losses, self._stat(PRESTIGE_STAT)
+            return self._stat(LEVEL_STAT), self._stash(), losses, self._stat(PRESTIGE_STAT), day, victories
         except Exception:
-            return None, (), losses, None
+            return None, (), losses, None, day, victories
 
     def _stash(self) -> Tuple[Tuple[int, Optional[str]], ...]:
         """Your stash's cards and the slot each starts in, from Run.Player.Stash.Container.Sockets (10 slots; a card
