@@ -520,6 +520,7 @@ class BazaarContext(CommonContext):
                     "log": self.log_session, "run_index": event.index, "day_offset": 0}
         self.refresh_held()
         self.update_status()
+        self.check_choice_screen(self.memory)  # the run's first choice can be in memory before the log starts it
 
     async def handle_day(self, event: DayReached) -> None:
         if not self.run.get("active"):
@@ -759,8 +760,9 @@ class BazaarContext(CommonContext):
         before, self.memory = self.memory, snapshot
         if menu_hidden(before) != menu_hidden(snapshot) and self.overlay:
             self.overlay.show_menu(self.menu_data())  # the reader came on or off, or a run's end screen came or went
-        if (before and before.offers) != (snapshot and snapshot.offers):
-            self.check_choice_screen(snapshot)
+        # every reading, not only when the offers change: memory can have them a reading before the screen reads as
+        # the choice, and a friend's v0.9.0 game got three padlocked events with none let through (2026-10-06)
+        self.check_choice_screen(snapshot)
         seen = lambda s: (s.state, items_on_screen(s), event_screen(s), s.level, s.stash) if s else None
         if seen(before) != seen(snapshot):
             self.refresh_padlocks()
@@ -905,7 +907,8 @@ class BazaarContext(CommonContext):
 
     def check_choice_screen(self, snapshot: Optional[Snapshot]) -> None:
         """A choice screen where every option is a locked event lets the least rare one through (owner, 2026-10-01),
-        with a message saying so."""
+        with a message saying so. Safe to call on every reading: once one is let through the screen isn't all
+        locked any more."""
         if not (snapshot and self.run.get("active") and snapshot.state in ("Choice", "Encounter")):
             return
         guid = let_through(snapshot.offers, self.run_locked_events())

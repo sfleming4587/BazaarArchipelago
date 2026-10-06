@@ -72,6 +72,11 @@ some locked names may never be offered in a given run. That wastes a slot, never
 - **All locked:** on every new `Choice`/`Encounter` reading from memory, `encounters.let_through` checks the offers.
   Only events, every one locked: the lowest rarity wins; a tie is picked from a SHA-256 of the screen's instance
   ids, so every reading and reconnect picks the same one. That template is let through for the rest of the run.
+  ⚠️ It runs on EVERY reading and at run start, not only when the offers change (2026-10-06): a friend's v0.9.0
+  game showed three padlocked locked events with none let through. Memory can hold the offers a reading before the
+  screen reads as `Choice`, or before the log starts the run; the old "offers changed" check then never ran again
+  while the padlocks (redrawn on many triggers) still showed. Calling it again is harmless: once one is let
+  through the screen isn't all locked any more.
 - **Extra Event Rarity copies** are added to `bypasses_ready`.
 
 ⚠️ **Let-through lasts the run, by template.** The log line doesn't carry the screen, so the event can't be tied to

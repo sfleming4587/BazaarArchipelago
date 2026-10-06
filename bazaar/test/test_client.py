@@ -1306,6 +1306,21 @@ class TestAllLockedChoice(ClientTestBase):
         self.play(EncounterEntered(self.a), DayReached(2))
         self.assertIsNone(self.ctx.blocked_reason())
 
+    def test_offers_read_before_the_screen_turned_into_the_choice_still_let_one_through(self) -> None:
+        """A friend's v0.9.0 game (2026-10-06): three locked events padlocked, none let through. The check only ran
+        when the offers changed; memory can have them a reading before the screen reads as the choice."""
+        from ..memreader import Snapshot
+        self.play(RunStarted("Vanessa"), DayReached(1))
+        early = self.screen((self.legendary, "EventEncounter"), (self.a, "EventEncounter"))
+        self.ctx.handle_snapshot(Snapshot("Loot", None, early.offers))
+        self.ctx.handle_snapshot(early)
+        self.assertEqual(self.ctx.run.get("let_through"), [self.a])
+
+    def test_a_choice_seen_before_the_log_starts_the_run_still_lets_one_through(self) -> None:
+        self.ctx.handle_snapshot(self.screen((self.legendary, "EventEncounter"), (self.a, "EventEncounter")))
+        self.play(RunStarted("Vanessa"), DayReached(1))
+        self.assertEqual(self.ctx.run.get("let_through"), [self.a])
+
     def test_a_tie_picks_the_same_one_every_time(self) -> None:
         from ..encounters import let_through
         snapshot = self.screen((self.a, "EventEncounter"), (self.b, "EventEncounter"))
