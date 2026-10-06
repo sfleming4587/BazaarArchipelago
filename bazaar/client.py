@@ -504,13 +504,13 @@ class BazaarContext(CommonContext):
             self.event(f"CHECKS ARE BLOCKED: {event.hero} isn't part of this multiworld.", warning=True)
             counting = False
         elif not self.hero_unlocked(event.hero):
-            self.event(f"CHECKS ARE BLOCKED: {event.hero} IS LOCKED. Abandon this run.", warning=True)
+            self.event(f"CHECKS ARE BLOCKED: {event.hero} IS LOCKED. Concede this run.", warning=True)
             self.beep()
             counting = False
         else:
             self.event(f"Started a run with {event.hero}. Good luck!")
         # "legal" = a hero you're allowed to play. Only legal runs send DeathLinks when lost; losing a
-        # run you were told to abandon shouldn't kill your friends.
+        # run you were told to concede shouldn't kill your friends.
         # A new run is a clean slate: nothing from an earlier run (held cards, DeathLink, PvP questions) carries over.
         self.watched = {"log": self.log_session, "runs": event.index + 1}
         if self.setting("death_links_same_run"):
@@ -624,11 +624,11 @@ class BazaarContext(CommonContext):
         if not self.run.get("active"):
             return None
         if self.run.get("deathlink_owed"):
-            return "- DEATHLINK: ABANDON THIS RUN"
+            return "- DEATHLINK: CONCEDE THIS RUN"
         if self.run.get("concede_reason"):
             return self.run["concede_reason"]
         if not self.run.get("counting"):
-            return f"- {self.run.get('hero', 'this hero').upper()} IS LOCKED: ABANDON THIS RUN"
+            return f"- {self.run.get('hero', 'this hero').upper()} IS LOCKED: CONCEDE THIS RUN"
         events = sorted({self.event_name(g).upper() for g in self.run.get("event_blocks", [])})
         if events:
             return f"- YOU WENT INTO {' AND '.join(events)}, WHICH {'IS' if len(events) == 1 else 'ARE'} LOCKED"
@@ -667,7 +667,7 @@ class BazaarContext(CommonContext):
                      for g in held.values()]
             for g in self.run.get("event_blocks", []) if self.run.get("active") else []:
                 text = f"{self.event_name(g)} (locked event)"
-                lines.append((f"{text} - USE BYPASS OR ABANDON", g) if bypass else f"{text} - ABANDON THIS RUN")
+                lines.append((f"{text} - USE BYPASS OR CONCEDE", g) if bypass else f"{text} - CONCEDE THIS RUN")
             upcoming = [t for t in self.run.get("traps", []) if t not in self.overdue_traps()] \
                 if self.run.get("active") else []
             lines += [f"Sell Trap: sell {self.trap_target(t)} before day {t['deadline']} starts"
@@ -905,7 +905,7 @@ class BazaarContext(CommonContext):
         self.event(f"You went into {name}, which is locked! CHECKS ARE BLOCKED for the rest of this run"
                    + (" unless you use a Lock Bypass." if bypass else "."), warning=True)
         self.beep()
-        self.toast(f"{'USE BYPASS OR ABANDON' if bypass else 'ABANDON THIS RUN'}: {name} is locked", seconds=12,
+        self.toast(f"{'USE BYPASS OR CONCEDE' if bypass else 'CONCEDE THIS RUN'}: {name} is locked", seconds=12,
                    warning=True)
         self.update_block_banner()
         self.save_state()
@@ -1048,7 +1048,7 @@ class BazaarContext(CommonContext):
             self.run["deathlink_cause"] = cause
             self.save_state()
             self.update_block_banner()
-            self.event("DEATHLINK! Abandon your current run now (Settings > Abandon Run). "
+            self.event("DEATHLINK! Concede your current run now. "
                        "No more checks count from this run.", warning=True)
         else:
             self.event("DeathLink received while you weren't in a run. You're safe this time.")

@@ -77,7 +77,7 @@ client's log file). If those can't open on your PC, the messages show in the cli
   owe a DeathLink. It clears by itself once you sell the card (or press **Use Bypass** next to it); a locked hero
   or a DeathLink blocks the rest of that run. A run you started while the client was off or disconnected that was
   already holding a locked card has to be conceded (no DeathLink is sent for it).
-- **DeathLink** (in the notices): time to abandon your run. A DeathLink you survive (by default the first one in
+- **DeathLink** (in the notices): time to concede your run. A DeathLink you survive (by default the first one in
   a run) shows a **DEATHLINK SURVIVED** pop-up instead, and you keep playing.
 - **Header (top left):** during a run, your hero, day, goal progress and Lock Bypasses, with the Shop Guide and
   Tracker buttons. It turns red while the client isn't connected to the multiworld.

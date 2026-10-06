@@ -61,7 +61,7 @@ A reader that attaches mid-fight has no `losses_before_fight`: that loss goes ou
 The log's run end still sends it if memory missed it (reader off) and sends nothing if memory already did
 (`run["lost_sent"]`), also when the run then ends as a concede. A DeathLink received after the loss is a dodge
 (the run is over). Nothing is judged while disconnected (no slot_data).
-⚠️ The `PVPCombat` condition only keeps a concede OUTSIDE a fight from counting as a loss; whether abandoning
+⚠️ The `PVPCombat` condition only keeps a concede OUTSIDE a fight from counting as a loss; whether conceding
 during a PvP fight touches `Losses`/prestige was never checked (in-game test). ⚠️ Not yet seen against a real
 lost run in game.
 

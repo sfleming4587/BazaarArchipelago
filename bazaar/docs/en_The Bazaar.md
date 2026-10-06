@@ -169,7 +169,7 @@ locked, new heroes aren't part of the seed, and a new monster counts as Bronze. 
   and on each locked merchant or event on a choice screen, and
   pops up a warning whenever you end up with one anyway. The warning clears
   itself once you sell it. Use `/locked` to see what's locked.
-- DeathLink: when someone else dies, abandon your current run once the client's DEATHLINK notice tells you to
+- DeathLink: when someone else dies, concede your current run once the client's DEATHLINK notice tells you to
   (by default the second one you receive in a run).
 
 ## Is this allowed by Tempo?

@@ -316,13 +316,13 @@ class BazaarDeathLink(DeathLink):
     """
     When you lose a run (your last PvP fight takes the last of your prestige), everyone else with DeathLink dies.
     Conceding a run doesn't send one unless death_link_on_concede is on.
-    When someone else dies, you must abandon your current run (Settings > Abandon Run).
+    When someone else dies, you must concede your current run.
     The client can't do this for you: automating game input is against Tempo's modding policy.
     """
 
 
 class DeathLinkOnConcede(Toggle):
-    """Conceding (abandoning) a run also sends a DeathLink. Conceding because you received a DeathLink never does.
+    """Conceding a run also sends a DeathLink. Conceding because you received a DeathLink never does.
     Off by default."""
     display_name = "DeathLink On Concede"
 

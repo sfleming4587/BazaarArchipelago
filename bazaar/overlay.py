@@ -865,7 +865,7 @@ class _Screen:
             tk.Label(frame, text="DEATHLINK", fg=ACCENT, bg=bg, font=f(16, "bold")).pack(anchor="w")
             tk.Label(frame, text=state["deathlink"], fg=FG, bg=bg, font=f(11), wraplength=inner_w,
                      justify="left").pack(anchor="w")
-            tk.Label(frame, text="Abandon your current run (Settings > Abandon Run).", fg=FG, bg=bg,
+            tk.Label(frame, text="Concede your current run.", fg=FG, bg=bg,
                      font=f(11, "bold"), wraplength=inner_w, justify="left").pack(anchor="w", pady=(2, 6))
         if state["locked"]:
             title, cards, blocked, _ = state["locked"]

@@ -115,7 +115,7 @@ class PvPFought:
 class RunEnded:
     victory: bool
     day: int
-    conceded: bool = False  # the player abandoned the run (as opposed to running out of prestige)
+    conceded: bool = False  # the player conceded the run (as opposed to running out of prestige)
 
 
 @dataclass(frozen=True)

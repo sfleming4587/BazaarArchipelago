@@ -500,7 +500,7 @@ class TestDeathLinkTriggers(ClientTestBase):
         self.fight(3, 0)
         self.assertEqual(len(self.deaths), 1)
 
-    def test_leaving_the_lost_run_by_abandoning_sends_nothing_more(self) -> None:
+    def test_leaving_the_lost_run_by_conceding_sends_nothing_more(self) -> None:
         self.ctx.slot_data["death_link_on_concede"] = True
         self.play(RunStarted("Vanessa"))
         self.fight(2, 3, "Choice")
