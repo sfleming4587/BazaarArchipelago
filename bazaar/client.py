@@ -54,7 +54,7 @@ SLOT_DEFAULTS = {"heroes": [], "max_day": 15, "pvp_win_checks": False, "monster_
                  "lock_items": [], "logic": None, "death_link": False, "death_link_amnesty": 0, "sell_trap_days": 2,
                  "death_link_on_concede": False, "death_links_before_concede": 1, "death_links_same_run": False,
                  "encounter_locks": [],
-                 "event_rarity": 0, "exempt_expeditions": True}
+                 "event_rarity": 0, "exempt_expeditions": True, "unlocks_in_logic": False}
 
 
 def own_popup(item_id: int) -> bool:
@@ -766,6 +766,21 @@ class BazaarContext(CommonContext):
             self.refresh_padlocks()
         if self.encounter and offers_at(before, self.encounter.guid) != offers_at(snapshot, self.encounter.guid):
             self.handle_encounter(self.encounter)
+        self.check_run_lost(before, snapshot)
+
+    def check_run_lost(self, before: Optional[Snapshot], snapshot: Optional[Snapshot]) -> None:
+        """DeathLink the moment the run-ending PvP fight is lost, not when Continue is pressed (owner 2026-09-30: the
+        log only says so after Continue, "which is abusable to not do the deathlink"). Losses up with Prestige at 0,
+        read during the fight itself so a concede never counts as a loss. If memory misses it, the log's run end
+        still sends it (docs/MEMORY-READER.md, "A lost run is known when the loss is counted")."""
+        if not (before and snapshot and self.run.get("active")) or self.run.get("lost_sent"):
+            return
+        if None in (before.losses, snapshot.losses, snapshot.prestige) or snapshot.state != "PVPCombat":
+            return
+        if snapshot.losses > before.losses and snapshot.prestige <= 0:
+            self.run["lost_sent"] = True
+            self.save_state()
+            Utils.async_start(self.maybe_send_death(self.run.get("day", 0), self.run.get("wins", 0)))
 
     def refresh_padlocks(self) -> None:
         """A padlock on each locked item on screen (shops, level-ups: whatever ROW_GAPS knows). Driven by memory
@@ -976,7 +991,7 @@ class BazaarContext(CommonContext):
                 await self.maybe_send_death(event.day, self.run.get("wins", 0), conceded=True)
             else:
                 self.event("Run conceded. Conceding doesn't send a DeathLink.")
-        else:
+        elif not self.run.get("lost_sent"):  # memory already sent it when the fight was lost
             await self.maybe_send_death(event.day, self.run.get("wins", 0))
         self.save_state()
 
@@ -1092,7 +1107,7 @@ class BazaarContext(CommonContext):
         unlocked, done = self.hero_unlocked(hero), self.done()
 
         def in_logic(check) -> bool:
-            unlocks = item_requirements(check, LEGENDARY_ITEMS in groups, self.setting("event_rarity"))
+            unlocks = item_requirements(check, LEGENDARY_ITEMS in groups, self.setting("event_rarity"))                 if self.setting("unlocks_in_logic") else {}  # seeds from before 2026-10-06 never needed them
             return (unlocked and have >= needs[check.name]
                     and all(received.count(name) >= copies for name, copies in unlocks.items()))
         return [(check, location_name_to_id[check.name] in done, in_logic(check))

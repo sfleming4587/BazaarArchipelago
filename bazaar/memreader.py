@@ -27,6 +27,7 @@ ALLOWED_STATICS = ("<CurrentState>k__BackingField", "Entities", "<Run>k__Backing
 # triggers"). Optional: if any of it can't be found (a patch), ui() says None and the padlocks fall back.
 UI_STATICS = ("<TransitionIn>k__BackingField", "<TooltipParentComponent>k__BackingField")
 LEVEL_STAT = 15  # your level among the player's stats (seen 2 -> 3 at the first level-up, 2026-09-30)
+PRESTIGE_STAT = 9  # 25 at a run's start, down on every PvP loss, 0 when the run is lost (2026-09-30)
 # Named exceptions to BLOCKED: your own character-select settings, not RNG (owner, 2026-10-01: Random must warn
 # when it can roll a locked hero). Nothing else with a blocked word in its name is ever read.
 ALLOWED_NAMES = ("_randomHeroEnabled", "_heroExcludedFromRandom")
@@ -80,6 +81,8 @@ class Snapshot(NamedTuple):
     offers: Tuple[Offer, ...]  # in the game's own order
     level: Optional[int] = None  # your level (it sets how wide your board is)
     stash: Tuple[Tuple[int, Optional[str], Optional[str]], ...] = ()  # your stash: (first slot 0-9, template, instance id)
+    losses: Optional[int] = None  # Run.Losses: PvP fights lost this run, up the moment the fight's replay ends
+    prestige: Optional[int] = None  # 0 or less: the run is lost (docs/MEMORY-READER.md, "A lost run is known ...")
 
 
 def blocked(name: Optional[str]) -> bool:
@@ -726,15 +729,17 @@ class Reader:
                 offers.append(Offer(instance, self._get(card, "TemplateId"), self._get(card, "Type")))
         return Snapshot(name, encounter, tuple(offers), *self._run_parts())
 
-    def _run_parts(self) -> Tuple[Optional[int], tuple]:
-        """Your level and stash, or (None, ()) when they make no sense this time. They're read through the Run, which
+    def _run_parts(self) -> Tuple[Optional[int], tuple, Optional[int], Optional[int]]:
+        """Your level, stash, losses and prestige, or (None, (), None, None) when they make no sense this time. They're read through the Run, which
         the game tears down and replaces around a run's end: 8 s after a concede (2026-10-02) Run.Player had no
         Attributes for a moment, and the reader switched off for the whole game session - no padlocks until the
         client restarted. Attach already checked the layout, so this is never a patch: the next look tries again."""
         try:
-            return self._level(), self._stash()
+            run = self.memory.ptr(self.statics["<Run>k__BackingField"])
+            losses = self._get(run, "Losses") if run else None
+            return self._stat(LEVEL_STAT), self._stash(), losses, self._stat(PRESTIGE_STAT)
         except Exception:
-            return None, ()
+            return None, (), None, None
 
     def _stash(self) -> Tuple[Tuple[int, Optional[str]], ...]:
         """Your stash's cards and the slot each starts in, from Run.Player.Stash.Container.Sockets (10 slots; a card
@@ -757,8 +762,8 @@ class Reader:
                 out.append((slot, self._get(card, "TemplateId"), ids.get(card)))
         return tuple(out)
 
-    def _level(self) -> Optional[int]:
-        """Your level, from Run.Player.Attributes (a Dictionary of stat -> value with 16-byte entries, K-mem3)."""
+    def _stat(self, stat: int) -> Optional[int]:
+        """One of your stats, from Run.Player.Attributes (a Dictionary of stat -> value with 16-byte entries, K-mem3)."""
         m, run = self.memory, self.memory.ptr(self.statics["<Run>k__BackingField"])
         player = self._get(run, "Player") if run else 0
         stats = self._get(player, "Attributes") if player else 0
@@ -767,6 +772,6 @@ class Reader:
         entries, count = self._get(stats, "_entries"), self._get(stats, "_count") or 0
         for i in range(min(count, 200)):
             entry = entries + 0x20 + 16 * i
-            if (m.i32(entry) or -1) >= 0 and m.i32(entry + 8) == LEVEL_STAT:  # a used entry (hash code >= 0)
+            if (m.i32(entry) or -1) >= 0 and m.i32(entry + 8) == stat:  # a used entry (hash code >= 0)
                 return m.i32(entry + 12)
         return None

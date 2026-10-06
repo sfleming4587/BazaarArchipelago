@@ -86,6 +86,7 @@ class BazaarWorld(World):
     encounter_locks: List[str]  # merchant/event lock items in the pool (see docs/ENCOUNTER-LOCKS.md)
     starter_merchants: List[str]  # merchants never locked
     event_rarity: int  # copies of Event Rarity Progression in the pool
+    unlocks_in_logic: bool  # False only for Universal Tracker on a seed made before 2026-10-06
     gating: set  # unlocks some check's rule needs (see locations.item_requirements): these are progression
     passthrough: Optional[Dict[str, Any]]  # Universal Tracker: the real seed's slot_data
 
@@ -97,6 +98,7 @@ class BazaarWorld(World):
     def generate_early(self) -> None:
         self.passthrough = getattr(self.multiworld, "re_gen_passthrough", {}).get(self.game)
         self.gating = set()
+        self.unlocks_in_logic = True
         if self.passthrough:
             self.rebuild_from_slot_data(self.passthrough)
             return
@@ -273,6 +275,7 @@ class BazaarWorld(World):
         self.lock_items, self.group_items = lock_items_by_hero(data["lock_items"])
         self.encounter_locks = [item_id_to_name[i] for i in data.get("encounter_locks", [])]
         self.event_rarity = data.get("event_rarity", 0)
+        self.unlocks_in_logic = data.get("unlocks_in_logic", False)  # seeds from before 2026-10-06 never needed them
         self.gating = self.gated_unlocks()
         pool = [hero_item(h) for h in self.heroes if h != self.starting_hero]
         pool += [name for names_ in self.lock_items.values() for name in names_] + self.group_items
@@ -356,6 +359,8 @@ class BazaarWorld(World):
                                and state.has_all_counts(unlocks, self.player))
 
     def unlocks_needed(self, check: Check) -> Dict[str, int]:
+        if not self.unlocks_in_logic:
+            return {}
         return item_requirements(check, LEGENDARY_ITEMS in self.group_items, self.event_rarity)
 
     def gated_unlocks(self) -> set:
@@ -406,5 +411,6 @@ class BazaarWorld(World):
             "death_link_on_concede": bool(self.options.death_link_on_concede.value),
             "encounter_locks": sorted(item_name_to_id[name] for name in self.encounter_locks),
             "event_rarity": self.event_rarity,
+            "unlocks_in_logic": True,
             "exempt_expeditions": bool(self.options.exempt_expeditions.value),
         }

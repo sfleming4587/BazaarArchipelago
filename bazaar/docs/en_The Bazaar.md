@@ -141,8 +141,8 @@ name (such as Make a Wish) still count as held and must be sold.
 
 ## DeathLink
 
-- A DeathLink is sent when you lose a run: your last PvP fight takes the last of your prestige. Losing a single
-  fight never sends one.
+- A DeathLink is sent when you lose a run: your last PvP fight takes the last of your prestige. It goes out the
+  moment that fight ends, not when you press Continue. Losing a single fight never sends one.
 - `death_link_on_concede`: conceding also sends a DeathLink (off by default). Conceding because you received a
   DeathLink never sends one.
 - `death_links_before_concede`: how many DeathLinks you have to receive before you must concede (2 by default).

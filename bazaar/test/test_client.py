@@ -457,6 +457,45 @@ class TestDeathLinkTriggers(ClientTestBase):
         self.play(RunStarted("Vanessa"), PvPFought(2, False), PvPFought(3, False), RunEnded(False, 3))
         self.assertEqual(len(self.deaths), 1)
 
+    def fight(self, losses: int, prestige: int, state: str = "PVPCombat") -> None:
+        """One memory reading during the day's PvP fight (Run.Losses, prestige stat)."""
+        from ..memreader import Snapshot
+
+        async def run():
+            self.ctx.handle_snapshot(Snapshot(state, None, (), losses=losses, prestige=prestige))
+            await asyncio.sleep(0)
+        self.await_(run())
+
+    def test_lost_run_sends_when_the_loss_is_counted_not_on_continue(self) -> None:
+        """Owner 2026-09-30 (built 2026-10-06 after a v0.9.0 game only sent on Continue)."""
+        self.play(RunStarted("Vanessa"), DayReached(5))
+        self.fight(2, 3)
+        self.fight(3, 0)  # the replay ended: still on the fight screen, no log line yet
+        self.assertEqual(len(self.deaths), 1)
+        self.play(RunEnded(False, 5))  # Continue pressed: the log's run end sends nothing more
+        self.assertEqual(len(self.deaths), 1)
+
+    def test_a_lost_fight_with_prestige_left_never_sends(self) -> None:
+        self.play(RunStarted("Vanessa"))
+        self.fight(0, 25)
+        self.fight(1, 22)
+        self.assertEqual(self.deaths, [])
+
+    def test_prestige_at_0_outside_a_fight_is_no_loss(self) -> None:
+        """A concede is the log's to judge (death_link_on_concede): memory only counts a loss on the fight screen."""
+        self.ctx.slot_data["death_link_on_concede"] = False
+        self.play(RunStarted("Vanessa"))
+        self.fight(2, 5, "Choice")
+        self.fight(3, 0, "Choice")
+        self.play(RunEnded(False, 4, conceded=True))
+        self.assertEqual(self.deaths, [])
+
+    def test_the_log_still_sends_when_memory_missed_the_loss(self) -> None:
+        self.play(RunStarted("Vanessa"))
+        self.fight(2, 3)
+        self.play(RunEnded(False, 6))
+        self.assertEqual(len(self.deaths), 1)
+
     def test_losing_single_fights_never_sends(self) -> None:
         self.play(RunStarted("Vanessa"), PvPFought(1, False))  # lost: prestige lost, run goes on
         self.assertEqual(self.deaths, [])
@@ -1335,6 +1374,7 @@ class TestUnlocksInLogicCount(ClientTestBase):
     def test_legendary_monsters_and_late_pvp_wait_for_their_unlocks(self) -> None:
         legendary_id = item_name_to_id["Legendary Items"]
         self.ctx.slot_data.update({"logic": {"day_10": 0, "diamond": 0, "legendary": 0}, "event_rarity": 2,
+                                   "unlocks_in_logic": True,
                                    "lock_items": [legendary_id],
                                    "monster_tiers": {str(d): ["Bronze", "Legendary"] for d in range(1, 16)}})
 
@@ -1349,3 +1389,6 @@ class TestUnlocksInLogicCount(ClientTestBase):
         self.assertIn(monster_location("Vanessa", 6, "Legendary"), after)
         self.assertIn(pvp_location("Vanessa", 13), after)
         self.assertNotIn(pvp_location("Vanessa", 14), after)
+        del self.ctx.slot_data["unlocks_in_logic"]  # a seed from before 2026-10-06: its logic never needed them
+        self.ctx.items_received = self.ctx.items_received[:-2]
+        self.assertIn(pvp_location("Vanessa", 14), in_logic())

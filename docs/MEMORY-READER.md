@@ -51,6 +51,14 @@ The final loss (Day 11):
 version could be dodged by never pressing Continue. Trigger: `Losses` went up **and** `Prestige <= 0`. Still only
 the run-ending loss, never every PvP loss (v0.4.1 ruling).
 
+**BUILT 2026-10-06** (`BazaarContext.check_run_lost`) after a v0.9.0 game (owner + friend) showed DeathLinks still
+only going out on Continue: the ruling had been written down but never built. The snapshot carries `losses`
+(`Run.Losses`) and `prestige` (stat 9); a DeathLink goes out when two readings in a row show `Losses` up with
+`Prestige <= 0` **while the screen is `PVPCombat`**. The log's run end still sends it if memory missed it (reader
+off, or Continue pressed between two readings) and sends nothing if memory already did (`run["lost_sent"]`).
+⚠️ The `PVPCombat` condition keeps a concede from ever counting as a loss (`death_link_on_concede` decides those);
+whether a concede touches `Losses` at all was never checked. ⚠️ Not yet seen against a real lost run in game.
+
 Prestige moved with the loss counter every time: 25 → 24 (Day 1), 24 → 22, 22 → 14 (Day 8), 14 → 5 (Day 9),
 5 → 1 (Day 10), 1 → 0 (Day 11). Monster losses did **not** cost prestige.
 
@@ -81,7 +89,7 @@ screenshot idea was for: it could mark locked cards on the overlay without match
 | Day | ✅ (from day transitions) | ✅ `Run.Day` |
 | Hour of the day (0-6) | ❌ | ✅ `Run.Hour`, `HoursInADay = 6` |
 | PvP win/loss | ❌ guessed / asked | ✅ `Victories` / `Losses`, when the replay ends |
-| Run lost | ⚠️ only after Continue | ✅ `Losses` up + `Prestige` 0, when the replay ends |
+| Run lost | ⚠️ only after Continue | ✅ `Losses` up + `Prestige` 0, when the replay ends (DeathLink uses this, 2026-10-06) |
 | Run won | ✅ `EndRunVictoryState`, ~8 s after the 10th win (seen 2026-10-01) | ✅ `Victories` = 10 when the fight ends; state `EndRunVictory` ~7 s later |
 | Monster tier | ⚠️ only through loot after a win | ✅ on the choice card, before the fight |
 | Monster win/loss | ⚠️ inferred from a loot screen | ✅ health of both sides |
@@ -347,7 +355,7 @@ status line.
    at least 10 px. Naming the position ("2nd card") needs the selection order to match the screen (test below).
    The Shop Guide could highlight the same cards.
 4. **PvP results** from `Victories`/`Losses`: no more "did you win?" prompt or exit-task guess.
-5. **DeathLink** the moment `Losses` goes up with `Prestige <= 0` (owner's ruling).
+5. **DeathLink** the moment `Losses` goes up with `Prestige <= 0` (owner's ruling) - BUILT 2026-10-06.
 6. **Monster checks** from the choice card's tier plus the health result, so a won fight is never missed and a
    lost one is never mistaken for a detection failure.
 7. **Docs and the promise.** README, DEVELOPERS.md ("the one big rule") and the setup guide must say plainly that

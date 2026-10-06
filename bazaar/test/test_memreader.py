@@ -57,7 +57,7 @@ class TestRunTornDown(unittest.TestCase):
         reader.memory.ptr.return_value = 1
         reader.mono.is_a.return_value = True
         fields = {"StateName": "Encounter", "CurrentEncounterId": "guid", "SelectionSet": 0}
-        with mock.patch.object(Reader, "_get", lambda self, obj, name: fields[name]),                 mock.patch.object(Reader, "_level", side_effect=ReaderOff("field Attributes not found")):
+        with mock.patch.object(Reader, "_get", lambda self, obj, name: fields[name]),                 mock.patch.object(Reader, "_stat", side_effect=ReaderOff("field Attributes not found")):
             snapshot = reader.snapshot()
         self.assertEqual(snapshot, memreader.Snapshot("Encounter", "guid", (), None, ()))
 
