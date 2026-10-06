@@ -204,7 +204,52 @@ class TestLogicThresholds(BazaarTestBase):
         self.assertFalse(self.can_reach_location(day_location(hero, 10)))
         self.collect_by_name(items[-1:])
         self.assertTrue(self.can_reach_location(day_location(hero, 10)))
+        self.collect_by_name(["Legendary Items"])  # Legendary monsters also need the unlock (TestUnlocksInLogic)
         self.assertTrue(self.can_reach_location(monster_location(hero, 6, "Legendary")))
+
+
+class TestUnlocksInLogic(BazaarTestBase):
+    """User 2026-10-06: Legendary Items gates Legendary monsters, Event Rarity Progression gates PvP wins from day 8
+    (1st copy) and day 14 (2nd), so other games show them as important instead of "not important"."""
+    options = {"max_monster_tier": "legendary", "max_day": 16, "legendary_items": 2, "event_rarity_progression": 3,
+               "logic_day_10_cards": 0, "logic_last_day_cards": 0, "logic_diamond_cards": 0,
+               "logic_legendary_cards": 0}
+
+    def test_every_copy_is_progression(self) -> None:
+        from BaseClasses import ItemClassification
+        for item in self.multiworld.itempool:
+            if item.player == self.player and item.name in ("Legendary Items", "Event Rarity Progression"):
+                self.assertEqual(item.classification, ItemClassification.progression, item.name)
+
+    def test_legendary_monsters_need_legendary_items(self) -> None:
+        hero = self.world.starting_hero
+        self.assertTrue(self.can_reach_location(monster_location(hero, 6, "Diamond")))
+        self.assertFalse(self.can_reach_location(monster_location(hero, 6, "Legendary")))
+        self.collect_by_name(["Legendary Items"])
+        self.assertTrue(self.can_reach_location(monster_location(hero, 6, "Legendary")))
+
+    def test_late_pvp_wins_need_event_rarity(self) -> None:
+        hero = self.world.starting_hero
+        self.assertTrue(self.can_reach_location(pvp_location(hero, 7)))
+        self.assertTrue(self.can_reach_location(day_location(hero, 16)))
+        self.assertFalse(self.can_reach_location(pvp_location(hero, 8)))
+        copies = self.get_items_by_name("Event Rarity Progression")
+        self.collect(copies[0])
+        self.assertTrue(self.can_reach_location(pvp_location(hero, 13)))
+        self.assertFalse(self.can_reach_location(pvp_location(hero, 14)))
+        self.collect(copies[1])
+        self.assertTrue(self.can_reach_location(pvp_location(hero, 16)))
+
+
+class TestUnlocksStayUsefulWhenNothingNeedsThem(BazaarTestBase):
+    options = {"max_monster_tier": "diamond", "pvp_win_checks": False, "legendary_items": 1,
+               "event_rarity_progression": 2}
+
+    def test_useful(self) -> None:
+        from BaseClasses import ItemClassification
+        names = {i.name: i.classification for i in self.multiworld.itempool if i.player == self.player}
+        self.assertEqual(names["Legendary Items"], ItemClassification.useful)
+        self.assertEqual(names["Event Rarity Progression"], ItemClassification.useful)
 
 
 class TestFullPoolHasNoFiller(BazaarTestBase):
@@ -509,7 +554,8 @@ class TestDuplicateAllHasNoFiller(BazaarTestBase):
 
 class TestEncounterLocks(BazaarTestBase):
     """Merchant/event locks (owner, 2026-10-02): 25% of those your heroes can meet, 5 starter merchants, 3 copies of
-    Event Rarity Progression, none of them needed by logic."""
+    Event Rarity Progression. Merchant/event locks are never needed by logic; Event Rarity Progression is since
+    2026-10-06 (late PvP wins, see TestUnlocksInLogic)."""
 
     def test_a_quarter_of_the_meetable_ones_are_locked(self) -> None:
         from ..data import ENCOUNTERS, EVENTS
@@ -530,14 +576,13 @@ class TestEncounterLocks(BazaarTestBase):
             self.assertTrue(encounter.merchant)
             self.assertTrue(any(EVENTS[g]["tier"] in ("Bronze", "Silver", "Gold") for g in encounter.guids))
 
-    def test_items_are_in_the_pool_and_never_progression(self) -> None:
+    def test_items_are_in_the_pool_and_locks_never_progression(self) -> None:
         items = [i for i in self.multiworld.itempool if i.player == self.player]
         names = [i.name for i in items]
         self.assertEqual(names.count("Event Rarity Progression"), 3)
         for name in self.world.encounter_locks:
             self.assertEqual(names.count(name), 1)
-        self.assertFalse([i.name for i in items if i.advancement
-                          and (i.name == "Event Rarity Progression" or i.name in self.world.encounter_locks)])
+        self.assertFalse([i.name for i in items if i.advancement and i.name in self.world.encounter_locks])
 
     def test_slot_data_carries_them(self) -> None:
         from ..items import item_name_to_id

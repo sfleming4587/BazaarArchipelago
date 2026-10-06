@@ -5,9 +5,11 @@ from typing import Callable, Dict, List
 from BaseClasses import Location
 
 from .data import HEROES, TIERS
-from .items import BASE_ID, GAME
+from .items import BASE_ID, EVENT_RARITY, GAME, LEGENDARY_ITEMS
 
 MAX_DAY = 20  # ids are reserved up to this day; the max_day option picks how many exist
+EVENT_RARITY_PVP_DAYS = (8, 14)  # PvP wins from these days need the 1st / 2nd Event Rarity Progression (user 2026-10-06:
+#   Legendary events are so rare the 2nd copy only gates late days)
 
 
 class BazaarLocation(Location):
@@ -87,6 +89,22 @@ def card_requirements(hero: str, lock_count: int, max_day: int, pvp_win_checks: 
         else:  # reaching a day
             needs[check.name] = by_day(check.day)
     return needs
+
+
+def item_requirements(check: Check, legendary_items: bool, event_rarity: int) -> Dict[str, int]:
+    """
+    Unlocks a check needs besides the hero's cards -> copies wanted (user 2026-10-06): Legendary monsters need
+    Legendary Items, PvP wins from day 8 / day 14 need 1 / 2 Event Rarity Progression. Only items the seed has count
+    (legendary_items: the unlock is in the pool; event_rarity: its copies). The world's rules and the client's
+    "checks in logic" both use this.
+    """
+    if check.kind == "monster" and check.tier == "Legendary" and legendary_items:
+        return {LEGENDARY_ITEMS: 1}
+    if check.kind == "pvp":
+        copies = min(event_rarity, sum(check.day >= day for day in EVENT_RARITY_PVP_DAYS))
+        if copies:
+            return {EVENT_RARITY: copies}
+    return {}
 
 
 def champion_event(hero: str) -> str:

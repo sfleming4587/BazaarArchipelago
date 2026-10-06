@@ -44,8 +44,13 @@ sit behind a progressive item. Designed with the owner 2026-10-01 and 2026-10-02
 - **Pool order:** hero unlocks, packs, Legendary Items / Expedition Tickets, Event Rarity Progression, Sell Traps,
   Lock Bypasses, merchant/event locks, then card locks from what's left. A default seed (228 slots) gets 39
   merchant/event locks and 137 card/pack locks, against 171 card/pack locks with merchant/event locks off.
-- **No logic:** every item here is `useful`. A choice screen always has a way on (the least-rare rule), so no check
-  ever needs one.
+- **No logic for merchant/event locks:** they are `useful`. A choice screen always has a way on (the least-rare
+  rule), so no check ever needs one.
+- **Event Rarity Progression IS in logic (user, 2026-10-06):** PvP wins from day 8 need copy 1, from day 14 copy 2
+  (`locations.EVENT_RARITY_PVP_DAYS`, user: "Legendary events are so stupidly rare though ... it should be later
+  like 14+"). Why: as `useful`, other games told the finder "This item does not seem important". Every copy is
+  progression when any check needs it, since whichever copy arrives first is the one that unlocks.
+  ⚠️ With `pvp_win_checks` off or `max_day` under 8 nothing needs it and it stays `useful`.
 - **slot_data:** `encounter_locks` (item ids), `event_rarity` (copies placed), `exempt_expeditions`.
 
 ⚠️ **The hourly event pool isn't in the local game data.** The server decides it, so "lockable" is a superset:

@@ -42,6 +42,9 @@ impossible); you can always try anything. It keeps important items off hard chec
   treated like the next day (winning is harder than just reaching it). Locked Common cards never count.
 - Bronze, Silver and Gold monsters follow their day. Diamond and Legendary monsters also expect
   `logic_diamond_cards` / `logic_legendary_cards` (defaults 10 / 20) of the hero's locked cards.
+- Legendary monsters also need **Legendary Items** (when your seed has it).
+- PvP wins from day 8 need one **Event Rarity Progression**, and from day 14 two (when your seed has them).
+  Legendary events are rare, so the second copy only matters on long runs.
 
 ## How many cards are locked?
 
@@ -70,7 +73,8 @@ own unlock, **Merchant: X** or **Event: X** (one item covers every rarity versio
   never locked. If every event offered is locked, the least rare one is let through (a tie is picked at random, and a
   pop-up says which) - unless the screen also has an option that isn't an event.
 
-None of these items are needed by logic: there's always a way on.
+Merchant and event unlocks are never needed by logic: there's always a way on. Event Rarity Progression is (see
+[Logic](#logic)), so other games show it as an important item.
 
 ## What is the goal?
 

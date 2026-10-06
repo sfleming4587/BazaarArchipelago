@@ -8,8 +8,8 @@ from NetUtils import NetworkItem, NetworkSlot, SlotType
 
 from ..client import BazaarContext, catch_up, dispatch
 from ..data import CARDS
-from ..items import BASE_ID, GAME, item_name_to_id
-from ..locations import day_location, location_name_to_id, monster_location, win_location
+from ..items import BASE_ID, EVENT_RARITY_ID, GAME, item_name_to_id
+from ..locations import day_location, location_name_to_id, monster_location, pvp_location, win_location
 from ..logparser import (CardGained, CardSold, DayReached, HeroSelected, LogParser, MonsterFought, PvPFought,
                          RunEnded, RunStarted)
 
@@ -1327,3 +1327,25 @@ class TestEventPadlocks(ClientTestBase):
         self.ctx.handle_snapshot(self.screen("Choice", (self.free, "EventEncounter"),
                                              (self.locked, "EventEncounter")))
         self.assertEqual(self.padlocks(), (None, []))
+
+
+class TestUnlocksInLogicCount(ClientTestBase):
+    """The menu/tracker "in logic" count follows the world's unlock rules (locations.item_requirements, 2026-10-06)."""
+
+    def test_legendary_monsters_and_late_pvp_wait_for_their_unlocks(self) -> None:
+        legendary_id = item_name_to_id["Legendary Items"]
+        self.ctx.slot_data.update({"logic": {"day_10": 0, "diamond": 0, "legendary": 0}, "event_rarity": 2,
+                                   "lock_items": [legendary_id],
+                                   "monster_tiers": {str(d): ["Bronze", "Legendary"] for d in range(1, 16)}})
+
+        def in_logic() -> set:
+            return {check.name for check, _, ok in self.ctx.check_states("Vanessa") if ok}
+        before = in_logic()
+        self.assertIn(pvp_location("Vanessa", 7), before)
+        self.assertNotIn(pvp_location("Vanessa", 8), before)
+        self.assertNotIn(monster_location("Vanessa", 6, "Legendary"), before)
+        self.ctx.items_received += [NetworkItem(legendary_id, 0, 0, 0), NetworkItem(EVENT_RARITY_ID, 0, 0, 0)]
+        after = in_logic()
+        self.assertIn(monster_location("Vanessa", 6, "Legendary"), after)
+        self.assertIn(pvp_location("Vanessa", 13), after)
+        self.assertNotIn(pvp_location("Vanessa", 14), after)

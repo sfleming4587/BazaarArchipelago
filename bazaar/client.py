@@ -24,10 +24,10 @@ from .data import (CARDS, CARDS_BY_GUID, EVENT_NAMES, EVENTS, GAME_VERSION, HERO
                    OFFER_DATA, TIERS)
 from .deathlink_lines import deathlink_message
 from .encounters import let_through, locked_events, rarity_bypasses
-from .items import (ENCOUNTER_UNLOCKS, EVENT_RARITY_ID, GAME, HERO_ITEM_IDS, LOCK_BYPASS_ID, SELL_TRAP, SELL_TRAP_ID,
-                    UNLOCKS, hero_item, item_id_to_name, item_name_to_id, lock_items_by_hero)
-from .locations import (card_requirements, day_location, hero_checks, location_name_to_id, monster_location,
-                        pvp_location, win_location)
+from .items import (ENCOUNTER_UNLOCKS, EVENT_RARITY_ID, GAME, HERO_ITEM_IDS, LEGENDARY_ITEMS, LOCK_BYPASS_ID, SELL_TRAP,
+                    SELL_TRAP_ID, UNLOCKS, hero_item, item_id_to_name, item_name_to_id, lock_items_by_hero)
+from .locations import (card_requirements, day_location, hero_checks, item_requirements, location_name_to_id,
+                        monster_location, pvp_location, win_location)
 from .logparser import (DEFAULT_LOG_PATH, HERO_ALIASES, PREV_LOG, HeroSelected, CardGained, CardSold, CardTransformed, DayReached,
                         EncounterEntered,
                         EncounterLeft, FightStarted, GameVersion, LogParser, LogTailer, MonsterFought, PvPFought,
@@ -1082,14 +1082,20 @@ class BazaarContext(CommonContext):
         logic = self.setting("logic")
         if not logic or "lock_items" not in self.slot_data:
             return None
-        items = lock_items_by_hero(self.setting("lock_items"))[0].get(hero, [])
-        received = {item_id_to_name.get(item.item) for item in self.items_received}
-        have = len(set(items) & received)
+        items, groups = lock_items_by_hero(self.setting("lock_items"))
+        items = items.get(hero, [])
+        received = [item_id_to_name.get(item.item) for item in self.items_received]
+        have = len(set(items) & set(received))
         tiers = self.setting("monster_tiers")
         max_day, pvp = self.setting("max_day"), bool(self.setting("pvp_win_checks"))
         needs = card_requirements(hero, len(items), max_day, pvp, lambda day: tiers.get(str(day), []), logic)
         unlocked, done = self.hero_unlocked(hero), self.done()
-        return [(check, location_name_to_id[check.name] in done, unlocked and have >= needs[check.name])
+
+        def in_logic(check) -> bool:
+            unlocks = item_requirements(check, LEGENDARY_ITEMS in groups, self.setting("event_rarity"))
+            return (unlocked and have >= needs[check.name]
+                    and all(received.count(name) >= copies for name, copies in unlocks.items()))
+        return [(check, location_name_to_id[check.name] in done, in_logic(check))
                 for check in hero_checks(hero, max_day, pvp, lambda day: tiers.get(str(day), []))]
 
     def hero_progress(self, hero: str) -> Optional[tuple]:

@@ -138,6 +138,7 @@ class LegendaryItems(Range):
     """
     Copies of the "Legendary Items" unlock in the multiworld. Every Legendary item is locked until the first copy
     is found; extra copies just make it likely to turn up sooner. 0 = Legendary items are never locked.
+    Logic expects it before Legendary monster checks.
     """
     display_name = "Legendary Items Unlocks"
     range_start = 0
@@ -181,6 +182,7 @@ class EventRarityProgression(Range):
     """
     Copies of "Event Rarity Progression" in the multiworld (0 = off). Until you find the first, Diamond merchants
     and events are locked; the second unlocks Legendary ones. Any copy past those two counts as a Lock Bypass.
+    Logic expects the first before PvP wins from day 8, and the second from day 14.
     Monsters and level-up rewards are never affected.
     """
     display_name = "Event Rarity Progression"

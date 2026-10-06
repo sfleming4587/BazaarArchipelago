@@ -12,8 +12,8 @@ from .data import (CARDS, CARDS_BY_NAME, ENCOUNTERS, EVENTS, HEROES, LEGENDARY_G
 from .items import (ENCOUNTERS_BY_ITEM, EVENT_RARITY, EXPEDITION_TICKETS, FILLER_ITEMS, GAME, GROUP_ITEMS,
                     LEGENDARY_ITEMS, LOCK_BYPASS, SELL_TRAP, BazaarItem, encounter_item, hero_item, item_id_to_name,
                     item_name_groups, item_name_to_id, lock_items_by_hero, pack_item)
-from .locations import (BazaarLocation, card_requirements, champion_event, hero_checks, location_name_groups,
-                        location_name_to_id, win_location)
+from .locations import (BazaarLocation, Check, card_requirements, champion_event, hero_checks, item_requirements,
+                        location_name_groups, location_name_to_id, win_location)
 from .options import (INCLUDE_HERO_OPTIONS, PACK_OPTIONS, BazaarOptions, option_groups,
                       option_presets)
 
@@ -86,6 +86,7 @@ class BazaarWorld(World):
     encounter_locks: List[str]  # merchant/event lock items in the pool (see docs/ENCOUNTER-LOCKS.md)
     starter_merchants: List[str]  # merchants never locked
     event_rarity: int  # copies of Event Rarity Progression in the pool
+    gating: set  # unlocks some check's rule needs (see locations.item_requirements): these are progression
     passthrough: Optional[Dict[str, Any]]  # Universal Tracker: the real seed's slot_data
 
     @staticmethod
@@ -95,6 +96,7 @@ class BazaarWorld(World):
 
     def generate_early(self) -> None:
         self.passthrough = getattr(self.multiworld, "re_gen_passthrough", {}).get(self.game)
+        self.gating = set()
         if self.passthrough:
             self.rebuild_from_slot_data(self.passthrough)
             return
@@ -188,6 +190,8 @@ class BazaarWorld(World):
             classification = ItemClassification.trap
         elif name == LOCK_BYPASS:
             classification = ItemClassification.useful  # a buff, never required by logic
+        elif name in self.gating:
+            classification = ItemClassification.progression
         elif name in GROUP_ITEMS or name == EVENT_RARITY or name in ENCOUNTERS_BY_ITEM                 or (name in CARDS_BY_NAME and CARDS_BY_NAME[name].hero == "Common"):
             classification = ItemClassification.useful  # never required by logic: a choice screen always has a way on
         else:
@@ -250,6 +254,7 @@ class BazaarWorld(World):
         for name in cards:
             self.lock_items.setdefault(CARDS_BY_NAME[name].hero, []).append(name)
         self.group_items = sorted(set(groups))
+        self.gating = self.gated_unlocks()
 
         # copy counts the player set (group unlocks, duplicated cards) never grow: only the others get extras
         chosen = set(copies) if self.options.duplicate_all_cards else set(duplicated)
@@ -268,6 +273,7 @@ class BazaarWorld(World):
         self.lock_items, self.group_items = lock_items_by_hero(data["lock_items"])
         self.encounter_locks = [item_id_to_name[i] for i in data.get("encounter_locks", [])]
         self.event_rarity = data.get("event_rarity", 0)
+        self.gating = self.gated_unlocks()
         pool = [hero_item(h) for h in self.heroes if h != self.starting_hero]
         pool += [name for names_ in self.lock_items.values() for name in names_] + self.group_items
         pool += self.encounter_locks + [EVENT_RARITY] * self.event_rarity
@@ -335,17 +341,29 @@ class BazaarWorld(World):
             items = self.lock_items.get(hero, [])
             needs = card_requirements(hero, len(items), self.options.max_day.value, bool(self.options.pvp_win_checks),
                                       self.monster_tiers, self.logic)
-            for name, count in needs.items():
-                self.set_card_rule(name, items, count)
-            self.set_card_rule(champion_event(hero), items, needs[win_location(hero)])
+            for check in hero_checks(hero, self.options.max_day.value, bool(self.options.pvp_win_checks),
+                                     self.monster_tiers):
+                self.set_check_rule(check.name, items, needs[check.name], self.unlocks_needed(check))
+            self.set_check_rule(champion_event(hero), items, needs[win_location(hero)], {})
 
         self.multiworld.completion_condition[self.player] = \
             lambda state: state.has("Champion", self.player, self.goal_count)
 
-    def set_card_rule(self, location_name: str, items: List[str], count: int) -> None:
-        if count:
+    def set_check_rule(self, location_name: str, items: List[str], count: int, unlocks: Dict[str, int]) -> None:
+        if count or unlocks:
             self.get_location(location_name).access_rule = \
-                lambda state: state.has_from_list_unique(items, self.player, count)  # duplicates count once
+                lambda state: ((not count or state.has_from_list_unique(items, self.player, count))  # dupes count once
+                               and state.has_all_counts(unlocks, self.player))
+
+    def unlocks_needed(self, check: Check) -> Dict[str, int]:
+        return item_requirements(check, LEGENDARY_ITEMS in self.group_items, self.event_rarity)
+
+    def gated_unlocks(self) -> set:
+        """Unlocks some check needs: progression, so other games show them as important (user 2026-10-06)."""
+        return {name for hero in self.heroes
+                for check in hero_checks(hero, self.options.max_day.value, bool(self.options.pvp_win_checks),
+                                         self.monster_tiers)
+                for name in self.unlocks_needed(check)}
 
     def write_spoiler(self, spoiler_handle) -> None:
         lines = [f"The Bazaar ({self.player_name})",
