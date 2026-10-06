@@ -61,3 +61,14 @@ class TestRunTornDown(unittest.TestCase):
             snapshot = reader.snapshot()
         self.assertEqual(snapshot, memreader.Snapshot("Encounter", "guid", (), None, ()))
 
+    def test_a_losses_read_failure_keeps_level_and_stash(self) -> None:
+        """Review 2026-10-06: a patch renaming Run.Losses must only cost the DeathLink-on-loss."""
+        reader = Reader()
+        reader.memory, reader.mono = mock.Mock(), mock.Mock()
+        reader.statics = {"<CurrentState>k__BackingField": 1, "<Run>k__BackingField": 2}
+        reader.memory.ptr.return_value = 1
+        reader.mono.is_a.return_value = True
+        fields = {"StateName": "Encounter", "CurrentEncounterId": "guid", "SelectionSet": 0}
+        with mock.patch.object(Reader, "_get", lambda self, obj, name: fields[name]),                 mock.patch.object(Reader, "_stat", return_value=7), mock.patch.object(Reader, "_stash", return_value=()):
+            snapshot = reader.snapshot()
+        self.assertEqual((snapshot.level, snapshot.losses, snapshot.prestige), (7, None, 7))

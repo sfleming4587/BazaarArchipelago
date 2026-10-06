@@ -87,7 +87,9 @@ class BazaarWorld(World):
     starter_merchants: List[str]  # merchants never locked
     event_rarity: int  # copies of Event Rarity Progression in the pool
     unlocks_in_logic: bool  # False only for Universal Tracker on a seed made before 2026-10-06
-    gating: set  # unlocks some check's rule needs (see locations.item_requirements): these are progression
+    # unlocks some check's rule needs (see locations.item_requirements): these are progression. The class default is
+    # for item-link group worlds, which never run generate_early
+    gating: frozenset = frozenset()
     passthrough: Optional[Dict[str, Any]]  # Universal Tracker: the real seed's slot_data
 
     @staticmethod
@@ -97,7 +99,6 @@ class BazaarWorld(World):
 
     def generate_early(self) -> None:
         self.passthrough = getattr(self.multiworld, "re_gen_passthrough", {}).get(self.game)
-        self.gating = set()
         self.unlocks_in_logic = True
         if self.passthrough:
             self.rebuild_from_slot_data(self.passthrough)
@@ -120,6 +121,12 @@ class BazaarWorld(World):
                             f"the number of included heroes.")
         self.starters = {}
         self.encounter_locks, self.starter_merchants, self.event_rarity = [], [], 0
+        # start_inventory(_from_pool) creates its items before create_items: classify them from the options now
+        # (review 2026-10-06: generation failed); create_items narrows this to what the pool really holds
+        self.group_items = [LEGENDARY_ITEMS] if self.options.legendary_items else []
+        self.event_rarity = self.options.event_rarity_progression.value
+        self.gating = self.gated_unlocks()
+        self.event_rarity = 0
         self.logic = {"day_10": self.options.logic_day_10_cards.value,
                       "last_day": self.options.logic_last_day_cards.value,
                       "diamond": self.options.logic_diamond_cards.value,

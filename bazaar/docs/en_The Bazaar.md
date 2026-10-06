@@ -142,7 +142,8 @@ name (such as Make a Wish) still count as held and must be sold.
 ## DeathLink
 
 - A DeathLink is sent when you lose a run: your last PvP fight takes the last of your prestige. It goes out the
-  moment that fight ends, not when you press Continue. Losing a single fight never sends one.
+  moment that fight ends, not when you press Continue (if the client can't read the game's memory, it goes out on
+  Continue instead). Losing a single fight never sends one.
 - `death_link_on_concede`: conceding also sends a DeathLink (off by default). Conceding because you received a
   DeathLink never sends one.
 - `death_links_before_concede`: how many DeathLinks you have to receive before you must concede (2 by default).
@@ -168,7 +169,8 @@ locked, new heroes aren't part of the seed, and a new monster counts as Bronze. 
   and on each locked merchant or event on a choice screen, and
   pops up a warning whenever you end up with one anyway. The warning clears
   itself once you sell it. Use `/locked` to see what's locked.
-- DeathLink: when someone else dies, abandon your current run.
+- DeathLink: when someone else dies, abandon your current run once the client's DEATHLINK notice tells you to
+  (by default the second one you receive in a run).
 
 ## Is this allowed by Tempo?
 

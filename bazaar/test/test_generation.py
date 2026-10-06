@@ -241,6 +241,19 @@ class TestUnlocksInLogic(BazaarTestBase):
         self.assertTrue(self.can_reach_location(pvp_location(hero, 16)))
 
 
+class TestUnlocksFromThePoolAtStart(unittest.TestCase):
+    """Review 2026-10-06: start_inventory(_from_pool) creates its items right after generate_early (Main.py), before
+    create_items; they came out useful, so the rules that need them could never be met and generation failed."""
+
+    def test_an_unlock_made_right_after_generate_early_is_progression(self) -> None:
+        from BaseClasses import ItemClassification
+        from test.general import setup_solo_multiworld
+        from .. import BazaarWorld
+        world = setup_solo_multiworld(BazaarWorld, ("generate_early",)).worlds[1]
+        # defaults: PvP wins from day 8 need Event Rarity Progression
+        self.assertEqual(world.create_item("Event Rarity Progression").classification, ItemClassification.progression)
+
+
 class TestUnlocksStayUsefulWhenNothingNeedsThem(BazaarTestBase):
     options = {"max_monster_tier": "diamond", "pvp_win_checks": False, "legendary_items": 1,
                "event_rarity_progression": 2}

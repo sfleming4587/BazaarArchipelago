@@ -469,7 +469,7 @@ class TestDeathLinkTriggers(ClientTestBase):
     def test_lost_run_sends_when_the_loss_is_counted_not_on_continue(self) -> None:
         """Owner 2026-09-30 (built 2026-10-06 after a v0.9.0 game only sent on Continue)."""
         self.play(RunStarted("Vanessa"), DayReached(5))
-        self.fight(2, 3)
+        self.fight(2, 3, "Choice")
         self.fight(3, 0)  # the replay ended: still on the fight screen, no log line yet
         self.assertEqual(len(self.deaths), 1)
         self.play(RunEnded(False, 5))  # Continue pressed: the log's run end sends nothing more
@@ -490,9 +490,45 @@ class TestDeathLinkTriggers(ClientTestBase):
         self.play(RunEnded(False, 4, conceded=True))
         self.assertEqual(self.deaths, [])
 
+    def test_a_no_screen_reading_between_cant_hide_the_loss(self) -> None:
+        """Review 2026-10-06: a reading with no screen, or Losses read a moment before prestige, came between."""
+        from ..memreader import Snapshot
+        self.play(RunStarted("Vanessa"))
+        self.fight(2, 3, "Choice")
+        self.ctx.handle_snapshot(Snapshot(None, None, ()))
+        self.fight(3, 1)  # losses already up, prestige not yet down
+        self.fight(3, 0)
+        self.assertEqual(len(self.deaths), 1)
+
+    def test_leaving_the_lost_run_by_abandoning_sends_nothing_more(self) -> None:
+        self.ctx.slot_data["death_link_on_concede"] = True
+        self.play(RunStarted("Vanessa"))
+        self.fight(2, 3, "Choice")
+        self.fight(3, 0)
+        self.play(RunEnded(False, 5, conceded=True))
+        self.assertEqual(len(self.deaths), 1)
+
+    def test_a_deathlink_received_after_the_loss_is_a_dodge(self) -> None:
+        self.play(RunStarted("Vanessa"))
+        self.fight(2, 3, "Choice")
+        self.fight(3, 0)
+        self.ctx.on_deathlink({"time": 1.0, "source": "Friend", "cause": "Friend fell."})
+        self.assertEqual(self.ctx.deathlinks_received, 0)
+        self.assertFalse(self.ctx.run.get("deathlink_owed"))
+
+    def test_nothing_is_judged_while_disconnected(self) -> None:
+        self.play(RunStarted("Vanessa"))
+        self.fight(2, 3, "Choice")
+        slot_data, self.ctx.slot_data = self.ctx.slot_data, {}
+        self.fight(3, 0)
+        self.ctx.slot_data = slot_data
+        self.assertEqual(self.deaths, [])
+        self.play(RunEnded(False, 6))  # the log's run end sends it once connected again
+        self.assertEqual(len(self.deaths), 1)
+
     def test_the_log_still_sends_when_memory_missed_the_loss(self) -> None:
         self.play(RunStarted("Vanessa"))
-        self.fight(2, 3)
+        self.fight(2, 3, "Choice")
         self.play(RunEnded(False, 6))
         self.assertEqual(len(self.deaths), 1)
 

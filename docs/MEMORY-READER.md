@@ -53,11 +53,17 @@ the run-ending loss, never every PvP loss (v0.4.1 ruling).
 
 **BUILT 2026-10-06** (`BazaarContext.check_run_lost`) after a v0.9.0 game (owner + friend) showed DeathLinks still
 only going out on Continue: the ruling had been written down but never built. The snapshot carries `losses`
-(`Run.Losses`) and `prestige` (stat 9); a DeathLink goes out when two readings in a row show `Losses` up with
-`Prestige <= 0` **while the screen is `PVPCombat`**. The log's run end still sends it if memory missed it (reader
-off, or Continue pressed between two readings) and sends nothing if memory already did (`run["lost_sent"]`).
-⚠️ The `PVPCombat` condition keeps a concede from ever counting as a loss (`death_link_on_concede` decides those);
-whether a concede touches `Losses` at all was never checked. ⚠️ Not yet seen against a real lost run in game.
+(`Run.Losses`, read on its own so a rename never costs level/stash) and `prestige` (stat 9). The run remembers
+`losses_before_fight` (Losses on the last reading off the `PVPCombat` screen); a DeathLink goes out when a reading
+**on the `PVPCombat` screen** has `Prestige <= 0` and `Losses` above `losses_before_fight`. Comparing with that,
+not the reading just before, means a no-screen reading or Losses read a moment before Prestige can't hide the loss.
+A reader that attaches mid-fight has no `losses_before_fight`: that loss goes out on Continue.
+The log's run end still sends it if memory missed it (reader off) and sends nothing if memory already did
+(`run["lost_sent"]`), also when the run then ends as a concede. A DeathLink received after the loss is a dodge
+(the run is over). Nothing is judged while disconnected (no slot_data).
+⚠️ The `PVPCombat` condition only keeps a concede OUTSIDE a fight from counting as a loss; whether abandoning
+during a PvP fight touches `Losses`/prestige was never checked (in-game test). ⚠️ Not yet seen against a real
+lost run in game.
 
 Prestige moved with the loss counter every time: 25 → 24 (Day 1), 24 → 22, 22 → 14 (Day 8), 14 → 5 (Day 9),
 5 → 1 (Day 10), 1 → 0 (Day 11). Monster losses did **not** cost prestige.

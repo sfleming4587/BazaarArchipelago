@@ -730,16 +730,20 @@ class Reader:
         return Snapshot(name, encounter, tuple(offers), *self._run_parts())
 
     def _run_parts(self) -> Tuple[Optional[int], tuple, Optional[int], Optional[int]]:
-        """Your level, stash, losses and prestige, or (None, (), None, None) when they make no sense this time. They're read through the Run, which
+        """Your level, stash, losses and prestige, or None/() for any that make no sense this time. They're read through the Run, which
         the game tears down and replaces around a run's end: 8 s after a concede (2026-10-02) Run.Player had no
         Attributes for a moment, and the reader switched off for the whole game session - no padlocks until the
-        client restarted. Attach already checked the layout, so this is never a patch: the next look tries again."""
+        client restarted. So a failed read here never turns the reader off: the next look tries again. Losses is
+        read on its own, so a patch that renames it only costs the DeathLink-on-loss, never level or stash."""
         try:
             run = self.memory.ptr(self.statics["<Run>k__BackingField"])
             losses = self._get(run, "Losses") if run else None
+        except Exception:
+            losses = None
+        try:
             return self._stat(LEVEL_STAT), self._stash(), losses, self._stat(PRESTIGE_STAT)
         except Exception:
-            return None, (), None, None
+            return None, (), losses, None
 
     def _stash(self) -> Tuple[Tuple[int, Optional[str]], ...]:
         """Your stash's cards and the slot each starts in, from Run.Player.Stash.Container.Sockets (10 slots; a card

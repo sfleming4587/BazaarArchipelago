@@ -768,18 +768,23 @@ class BazaarContext(CommonContext):
             self.refresh_padlocks()
         if self.encounter and offers_at(before, self.encounter.guid) != offers_at(snapshot, self.encounter.guid):
             self.handle_encounter(self.encounter)
-        self.check_run_lost(before, snapshot)
+        self.check_run_lost(snapshot)
 
-    def check_run_lost(self, before: Optional[Snapshot], snapshot: Optional[Snapshot]) -> None:
+    def check_run_lost(self, snapshot: Optional[Snapshot]) -> None:
         """DeathLink the moment the run-ending PvP fight is lost, not when Continue is pressed (owner 2026-09-30: the
         log only says so after Continue, "which is abusable to not do the deathlink"). Losses up with Prestige at 0,
-        read during the fight itself so a concede never counts as a loss. If memory misses it, the log's run end
+        read during the fight itself so a concede outside a fight never counts. If memory misses it, the log's run end
         still sends it (docs/MEMORY-READER.md, "A lost run is known when the loss is counted")."""
-        if not (before and snapshot and self.run.get("active")) or self.run.get("lost_sent"):
+        if not (snapshot and self.slot_data and self.run.get("active")) or self.run.get("lost_sent"):
             return
-        if None in (before.losses, snapshot.losses, snapshot.prestige) or snapshot.state != "PVPCombat":
+        if snapshot.losses is None or snapshot.prestige is None:
             return
-        if snapshot.losses > before.losses and snapshot.prestige <= 0:
+        # compared with Losses before the fight, not the reading just before: a reading with no screen, or Losses
+        # read a moment before prestige, between them can't hide the loss (review 2026-10-06)
+        before_fight = self.run.get("losses_before_fight")
+        if snapshot.state != "PVPCombat":
+            self.run["losses_before_fight"] = snapshot.losses
+        elif snapshot.prestige <= 0 and before_fight is not None and snapshot.losses > before_fight:
             self.run["lost_sent"] = True
             self.save_state()
             Utils.async_start(self.maybe_send_death(self.run.get("day", 0), self.run.get("wins", 0)))
@@ -989,12 +994,14 @@ class BazaarContext(CommonContext):
             pass  # a won run never sends a DeathLink
         elif deathlink_owed:
             self.event("Run over. DeathLink paid off.")
+        elif self.run.get("lost_sent"):
+            pass  # memory sent it when the fight was lost; leaving from the loss screen sends nothing more
         elif event.conceded:
             if self.setting("death_link_on_concede"):
                 await self.maybe_send_death(event.day, self.run.get("wins", 0), conceded=True)
             else:
                 self.event("Run conceded. Conceding doesn't send a DeathLink.")
-        elif not self.run.get("lost_sent"):  # memory already sent it when the fight was lost
+        else:
             await self.maybe_send_death(event.day, self.run.get("wins", 0))
         self.save_state()
 
@@ -1024,7 +1031,8 @@ class BazaarContext(CommonContext):
         super().on_deathlink(data)
         beep()
         cause = data.get("cause") or f"{data.get('source', 'Someone')} died."
-        if self.run.get("active") and not self.run.get("deathlink_owed"):
+        in_run = self.run.get("active") and not self.run.get("lost_sent")  # a lost run is over, Continue or not
+        if in_run and not self.run.get("deathlink_owed"):
             self.deathlinks_received += 1
             needed = self.setting("death_links_before_concede")
             if self.deathlinks_received < needed:
@@ -1035,7 +1043,7 @@ class BazaarContext(CommonContext):
                            warning=True)
                 return
             self.deathlinks_received = 0
-        if self.run.get("active"):
+        if in_run:
             self.run["deathlink_owed"] = True
             self.run["deathlink_cause"] = cause
             self.save_state()
