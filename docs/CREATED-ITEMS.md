@@ -68,11 +68,20 @@ so we can still block cores" for The Cult's cores.
   `Reagent` tag.
 - Padlocks: allowed created cards, and cards not judged yet, get none in your stash.
 
+## Verified in game (owner, 2026-10-07, Mak, created_items: locked, Tempo build with the client as administrator)
+
+- A fight's own transform (Potion Potion during a monster fight) writes **no** log line: nothing to ignore.
+- Selling Catalysts: Sulphur -> Scalpel (unlocked: silent) and Emerald -> Philosopher's Stone (locked: "A card
+  transformed into ... CHECKS ARE BLOCKED" 0.3 s after the log line); selling it unblocked. Memory showed the new
+  card well within a second.
+- Potion Potion's daily Catalysts were spawned with no log line (sold later as never-gained ids); Catalyst isn't a
+  card we lock, so nothing happened - as intended.
+
 ## ⚠️ Unverified (needs a game session with the watcher)
 
-- Whether a transform's new card is already on your board when its log line is read (the 10 s wait covers a delay).
-- Whether a fight's own transforms (Virus, Mirror...) write a log line at all, and whether an end-of-fight transform
-  (Assembly Line, Fairy Statue) is on your board by the first reading after the fight (the 10 s wait covers a delay).
+- Whether an end-of-fight transform (Assembly Line, Fairy Statue) is on your board by the first reading after the
+  fight (the 10 s wait covers a delay), and other fights' own transforms (Virus, Mirror...) logging nothing either.
+- A locked card spawned with no log line actually blocking (the spawn path; only unlocked spawns seen so far).
 - Pedestal results: if they make a new card with no log line, they're judged as spawns (never free under Special
   Cases).
 - How Wink writes its transforms (one line per item is expected) and which of The Cult's cards get log lines.
