@@ -4,7 +4,8 @@ param(
     [string]$Name = "Sulldog",
     [string]$StartingHero = "any",   # any, vanessa, pygmalien, dooley, mak, stelle, jules, karnok, the_dragons
     [int]$Port = 38281,
-    [switch]$DeathLink               # DeathLink on, conceding included
+    [switch]$DeathLink,              # DeathLink on, conceding included
+    [string]$CreatedItems = "allowed" # allowed, special_cases, locked (docs/CREATED-ITEMS.md)
 )
 $ErrorActionPreference = "Stop"
 $dl = if ($DeathLink) { "true" } else { "false" }
@@ -33,6 +34,7 @@ The Bazaar:
   legacy_card_packs: true
   death_link: $dl
   death_link_on_concede: $dl
+  created_items: $CreatedItems
 "@ | Set-Content -Encoding utf8 (Join-Path $players "$Name.yaml")
 
 Push-Location $ap
