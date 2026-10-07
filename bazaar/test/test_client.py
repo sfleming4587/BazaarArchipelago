@@ -1580,11 +1580,46 @@ class TestCreatedItems(ClientTestBase):
         self.look(("itm_d", self.shelter.guid))
         self.assertIsNone(self.ctx.blocked_reason())
 
-    def test_a_transform_during_a_fight_changes_nothing(self) -> None:
+    def test_a_transform_undone_with_its_fight_changes_nothing(self) -> None:
         self.level(0)
+        self.look()
         self.play(CardGained(LOCKED.guid, "itm_x", False), CardTransformed("itm_x", "itm_y", in_fight=True))
-        self.assertIn("UNTIL", self.ctx.blocked_reason())  # still holding it after the fight
+        self.look(("itm_x", LOCKED.guid), state="Combat")  # mid-fight: nothing is judged
+        self.now += 4
+        self.look(("itm_x", LOCKED.guid), state="Loot")  # after it the old card is back: undone
+        self.assertIn("UNTIL", self.ctx.blocked_reason())  # still holding it
         self.assertNotIn("itm_y", self.ctx.run.get("transformed", []))
+        self.assertEqual(self.ctx.fight_transforms, {})
+
+    def test_a_transform_when_a_fight_ends_follows_the_rules(self) -> None:
+        """Owner, 2026-10-07: Assembly Line's end-of-fight transform "should follow the transform special case
+        rules" - the log writes it before the replay ends, memory shows it stayed."""
+        self.level(1)
+        self.look()
+        self.play(CardGained(self.shelter.guid, "itm_a", False), CardTransformed("itm_a", "itm_friend", in_fight=True))
+        self.look(("itm_friend", LOCKED.guid), state="Loot")
+        self.assertIn("UNTIL", self.ctx.blocked_reason())  # not a Reagent: judged
+        self.assertNotIn("itm_a", self.ctx.run["inventory"])
+
+    def test_the_cult_is_free_even_under_locked(self) -> None:
+        """Owner, 2026-10-07: "It should be treated as a special case to allow"."""
+        from ..logparser import EncounterEntered, EncounterLeft
+        self.level(2)
+        self.look()
+        self.play(EncounterEntered("bf1594cc-7f65-4236-b95f-ed2f521739de"), CardGained(LOCKED.guid, "itm_core", False))
+        self.spawn("itm_s", LOCKED.guid, ("itm_core", LOCKED.guid))
+        self.play(EncounterLeft())
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def test_vending_machine_counts_like_soda_machine(self) -> None:
+        from ..data import CARDS_BY_NAME
+        self.level(1)
+        machine, flavour = CARDS_BY_NAME["Vending Machine"], CARDS_BY_NAME["Mystery Flavor"]
+        self.ctx.slot_data["lock_items"].append(BASE_ID + flavour.ap_id)
+        self.play(CardGained(machine.guid, "itm_v", False))
+        self.look(("itm_v", machine.guid))
+        self.spawn("itm_drink", flavour.guid, ("itm_v", machine.guid))
+        self.assertIsNone(self.ctx.blocked_reason())
 
     def test_wink_and_the_cult_are_free_under_special_cases_mandala_is_not(self) -> None:
         from ..logparser import EncounterEntered, EncounterLeft

@@ -303,13 +303,14 @@ class LockLootItems(Toggle):
 class CreatedItems(Choice):
     """
     What happens when the game makes a card for you instead of you picking it: a card spawned by another card (selling
-    Temporary Shelter gives you 2 Scrap) or a card transformed into another outside a fight (a Reagent at Alembic,
-    Catalyst, Wink, The Cult, Mandala, ...). Transforms during a fight never count: the fight undoes them.
+    Temporary Shelter gives you 2 Scrap) or a card transformed into another (a Reagent at Alembic, Catalyst, Wink,
+    Mandala, Assembly Line at a fight's end, ...). Transforms the fight itself undoes never count. Everything The Cult
+    gives you is always free.
     Allowed: every created card is yours to keep, locked or not.
     Special Cases: only cards that are meant to be made are free: the first transform of one of Mak's Reagents,
     everything Wink and The Cult give you, items that always spawn the same card (Temporary Shelter's Scrap,
-    Chum's Piranha, ...) and Soda Machine's drinks. Every other created card follows Locked - a Mandala transform
-    included, unless it turns one of Mak's Reagents.
+    Chum's Piranha, ...) and Soda and Vending Machine drinks. Every other created card follows Locked - a Mandala or
+    Assembly Line transform included, unless it turns one of Mak's Reagents.
     Locked: a created card that is still locked blocks your checks until you sell it, transform it again, or use a
     Lock Bypass on it.
     """

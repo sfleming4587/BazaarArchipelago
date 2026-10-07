@@ -21,8 +21,8 @@ from CommonClient import (ClientCommandProcessor, CommonContext, get_base_parser
 from MultiServer import mark_raw
 from NetUtils import ClientStatus
 
-from .data import (CARDS, CARDS_BY_GUID, EVENT_NAMES, EVENTS, FIXED_SPAWNS, GAME_VERSION, HEROES, MERCHANT_DATA, MONSTERS,
-                   OFFER_DATA, TIERS)
+from .data import (CARDS, CARDS_BY_GUID, EVENT_NAMES, EVENTS, FIXED_SPAWNS, GAME_VERSION, HEROES, MERCHANT_DATA,
+                   MONSTERS, OFFER_DATA, TIERS)
 from .deathlink_lines import deathlink_message
 from .encounters import let_through, locked_events, rarity_bypasses
 from .items import (ENCOUNTER_UNLOCKS, EVENT_RARITY_ID, GAME, HERO_ITEM_IDS, LEGENDARY_ITEMS, LOCK_BYPASS_ID, SELL_TRAP,
@@ -59,17 +59,21 @@ SLOT_DEFAULTS = {"heroes": [], "max_day": 15, "pvp_win_checks": False, "monster_
                  "event_rarity": 0, "exempt_expeditions": True, "unlocks_in_logic": False, "created_items": 0}
 
 # Created items (owner, 2026-10-07; see docs/CREATED-ITEMS.md): cards the game makes for you - spawned by another card
-# or transformed outside a fight. Wink and The Cult are the only events whose cards are free under Special Cases ("to
-# not totally brick your run"); every other event (Mandala...) follows the Locked rule there.
-FREE_EVENTS = frozenset({"3e4c4f1a-fe5d-4e38-887a-08666ce36e71",   # Wink
-                         "bf1594cc-7f65-4236-b95f-ed2f521739de"})  # The Cult
+# or transformed. Wink and The Cult are the only events whose cards are free under Special Cases ("to not totally
+# brick your run"); every other event (Mandala...) follows the Locked rule there. The Cult is free under Locked too
+# ("It should be treated as a special case to allow").
+CULT = "bf1594cc-7f65-4236-b95f-ed2f521739de"
+FREE_EVENTS = frozenset({"3e4c4f1a-fe5d-4e38-887a-08666ce36e71", CULT})  # Wink, The Cult
 # Items whose spawns are free under Special Cases although they pick at random, by the owner's choice (2026-10-07:
-# "soda machine should be in the rule 2 selected cases list"): item -> the lockable cards it can make. Soda Machine's
-# other flavours can't be locked.
-OWNER_SPAWNS = {"16005305-bce3-4cae-8c90-8b6560def112": ("78eb19fd-4da4-45d5-b4cb-d669b50b6ed6",)}  # -> Mystery Flavor
+# "only counting soda machine and vending machine since they have a limited pool of items"): item -> the lockable
+# cards it can make. Their other drinks and snacks can't be locked.
+MYSTERY_FLAVOR = "78eb19fd-4da4-45d5-b4cb-d669b50b6ed6"
+OWNER_SPAWNS = {"16005305-bce3-4cae-8c90-8b6560def112": (MYSTERY_FLAVOR,),   # Soda Machine
+                "7827d946-0204-4897-b3e4-bd7cec8e3979": (MYSTERY_FLAVOR,)}   # Vending Machine
 FIGHT_SCREENS = ("Combat", "PVPCombat")
 SPAWN_GRACE = 2.0  # seconds a card may sit on your board/stash before its "gained" log line; after that it was made
 TRANSFORM_WAIT = 10.0  # seconds memory gets to show what a card transformed into; then it's allowed (can't tell)
+UNDONE_AFTER = 3.0  # seconds after a fight transform's line before the old card back on your board means it was undone
 SOLD_MEMORY = 10.0  # seconds a sold card still counts as the source of a fixed spawn (Temporary Shelter -> Scrap)
 
 
@@ -268,7 +272,8 @@ class BazaarContext(CommonContext):
         self.log_session: Optional[str] = None  # which game session the log being read is from (see log_session)
         # created items (judge_created): what transforms became comes from memory; cards with no log line are spawns
         self.pending_transforms: Dict[str, float] = {}  # new instance -> when the log said so
-        self.unexplained: Dict[str, tuple] = {}  # instance with no log line yet -> (first seen, at Wink/The Cult)
+        self.unexplained: Dict[str, tuple] = {}  # instance with no log line yet -> (first seen, event you were in)
+        self.fight_transforms: Dict[str, tuple] = {}  # new instance -> (old instance, when): kept or undone? (memory)
         self.recent_sold: list = []  # (when, guid): a fixed spawn's source may already be sold (Temporary Shelter)
         self.adopted = False  # cards already there at memory's first look (client start, new run) aren't judged
         self.current_event: Optional[str] = None  # any merchant/event you're in (self.encounter: item-giving ones)
@@ -539,6 +544,7 @@ class BazaarContext(CommonContext):
         if self.setting("death_links_same_run"):
             self.deathlinks_received = 0
         self.pending_transforms, self.unexplained, self.recent_sold, self.adopted = {}, {}, [], False
+        self.fight_transforms = {}
         self.run = {"active": True, "hero": event.hero, "day": 1, "counting": counting, "legal": counting,
                     "deathlink_owed": False, "held": {}, "inventory": {}, "traps": [],
                     "log": self.log_session, "run_index": event.index, "day_offset": 0}
@@ -719,7 +725,7 @@ class BazaarContext(CommonContext):
                 made.remove(event.instance)
             if event.instance in self.run.get("held", {}):
                 return  # already judged (as a spawn), already said
-            if self.at_free_event() and self.setting("created_items") != CreatedItems.option_locked:
+            if self.event_frees(self.current_event):
                 made.append(event.instance)  # The Cult hands these out: free (owner, 2026-10-07)
                 self.save_state()
                 return
@@ -744,23 +750,32 @@ class BazaarContext(CommonContext):
     def handle_transform(self, event: CardTransformed) -> None:
         """A card turned into another. The old one stops counting - a held locked card no longer blocks checks - and
         what it became follows the Created Items option (owner, 2026-10-07): allowed, allowed in the special cases,
-        or judged like any card you take once memory says what it is. A fight's transforms never count: "it only
-        pertains to the fight and afterward will be reset to before the fight"."""
-        if not self.run.get("active") or event.in_fight:
+        or judged like any card you take once memory says what it is. A fight's own transforms never count: "it
+        only pertains to the fight and afterward will be reset to before the fight". But some cards transform when a
+        fight ends (Assembly Line, Fairy Statue), and the log writes those before it leaves the replay too - so a
+        transform logged in a fight waits until it's over: memory shows whether it stayed (judge_created)."""
+        if not self.run.get("active"):
             return
-        old = self.run.get("inventory", {}).pop(event.old, None)
-        was_made = event.old in self.run.get("transformed", [])
+        if event.in_fight:
+            if not self.quiet:  # (a replay can't look: ignored, as a fight transform)
+                self.fight_transforms[event.new] = (event.old, time.monotonic())
+            return
+        self.apply_transform(event.old, event.new)
+
+    def apply_transform(self, old_instance: str, new: str) -> None:
+        old = self.run.get("inventory", {}).pop(old_instance, None)
+        was_made = old_instance in self.run.get("transformed", [])
         for trap in self.run.get("traps", []):  # a Sell Trap follows its card (the old one can't be sold any more)
-            if trap["instance"] == event.old:
-                trap.update(instance=event.new, transformed=True)
+            if trap["instance"] == old_instance:
+                trap.update(instance=new, transformed=True)
                 self.update_block_banner()
-        self.run.get("held_at", {}).pop(event.old, None)
+        self.run.get("held_at", {}).pop(old_instance, None)
         free = self.quiet or self.transform_free(old, was_made)  # replaying the log: memory can't say what it became
         if free:
-            self.allow_made(event.new)
+            self.allow_made(new)
         else:
-            self.pending_transforms[event.new] = time.monotonic()
-        guid = self.run.get("held", {}).pop(event.old, None)
+            self.pending_transforms[new] = time.monotonic()
+        guid = self.run.get("held", {}).pop(old_instance, None)
         if guid:
             then = "that's allowed." if free else "checking what it became."
             self.event(f"{CARDS_BY_GUID[guid].name} transformed into another card - {then}"
@@ -770,18 +785,17 @@ class BazaarContext(CommonContext):
             self.save_state()
         self.refresh_padlocks()
 
-    def at_free_event(self) -> bool:
-        return self.current_event in FREE_EVENTS
+    def event_frees(self, event: Optional[str]) -> bool:
+        """Cards made in this event are free: The Cult always, Wink unless the seed says Locked."""
+        return event == CULT or (event in FREE_EVENTS and self.setting("created_items") != CreatedItems.option_locked)
 
     def transform_free(self, old: Optional[str], was_made: bool) -> bool:
         """Special Cases: the first transform of one of Mak's Reagents, and anything Wink or The Cult does."""
         level = self.setting("created_items")
-        if level == CreatedItems.option_allowed:
+        if level == CreatedItems.option_allowed or self.event_frees(self.current_event):
             return True
-        if level == CreatedItems.option_special_cases:
-            reagent = old in CARDS_BY_GUID and "Reagent" in CARDS_BY_GUID[old].tags and not was_made
-            return reagent or self.at_free_event()
-        return False
+        reagent = old in CARDS_BY_GUID and "Reagent" in CARDS_BY_GUID[old].tags and not was_made
+        return level == CreatedItems.option_special_cases and reagent
 
     def fixed_spawn(self, guid: str, now: float) -> bool:
         """A card one of your items always spawns (Temporary Shelter -> Scrap): the item is still yours, or you sold it
@@ -826,8 +840,15 @@ class BazaarContext(CommonContext):
         if not self.adopted:  # already there when memory first looked: from before the client watched
             self.adopted = True
             for instance, guid in cards.items():
-                if instance not in self.pending_transforms:
+                if instance not in self.pending_transforms and instance not in self.fight_transforms:
                     inventory.setdefault(instance, guid)
+        for new, (old, when) in list(self.fight_transforms.items()):  # the fight is over: did they stay?
+            if new in cards:  # kept (a transform when the fight ended): the usual rules
+                del self.fight_transforms[new]
+                self.apply_transform(old, new)
+                changed = True
+            elif (old in cards and now - when > UNDONE_AFTER) or now - when > TRANSFORM_WAIT:
+                del self.fight_transforms[new]  # undone with the fight (or never seen): nothing happened
         for new, when in list(self.pending_transforms.items()):
             if new in cards:
                 del self.pending_transforms[new]
@@ -840,16 +861,17 @@ class BazaarContext(CommonContext):
         made = set(self.run.get("transformed", []))
         level = self.setting("created_items")
         for instance, guid in cards.items():
-            if instance in inventory or instance in made or instance in self.pending_transforms:
+            if instance in inventory or instance in made or instance in self.pending_transforms \
+                    or instance in self.fight_transforms:
                 continue
-            first, at_event = self.unexplained.setdefault(instance, (now, self.at_free_event()))
+            first, event = self.unexplained.setdefault(instance, (now, self.current_event))
             if now - first < SPAWN_GRACE:
                 continue
             del self.unexplained[instance]
             inventory[instance] = guid
             changed = True
-            if level == CreatedItems.option_allowed or (level == CreatedItems.option_special_cases
-                                                        and (at_event or self.fixed_spawn(guid, now))):
+            if level == CreatedItems.option_allowed or self.event_frees(event) \
+                    or (level == CreatedItems.option_special_cases and self.fixed_spawn(guid, now)):
                 self.allow_made(instance)
             else:
                 self.judge_made(instance, guid, "appeared:")
@@ -1008,7 +1030,8 @@ class BazaarContext(CommonContext):
         starts = {slot: (template, instance) for slot, template, instance in self.memory.stash}
         locked, sizes, spots, slot = self.run_locked_guids(), [], [], 0
         # created cards that are allowed (handle_transform, judge_created), and those not judged yet
-        allowed = set(self.run.get("transformed", [])) | set(self.unexplained) | set(self.pending_transforms)
+        allowed = set(self.run.get("transformed", [])) | set(self.unexplained) | set(self.pending_transforms) \
+            | set(self.fight_transforms)
         while slot < 10:
             template, instance = starts.get(slot, (None, None))
             size = CARDS_BY_GUID[template].size if template in CARDS_BY_GUID else None
