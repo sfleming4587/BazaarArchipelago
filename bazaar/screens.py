@@ -32,7 +32,9 @@ def monitors() -> List[Rect]:
     def add(monitor, _dc, _rect, _data) -> bool:
         info = MonitorInfo()
         info.cbSize = ctypes.sizeof(MonitorInfo)
-        if user32.GetMonitorInfoW(monitor, ctypes.byref(info)):
+        # wrapped: a bare int is passed as a 32-bit C int, and a handle above that raised OverflowError and lost the
+        # monitor (a player's log, 2026-10-06)
+        if user32.GetMonitorInfoW(wintypes.HMONITOR(monitor), ctypes.byref(info)):
             r = info.rcMonitor
             found.append((r.left, r.top, r.right - r.left, r.bottom - r.top))
         return True
