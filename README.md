@@ -179,7 +179,9 @@ missed Sell Trap or a DeathLink. `/unblock` shows what's in the way. Also check 
 connected.
 
 **The padlocks are missing.**
-Give the client a minute or two after starting the game. If the client says the memory reader turned itself off,
+Playing through the Tempo launcher? It runs the game as administrator, so the client needs to be too: accept
+Windows' prompt when the client asks, or start the Archipelago Launcher with "Run as administrator".
+Otherwise, give the client a minute or two after starting the game. If the client says the memory reader turned itself off,
 restart the game once. If it says so again, a game patch probably changed something, and padlocks stay off until a
 newer `bazaar.apworld` supports it. The Shop Guide still crosses out locked cards, and everything else keeps
 working.

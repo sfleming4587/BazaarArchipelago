@@ -44,6 +44,11 @@ class NotReady(ReaderOff):
     """The game isn't running or is still loading: nothing wrong, try again later."""
 
 
+class NeedsAdmin(ReaderOff):
+    """The game runs as administrator and this client doesn't, so Windows won't let it read the game (the Tempo
+    launcher starts it that way, verified 2026-10-07). Not a patch: the client offers to restart as administrator."""
+
+
 class NoAssemblies(ReaderOff):
     """The game's assembly list isn't there: still loading, or (if it stays that way) a patch."""
 
@@ -145,6 +150,19 @@ def game_window() -> Optional[Tuple[int, int]]:
 def game_pid() -> Optional[int]:
     found = game_window()
     return found[1] if found else None
+
+
+ERROR_ACCESS_DENIED = 5
+
+
+def needs_admin(pid: int) -> bool:
+    """Windows refuses to let this client open the game for reading (the rights Memory asks for) because the game
+    runs as administrator and the client doesn't."""
+    handle = k32.OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, False, pid)
+    if handle:
+        k32.CloseHandle(handle)
+        return False
+    return C.get_last_error() == ERROR_ACCESS_DENIED and not C.windll.shell32.IsUserAnAdmin()
 
 
 def find_module(pid: int, name: str) -> Optional[Tuple[int, int]]:
@@ -518,6 +536,9 @@ class Reader:
         pid = game_pid()
         if not pid:
             raise NotReady("The Bazaar isn't running")
+        # Checked first: a refused module list looks just like a game that's still loading (a player's log, 2026-10-06)
+        if needs_admin(pid):
+            raise NeedsAdmin("The Bazaar runs as administrator")
         module = find_module(pid, MONO_DLL)
         if not module:
             raise NotReady("the game is still loading")

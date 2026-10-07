@@ -32,7 +32,7 @@ from .logparser import (DEFAULT_LOG_PATH, HERO_ALIASES, PREV_LOG, HeroSelected, 
                         EncounterEntered,
                         EncounterLeft, FightStarted, GameVersion, LogParser, LogTailer, MonsterFought, PvPFought,
                         RunEnded, RunStarted, UnrecognizedRun, log_session)
-from .memreader import NotReady, Reader, ReaderOff, Snapshot, game_pid
+from .memreader import NeedsAdmin, NotReady, Reader, ReaderOff, Snapshot, game_pid
 from .merchants import possible_stock
 from .overlay import FILE_ONLY, ROW_GAPS, event_row
 from .tracker import hero_order
@@ -1452,11 +1452,40 @@ async def watch_log(ctx: BazaarContext) -> None:
             await asyncio.sleep(POLL_SECONDS)
 
 
+def admin_relaunch(ctx: BazaarContext) -> tuple:
+    """(program, parameters, folder) that start this client again through the Archipelago Launcher, connecting to
+    the same server and slot. The password isn't passed (it would sit on a command line): the client asks for it."""
+    import subprocess
+    args = ["The Bazaar Client", "--"]
+    if ctx.server_address:
+        args += ["--connect", ctx.server_address]
+    if ctx.auth:
+        args += ["--name", ctx.auth]
+    if ctx.log_path != default_log_path():
+        args += ["--logpath", ctx.log_path]
+    if not ctx.overlay:
+        args.append("--no-overlay")
+    if not ctx.shop_guide:
+        args.append("--no-shop-guide")
+    if not Utils.is_frozen():  # from source: python Launcher.py
+        args.insert(0, Utils.local_path("Launcher.py"))
+    return sys.executable, subprocess.list2cmdline(args), Utils.local_path()
+
+
+def restart_as_admin(ctx: BazaarContext) -> bool:
+    """Owner, 2026-10-07: "please just pretend the user hits 'yes' and ask for admin right away" (a Yes/No box first
+    opened under the game, unseen). Windows' own permission prompt starts the client again as administrator. True when
+    the new client was started (this one should then close); False if the player said no there."""
+    import ctypes
+    program, parameters, folder = admin_relaunch(ctx)
+    return ctypes.windll.shell32.ShellExecuteW(None, "runas", program, parameters, folder, 1) > 32
+
+
 async def watch_memory(ctx: BazaarContext) -> None:
     """Reads what's on offer from the game's memory a few times a second. If a check fails the reader stays off
     for this game session (no padlocks; the Shop Guide still marks locked cards); it's only tried
     again when the game restarts (never re-engineered after a patch, owner 2026-09-30)."""
-    reader, loop, said = Reader(), asyncio.get_running_loop(), None
+    reader, loop, said, asked_admin = Reader(), asyncio.get_running_loop(), None, False
     while not ctx.exit_event.is_set():
         try:
             if not reader.attached():
@@ -1478,7 +1507,17 @@ async def watch_memory(ctx: BazaarContext) -> None:
             if str(error) != said:
                 said = str(error)
                 logger.info(f"Memory reader off: {error}", extra=FILE_ONLY)
-                if not isinstance(error, NotReady):
+                if isinstance(error, NeedsAdmin):
+                    if not asked_admin:
+                        asked_admin = True
+                        if await loop.run_in_executor(None, restart_as_admin, ctx):
+                            if ctx.ui:  # the administrator client takes over; close this one like /exit does
+                                ctx.ui.stop()
+                            ctx.exit_event.set()
+                            return
+                    ctx.event("The Bazaar runs as administrator, so locked cards on offer get no padlocks. Start the "
+                              "Archipelago Launcher as administrator to get them back.", warning=True)
+                elif not isinstance(error, NotReady):
                     ctx.event(f"The memory reader turned itself off ({error}), probably after a game patch. Locked "
                               f"cards on offer get no padlocks until it's back (the Shop Guide still marks them).")
             if isinstance(error, NotReady):

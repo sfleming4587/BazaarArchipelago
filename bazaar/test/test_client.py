@@ -1464,3 +1464,18 @@ class TestUnlocksInLogicCount(ClientTestBase):
         del self.ctx.slot_data["unlocks_in_logic"]  # a seed from before 2026-10-06: its logic never needed them
         self.ctx.items_received = self.ctx.items_received[:-2]
         self.assertIn(pvp_location("Vanessa", 14), in_logic())
+
+
+class TestAdminRestart(ClientTestBase):
+    """Owner, 2026-10-07: the client asks to restart as administrator when the game (Tempo launcher) runs as one."""
+
+    def test_the_new_client_reconnects_to_the_same_slot_without_the_password_on_the_command_line(self) -> None:
+        from ..client import admin_relaunch
+        self.ctx.server_address, self.ctx.auth, self.ctx.password = "archipelago.gg:55897", "Some One", "secret"
+        with mock.patch("Utils.is_frozen", return_value=True):
+            program, parameters, _folder = admin_relaunch(self.ctx)
+        self.assertEqual(parameters, '"The Bazaar Client" -- --connect archipelago.gg:55897 --name "Some One" '
+                                     '--no-overlay')
+        self.assertNotIn("secret", parameters)
+        with mock.patch("Utils.is_frozen", return_value=False):  # from source: python Launcher.py "The Bazaar Client"
+            self.assertIn('Launcher.py" "The Bazaar Client" -- --connect', admin_relaunch(self.ctx)[1])

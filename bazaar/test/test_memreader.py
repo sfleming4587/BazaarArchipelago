@@ -72,3 +72,24 @@ class TestRunTornDown(unittest.TestCase):
         with mock.patch.object(Reader, "_get", lambda self, obj, name: fields[name]),                 mock.patch.object(Reader, "_stat", return_value=7), mock.patch.object(Reader, "_stash", return_value=()):
             snapshot = reader.snapshot()
         self.assertEqual((snapshot.level, snapshot.losses, snapshot.prestige), (7, None, 7))
+
+
+class TestGameRunsAsAdministrator(unittest.TestCase):
+    """The Tempo launcher starts the game as administrator (verified 2026-10-07): Windows refuses to let the client
+    read it, which used to look like a game that's "still loading" forever."""
+
+    def attach(self, refused: bool) -> None:
+        with mock.patch.object(memreader, "game_pid", return_value=42), \
+                mock.patch.object(memreader, "needs_admin", return_value=refused), \
+                mock.patch.object(memreader, "find_module", return_value=None), \
+                mock.patch.object(memreader.sys, "platform", "win32"):
+            Reader().attach()
+
+    def test_a_refused_game_asks_for_administrator_not_still_loading(self) -> None:
+        with self.assertRaises(memreader.NeedsAdmin):
+            self.attach(refused=True)
+
+    def test_a_readable_game_without_mono_yet_is_still_loading(self) -> None:
+        with self.assertRaises(NotReady) as caught:
+            self.attach(refused=False)
+        self.assertNotIsInstance(caught.exception, memreader.NeedsAdmin)

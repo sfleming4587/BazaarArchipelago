@@ -2,7 +2,7 @@
 
 ## Required Software
 
-- [The Bazaar](https://store.steampowered.com/app/1617400/The_Bazaar/) on Steam
+- [The Bazaar](https://store.steampowered.com/app/1617400/The_Bazaar/) on Steam, or from the Tempo launcher
 - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) 0.6.4 or newer
 - `bazaar.apworld` from the [latest release](https://github.com/sfleming4587/BazaarArchipelago/releases/latest)
 
@@ -18,6 +18,10 @@
 
 That's it! Nothing gets installed into The Bazaar itself - the client reads the log file the game already writes,
 and a little of the game's memory, read-only, for the padlocks on locked cards.
+
+Playing through the Tempo launcher? It starts the game as administrator, so the first time the client sees the
+game it asks Windows to restart itself as administrator too - say yes, and it comes back connected to your slot.
+Without that it can't read the game, and locked cards get no padlocks.
 
 In the game's settings, keep the display mode on **Fullscreen Window** (the default). The client's helpers are
 their own windows on top of the game, and exclusive fullscreen would hide them.

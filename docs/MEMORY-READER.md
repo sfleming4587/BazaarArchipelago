@@ -282,6 +282,13 @@ of guessing. Offsets found on 2026-09-30: assembly list +0xA0, class cache +0x4D
   `CardController` both read garbage there. `Mono.learn_static_blocks` finds the count's place and only accepts
   it when two classes agree (`BoardManager.CancellationToken` is a `CancellationTokenSource`, `CardController`'s
   drag flag is 0 or 1).
+- **K-mem9 (2026-10-07): the Tempo launcher runs the game as administrator.** Same Mono build, window and exe as
+  Steam's (`%APPDATA%\Tempo Launcher - Beta\game\buildx64\TheBazaar.exe`), but its token is elevated, so a normal
+  client gets error 5 on `OpenProcess(VM_READ | QUERY_INFORMATION)` and an empty module list - which read as "the
+  game is still loading" forever (a player's log, 2026-10-06). `memreader.needs_admin` checks this first and raises
+  `NeedsAdmin`; the client then restarts itself through Windows' permission prompt (owner: "ask for admin right
+  away", no Yes/No box - one opened under the game unseen) and closes the old window like `/exit`. Verified live
+  2026-10-07: an elevated reader attaches to the Tempo game; a normal one gets `NeedsAdmin`.
 - **K-mem8 (2026-10-01):** some objects nothing static points to (the input manager) are found by searching the
   game's private read-write memory once for their class's vtable pointer (`Memory.find_pointer`, ~4.4 GB in 6-28 s);
   this Mono's GC never moves objects, so the address holds for the session. Needs PROCESS_QUERY_INFORMATION (to
