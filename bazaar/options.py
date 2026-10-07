@@ -1,7 +1,7 @@
 import types
 from dataclasses import dataclass, make_dataclass
 
-from Options import (Choice, DeathLink, DefaultOnToggle, ItemSet, OptionGroup, PerGameCommonOptions, Range,
+from Options import (Choice, DeathLink, DefaultOnToggle, ItemSet, Option, OptionGroup, PerGameCommonOptions, Range,
                      StartInventoryPool, Toggle)
 
 from .data import BASE_HEROES, CARDS, HEROES, PACKS, TIERS, hero_key
@@ -21,24 +21,27 @@ def _switch(class_name: str, display_name: str, doc: str, on: bool = False) -> t
 # its switch automatically. option name -> hero.
 INCLUDE_HERO_OPTIONS = {f"include_{hero_key(h)}": h for h in HEROES}
 INCLUDE_SWITCHES = {name: _switch(f"Include{hero.replace(' ', '')}", hero,
-                                  f"Play {hero} in this multiworld" + ("." if hero in BASE_HEROES else
-                                                                       f" - DLC hero, you must own {hero}.")
-                                  + f" Unticked: no {hero} checks, cards or unlock.", on=hero in BASE_HEROES)
+                                  f"Include {hero} in your seed." + ("" if hero in BASE_HEROES else
+                                                                     f" Requires owning {hero} (DLC).")
+                                  + f"\n\nIf disabled, {hero} has no checks, cards or unlock item.",
+                                  on=hero in BASE_HEROES)
                     for name, hero in INCLUDE_HERO_OPTIONS.items()}
 # One switch per legacy pack (user 2026-09-30: "doesn't have to be all or none"), named from the pack's data key so a
 # renamed pack keeps its option. On by default: legacy_card_packs alone still means every pack. option name -> key.
 PACK_OPTIONS = {f"pack_{p.key.lower()}": p.key for p in PACKS}
 PACK_SWITCHES = {name: _switch(f"Pack{p.key.replace('_', '')}", f"{p.hero}: {p.name}",
-                               f"With legacy_card_packs on, lock {p.name} ({p.hero}) as one item. Off: its cards are "
-                               f"locked one by one like any other card.", on=True)
+                               f"Locks {p.name} as a single item.\n\nOnly matters when Legacy Card Packs is enabled. "
+                               f"If disabled, its cards are locked one by one like any other card.", on=True)
                  for name, p in zip(PACK_OPTIONS, PACKS)}
 
 
 def _starting_hero_body(namespace: dict) -> None:
     namespace.update(
         __doc__="""
-    The hero you start with. Every other hero has to be found as an item.
-    If the chosen hero isn't one of your included heroes, a random included hero is used instead.
+    The hero you start with.
+
+    Every other hero has to be found as an item. If this hero isn't one of your included heroes, a random included
+    hero is picked instead.
     """,
         display_name="Starting Hero", default=0, __module__=__name__, option_any=0,
         # values follow data.HEROES, which is append-only, so a saved choice never changes meaning
@@ -50,17 +53,18 @@ StartingHero = types.new_class("StartingHero", (Choice,), exec_body=_starting_he
 
 class EarlyHeroUnlock(Toggle):
     """
-    Puts a second hero's unlock among the checks you can do right away, so you get another hero early.
-    Off by default: when there are spare checks, hero unlocks get duplicate copies (up to 3 each), which usually
-    makes them turn up early anyway.
+    Places a second hero's unlock early, so you get another hero sooner.
+
+    Usually not needed, since spare checks already add extra copies of hero unlocks.
     """
     display_name = "Early Hero Unlock"
 
 
 class HeroesRequired(Range):
     """
-    How many different heroes need a 10-win run to finish your goal.
-    Capped at the number of included heroes.
+    How many different heroes need a 10-win run to complete your goal.
+
+    This can't be higher than the number of included heroes.
     """
     display_name = "Heroes Required"
     range_start = 1
@@ -70,36 +74,43 @@ class HeroesRequired(Range):
 
 class MaxDay(Range):
     """
-    Day-based checks (reach day, PvP win, monsters) exist for every day from 1 up to this number.
-    Getting 10 wins with a hero sends every check that hero has left.
-    Days after 16 only happen through specific events, so 16 is the highest.
+    The last day that has checks.
+
+    Every day up to this one has Reach Day, PvP Win and Monster checks. Getting 10 wins with a hero sends every check
+    that hero has left. Days past 16 only happen through specific events, so 16 is the maximum.
     """
-    display_name = "Max Day Check"
+    display_name = "Last Day With Checks"
     range_start = 5
     range_end = 16  # later days need specific events; ids stay reserved up to MAX_DAY for old seeds
     default = 13
 
 
 class PvPWinChecks(DefaultOnToggle):
-    """Each hero gets a check for winning the PvP fight at the end of each day (up to max_day). The client counts
-    wins by itself from the game's log."""
+    """
+    Adds a check for winning the PvP fight at the end of each day.
+    """
     display_name = "PvP Win Checks"
 
 
 class MonsterChecks(DefaultOnToggle):
     """
-    Each hero gets monster checks for each day, one per rarity that day's hour-3 monsters can have
-    (day 1 up to Silver, day 2 up to Gold, days 3-5 up to Diamond, day 6+ up to Legendary).
-    Beating a monster sends its rarity and every rarity below it for that day.
-    Monsters from events (not the hour-3 monster choice) don't count.
+    Adds checks for beating the monster you pick each day.
+
+    There's one check per rarity that day's monsters can be: day 1 goes up to Silver, day 2 up to Gold, days 3 to 5
+    up to Diamond and day 6 onward up to Legendary. Beating a monster sends its rarity and every rarity below it.
+    Only the monster you pick at hour 3 counts, not monsters from events.
     """
     display_name = "Monster Checks"
 
 
 def _max_monster_tier_body(namespace: dict) -> None:
     namespace.update(
-        __doc__="The highest monster rarity that has a check. Pick diamond to leave out Legendary monster checks.",
-        display_name="Maximum Monster Difficulty", default=TIERS.index("Diamond"), __module__=__name__,
+        __doc__="""
+    The highest monster rarity that has checks.
+
+    Choose Diamond to leave out Legendary monster checks.
+    """,
+        display_name="Highest Monster Rarity", default=TIERS.index("Diamond"), __module__=__name__,
         **{f"option_{tier.lower()}": number for number, tier in enumerate(TIERS)})  # from data.TIERS
 
 
@@ -108,14 +119,13 @@ MaxMonsterTier = types.new_class("MaxMonsterTier", (Choice,), exec_body=_max_mon
 
 class LockedCardsPercent(Range):
     """
-    Percent of the checks left over (after hero, pack and group unlocks, Sell Traps and Lock Bypasses) that hold a
-    different locked card.
-    Locked cards may not be bought or kept until you receive them. They're spread evenly over your heroes
-    (and the Common pool, if enabled).
-    Below 100, the other checks hold duplicates instead: first extra hero unlocks (up to 3 of each), then extra
-    copies of locked cards (up to 3 of each). Copy counts you set yourself never change: Legendary Items and
-    Expedition Tickets unlocks, and cards in duplicate_cards. With duplicate_all_cards on, this percent doesn't
-    apply: every spare check holds a locked card, as pairs.
+    How many of your spare checks hold a locked card.
+
+    Locked cards can't be bought or kept until you receive them, and they're spread evenly across your heroes.
+    Spare checks are the ones left after hero unlocks, packs, group unlocks, Sell Traps and Lock Bypasses.
+
+    Below 100, the rest get extra copies instead: extra hero unlocks first, then extra copies of locked cards (up to
+    3 of each). Copy counts you set yourself never change. Does nothing if Duplicate All Cards is enabled.
     """
     display_name = "Locked Cards Percent"
     range_start = 0
@@ -125,8 +135,9 @@ class LockedCardsPercent(Range):
 
 class StarterCards(Range):
     """
-    For each hero (and the Common pool), this many Bronze cards are never locked, so early days always have
-    something to buy even when lots of cards are locked.
+    How many Bronze cards per hero are never locked.
+
+    This makes sure the early days always have something to buy.
     """
     display_name = "Starter Cards"
     range_start = 0
@@ -136,9 +147,10 @@ class StarterCards(Range):
 
 class LegendaryItems(Range):
     """
-    Copies of the "Legendary Items" unlock in the multiworld. Every Legendary item is locked until the first copy
-    is found; extra copies just make it likely to turn up sooner. 0 = Legendary items are never locked.
-    Logic expects it before Legendary monster checks.
+    Number of Legendary Items unlocks in the item pool.
+
+    Every Legendary item is locked until you find the first one. Extra copies just make it show up sooner. Set to 0
+    to never lock Legendary items. Logic expects it before Legendary monster checks.
     """
     display_name = "Legendary Items Unlocks"
     range_start = 0
@@ -148,8 +160,9 @@ class LegendaryItems(Range):
 
 class ExpeditionTickets(Range):
     """
-    Copies of the "Expedition Tickets" unlock in the multiworld. Expedition tickets (Crash Site, Temple) are
-    locked until the first copy is found. 0 = tickets are never locked.
+    Number of Expedition Tickets unlocks in the item pool.
+
+    The Crash Site and Temple tickets are locked until you find the first one. Set to 0 to never lock the tickets.
     """
     display_name = "Expedition Tickets Unlocks"
     range_start = 0
@@ -159,10 +172,13 @@ class ExpeditionTickets(Range):
 
 class LockedEncountersPercent(Range):
     """
-    Percent of the merchants and events your heroes can meet that get their own lock item (0 = off). A locked
-    merchant can still be visited, but anything you buy there counts as a locked card. Going into any other locked
-    event blocks checks for the rest of the run, unless you press Use Bypass. Level-up rewards and monsters are never
-    locked. If every event offered is locked, the least rare one is let through.
+    How many of the merchants and events you can run into are locked behind an item.
+
+    You can still visit a locked merchant, but anything you buy there counts as a locked card. Going into any other
+    locked event blocks your checks for the rest of the run, unless you use a Lock Bypass on it.
+
+    Level-up rewards and monsters are never locked. If every event you're offered is locked, the least rare one is
+    let through. Set to 0 to turn this off.
     """
     display_name = "Locked Merchants and Events Percent"
     range_start = 0
@@ -171,7 +187,11 @@ class LockedEncountersPercent(Range):
 
 
 class StarterMerchants(Range):
-    """Merchants your heroes can meet that are never locked, so there's always somewhere to shop."""
+    """
+    How many merchants are never locked.
+
+    This makes sure there's always somewhere to shop.
+    """
     display_name = "Starter Merchants"
     range_start = 0
     range_end = 20
@@ -180,10 +200,11 @@ class StarterMerchants(Range):
 
 class EventRarityProgression(Range):
     """
-    Copies of "Event Rarity Progression" in the multiworld (0 = off). Until you find the first, Diamond merchants
-    and events are locked; the second unlocks Legendary ones. Any copy past those two counts as a Lock Bypass.
-    Logic expects the first before PvP wins from day 8, and the second from day 14.
-    Monsters and level-up rewards are never affected.
+    Number of Event Rarity Progression items in the item pool.
+
+    Diamond merchants and events are locked until you find the first one, and the second one unlocks Legendary ones.
+    Any extra copies count as Lock Bypasses. Logic expects the first one before PvP wins from day 8, and the second
+    from day 14. Monsters and level-up rewards are never affected. Set to 0 to turn this off.
     """
     display_name = "Event Rarity Progression"
     range_start = 0
@@ -192,31 +213,41 @@ class EventRarityProgression(Range):
 
 
 class ExemptExpeditions(DefaultOnToggle):
-    """Expeditions (Crash Site, Temple) and every event inside them are never locked by Event Rarity Progression.
-    The tickets themselves still need the Expedition Tickets unlock."""
+    """
+    Keeps the Crash Site and Temple expeditions unlocked by Event Rarity Progression.
+
+    The tickets still need the Expedition Tickets unlock.
+    """
     display_name = "Exempt Expeditions"
 
 
 class DuplicateAllCards(Toggle):
     """
-    Casual mode: the same number of checks, but only about half as many locked cards. Every locked card gets a
-    second copy in the multiworld (either copy unlocks it), and every spare check holds such a pair (Locked Cards
-    Percent doesn't apply) - fewer cards to avoid, and each one turns up sooner.
+    Gives every locked card a second copy, for a more casual game.
+
+    Either copy unlocks the card, so you deal with about half as many locked cards over the same number of checks.
+    Locked Cards Percent does nothing while this is enabled.
     """
     display_name = "Duplicate All Cards (casual)"
 
 
 class DuplicateCards(ItemSet):
-    """Cards that get a second copy if they're locked (either copy unlocks the card), e.g. ["Cutlass"]."""
+    """
+    Cards that get a second copy in the item pool if they're locked.
+
+    Either copy unlocks the card.
+    """
     display_name = "Duplicate Cards"
     valid_keys = frozenset(c.name for c in CARDS if not c.ticket)
 
 
 class SellTraps(Range):
     """
-    Number of Sell Traps in the multiworld (0 = off). When you receive one, the client picks a random item you're
-    holding; sell it before the start of the day given by sell_trap_days or checks are blocked until you do.
-    A trap never blocks the fight you're in. Each trap takes the place of one locked card.
+    Number of Sell Traps in the item pool.
+
+    When you receive one, the client picks a random item you're holding. Sell it before the deadline from Sell Trap
+    Days, or your checks are blocked until you do. A trap never blocks the fight you're in, and each one replaces a
+    locked card in the pool. Set to 0 to turn them off.
     """
     display_name = "Sell Traps"
     range_start = 0
@@ -225,7 +256,11 @@ class SellTraps(Range):
 
 
 class SellTrapDays(Range):
-    """Days you get to sell a Sell Trap's item: received on day 3 with 2 days means sell it before day 5 starts."""
+    """
+    How many days you get to sell a Sell Trap's item.
+
+    For example, getting one on day 3 with 2 days means you have to sell it before day 5 starts.
+    """
     display_name = "Sell Trap Days"
     range_start = 1
     range_end = 5
@@ -234,10 +269,11 @@ class SellTrapDays(Range):
 
 class LockBypasses(Range):
     """
-    Number of Lock Bypasses in the multiworld (0 = off). A buff: when you're holding a locked card, press Use
-    Bypass next to it in the client's alert box; that card is allowed for the rest of the run, including more
-    copies of it (upgrades). A bypass is never used by itself. Unused ones carry over to later runs. Each takes the
-    place of one locked card.
+    Number of Lock Bypasses in the item pool.
+
+    When you're holding a locked card, press Use Bypass next to it in the client to keep it for the rest of the run,
+    upgrades and extra copies included. Bypasses are never used automatically, and unused ones carry over to later
+    runs. Each one replaces a locked card in the pool. Set to 0 to turn them off.
     """
     display_name = "Lock Bypasses"
     range_start = 0
@@ -247,10 +283,11 @@ class LockBypasses(Range):
 
 class LogicDay10Cards(Range):
     """
-    Logic: how many of a hero's own locked cards should be unlocked before reaching day 10 is expected. Later days
-    climb from here to Logic: Cards Before The Last Day. Days 8-9 expect half as many. Days 1-7 only need the hero
-    (every run reaches day 7).
-    This only decides where other players' items can be placed; you can always try anything.
+    How many of a hero's locked cards logic expects you to have before day 10.
+
+    Days 8 and 9 expect half as many, and days 1 to 7 only need the hero, since every run makes it to day 7. Later
+    days climb from here up to Logic: Cards Before The Last Day. This only affects where items get placed, you can
+    always try anything.
     """
     display_name = "Logic: Cards Before Day 10"
     range_start = 0
@@ -260,10 +297,10 @@ class LogicDay10Cards(Range):
 
 class LogicLastDayCards(Range):
     """
-    Logic: how many of a hero's own locked cards should be unlocked before the last day (max_day) and the 10-win
-    check. From day 10 the expected amount climbs evenly from Logic: Cards Before Day 10 up to this, so later days
-    expect more cards. With a max_day of 10 or less there's nothing to climb: 10 wins expects the day-10 amount.
-    This only decides where other players' items can be placed; you can always try anything.
+    How many of a hero's locked cards logic expects you to have before the last day and the 10-win check.
+
+    From day 10 on, the amount climbs evenly from Logic: Cards Before Day 10 up to this number. If your last day is 10
+    or lower, the day 10 amount is used. This only affects where items get placed, you can always try anything.
     """
     display_name = "Logic: Cards Before The Last Day"
     range_start = 0
@@ -272,7 +309,9 @@ class LogicLastDayCards(Range):
 
 
 class LogicDiamondCards(Range):
-    """Logic: how many of a hero's own locked cards are expected before beating a Diamond monster."""
+    """
+    How many of a hero's locked cards logic expects you to have before beating a Diamond monster.
+    """
     display_name = "Logic: Cards Before Diamond Monsters"
     range_start = 0
     range_end = 30  # lowered for a seed with too few checks that need no cards (see BazaarWorld.fit_logic)
@@ -280,7 +319,9 @@ class LogicDiamondCards(Range):
 
 
 class LogicLegendaryCards(Range):
-    """Logic: how many of a hero's own locked cards are expected before beating a Legendary monster."""
+    """
+    How many of a hero's locked cards logic expects you to have before beating a Legendary monster.
+    """
     display_name = "Logic: Cards Before Legendary Monsters"
     range_start = 0
     range_end = 30  # lowered for a seed with too few checks that need no cards (see BazaarWorld.fit_logic)
@@ -288,31 +329,38 @@ class LogicLegendaryCards(Range):
 
 
 class LockCommonCards(DefaultOnToggle):
-    """Allow neutral cards (the Common pool, usable by every hero) to be locked."""
+    """
+    Lets Common cards be locked too.
+
+    Common cards are the neutral ones every hero can use.
+    """
     display_name = "Lock Common Cards"
 
 
 class LockLootItems(Toggle):
     """
-    Allow Loot items (Med Kit, Reroll Token, Skill Voucher, Upgrade Hammer, Scrap, ...) to be locked.
-    These are meant to be used or sold for their effect, so they're left out by default.
+    Lets Loot items be locked too.
+
+    Loot items are things like Med Kit, Reroll Token, Skill Voucher, Upgrade Hammer and Scrap. They're meant to be
+    used or sold, so they're left out by default.
     """
     display_name = "Lock Loot Items"
 
 
 class CreatedItems(Choice):
     """
-    What happens when the game makes a card for you instead of you picking it: a card spawned by another card (selling
-    Temporary Shelter gives you 2 Scrap) or a card transformed into another (a Reagent at Alembic, Catalyst, Wink,
-    Mandala, Assembly Line at a fight's end, ...). Transforms the fight itself undoes never count. Everything The Cult
-    gives you is always free.
-    Allowed: every created card is yours to keep, locked or not.
-    Special Cases: only cards that are meant to be made are free: the first transform of one of Mak's Reagents,
-    everything Wink and The Cult give you, items that always spawn the same card (Temporary Shelter's Scrap,
-    Chum's Piranha, ...) and Soda and Vending Machine drinks. Every other created card follows Locked - a Mandala or
-    Assembly Line transform included, unless it turns one of Mak's Reagents.
-    Locked: a created card that is still locked blocks your checks until you sell it, transform it again, or use a
-    Lock Bypass on it.
+    Decides if cards the game makes for you count as locked.
+
+    This covers cards spawned by other cards, like the Scrap you get from selling Temporary Shelter, and cards
+    transformed outside of a fight, like at Mandala or by selling Catalyst. Anything The Cult gives you is always
+    allowed.
+
+    - **Allowed:** Every created card is yours to keep, even if it's locked.
+    - **Special Cases:** Only cards that are meant to be made are allowed. That's the first transform of Mak's
+      Reagents, anything from Wink, Soda and Vending Machine drinks, and items that always spawn the same card (like
+      Temporary Shelter's Scrap). Everything else is treated like Locked.
+    - **Locked:** A created card that's still locked blocks your checks until you sell it, transform it again or use
+      a Lock Bypass on it.
     """
     display_name = "Created Items"
     option_allowed = 0
@@ -323,33 +371,42 @@ class CreatedItems(Choice):
 
 class LegacyCardPacks(Toggle):
     """
-    Lock the original hero expansion packs (e.g. Mysteries of the Deep, Dooltron, Pigglestorm) as single items.
-    Receiving a pack unlocks all 10 of its cards at once. Only applies to heroes you have available.
-    Pack cards are never picked as individual locks. Untick any pack below to leave it out.
-    Recommended: also turn on Duplicate All Cards (casual). Each pack locks 10 cards with a single check, so packs lock
-    far more cards in total (a Standard seed with the base heroes: about 200 without packs, 275 with all of them;
-    with Duplicate All Cards too, about 190).
+    Locks the original hero expansion packs as single items.
+
+    Receiving a pack unlocks all 10 of its cards at once, like Mysteries of the Deep, Dooltron or Pigglestorm. Only
+    packs for your included heroes are used, and you can leave out any pack with its switch below.
+
+    Packs lock a lot more cards overall, so Duplicate All Cards is recommended with this. A Standard seed with the
+    base heroes has about 200 locked cards without packs, 275 with all of them, and 190 with Duplicate All Cards too.
     """
     display_name = "Legacy Card Packs"
 
 
 class BazaarDeathLink(DeathLink):
     """
-    When you lose a run (your last PvP fight takes the last of your prestige), everyone else with DeathLink dies.
-    Conceding a run doesn't send one unless death_link_on_concede is on.
-    When someone else dies, you must concede your current run.
-    The client can't do this for you: automating game input is against Tempo's modding policy.
+    When you lose a run, everyone else with DeathLink dies, and when they die, you have to concede your run.
+
+    A run is lost when your last PvP fight takes the rest of your prestige. Conceding doesn't send a DeathLink unless
+    DeathLink On Concede is enabled. The client can't concede for you, since automating game input is against Tempo's
+    modding policy.
     """
 
 
 class DeathLinkOnConcede(Toggle):
-    """Conceding a run also sends a DeathLink. Conceding because you received a DeathLink never does.
-    Off by default."""
+    """
+    Conceding a run also sends a DeathLink.
+
+    Conceding because you received a DeathLink never sends one.
+    """
     display_name = "DeathLink On Concede"
 
 
 class DeathLinkAmnesty(Range):
-    """Number of DeathLink triggers that are forgiven before one is sent (0 = every trigger sends one)."""
+    """
+    How many of your DeathLinks are forgiven before one is actually sent.
+
+    Set to 0 to send every one.
+    """
     display_name = "DeathLink Amnesty"
     range_start = 0
     range_end = 10
@@ -357,10 +414,12 @@ class DeathLinkAmnesty(Range):
 
 
 class DeathLinksBeforeConcede(Range):
-    """Number of DeathLinks you must receive before you have to concede a run (1 = every one does).
-    They must all arrive in the same run unless death_links_same_run is off (then they add up across runs). The count
-    starts over once one makes you concede.
-    A DeathLink that arrives while you're not in a run (a dodge) doesn't count."""
+    """
+    How many DeathLinks you need to receive before you have to concede a run.
+
+    Set to 1 to concede on every one. The count starts over after you concede, and DeathLinks that arrive while you're
+    not in a run don't count. See DeathLinks In The Same Run for whether they have to arrive in one run.
+    """
     display_name = "DeathLinks Before Concede"
     range_start = 1
     range_end = 10
@@ -368,8 +427,11 @@ class DeathLinksBeforeConcede(Range):
 
 
 class DeathLinksSameRun(DefaultOnToggle):
-    """The DeathLinks counted by death_links_before_concede must all arrive during the same run: the count starts
-    over with every new run. On by default; off, they add up across runs."""
+    """
+    The DeathLinks for DeathLinks Before Concede have to arrive during the same run.
+
+    The count starts over every new run. If disabled, they add up across runs.
+    """
     display_name = "DeathLinks In The Same Run"
 
 
@@ -454,3 +516,24 @@ option_groups = [
     OptionGroup("DeathLink", [BazaarDeathLink, DeathLinkOnConcede, DeathLinkAmnesty,
                                    DeathLinksBeforeConcede, DeathLinksSameRun]),
 ]
+
+
+def _flow(doc: str) -> str:
+    """One line per paragraph and per list item. The Launcher's Options Creator shows every line break in a tooltip,
+    so the source's wrapping would break sentences in half there (the website joins them by itself)."""
+    paragraphs, lines = [], []
+    for line in [line.strip() for line in doc.strip().splitlines()] + [""]:
+        if not line or line.startswith("- "):
+            if lines:
+                paragraphs.append(" ".join(lines))
+            lines = [line] if line else []
+            if not line:
+                paragraphs.append("")
+        else:
+            lines.append(line)
+    return "\n".join(paragraphs).strip().replace("\n\n\n", "\n\n")
+
+
+for _option in list(globals().values()):
+    if isinstance(_option, type) and issubclass(_option, Option) and _option.__module__ == __name__ and _option.__doc__:
+        _option.__doc__ = _flow(_option.__doc__)
