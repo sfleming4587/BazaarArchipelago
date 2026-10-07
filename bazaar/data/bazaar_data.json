@@ -1,5 +1,5 @@
 {
- "game_version": "1.0.12293",
+ "game_version": "1.0.12650",
  "heroes": [
   "Vanessa",
   "Pygmalien",
@@ -1328,7 +1328,7 @@
    "ap_id": 1035,
    "name": "Atlas Stone",
    "hero": "Pygmalien",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Medium",
    "tags": [
     "Relic",
@@ -1354,7 +1354,6 @@
     "Turbo"
    ],
    "tiers": [
-    "Bronze",
     "Diamond",
     "Gold",
     "Silver"
@@ -1720,7 +1719,9 @@
     "Tech"
    ],
    "hidden_tags": [
-    "Shield"
+    "EconomyReference",
+    "Shield",
+    "Value"
    ],
    "enchants": [
     "Deadly",
@@ -1900,7 +1901,7 @@
    "ap_id": 1050,
    "name": "Balloon Bot",
    "hero": "Dooley",
-   "tier": "Silver",
+   "tier": "Bronze",
    "size": "Medium",
    "tags": [
     "Friend"
@@ -1926,6 +1927,7 @@
     "Turbo"
    ],
    "tiers": [
+    "Bronze",
     "Diamond",
     "Gold",
     "Silver"
@@ -2314,6 +2316,7 @@
    "hidden_tags": [
     "CritReference",
     "Damage",
+    "Lifesteal",
     "PoisonReference"
    ],
    "enchants": [
@@ -3076,7 +3079,8 @@
     "Weapon"
    ],
    "hidden_tags": [
-    "Damage"
+    "Damage",
+    "Lifesteal"
    ],
    "enchants": [
     "Deadly",
@@ -5834,7 +5838,7 @@
    "ap_id": 1154,
    "name": "Caracal",
    "hero": "Karnok",
-   "tier": "Silver",
+   "tier": "Bronze",
    "size": "Small",
    "tags": [
     "Friend",
@@ -5861,6 +5865,7 @@
     "Turbo"
    ],
    "tiers": [
+    "Bronze",
     "Diamond",
     "Gold",
     "Silver"
@@ -9101,6 +9106,7 @@
    ],
    "hidden_tags": [
     "Damage",
+    "Lifesteal",
     "Quest"
    ],
    "enchants": [
@@ -9138,7 +9144,8 @@
    ],
    "hidden_tags": [
     "Damage",
-    "DamageReference"
+    "DamageReference",
+    "Lifesteal"
    ],
    "enchants": [
     "Deadly",
@@ -9704,8 +9711,9 @@
     "Tool"
    ],
    "hidden_tags": [
+    "DamageReference",
     "EconomyReference",
-    "Shield",
+    "ShieldReference",
     "Value"
    ],
    "enchants": [
@@ -10509,8 +10517,7 @@
     "Vehicle"
    ],
    "hidden_tags": [
-    "Burn",
-    "Cooldown"
+    "Burn"
    ],
    "enchants": [
     "Deadly",
@@ -11639,6 +11646,7 @@
    "hidden_tags": [
     "Charge",
     "FreezeReference",
+    "Heal",
     "SlowReference"
    ],
    "enchants": [
@@ -13257,18 +13265,19 @@
    "tags": [
     "Food"
    ],
-   "hidden_tags": [
-    "Quest"
-   ],
+   "hidden_tags": [],
    "enchants": [
     "Deadly",
     "Fiery",
+    "Golden",
     "Heavy",
     "Icy",
     "Mossy",
     "Obsidian",
+    "Radiant",
     "Restorative",
     "Shielded",
+    "Shiny",
     "Toxic",
     "Turbo"
    ],
@@ -14111,7 +14120,7 @@
    "ap_id": 1374,
    "name": "Geyser",
    "hero": "Karnok",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Medium",
    "tags": [
     "Property"
@@ -14119,6 +14128,8 @@
    "hidden_tags": [
     "Burn",
     "BurnReference",
+    "HealReference",
+    "HealthReference",
     "RageReference"
    ],
    "enchants": [
@@ -14138,8 +14149,7 @@
    ],
    "tiers": [
     "Diamond",
-    "Gold",
-    "Silver"
+    "Gold"
    ],
    "shop": true,
    "ticket": false
@@ -15132,7 +15142,9 @@
    "hero": "Stelle",
    "tier": "Bronze",
    "size": "Small",
-   "tags": [],
+   "tags": [
+    "Tech"
+   ],
    "hidden_tags": [
     "DamageReference",
     "FlyingReference"
@@ -15391,7 +15403,7 @@
    "ap_id": 1408,
    "name": "Hands of Time",
    "hero": "Common",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Medium",
    "tags": [
     "Relic",
@@ -15417,8 +15429,7 @@
    ],
    "tiers": [
     "Diamond",
-    "Gold",
-    "Silver"
+    "Gold"
    ],
    "shop": true,
    "ticket": false
@@ -15512,7 +15523,6 @@
    ],
    "hidden_tags": [
     "Ammo",
-    "CritReference",
     "Damage",
     "HasteReference"
    ],
@@ -15893,7 +15903,7 @@
    "ap_id": 1421,
    "name": "Hidden Lake",
    "hero": "Karnok",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Large",
    "tags": [
     "Aquatic",
@@ -15921,8 +15931,7 @@
    ],
    "tiers": [
     "Diamond",
-    "Gold",
-    "Silver"
+    "Gold"
    ],
    "shop": true,
    "ticket": false
@@ -18272,7 +18281,7 @@
    "ap_id": 1484,
    "name": "Jambalaya",
    "hero": "Jules",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Medium",
    "tags": [
     "Food"
@@ -18298,7 +18307,6 @@
     "Turbo"
    ],
    "tiers": [
-    "Bronze",
     "Diamond",
     "Gold",
     "Silver"
@@ -19745,6 +19753,8 @@
     "Apparel"
    ],
    "hidden_tags": [
+    "Crit",
+    "Haste",
     "RageReference"
    ],
    "enchants": [
@@ -19818,6 +19828,7 @@
    "hidden_tags": [
     "Damage",
     "DamageReference",
+    "Lifesteal",
     "PoisonReference"
    ],
    "enchants": [
@@ -19848,7 +19859,7 @@
    "ap_id": 1526,
    "name": "Lemonade Stand",
    "hero": "Pygmalien",
-   "tier": "Silver",
+   "tier": "Bronze",
    "size": "Large",
    "tags": [
     "Food",
@@ -19875,6 +19886,7 @@
     "Turbo"
    ],
    "tiers": [
+    "Bronze",
     "Diamond",
     "Gold",
     "Silver"
@@ -20003,7 +20015,7 @@
    "ap_id": 1530,
    "name": "Library",
    "hero": "Mak",
-   "tier": "Diamond",
+   "tier": "Gold",
    "size": "Large",
    "tags": [
     "Property"
@@ -20027,7 +20039,8 @@
     "Turbo"
    ],
    "tiers": [
-    "Diamond"
+    "Diamond",
+    "Gold"
    ],
    "shop": true,
    "ticket": false
@@ -20037,15 +20050,14 @@
    "ap_id": 1531,
    "name": "Lichen",
    "hero": "Karnok",
-   "tier": "Silver",
+   "tier": "Bronze",
    "size": "Small",
    "tags": [
     "Food"
    ],
    "hidden_tags": [
     "BurnReference",
-    "PoisonReference",
-    "RageReference"
+    "PoisonReference"
    ],
    "enchants": [
     "Deadly",
@@ -20063,6 +20075,7 @@
     "Turbo"
    ],
    "tiers": [
+    "Bronze",
     "Diamond",
     "Gold",
     "Silver"
@@ -20385,6 +20398,7 @@
    "tier": "Gold",
    "size": "Large",
    "tags": [
+    "Property",
     "Weapon"
    ],
    "hidden_tags": [
@@ -20781,7 +20795,7 @@
    "ap_id": 1551,
    "name": "Luxury Kiuas",
    "hero": "Pygmalien",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Medium",
    "tags": [
     "Tool"
@@ -20807,7 +20821,6 @@
     "Turbo"
    ],
    "tiers": [
-    "Bronze",
     "Diamond",
     "Gold",
     "Silver"
@@ -21016,6 +21029,7 @@
    "hidden_tags": [
     "Damage",
     "DamageReference",
+    "RegenReference",
     "SlowReference"
    ],
    "enchants": [
@@ -24083,13 +24097,15 @@
    "ap_id": 1639,
    "name": "Pantry",
    "hero": "Jules",
-   "tier": "Diamond",
+   "tier": "Silver",
    "size": "Large",
    "tags": [
     "Property"
    ],
    "hidden_tags": [
-    "Charge"
+    "BurnReference",
+    "RegenReference",
+    "ShieldReference"
    ],
    "enchants": [
     "Deadly",
@@ -24107,7 +24123,9 @@
     "Turbo"
    ],
    "tiers": [
-    "Diamond"
+    "Diamond",
+    "Gold",
+    "Silver"
    ],
    "shop": true,
    "ticket": false
@@ -24159,7 +24177,7 @@
    "tier": "Diamond",
    "size": "Medium",
    "tags": [
-    "Vehicle"
+    "Tool"
    ],
    "hidden_tags": [
     "FlyingReference"
@@ -24418,7 +24436,7 @@
    "ap_id": 1648,
    "name": "Peacewrought",
    "hero": "Mak",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Medium",
    "tags": [
     "Relic"
@@ -24444,7 +24462,6 @@
     "Turbo"
    ],
    "tiers": [
-    "Bronze",
     "Diamond",
     "Gold",
     "Silver"
@@ -24494,7 +24511,7 @@
    "ap_id": 1650,
    "name": "Pendulum",
    "hero": "Mak",
-   "tier": "Gold",
+   "tier": "Diamond",
    "size": "Medium",
    "tags": [
     "Relic",
@@ -24519,8 +24536,7 @@
     "Turbo"
    ],
    "tiers": [
-    "Diamond",
-    "Gold"
+    "Diamond"
    ],
    "shop": true,
    "ticket": false
@@ -25431,6 +25447,7 @@
    ],
    "hidden_tags": [
     "Damage",
+    "Lifesteal",
     "PoisonReference"
    ],
    "enchants": [
@@ -25575,11 +25592,10 @@
    "ap_id": 1679,
    "name": "Pogo Stick",
    "hero": "Stelle",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Medium",
    "tags": [
-    "Toy",
-    "Vehicle"
+    "Toy"
    ],
    "hidden_tags": [
     "Charge",
@@ -25604,8 +25620,7 @@
    ],
    "tiers": [
     "Diamond",
-    "Gold",
-    "Silver"
+    "Gold"
    ],
    "shop": true,
    "ticket": false
@@ -26501,11 +26516,9 @@
    "size": "Medium",
    "tags": [
     "Apparel",
-    "Tech",
-    "Weapon"
+    "Tech"
    ],
    "hidden_tags": [
-    "Damage",
     "Flying",
     "FlyingReference",
     "Haste"
@@ -28645,7 +28658,8 @@
    ],
    "hidden_tags": [
     "Damage",
-    "DamageReference"
+    "DamageReference",
+    "Lifesteal"
    ],
    "enchants": [
     "Deadly",
@@ -28683,8 +28697,7 @@
     "Relic"
    ],
    "hidden_tags": [
-    "DamageReference",
-    "RageReference"
+    "DamageReference"
    ],
    "enchants": [
     "Deadly",
@@ -28763,7 +28776,8 @@
    "hidden_tags": [
     "CritReference",
     "Damage",
-    "DamageReference"
+    "DamageReference",
+    "Lifesteal"
    ],
    "enchants": [
     "Deadly",
@@ -28838,7 +28852,8 @@
    ],
    "hidden_tags": [
     "CritReference",
-    "Damage"
+    "Damage",
+    "Lifesteal"
    ],
    "enchants": [
     "Deadly",
@@ -28876,7 +28891,8 @@
    "hidden_tags": [
     "CritReference",
     "Damage",
-    "DamageReference"
+    "DamageReference",
+    "Lifesteal"
    ],
    "enchants": [
     "Deadly",
@@ -28915,7 +28931,8 @@
    "hidden_tags": [
     "Crit",
     "CritReference",
-    "Damage"
+    "Damage",
+    "Lifesteal"
    ],
    "enchants": [
     "Deadly",
@@ -29536,7 +29553,7 @@
    "ap_id": 1784,
    "name": "Schematics",
    "hero": "Dooley",
-   "tier": "Silver",
+   "tier": "Bronze",
    "size": "Medium",
    "tags": [],
    "hidden_tags": [
@@ -29559,6 +29576,7 @@
     "Turbo"
    ],
    "tiers": [
+    "Bronze",
     "Diamond",
     "Gold",
     "Silver"
@@ -30226,7 +30244,8 @@
     "Weapon"
    ],
    "hidden_tags": [
-    "Damage"
+    "Damage",
+    "Lifesteal"
    ],
    "enchants": [
     "Deadly",
@@ -31680,7 +31699,7 @@
    "ap_id": 1841,
    "name": "Snow Wisp",
    "hero": "Karnok",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Small",
    "tags": [
     "Friend"
@@ -31707,8 +31726,7 @@
    ],
    "tiers": [
     "Diamond",
-    "Gold",
-    "Silver"
+    "Gold"
    ],
    "shop": true,
    "ticket": false
@@ -31718,7 +31736,7 @@
    "ap_id": 1842,
    "name": "Snowflake",
    "hero": "Common",
-   "tier": "Diamond",
+   "tier": "Silver",
    "size": "Small",
    "tags": [
     "Loot"
@@ -31740,7 +31758,9 @@
     "Turbo"
    ],
    "tiers": [
-    "Diamond"
+    "Diamond",
+    "Gold",
+    "Silver"
    ],
    "shop": true,
    "ticket": false
@@ -33256,7 +33276,7 @@
    "ap_id": 1883,
    "name": "Stellar Swallowtail",
    "hero": "Stelle",
-   "tier": "Gold",
+   "tier": "Silver",
    "size": "Large",
    "tags": [
     "Vehicle",
@@ -33286,7 +33306,8 @@
    ],
    "tiers": [
     "Diamond",
-    "Gold"
+    "Gold",
+    "Silver"
    ],
    "shop": true,
    "ticket": false
@@ -33340,6 +33361,7 @@
    ],
    "hidden_tags": [
     "Damage",
+    "Lifesteal",
     "Slow"
    ],
    "enchants": [
@@ -33833,18 +33855,14 @@
    "ap_id": 1898,
    "name": "Sunlight Spear",
    "hero": "Mak",
-   "tier": "Gold",
+   "tier": "Silver",
    "size": "Medium",
    "tags": [
-    "Relic",
-    "Weapon"
+    "Relic"
    ],
    "hidden_tags": [
     "Burn",
-    "BurnReference",
-    "Damage",
-    "DamageReference",
-    "Regen",
+    "Heal",
     "RegenReference"
    ],
    "enchants": [
@@ -33864,7 +33882,8 @@
    ],
    "tiers": [
     "Diamond",
-    "Gold"
+    "Gold",
+    "Silver"
    ],
    "shop": true,
    "ticket": false
@@ -33874,7 +33893,7 @@
    "ap_id": 1899,
    "name": "Suppressor",
    "hero": "Vanessa",
-   "tier": "Silver",
+   "tier": "Gold",
    "size": "Small",
    "tags": [
     "Tech"
@@ -33900,8 +33919,7 @@
    ],
    "tiers": [
     "Diamond",
-    "Gold",
-    "Silver"
+    "Gold"
    ],
    "shop": true,
    "ticket": false
@@ -34834,7 +34852,7 @@
    "ap_id": 1924,
    "name": "Thermal Lance",
    "hero": "Dooley",
-   "tier": "Gold",
+   "tier": "Bronze",
    "size": "Medium",
    "tags": [
     "Tool"
@@ -34860,8 +34878,10 @@
     "Turbo"
    ],
    "tiers": [
+    "Bronze",
     "Diamond",
-    "Gold"
+    "Gold",
+    "Silver"
    ],
    "shop": true,
    "ticket": false
@@ -35723,13 +35743,14 @@
    "ap_id": 1948,
    "name": "Trapvine",
    "hero": "Karnok",
-   "tier": "Diamond",
+   "tier": "Gold",
    "size": "Large",
    "tags": [
     "Friend",
     "Trap"
    ],
    "hidden_tags": [
+    "Charge",
     "Poison",
     "Slow",
     "SlowReference"
@@ -35750,7 +35771,8 @@
     "Turbo"
    ],
    "tiers": [
-    "Diamond"
+    "Diamond",
+    "Gold"
    ],
    "shop": true,
    "ticket": false
@@ -36073,7 +36095,8 @@
     "Aquatic"
    ],
    "hidden_tags": [
-    "Shield"
+    "Shield",
+    "ShieldReference"
    ],
    "enchants": [
     "Deadly",
@@ -36410,7 +36433,7 @@
    "ap_id": 1966,
    "name": "Vampire Squid",
    "hero": "Vanessa",
-   "tier": "Silver",
+   "tier": "Bronze",
    "size": "Small",
    "tags": [
     "Aquatic",
@@ -36420,7 +36443,7 @@
    "hidden_tags": [
     "CritReference",
     "Damage",
-    "DamageReference"
+    "Lifesteal"
    ],
    "enchants": [
     "Deadly",
@@ -36438,6 +36461,7 @@
     "Turbo"
    ],
    "tiers": [
+    "Bronze",
     "Diamond",
     "Gold",
     "Silver"
@@ -36529,9 +36553,7 @@
    "tags": [
     "Property"
    ],
-   "hidden_tags": [
-    "EconomyReference"
-   ],
+   "hidden_tags": [],
    "enchants": [
     "Deadly",
     "Fiery",
@@ -38532,13 +38554,13 @@
    "ap_id": 2022,
    "name": "Yarrow Paste",
    "hero": "Karnok",
-   "tier": "Bronze",
+   "tier": "Silver",
    "size": "Small",
    "tags": [],
    "hidden_tags": [
+    "BurnReference",
     "Heal",
-    "HealReference",
-    "RageReference"
+    "PoisonReference"
    ],
    "enchants": [
     "Deadly",
@@ -38556,7 +38578,6 @@
     "Turbo"
    ],
    "tiers": [
-    "Bronze",
     "Diamond",
     "Gold",
     "Silver"
@@ -39549,7 +39570,9 @@
    "hero": "Stelle",
    "tier": "Silver",
    "size": "Medium",
-   "tags": [],
+   "tags": [
+    "Tool"
+   ],
    "hidden_tags": [
     "Burn"
    ],
@@ -41415,7 +41438,6 @@
     "Friend"
    ],
    "hidden_tags": [
-    "Poison",
     "PoisonReference",
     "Shield",
     "ShieldReference"
@@ -42478,7 +42500,7 @@
    "guid": "b18ca39c-8aa4-40c1-a687-524380b64370",
    "ap_id": 2126,
    "name": "Sitting Duck",
-   "hero": "Vanessa",
+   "hero": "Common",
    "tier": "Legendary",
    "size": "Small",
    "tags": [
@@ -43097,6 +43119,7 @@
    "enchants": [
     "Deadly",
     "Fiery",
+    "Golden",
     "Heavy",
     "Icy",
     "Mossy",
@@ -43629,6 +43652,707 @@
    ],
    "shop": false,
    "ticket": true
+  },
+  {
+   "guid": "17a4e1db-dd45-4ed2-b0c5-31200dfb0db9",
+   "ap_id": 2157,
+   "name": "Aged Cask",
+   "hero": "Common",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Food",
+    "Tool"
+   ],
+   "hidden_tags": [
+    "Heal",
+    "SlowReference"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond",
+    "Gold",
+    "Silver"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "85a8c6f1-b74e-49f3-817b-680112b69ac0",
+   "ap_id": 2158,
+   "name": "Assembly Line",
+   "hero": "Dooley",
+   "tier": "Silver",
+   "size": "Large",
+   "tags": [
+    "Tech",
+    "Tool"
+   ],
+   "hidden_tags": [
+    "EconomyReference"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond",
+    "Gold",
+    "Silver"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "ec7a81eb-529c-416c-921a-609b44eda2de",
+   "ap_id": 2159,
+   "name": "Cauterizer",
+   "hero": "Stelle",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Tool",
+    "Vehicle"
+   ],
+   "hidden_tags": [
+    "Burn",
+    "BurnReference",
+    "DamageReference"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond",
+    "Gold",
+    "Silver"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "7d2322c3-0b07-4518-84d6-1def5bfb2262",
+   "ap_id": 2160,
+   "name": "Dragon Harp",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Large",
+   "tags": [
+    "Dragon",
+    "Instrument",
+    "Weapon"
+   ],
+   "hidden_tags": [
+    "Damage",
+    "DamageReference",
+    "Haste",
+    "HasteReference"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond",
+    "Gold",
+    "Silver"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "7f310e00-4379-4321-bc63-0fee747ca058",
+   "ap_id": 2161,
+   "name": "Dreampearl",
+   "hero": "Common",
+   "tier": "Diamond",
+   "size": "Small",
+   "tags": [
+    "Loot"
+   ],
+   "hidden_tags": [],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "ff228499-8019-4815-83c6-d227266a9517",
+   "ap_id": 2162,
+   "name": "Fire Fly Trap",
+   "hero": "Jules",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Trap"
+   ],
+   "hidden_tags": [
+    "Burn",
+    "BurnReference",
+    "HeatedReference"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Bronze",
+    "Diamond",
+    "Gold",
+    "Silver"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "832dc1c4-3418-4690-8e87-7303ea6f1a0f",
+   "ap_id": 2163,
+   "name": "Flamespitter Frog",
+   "hero": "Karnok",
+   "tier": "Gold",
+   "size": "Small",
+   "tags": [
+    "Friend"
+   ],
+   "hidden_tags": [
+    "Burn",
+    "Poison"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond",
+    "Gold"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "5f1ce53c-dde7-4390-b50d-5cf634eca6eb",
+   "ap_id": 2164,
+   "name": "Flaming Gelato",
+   "hero": "Jules",
+   "tier": "Bronze",
+   "size": "Small",
+   "tags": [
+    "Food"
+   ],
+   "hidden_tags": [
+    "Burn",
+    "ChilledReference",
+    "Freeze"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Bronze",
+    "Diamond",
+    "Gold",
+    "Silver"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "d3e0728d-dfc9-49e3-bdfd-abb16cb9e176",
+   "ap_id": 2165,
+   "name": "Games Table",
+   "hero": "Pygmalien",
+   "tier": "Gold",
+   "size": "Medium",
+   "tags": [
+    "Relic",
+    "Toy"
+   ],
+   "hidden_tags": [
+    "Charge"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond",
+    "Gold"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "1d08f925-897f-41f8-a672-466ad044920b",
+   "ap_id": 2166,
+   "name": "Hydra Tree",
+   "hero": "Karnok",
+   "tier": "Diamond",
+   "size": "Medium",
+   "tags": [
+    "Friend",
+    "Property"
+   ],
+   "hidden_tags": [
+    "RageReference"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "3315000c-3499-485a-85ac-70a17e3fc0bd",
+   "ap_id": 2167,
+   "name": "Ignitar",
+   "hero": "The Dragons",
+   "tier": "Bronze",
+   "size": "Medium",
+   "tags": [
+    "Instrument"
+   ],
+   "hidden_tags": [
+    "Burn",
+    "TempoReference"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Bronze",
+    "Diamond",
+    "Gold",
+    "Silver"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "cf3b77df-37f4-48f0-829e-178f2a677ca2",
+   "ap_id": 2168,
+   "name": "Lightning Focuser",
+   "hero": "Stelle",
+   "tier": "Gold",
+   "size": "Medium",
+   "tags": [
+    "Tech",
+    "Vehicle",
+    "Weapon"
+   ],
+   "hidden_tags": [
+    "Charge",
+    "Damage",
+    "DamageReference",
+    "SlowReference"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond",
+    "Gold"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "894657f8-ab1e-4acf-b52e-538559f00d37",
+   "ap_id": 2169,
+   "name": "Mecha Dragon",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Large",
+   "tags": [
+    "Dragon",
+    "Tech",
+    "Vehicle"
+   ],
+   "hidden_tags": [
+    "Flying"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond",
+    "Gold",
+    "Silver"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "78eb19fd-4da4-45d5-b4cb-d669b50b6ed6",
+   "ap_id": 2170,
+   "name": "Mystery Flavor",
+   "hero": "Common",
+   "tier": "Diamond",
+   "size": "Small",
+   "tags": [
+    "Food"
+   ],
+   "hidden_tags": [],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Restorative",
+    "Shielded",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "16005305-bce3-4cae-8c90-8b6560def112",
+   "ap_id": 2171,
+   "name": "Soda Machine",
+   "hero": "Common",
+   "tier": "Bronze",
+   "size": "Medium",
+   "tags": [
+    "Property"
+   ],
+   "hidden_tags": [],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Restorative",
+    "Shielded",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Bronze",
+    "Diamond",
+    "Gold",
+    "Silver"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "c2de4832-2ac1-4496-8d30-683096dcd7c3",
+   "ap_id": 2172,
+   "name": "Spiked Jacket",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Apparel",
+    "Weapon"
+   ],
+   "hidden_tags": [
+    "Damage",
+    "Shield",
+    "ShieldReference"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond",
+    "Gold",
+    "Silver"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "b242a1b0-78ac-4513-ace4-5acf3e42cb11",
+   "ap_id": 2173,
+   "name": "Sunlight Vault",
+   "hero": "Mak",
+   "tier": "Gold",
+   "size": "Medium",
+   "tags": [
+    "Property",
+    "Relic"
+   ],
+   "hidden_tags": [
+    "BurnReference",
+    "RegenReference"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond",
+    "Gold"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "d54ad2ca-c2bc-496d-9c59-852a1a831ec5",
+   "ap_id": 2174,
+   "name": "Treasure Map",
+   "hero": "Vanessa",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Relic",
+    "Tool"
+   ],
+   "hidden_tags": [
+    "Quest"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond",
+    "Gold",
+    "Silver"
+   ],
+   "shop": true,
+   "ticket": false
+  },
+  {
+   "guid": "5f205c02-6bd9-4f9e-8a53-9281e0f91c52",
+   "ap_id": 2175,
+   "name": "Violin Bow",
+   "hero": "The Dragons",
+   "tier": "Silver",
+   "size": "Medium",
+   "tags": [
+    "Instrument",
+    "Weapon"
+   ],
+   "hidden_tags": [
+    "Damage",
+    "HasteReference"
+   ],
+   "enchants": [
+    "Deadly",
+    "Fiery",
+    "Golden",
+    "Heavy",
+    "Icy",
+    "Mossy",
+    "Obsidian",
+    "Radiant",
+    "Restorative",
+    "Shielded",
+    "Shiny",
+    "Toxic",
+    "Turbo"
+   ],
+   "tiers": [
+    "Diamond",
+    "Gold",
+    "Silver"
+   ],
+   "shop": true,
+   "ticket": false
   }
  ],
  "packs": [
@@ -46736,6 +47460,58 @@
    }
   },
   {
+   "guid": "a8c54f28-4d97-49fc-8186-0ab412d3577a",
+   "name": "Laurel",
+   "stock": {
+    "$type": "TSpawnContextQuery",
+    "Groups": [
+     {
+      "$type": "TSpawnGroup",
+      "Filters": [
+       {
+        "$type": "TSpawnFilterQuery",
+        "Constraints": {
+         "$type": "ConstraintAnd",
+         "Constraints": [
+          {
+           "$type": "ConstraintHiddenTag",
+           "HiddenTags": [
+            "HeatedReference",
+            "ChilledReference"
+           ],
+           "IsNot": false
+          },
+          {
+           "$type": "ConstraintCardType",
+           "Types": [
+            "Item"
+           ],
+           "IsNot": false
+          }
+         ]
+        }
+       }
+      ],
+      "SelectionMethod": "Random",
+      "Limit": null,
+      "Prerequisites": null,
+      "RandomWeight": 0,
+      "Behaviors": null
+     }
+    ],
+    "SelectionMethod": "Sequential",
+    "Limit": {
+     "$type": "TFixedValue",
+     "Value": 3.0
+    },
+    "Behaviors": [
+     {
+      "$type": "TSpawnBehaviorDownShiftTier"
+     }
+    ]
+   }
+  },
+  {
    "guid": "892de564-d894-4e07-ab21-959e16e8cdf8",
    "name": "Luxe",
    "stock": {
@@ -49670,8 +50446,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -49725,8 +50501,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -49780,8 +50556,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -49835,8 +50611,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -50274,6 +51050,46 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        }
       ]
+     },
+     {
+      "$type": "TSpawnGroup",
+      "Filters": [
+       {
+        "$type": "TSpawnFilterIdList",
+        "Ids": [
+         "f7fe75bb-e381-4325-a584-01a48929c49b"
+        ]
+       }
+      ],
+      "SelectionMethod": "Sequential",
+      "Limit": null,
+      "Prerequisites": [
+       {
+        "$type": "TPrerequisiteCardCount",
+        "Subject": {
+         "$type": "TTargetCardSection",
+         "TargetSection": "AbsolutePlayerHandAndStash",
+         "ExcludeSelf": false,
+         "Conditions": {
+          "$type": "TCardConditionalId",
+          "Id": "8c4b958a-ec6a-4743-bd77-b32010735925",
+          "IsNot": false
+         }
+        },
+        "Comparison": "GreaterThanOrEqual",
+        "Amount": 1
+       }
+      ],
+      "RandomWeight": 10,
+      "Behaviors": [
+       {
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
+       },
+       {
+        "$type": "TSpawnBehaviorIncludeCommonAndHero"
+       }
+      ]
      }
     ]
    }
@@ -50325,8 +51141,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -50380,8 +51196,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -50435,8 +51251,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -50490,8 +51306,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -50665,8 +51481,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -50720,8 +51536,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -50775,8 +51591,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -50859,8 +51675,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -51383,12 +52199,27 @@
            },
            {
             "$type": "TCardConditionalId",
+            "Id": "34e8e6c4-3e5e-4b40-9756-51751a30e2f3",
+            "IsNot": false
+           },
+           {
+            "$type": "TCardConditionalId",
             "Id": "6ae4a6dc-414e-4324-bba6-a6e4acf7103e",
             "IsNot": false
            },
            {
             "$type": "TCardConditionalId",
+            "Id": "5e23b55f-460f-4d40-b430-d59cbc659990",
+            "IsNot": false
+           },
+           {
+            "$type": "TCardConditionalId",
             "Id": "dbbc7e62-ea73-4739-8765-dc73541e99cf",
+            "IsNot": false
+           },
+           {
+            "$type": "TCardConditionalId",
+            "Id": "57b23894-073d-4387-9317-7c568d6b86b2",
             "IsNot": false
            }
           ]
@@ -53808,8 +54639,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -53870,8 +54701,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -53932,8 +54763,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -53994,8 +54825,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -54422,8 +55253,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -54477,8 +55308,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -54532,8 +55363,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -54587,8 +55418,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -54649,8 +55480,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -54711,8 +55542,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -54773,8 +55604,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -54835,8 +55666,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -54890,8 +55721,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -54945,8 +55776,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -55000,8 +55831,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -55055,8 +55886,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -55334,8 +56165,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -55403,8 +56234,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -55472,8 +56303,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -55541,8 +56372,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -56344,8 +57175,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -56413,8 +57244,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -56482,8 +57313,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -56551,8 +57382,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -56606,8 +57437,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -56661,8 +57492,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -56716,8 +57547,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -56771,8 +57602,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -56925,8 +57756,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -56980,8 +57811,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -57035,8 +57866,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -57090,8 +57921,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -57358,6 +58189,38 @@
       ],
       "RandomWeight": 1000,
       "Behaviors": []
+     },
+     {
+      "$type": "TSpawnGroup",
+      "Filters": [
+       {
+        "$type": "TSpawnFilterIdList",
+        "Ids": [
+         "fe024ecf-44c9-41b0-969c-cf47fe2d9093"
+        ]
+       }
+      ],
+      "SelectionMethod": "Sequential",
+      "Limit": null,
+      "Prerequisites": [
+       {
+        "$type": "TPrerequisiteCardCount",
+        "Subject": {
+         "$type": "TTargetCardSection",
+         "TargetSection": "AbsolutePlayerHandAndStash",
+         "ExcludeSelf": false,
+         "Conditions": {
+          "$type": "TCardConditionalId",
+          "Id": "43190b98-4f7f-4b2e-b92e-32b07b7fc2e1",
+          "IsNot": false
+         }
+        },
+        "Comparison": "GreaterThanOrEqual",
+        "Amount": 1
+       }
+      ],
+      "RandomWeight": 1000,
+      "Behaviors": []
      }
     ]
    }
@@ -57597,8 +58460,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -57652,8 +58515,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -57707,8 +58570,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -57762,8 +58625,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -57821,8 +58684,8 @@
         "IgnoreHero": true
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -57880,8 +58743,8 @@
         "IgnoreHero": true
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -57968,8 +58831,8 @@
         "IgnoreHero": true
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -58027,8 +58890,8 @@
         "IgnoreHero": true
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -60433,7 +61296,9 @@
         "$type": "TSpawnFilterIdList",
         "Ids": [
          "6ae4a6dc-414e-4324-bba6-a6e4acf7103e",
-         "21aff4c7-a0e9-4d9b-9ce1-0a5b95b2109c"
+         "21aff4c7-a0e9-4d9b-9ce1-0a5b95b2109c",
+         "5e23b55f-460f-4d40-b430-d59cbc659990",
+         "34e8e6c4-3e5e-4b40-9756-51751a30e2f3"
         ]
        }
       ],
@@ -60475,7 +61340,8 @@
        {
         "$type": "TSpawnFilterIdList",
         "Ids": [
-         "dbbc7e62-ea73-4739-8765-dc73541e99cf"
+         "dbbc7e62-ea73-4739-8765-dc73541e99cf",
+         "57b23894-073d-4387-9317-7c568d6b86b2"
         ]
        }
       ],
@@ -62368,8 +63234,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -62430,8 +63296,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -62492,8 +63358,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -62554,8 +63420,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -62616,8 +63482,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -62678,8 +63544,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -62740,8 +63606,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -62802,8 +63668,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -64000,8 +64866,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -64062,8 +64928,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -64124,8 +64990,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -64186,8 +65052,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -64515,8 +65381,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -64571,8 +65437,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -64627,8 +65493,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -64683,8 +65549,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -64745,8 +65611,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -64807,8 +65673,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -64869,8 +65735,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -64931,8 +65797,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -66510,7 +67376,9 @@
         "$type": "TSpawnFilterIdList",
         "Ids": [
          "6ae4a6dc-414e-4324-bba6-a6e4acf7103e",
-         "21aff4c7-a0e9-4d9b-9ce1-0a5b95b2109c"
+         "21aff4c7-a0e9-4d9b-9ce1-0a5b95b2109c",
+         "5e23b55f-460f-4d40-b430-d59cbc659990",
+         "34e8e6c4-3e5e-4b40-9756-51751a30e2f3"
         ]
        }
       ],
@@ -66534,7 +67402,8 @@
        {
         "$type": "TSpawnFilterIdList",
         "Ids": [
-         "dbbc7e62-ea73-4739-8765-dc73541e99cf"
+         "dbbc7e62-ea73-4739-8765-dc73541e99cf",
+         "57b23894-073d-4387-9317-7c568d6b86b2"
         ]
        }
       ],
@@ -69879,8 +70748,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -69941,8 +70810,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -70003,8 +70872,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -70065,8 +70934,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -70127,8 +70996,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -70189,8 +71058,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -70251,8 +71120,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -70313,8 +71182,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -75331,8 +76200,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -75401,8 +76270,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -75471,8 +76340,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -75541,8 +76410,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -76864,8 +77733,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -76919,8 +77788,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -77003,8 +77872,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -77058,8 +77927,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -78175,8 +79044,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -78237,8 +79106,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -78299,8 +79168,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -78390,8 +79259,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -78481,8 +79350,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -78543,8 +79412,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -78605,8 +79474,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -78667,8 +79536,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -79027,8 +79896,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -79074,8 +79943,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -79129,8 +79998,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -79176,8 +80045,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -79231,8 +80100,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -79278,8 +80147,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -79333,8 +80202,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -79380,8 +80249,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -79627,8 +80496,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -79682,8 +80551,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -79737,8 +80606,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -79792,8 +80661,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -79884,6 +80753,46 @@
       ],
       "RandomWeight": 2,
       "Behaviors": []
+     }
+    ]
+   }
+  },
+  {
+   "guid": "90e47f27-241c-4769-a6c6-a100d2a33421",
+   "name": "Rest",
+   "stock": {
+    "Groups": [
+     {
+      "$type": "TSpawnGroup",
+      "Filters": [
+       {
+        "$type": "TSpawnFilterIdList",
+        "Ids": [
+         "099cccf9-2372-4ebe-ac78-eee68f510979",
+         "4c8ea629-990e-4bdf-a7ef-a8520608e47b",
+         "411d0927-857b-468a-afa0-9d525a232922",
+         "199c5f39-cc7a-4ef1-ae55-b19d531e5e66",
+         "740c7183-d8aa-4bd5-b455-62c05309c60a",
+         "44ffc3d6-b696-4753-936b-6d590821de93",
+         "93857582-f36e-4833-82e3-c79d0fd19890",
+         "78eb19fd-4da4-45d5-b4cb-d669b50b6ed6"
+        ]
+       }
+      ],
+      "SelectionMethod": "Random",
+      "Limit": null,
+      "Prerequisites": null,
+      "RandomWeight": 0,
+      "Behaviors": [
+       {
+        "$type": "TSpawnBehaviorAllowDuplicates",
+        "AllowDuplicates": false
+       },
+       {
+        "$type": "TSpawnBehaviorAllowPlayerDuplicates",
+        "AllowPlayerDuplicates": true
+       }
+      ]
      }
     ]
    }
@@ -80421,8 +81330,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -80527,8 +81436,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -80582,8 +81491,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -80637,8 +81546,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -81511,6 +82420,38 @@
       ],
       "RandomWeight": 0,
       "Behaviors": []
+     },
+     {
+      "$type": "TSpawnGroup",
+      "Filters": [
+       {
+        "$type": "TSpawnFilterIdList",
+        "Ids": [
+         "d733a96a-be96-4379-943b-b0ce3a1e926f"
+        ]
+       }
+      ],
+      "SelectionMethod": "Sequential",
+      "Limit": null,
+      "Prerequisites": [
+       {
+        "$type": "TPrerequisiteCardCount",
+        "Subject": {
+         "$type": "TTargetCardSection",
+         "TargetSection": "AbsolutePlayerHandAndStash",
+         "ExcludeSelf": false,
+         "Conditions": {
+          "$type": "TCardConditionalId",
+          "Id": "25035a36-1105-4ef9-81b0-c5bb6926415b",
+          "IsNot": false
+         }
+        },
+        "Comparison": "GreaterThanOrEqual",
+        "Amount": 1
+       }
+      ],
+      "RandomWeight": 0,
+      "Behaviors": []
      }
     ]
    }
@@ -82118,6 +83059,51 @@
            {
             "$type": "TCardConditionalId",
             "Id": "d1edc0f5-8c49-4c4a-b65b-6924a26888d9",
+            "IsNot": false
+           }
+          ]
+         }
+        },
+        "Comparison": "GreaterThanOrEqual",
+        "Amount": 1
+       }
+      ],
+      "RandomWeight": 0,
+      "Behaviors": [
+       {
+        "$type": "TSpawnBehaviorIncludeCommonAndHero"
+       },
+       {
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
+       }
+      ]
+     },
+     {
+      "$type": "TSpawnGroup",
+      "Filters": [
+       {
+        "$type": "TSpawnFilterIdList",
+        "Ids": [
+         "34b77323-84b4-44ba-8cd5-627d26fb192c"
+        ]
+       }
+      ],
+      "SelectionMethod": "Sequential",
+      "Limit": null,
+      "Prerequisites": [
+       {
+        "$type": "TPrerequisiteCardCount",
+        "Subject": {
+         "$type": "TTargetCardSection",
+         "TargetSection": "AbsolutePlayerHandAndStash",
+         "ExcludeSelf": false,
+         "Conditions": {
+          "$type": "TCardConditionalOr",
+          "Conditions": [
+           {
+            "$type": "TCardConditionalId",
+            "Id": "58928d1a-27ef-43be-89e2-81e627dae954",
             "IsNot": false
            }
           ]
@@ -82949,8 +83935,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -83018,8 +84004,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -83087,8 +84073,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -83156,8 +84142,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -84925,8 +85911,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -84973,8 +85959,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85021,8 +86007,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85061,8 +86047,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85116,8 +86102,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -85172,8 +86158,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85220,8 +86206,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85268,8 +86254,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85308,8 +86294,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85363,8 +86349,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -85419,8 +86405,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85467,8 +86453,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85515,8 +86501,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85555,8 +86541,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85610,8 +86596,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -85666,8 +86652,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85714,8 +86700,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85762,8 +86748,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85802,8 +86788,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      },
@@ -85857,8 +86843,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -86727,7 +87713,9 @@
         "$type": "TSpawnFilterIdList",
         "Ids": [
          "6ae4a6dc-414e-4324-bba6-a6e4acf7103e",
-         "21aff4c7-a0e9-4d9b-9ce1-0a5b95b2109c"
+         "21aff4c7-a0e9-4d9b-9ce1-0a5b95b2109c",
+         "5e23b55f-460f-4d40-b430-d59cbc659990",
+         "34e8e6c4-3e5e-4b40-9756-51751a30e2f3"
         ]
        }
       ],
@@ -87202,8 +88190,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -87264,8 +88252,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -87326,8 +88314,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -87388,8 +88376,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -87790,8 +88778,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -87845,8 +88833,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -87900,8 +88888,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -87955,8 +88943,8 @@
         "$type": "TSpawnBehaviorIncludeCommonAndHero"
        },
        {
-        "$type": "TSpawnBehaviorInheritTier",
-        "Inherits": true
+        "$type": "TSpawnBehaviorIgnoreTierTable",
+        "IgnoreTierTable": true
        }
       ]
      }
@@ -88203,6 +89191,13 @@
    "spawns": false
   },
   {
+   "guid": "8cac11e0-0550-42be-bbfc-b18697e3369f",
+   "name": "Soda Swiller",
+   "tier": "Silver",
+   "level": 3,
+   "spawns": true
+  },
+  {
    "guid": "04b60df4-91d9-4065-94e0-f9f462a3b104",
    "name": "Tempest Bravo",
    "tier": "Bronze",
@@ -88282,6 +89277,13 @@
   {
    "guid": "35d68424-87ba-4d8a-8776-8d8302a425f9",
    "name": "Product Demonstrator",
+   "tier": "Silver",
+   "level": 4,
+   "spawns": true
+  },
+  {
+   "guid": "753ccc3c-726a-4b18-8726-621aedce54b6",
+   "name": "Sommelier",
    "tier": "Silver",
    "level": 4,
    "spawns": true
@@ -92944,6 +93946,21 @@
    "expedition": false
   },
   {
+   "guid": "a8c54f28-4d97-49fc-8186-0ab412d3577a",
+   "name": "Laurel",
+   "internal": "Laurel",
+   "tier": "Silver",
+   "heroes": [
+    "Jules"
+   ],
+   "tags": [
+    "Merchant"
+   ],
+   "spawns": "Always",
+   "level_up": false,
+   "expedition": false
+  },
+  {
    "guid": "2d23952b-f0e4-4a7a-ac65-11c7def01679",
    "name": "Laurel's Night Terrors",
    "internal": "Laurel's Night Terrors",
@@ -93327,7 +94344,7 @@
    "guid": "255ae0fa-f203-4e9f-855d-e090e6937b5b",
    "name": "Mandala",
    "internal": "Mandala",
-   "tier": "Bronze",
+   "tier": "Silver",
    "heroes": [
     "Common"
    ],
@@ -94914,7 +95931,7 @@
    "guid": "90e47f27-241c-4769-a6c6-a100d2a33421",
    "name": "Rest",
    "internal": "Rest",
-   "tier": "Bronze",
+   "tier": "Silver",
    "heroes": [
     "Common"
    ],
@@ -95998,7 +97015,7 @@
    "guid": "11287697-dd45-4edc-9539-780a26001043",
    "name": "The Docks",
    "internal": "The Docks",
-   "tier": "Bronze",
+   "tier": "Silver",
    "heroes": [
     "Common"
    ],
@@ -96705,7 +97722,8 @@
     "Mak",
     "Jules",
     "Karnok",
-    "The Dragons"
+    "The Dragons",
+    "Pygmalien"
    ],
    "tags": [],
    "spawns": "GuidOnly",
@@ -98757,6 +99775,34 @@
     "b81a1c81-0a16-462a-8247-04653354b79d"
    ],
    "merchant": false
+  },
+  {
+   "ap_id": 5183,
+   "name": "Laurel",
+   "guids": [
+    "a8c54f28-4d97-49fc-8186-0ab412d3577a"
+   ],
+   "merchant": true
   }
- ]
+ ],
+ "fixed_spawns": {
+  "26a15140-798a-4ac5-9df9-711ccc3cf89d": [
+   "a8b604d0-de28-400f-8a4b-d5b29ccfba27"
+  ],
+  "40c54925-3b1b-475d-9d68-6b668fd023fe": [
+   "6ba3778c-e760-44f3-b3b4-a4b4ca267cc2"
+  ],
+  "793b64b2-20a8-42ca-a592-54c9c3f814f8": [
+   "e21985a8-fe05-4142-ab65-93c110545ec3"
+  ],
+  "b11c97e2-57ae-4100-a1a9-fc9744e03261": [
+   "6ba3778c-e760-44f3-b3b4-a4b4ca267cc2"
+  ],
+  "c7435ab5-dd8b-4c78-a5a4-6b2795dacaf3": [
+   "840b6bc5-4786-40bc-b864-cc5c2b78641a"
+  ],
+  "e45d3e01-ed5e-4b13-b50b-668adecd485b": [
+   "f105f32c-d601-4624-9971-5cb16ff0b091"
+  ]
+ }
 }

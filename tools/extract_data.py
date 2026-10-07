@@ -63,6 +63,23 @@ def item_deals(node):
             yield from item_deals(value)
 
 
+def fixed_spawns(node):
+    """The card id of every TActionGameSpawnCards inside a card that can only ever give that one card (e.g.
+    Temporary Shelter -> 2 Scrap). A pick from a query or from a list of several ids (Soda Machine's 8 flavours,
+    Assembly Line's 13 cards) is random, not consistent (checked 2026-10-07)."""
+    if isinstance(node, dict):
+        if node.get("$type") == "TActionGameSpawnCards":
+            filters = [f for g in (node.get("SpawnContext") or {}).get("Groups") or [] for f in g.get("Filters") or []]
+            ids = {i.lower() for f in filters for i in f.get("Ids") or []}
+            if filters and all(f.get("$type") == "TSpawnFilterIdList" for f in filters) and len(ids) == 1:
+                yield from ids
+        for value in node.values():
+            yield from fixed_spawns(value)
+    elif isinstance(node, list):
+        for value in node:
+            yield from fixed_spawns(value)
+
+
 def card_name(card: dict) -> str:
     title = ((card.get("Localization") or {}).get("Title") or {}).get("Text")
     return (title or card["InternalName"]).strip()
@@ -231,6 +248,12 @@ def main() -> None:
     gone = old_encounter_ids.keys() - lockable.keys()  # vanished from the game: keep the id and name reserved
     encounters += [e for e in old.get("encounters", []) if e["name"] in gone]
 
+    # Items that always spawn the same lockable card (owner, 2026-10-07: the middle created-items level allows "items
+    # that spawn 1 item consistently, not random"). Source card id -> the lockable card(s) it always gives.
+    spawns = {guid: sorted({s for s in fixed_spawns(card.get("Abilities")) if s in known})
+              for guid, card in raw.items()}
+    spawns = {guid: targets for guid, targets in sorted(spawns.items()) if targets}
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
     versions = re.findall(r"\[VersionShow\]\s+Version: (\d+\.\d+\.\d+)", (CACHE / "Player.log").read_text(
         encoding="utf-8", errors="replace")) if (CACHE / "Player.log").exists() else []
@@ -240,7 +263,7 @@ def main() -> None:
            "offers": sorted(offers, key=lambda m: m["name"]),
            "monsters": sorted(monsters, key=lambda m: (m["level"] or 0, m["name"])),
            "events": sorted(events, key=lambda e: (e["name"], e["guid"])),
-           "encounters": sorted(encounters, key=lambda e: e["ap_id"])}
+           "encounters": sorted(encounters, key=lambda e: e["ap_id"]), "fixed_spawns": spawns}
     OUT.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
 
     per_hero = {}
@@ -249,7 +272,7 @@ def main() -> None:
             per_hero[c["hero"]] = per_hero.get(c["hero"], 0) + 1
     print(f"wrote {OUT}: {len(cards)} cards, {len(packs)} packs, {len(out['merchants'])} merchants, "
           f"{len(out['offers'])} item choices, {len(out['monsters'])} monsters, {len(out['events'])} events, "
-          f"{len(encounters)} lockable merchants/events")
+          f"{len(encounters)} lockable merchants/events, {len(spawns)} items with a fixed spawn")
     print("shop items per hero:", dict(sorted(per_hero.items())))
     if unknown_heroes:
         print(f"WARNING: unknown hero names {sorted(unknown_heroes)} - add them to HEROES/HERO_ALIASES")

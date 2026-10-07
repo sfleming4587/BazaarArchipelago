@@ -18,6 +18,7 @@ it doesn't know (new cards are never locked, new heroes aren't in the seed, new 
 | Every event (choice-screen cards: merchants and plain events) with rarity, heroes, tags, spawn rule | same (`EventEncounter` cards) | same, `events` |
 | Which events are level-up rewards / part of an expedition | same (`level_ups` table; `[... Expedition]` InternalName prefix) | same, `events` (`level_up`, `expedition`) |
 | Lockable merchants/events, one per name, with their lock item `ap_id` (from 5000) | worked out by the extractor (see `docs/ENCOUNTER-LOCKS.md`) | same, `encounters` |
+| Items that always spawn one same lockable card (Temporary Shelter -> Scrap); random picks are left out | same (`TActionGameSpawnCards` with a single id) | same, `fixed_spawns` |
 | Game build the data came from | the newest `[VersionShow]` line in `Player.log` | `game_version` in the same file |
 | First day each monster rarity appears | **observed in game** - the server decides this, it's not in local data | `FIRST_DAY_OF_TIER` in `bazaar/data/__init__.py` |
 | Heroes (display names, order) | hand-kept list | `HEROES` / `HERO_ALIASES` in `tools/extract_data.py` |
@@ -30,7 +31,7 @@ it doesn't know (new cards are never locked, new heroes aren't in the seed, new 
    `%USERPROFILE%\AppData\LocalLow\Tempo Storm\The Bazaar\prod\cache\GameData.db`.
 2. **Extract:** from the repo root run `python tools/extract_data.py --i-have-permission`. It opens the database read-only (it never
    changes game files, even with the game running) and prints counts, e.g.
-   `1157 cards, 10 packs, 107 merchants, 379 item choices, 179 monsters`.
+   `1176 cards, 10 packs, 108 merchants, 380 item choices, 181 monsters`.
 3. **New hero?** The extractor prints `WARNING: unknown hero names [...]`. Then:
    - append the display name to `HEROES` in `tools/extract_data.py` (append only - order sets location ids);
    - map the database name in `HERO_ALIASES` there (e.g. `"Hero8": "The Dragons"`);
