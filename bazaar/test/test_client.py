@@ -1601,6 +1601,35 @@ class TestCreatedItems(ClientTestBase):
         self.look(("itm_d", LOCKED.guid))
         self.assertIn("UNTIL", self.ctx.blocked_reason())
 
+    def test_special_cases_free_soda_machines_drinks(self) -> None:
+        """Owner, 2026-10-07: "soda machine should be in the rule 2 selected cases list" (it picks at random)."""
+        from ..data import CARDS_BY_NAME
+        self.level(1)
+        soda, flavour = CARDS_BY_NAME["Soda Machine"], CARDS_BY_NAME["Mystery Flavor"]
+        self.ctx.slot_data["lock_items"].append(BASE_ID + flavour.ap_id)
+        self.play(CardGained(soda.guid, "itm_soda", False))
+        self.look(("itm_soda", soda.guid))
+        self.spawn("itm_drink", flavour.guid, ("itm_soda", soda.guid))
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.level(2)
+        self.spawn("itm_drink2", flavour.guid, ("itm_soda", soda.guid), ("itm_drink", flavour.guid))
+        self.assertIn("UNTIL", self.ctx.blocked_reason())  # not under Locked
+
+    def test_mandala_turning_a_reagent_is_free_under_special_cases_anything_else_is_judged(self) -> None:
+        """Owner, 2026-10-07: Mandala (it transforms your leftmost item) follows the special cases - a Reagent's first
+        transform is free there - and is otherwise judged."""
+        from ..logparser import EncounterEntered, EncounterLeft
+        mandala = "255ae0fa-f203-4e9f-855d-e090e6937b5b"
+        self.level(1)
+        self.look()
+        self.play(EncounterEntered(mandala), CardGained(self.myrrh.guid, "itm_m", False),
+                  CardTransformed("itm_m", "itm_p"), EncounterLeft())
+        self.look(("itm_p", LOCKED.guid))
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.play(EncounterEntered(mandala), CardTransformed("itm_p", "itm_q"), EncounterLeft())
+        self.look(("itm_q", LOCKED.guid))
+        self.assertIn("UNTIL", self.ctx.blocked_reason())
+
     def test_memory_off_lets_a_waiting_transform_through(self) -> None:
         self.level(2)
         self.play(CardGained(self.shelter.guid, "itm_a", False), CardTransformed("itm_a", "itm_b"))

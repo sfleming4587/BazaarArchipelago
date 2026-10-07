@@ -134,17 +134,17 @@ A bypass is never used by itself, so buying a card you didn't realise was locked
 Unused bypasses wait for later runs, and the header (top left) always shows how many you have. Like a trap, each bypass
 takes the place of one locked card.
 
-**Items the game makes for you are allowed by default - the Created Items option decides.** These are cards spawned
+**Items the game makes for you follow the Created Items option.** These are cards spawned
 by another card (selling Temporary Shelter gives you 2 Scrap) and cards transformed into another outside a fight
 (a Reagent at Alembic, Catalyst, Wink, The Cult, Mandala). Transforms during a fight never count: the fight undoes
 them. Rewards the log names (such as Make a Wish) always count as held and must be sold.
 
-- **Allowed** (default): every created card is yours to keep.
-- **Special Cases:** only cards that are meant to be made are free - the first transform of one of Mak's Reagents,
-  everything Wink and The Cult do, and items that always make the same card (Temporary Shelter or Salvage Yard's
-  Scrap, Colossal Popsicle's Icicle, Froyo Cart's Sorbet, Chum's Piranha, Pasta Maker's Pasta). Anything else is
-  judged like a card you took.
-- **Locked:** a created card that's still locked blocks checks until you sell it, transform it again, or use a
+- **Allowed** (Casual): every created card is yours to keep.
+- **Special Cases** (default): only cards that are meant to be made are free - the first transform of one of Mak's
+  Reagents (at Mandala too), everything Wink and The Cult give you, Soda Machine's drinks, and items that always make
+  the same card (Temporary Shelter or Salvage Yard's Scrap, Colossal Popsicle's Icicle, Froyo Cart's Sorbet, Chum's
+  Piranha, Pasta Maker's Pasta). Anything else is judged like a card you took.
+- **Locked** (Hardcore): a created card that's still locked blocks checks until you sell it, transform it again, or use a
   Lock Bypass on it.
 
 The client spots created cards by watching your board and stash, so it needs the memory reader (and the Tempo

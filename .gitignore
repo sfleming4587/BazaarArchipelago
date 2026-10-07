@@ -19,3 +19,6 @@ __pycache__/
 # local agent instructions
 /CLAUDE.md
 /docs/wiki/
+
+# card pictures the owner supplies for make_card_art.py --add (the converted ones ship in card-art.zip)
+/docs/CardImages/

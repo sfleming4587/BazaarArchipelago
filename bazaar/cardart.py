@@ -32,9 +32,10 @@ from typing import Callable, Dict, Iterable, Optional, Tuple
 from .data import Card
 from .theme import LOCKED_X
 
-ART_SET = "card-art-1"  # the picture set in data/card-art.zip; also its cache folder
+ART_SET = "card-art-2"  # the picture set in data/card-art.zip; also its cache folder
+# Legendary, owner 2026-10-07: "a bright vibrant red, with a tinge of gold" - warmer than theme.LOCKED_X's crimson
 TIER_COLORS = {"Bronze": "#cd7f32", "Silver": "#c0c0c0", "Gold": "#ffd700", "Diamond": "#7fe7ff",
-               "Legendary": "#c77dff"}
+               "Legendary": "#ff4510"}
 URGENT, PRELOAD = 0, 1
 PRELOAD_PAUSE = 0.15  # seconds between background pictures, so preloading never competes with the game
 LOCKED_DIM = 0.45  # a locked card's picture: grey at this brightness

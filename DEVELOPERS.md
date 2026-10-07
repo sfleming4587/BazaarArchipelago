@@ -97,7 +97,9 @@ bazaar/data/bazaar_data.json` must show no changed `ap_id`s.
   downloaded (owner, 2026-10-02: only what Archipelago strictly needs leaves the network). The images were given to
   the project by Bazaar DB's developer; `tools/make_card_art.py` turns them into the zip (exact Shop Guide sizes,
   about 3 MB). For a new set, replace the zip and bump `ART_SET` in `bazaar/cardart.py` (the cache folder of
-  converted pictures). Never read
+  converted pictures). Cards a patch adds can be added to the zip from pictures named after them
+  (`make_card_art.py --add <folder>`; 2026-10-07: 19 cards from Tempo's patch notes, supplied by the owner), then
+  bump `ART_SET`. Never read
   pictures from the game's files (EULA; the 2026-10-01 freeze lift covers game data, not pictures - ask first).
 
 Happy hacking, and thanks again for pitching in!

@@ -307,8 +307,9 @@ class CreatedItems(Choice):
     Catalyst, Wink, The Cult, Mandala, ...). Transforms during a fight never count: the fight undoes them.
     Allowed: every created card is yours to keep, locked or not.
     Special Cases: only cards that are meant to be made are free: the first transform of one of Mak's Reagents,
-    everything Wink and The Cult do, and items that always spawn the same card (Temporary Shelter's Scrap,
-    Chum's Piranha, ...). Every other created card follows Locked.
+    everything Wink and The Cult give you, items that always spawn the same card (Temporary Shelter's Scrap,
+    Chum's Piranha, ...) and Soda Machine's drinks. Every other created card follows Locked - a Mandala transform
+    included, unless it turns one of Mak's Reagents.
     Locked: a created card that is still locked blocks your checks until you sell it, transform it again, or use a
     Lock Bypass on it.
     """
@@ -316,7 +317,7 @@ class CreatedItems(Choice):
     option_allowed = 0
     option_special_cases = 1
     option_locked = 2
-    default = 0
+    default = 1
 
 
 class LegacyCardPacks(Toggle):
@@ -423,7 +424,7 @@ option_presets = {
         "heroes_required": 1, "early_hero_unlock": True, "max_day": 12, "max_monster_tier": "gold",
         "locked_cards_percent": 60, "starter_cards": 30, "legendary_items": 3, "expedition_tickets": 3,
         "locked_encounters_percent": 10, "starter_merchants": 10,
-        "sell_traps": 0, "lock_bypasses": 10,
+        "sell_traps": 0, "lock_bypasses": 10, "created_items": "allowed",
         "logic_day_10_cards": 8, "logic_last_day_cards": 12, "logic_diamond_cards": 5, "logic_legendary_cards": 10,
         "death_link": False,
     },
@@ -432,7 +433,7 @@ option_presets = {
         "heroes_required": 6, "max_day": 16, "max_monster_tier": "legendary", "locked_cards_percent": 100,
         "starter_cards": 10, "legendary_items": 1, "expedition_tickets": 1, "legacy_card_packs": True,
         "locked_encounters_percent": 50, "starter_merchants": 2, "event_rarity_progression": 2,
-        "sell_traps": 10, "sell_trap_days": 1, "lock_bypasses": 0,
+        "sell_traps": 10, "sell_trap_days": 1, "lock_bypasses": 0, "created_items": "locked",
         "logic_day_10_cards": 25, "logic_last_day_cards": 50, "logic_diamond_cards": 20, "logic_legendary_cards": 30,
         "death_link": True, "death_link_on_concede": True, "death_links_before_concede": 1,
     },

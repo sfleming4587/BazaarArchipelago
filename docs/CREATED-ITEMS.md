@@ -1,8 +1,10 @@
 # Created items - cards the game makes for you
 
 **The `created_items` option decides whether cards the game makes (spawned by another card, or transformed outside a
-fight) are allowed, allowed only in special cases, or judged like any card you take.** Default: allowed, which is
-how it worked before the option (rule adopted 2026-09-29).
+fight) are allowed, allowed only in special cases, or judged like any card you take.** Default (= Standard):
+Special Cases; Casual: Allowed; Hardcore: Locked (owner, 2026-10-07: "hardcore uses locked, casual uses free and
+standard uses the select cases for defaults"). Seeds from before the option behave as Allowed (rule adopted
+2026-09-29).
 
 ## Rulings (owner, 2026-10-07)
 
@@ -17,21 +19,28 @@ how it worked before the option (rule adopted 2026-09-29).
 - Fight transforms never count: "it only pertains to the fight and afterward will be reset to before the fight so
   its moot."
 - Reading the board is approved: "It should be able to, you already read whats in the stash".
+- "soda machine should be in the rule 2 selected cases list for allow" - its drinks are free under Special Cases
+  although it picks at random (`OWNER_SPAWNS` in `client.py`; Mystery Flavor is its only lockable drink).
+- "Mandala is the primary way to transform items since the event will transform your leftmost item, so make sure this
+  will work with the select cases from rule 2": a Mandala transform of a Reagent is free under Special Cases (the
+  Reagent rule); any other Mandala transform is judged, as ruled earlier ("rule 3 unless rule 1 is selected").
+- "Let the cult event allow all items that it gives": everything The Cult gives is free under Allowed and Special
+  Cases.
 
 ## The levels
 
 | | Allowed (0) | Special Cases (1) | Locked (2) |
 |---|---|---|---|
-| Spawned card | free | free if one of your items always makes exactly that card (`fixed_spawns`), or at Wink/The Cult; else judged | judged |
+| Spawned card | free | free if one of your items always makes exactly that card (`fixed_spawns`) or it's a Soda Machine drink, or at Wink/The Cult; else judged | judged |
 | Transformed card | free | free if the old card was a Reagent (and not itself a transform result), or at Wink/The Cult; else judged | judged |
 | Cards The Cult hands out (logged gains) | free | free | judged |
 
 "Judged" = like a card you took: if it's locked it's held, checks are blocked until it's sold, transformed again, or
 a Lock Bypass is used on it. An unlocked created card is simply fine.
 
-⚠️ **The Cult under Allowed is free too** (my call, 2026-10-07, not yet confirmed by the owner): Allowed is meant to be
-the most lenient level, so it can't be stricter than Special Cases. Before the option, a locked core from The Cult
-had to be sold (2026-09-30 "cores can be sold so we can still block cores").
+⚠️ **The Cult under Allowed is free too** (confirmed by the owner 2026-10-07: "Let the cult event allow all items
+that it gives"). Before the option, a locked core from The Cult had to be sold (2026-09-30 "cores can be sold so we
+can still block cores"); under Locked it still does - open question to the owner whether Locked should free it too.
 
 ## How the client tells
 

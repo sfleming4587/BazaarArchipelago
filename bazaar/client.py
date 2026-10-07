@@ -63,6 +63,10 @@ SLOT_DEFAULTS = {"heroes": [], "max_day": 15, "pvp_win_checks": False, "monster_
 # not totally brick your run"); every other event (Mandala...) follows the Locked rule there.
 FREE_EVENTS = frozenset({"3e4c4f1a-fe5d-4e38-887a-08666ce36e71",   # Wink
                          "bf1594cc-7f65-4236-b95f-ed2f521739de"})  # The Cult
+# Items whose spawns are free under Special Cases although they pick at random, by the owner's choice (2026-10-07:
+# "soda machine should be in the rule 2 selected cases list"): item -> the lockable cards it can make. Soda Machine's
+# other flavours can't be locked.
+OWNER_SPAWNS = {"16005305-bce3-4cae-8c90-8b6560def112": ("78eb19fd-4da4-45d5-b4cb-d669b50b6ed6",)}  # -> Mystery Flavor
 FIGHT_SCREENS = ("Combat", "PVPCombat")
 SPAWN_GRACE = 2.0  # seconds a card may sit on your board/stash before its "gained" log line; after that it was made
 TRANSFORM_WAIT = 10.0  # seconds memory gets to show what a card transformed into; then it's allowed (can't tell)
@@ -782,7 +786,7 @@ class BazaarContext(CommonContext):
     def fixed_spawn(self, guid: str, now: float) -> bool:
         """A card one of your items always spawns (Temporary Shelter -> Scrap): the item is still yours, or you sold it
         moments ago."""
-        sources = {source for source, made in FIXED_SPAWNS.items() if guid in made}
+        sources = {source for source, made in {**FIXED_SPAWNS, **OWNER_SPAWNS}.items() if guid in made}
         sold = {g for when, g in self.recent_sold if now - when < SOLD_MEMORY}
         return bool(sources & (set(self.run.get("inventory", {}).values()) | sold))
 
