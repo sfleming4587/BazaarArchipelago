@@ -12,6 +12,7 @@ import json
 import os
 import random
 import sys
+import time
 from typing import Any, Dict, Optional, Set
 
 import Utils
@@ -20,7 +21,7 @@ from CommonClient import (ClientCommandProcessor, CommonContext, get_base_parser
 from MultiServer import mark_raw
 from NetUtils import ClientStatus
 
-from .data import (CARDS, CARDS_BY_GUID, EVENT_NAMES, EVENTS, GAME_VERSION, HEROES, MERCHANT_DATA, MONSTERS,
+from .data import (CARDS, CARDS_BY_GUID, EVENT_NAMES, EVENTS, FIXED_SPAWNS, GAME_VERSION, HEROES, MERCHANT_DATA, MONSTERS,
                    OFFER_DATA, TIERS)
 from .deathlink_lines import deathlink_message
 from .encounters import let_through, locked_events, rarity_bypasses
@@ -34,6 +35,7 @@ from .logparser import (DEFAULT_LOG_PATH, HERO_ALIASES, PREV_LOG, HeroSelected, 
                         RunEnded, RunStarted, UnrecognizedRun, log_session)
 from .memreader import NeedsAdmin, NotReady, Reader, ReaderOff, Snapshot, game_pid
 from .merchants import possible_stock
+from .options import CreatedItems
 from .overlay import FILE_ONLY, ROW_GAPS, event_row
 from .tracker import hero_order
 # the heroes Random can roll, by the game's own names (PlayerPreferences keys them like this; "Hero8" = The Dragons)
@@ -54,7 +56,17 @@ SLOT_DEFAULTS = {"heroes": [], "max_day": 15, "pvp_win_checks": False, "monster_
                  "lock_items": [], "logic": None, "death_link": False, "death_link_amnesty": 0, "sell_trap_days": 2,
                  "death_link_on_concede": False, "death_links_before_concede": 1, "death_links_same_run": False,
                  "encounter_locks": [],
-                 "event_rarity": 0, "exempt_expeditions": True, "unlocks_in_logic": False}
+                 "event_rarity": 0, "exempt_expeditions": True, "unlocks_in_logic": False, "created_items": 0}
+
+# Created items (owner, 2026-10-07; see docs/CREATED-ITEMS.md): cards the game makes for you - spawned by another card
+# or transformed outside a fight. Wink and The Cult are the only events whose cards are free under Special Cases ("to
+# not totally brick your run"); every other event (Mandala...) follows the Locked rule there.
+FREE_EVENTS = frozenset({"3e4c4f1a-fe5d-4e38-887a-08666ce36e71",   # Wink
+                         "bf1594cc-7f65-4236-b95f-ed2f521739de"})  # The Cult
+FIGHT_SCREENS = ("Combat", "PVPCombat")
+SPAWN_GRACE = 2.0  # seconds a card may sit on your board/stash before its "gained" log line; after that it was made
+TRANSFORM_WAIT = 10.0  # seconds memory gets to show what a card transformed into; then it's allowed (can't tell)
+SOLD_MEMORY = 10.0  # seconds a sold card still counts as the source of a fixed spawn (Temporary Shelter -> Scrap)
 
 
 def own_popup(item_id: int) -> bool:
@@ -250,6 +262,12 @@ class BazaarContext(CommonContext):
         self.menu_hero: Optional[str] = None  # hero picked on the hero-select screen, while not in a run
         self.room_seed = ""  # CommonClient never sets seed_name, so the saved state is keyed on this instead
         self.log_session: Optional[str] = None  # which game session the log being read is from (see log_session)
+        # created items (judge_created): what transforms became comes from memory; cards with no log line are spawns
+        self.pending_transforms: Dict[str, float] = {}  # new instance -> when the log said so
+        self.unexplained: Dict[str, tuple] = {}  # instance with no log line yet -> (first seen, at Wink/The Cult)
+        self.recent_sold: list = []  # (when, guid): a fixed spawn's source may already be sold (Temporary Shelter)
+        self.adopted = False  # cards already there at memory's first look (client start, new run) aren't judged
+        self.current_event: Optional[str] = None  # any merchant/event you're in (self.encounter: item-giving ones)
 
     # --- connection ---------------------------------------------------------------------------------------------
 
@@ -516,6 +534,7 @@ class BazaarContext(CommonContext):
         self.watched = {"log": self.log_session, "runs": event.index + 1}
         if self.setting("death_links_same_run"):
             self.deathlinks_received = 0
+        self.pending_transforms, self.unexplained, self.recent_sold, self.adopted = {}, {}, [], False
         self.run = {"active": True, "hero": event.hero, "day": 1, "counting": counting, "legal": counting,
                     "deathlink_owed": False, "held": {}, "inventory": {}, "traps": [],
                     "log": self.log_session, "run_index": event.index, "day_offset": 0}
@@ -690,6 +709,16 @@ class BazaarContext(CommonContext):
     def handle_gain(self, event: CardGained) -> None:
         if self.run.get("active"):
             self.run.setdefault("inventory", {})[event.instance] = event.guid
+            self.unexplained.pop(event.instance, None)
+            made = self.run.setdefault("transformed", [])
+            if event.instance in made:  # memory took it for a spawn before its log line came: the log wins
+                made.remove(event.instance)
+            if event.instance in self.run.get("held", {}):
+                return  # already judged (as a spawn), already said
+            if self.at_free_event() and self.setting("created_items") != CreatedItems.option_locked:
+                made.append(event.instance)  # The Cult hands these out: free (owner, 2026-10-07)
+                self.save_state()
+                return
         # A card that isn't in the data (Pelt, Midsworth's Package: items only one event or monster hands out) is
         # simply never locked - nothing to tell the player (owner, 2026-10-02). A patch is the version notice's job.
         if not self.run.get("active"):
@@ -709,29 +738,129 @@ class BazaarContext(CommonContext):
         self.refresh_held()
 
     def handle_transform(self, event: CardTransformed) -> None:
-        """A card turned into another (owner, 2026-10-01: "Lets allow transformations"): the old one stops counting
-        - a held locked card no longer blocks checks - and what it became is allowed for the rest of the run,
-        locked or not (the log doesn't even say what it became)."""
-        if not self.run.get("active"):
+        """A card turned into another. The old one stops counting - a held locked card no longer blocks checks - and
+        what it became follows the Created Items option (owner, 2026-10-07): allowed, allowed in the special cases,
+        or judged like any card you take once memory says what it is. A fight's transforms never count: "it only
+        pertains to the fight and afterward will be reset to before the fight"."""
+        if not self.run.get("active") or event.in_fight:
             return
-        self.run.get("inventory", {}).pop(event.old, None)
-        self.run.setdefault("transformed", []).append(event.new)
+        old = self.run.get("inventory", {}).pop(event.old, None)
+        was_made = event.old in self.run.get("transformed", [])
         for trap in self.run.get("traps", []):  # a Sell Trap follows its card (the old one can't be sold any more)
             if trap["instance"] == event.old:
                 trap.update(instance=event.new, transformed=True)
                 self.update_block_banner()
         self.run.get("held_at", {}).pop(event.old, None)
+        free = self.quiet or self.transform_free(old, was_made)  # replaying the log: memory can't say what it became
+        if free:
+            self.allow_made(event.new)
+        else:
+            self.pending_transforms[event.new] = time.monotonic()
         guid = self.run.get("held", {}).pop(event.old, None)
         if guid:
-            self.event(f"{CARDS_BY_GUID[guid].name} transformed into another card - transformed cards are allowed."
+            then = "that's allowed." if free else "checking what it became."
+            self.event(f"{CARDS_BY_GUID[guid].name} transformed into another card - {then}"
                        + ("" if self.run.get("held") else " Checks unblocked."))
             self.refresh_held()
         else:
             self.save_state()
         self.refresh_padlocks()
 
+    def at_free_event(self) -> bool:
+        return self.current_event in FREE_EVENTS
+
+    def transform_free(self, old: Optional[str], was_made: bool) -> bool:
+        """Special Cases: the first transform of one of Mak's Reagents, and anything Wink or The Cult does."""
+        level = self.setting("created_items")
+        if level == CreatedItems.option_allowed:
+            return True
+        if level == CreatedItems.option_special_cases:
+            reagent = old in CARDS_BY_GUID and "Reagent" in CARDS_BY_GUID[old].tags and not was_made
+            return reagent or self.at_free_event()
+        return False
+
+    def fixed_spawn(self, guid: str, now: float) -> bool:
+        """A card one of your items always spawns (Temporary Shelter -> Scrap): the item is still yours, or you sold it
+        moments ago."""
+        sources = {source for source, made in FIXED_SPAWNS.items() if guid in made}
+        sold = {g for when, g in self.recent_sold if now - when < SOLD_MEMORY}
+        return bool(sources & (set(self.run.get("inventory", {}).values()) | sold))
+
+    def allow_made(self, instance: str) -> None:
+        self.run.setdefault("transformed", []).append(instance)
+
+    def judge_made(self, instance: str, guid: str, how: str) -> None:
+        """A created card under the Locked rule (or outside the special cases): it blocks checks if it's locked."""
+        if guid not in self.run_locked_guids():
+            return
+        self.run.setdefault("held", {})[instance] = guid
+        self.event(f"A card {how} {self.held_text(guid)}, which is still locked! CHECKS ARE BLOCKED until you sell "
+                   "it or transform it again.", warning=True)
+        self.beep()
+        what = "SELL OR USE BYPASS" if self.bypasses_ready() > 0 else "SELL IT NOW"
+        self.toast(f"{what}: {CARDS_BY_GUID[guid].name} is locked", seconds=12, warning=True)
+        self.refresh_held()
+
+    def judge_created(self, snapshot: Optional[Snapshot]) -> None:
+        """Created items from memory (owner, 2026-10-07; docs/CREATED-ITEMS.md). Your board and stash are compared
+        with the log: a card no log line explains after SPAWN_GRACE was spawned by the game, and a transform's new
+        card gets its template here. Nothing during fights; nothing in a quiet replay."""
+        if not self.run.get("active") or self.quiet:
+            return
+        now, changed = time.monotonic(), False
+        if snapshot is None:  # memory is off: a transform waiting for it can't be told, so it's allowed
+            self.adopted = False
+            for new, when in list(self.pending_transforms.items()):
+                if now - when > TRANSFORM_WAIT:
+                    del self.pending_transforms[new]
+                    self.allow_made(new)
+            return
+        if snapshot.state in FIGHT_SCREENS:
+            return
+        cards = {instance: guid for _slot, guid, instance in snapshot.board + snapshot.stash if instance and guid}
+        inventory = self.run.setdefault("inventory", {})
+        if not self.adopted:  # already there when memory first looked: from before the client watched
+            self.adopted = True
+            for instance, guid in cards.items():
+                if instance not in self.pending_transforms:
+                    inventory.setdefault(instance, guid)
+        for new, when in list(self.pending_transforms.items()):
+            if new in cards:
+                del self.pending_transforms[new]
+                inventory[new] = cards[new]
+                self.judge_made(new, cards[new], "transformed into")
+                changed = True
+            elif now - when > TRANSFORM_WAIT:  # gone before memory saw it (sold, transformed again)
+                del self.pending_transforms[new]
+                self.allow_made(new)
+        made = set(self.run.get("transformed", []))
+        level = self.setting("created_items")
+        for instance, guid in cards.items():
+            if instance in inventory or instance in made or instance in self.pending_transforms:
+                continue
+            first, at_event = self.unexplained.setdefault(instance, (now, self.at_free_event()))
+            if now - first < SPAWN_GRACE:
+                continue
+            del self.unexplained[instance]
+            inventory[instance] = guid
+            changed = True
+            if level == CreatedItems.option_allowed or (level == CreatedItems.option_special_cases
+                                                        and (at_event or self.fixed_spawn(guid, now))):
+                self.allow_made(instance)
+            else:
+                self.judge_made(instance, guid, "appeared:")
+        for instance in list(self.unexplained):
+            if instance not in cards:  # sold or gone within the grace period
+                del self.unexplained[instance]
+        if changed:
+            self.save_state()
+            self.refresh_padlocks()
+
     def handle_sold(self, event: CardSold) -> None:
-        self.run.get("inventory", {}).pop(event.instance, None)
+        sold = self.run.get("inventory", {}).pop(event.instance, None)
+        if sold:
+            now = time.monotonic()
+            self.recent_sold = [s for s in self.recent_sold if now - s[0] < SOLD_MEMORY] + [(now, sold)]
         traps = self.run.get("traps", [])
         if any(t["instance"] == event.instance for t in traps):
             self.run["traps"] = [t for t in traps if t["instance"] != event.instance]
@@ -770,6 +899,7 @@ class BazaarContext(CommonContext):
         if self.encounter and offers_at(before, self.encounter.guid) != offers_at(snapshot, self.encounter.guid):
             self.handle_encounter(self.encounter)
         self.check_run_lost(snapshot)
+        self.judge_created(snapshot)
         if snapshot and self.slot_data and self.run.get("active") and self.run.get("resync")                 and snapshot.day and snapshot.victories is not None:
             self.run.pop("resync")
             Utils.async_start(self.resync_run(snapshot.day, snapshot.victories))
@@ -873,7 +1003,8 @@ class BazaarContext(CommonContext):
         freely). The stash is laid out as a 10-slot row with Empty filling the free slots."""
         starts = {slot: (template, instance) for slot, template, instance in self.memory.stash}
         locked, sizes, spots, slot = self.run_locked_guids(), [], [], 0
-        allowed = set(self.run.get("transformed", []))  # transformed cards are allowed (handle_transform)
+        # created cards that are allowed (handle_transform, judge_created), and those not judged yet
+        allowed = set(self.run.get("transformed", [])) | set(self.unexplained) | set(self.pending_transforms)
         while slot < 10:
             template, instance = starts.get(slot, (None, None))
             size = CARDS_BY_GUID[template].size if template in CARDS_BY_GUID else None
@@ -1288,9 +1419,11 @@ async def dispatch(ctx: BazaarContext, event) -> None:
     elif isinstance(event, FightStarted):
         ctx.handle_fight(event)
     elif isinstance(event, EncounterEntered):
+        ctx.current_event = event.guid
         ctx.judge_event(event)
         ctx.handle_encounter(event)
     elif isinstance(event, EncounterLeft):
+        ctx.current_event = None
         ctx.handle_encounter_left()
     elif isinstance(event, MonsterFought):
         await ctx.handle_monster(event)

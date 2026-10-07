@@ -90,6 +90,8 @@ def tiers_on_day(day: int, highest: str) -> List[str]:
 # Cards unlocked together by one group item.
 LEGENDARY_GUIDS = frozenset(c.guid for c in CARDS if c.shop and c.tier == "Legendary")
 TICKET_GUIDS = frozenset(c.guid for c in CARDS if c.ticket)
+# item guid -> the lockable card it always spawns (Temporary Shelter -> Scrap); random spawns aren't listed
+FIXED_SPAWNS: Dict[str, Tuple[str, ...]] = {k: tuple(v) for k, v in _raw.get("fixed_spawns", {}).items()}
 
 CARDS_BY_NAME: Dict[str, Card] = {c.name: c for c in CARDS}
 CARDS_BY_GUID: Dict[str, Card] = {c.guid: c for c in CARDS}

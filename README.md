@@ -135,8 +135,9 @@ checks and the notices box says **CHECKS ARE BLOCKED** and why.
 
 - **Only play heroes you've received.** A run with a locked hero sends nothing.
 - **Don't keep locked cards.** If one lands in your hands anyway (a reward, say), just sell it: checks resume the
-  moment the game logs the sale. Items the game makes for you by itself (from another item, a Shovel, a
-  transformation) are always fine.
+  moment the game logs the sale. Items the game makes for you by itself (spawned by another item, or transformed
+  outside a fight) are fine by default; the **Created Items** option can make them count too, either always or
+  outside a few special cases (Mak's Reagents, Wink, The Cult, items that always make the same card).
 - **Sell Traps** (3 by default): sell the item it names before the day shown.
 - **Don't step into locked events.** Going into one pauses your checks for the rest of that run. A locked merchant
   is fine to visit, but anything you take there has to be sold. If every event on offer is locked, the client lets

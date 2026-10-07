@@ -76,7 +76,8 @@ client's log file). If those can't open on your PC, the messages show in the cli
 - **Padlocks:** every locked card you're offered - in a shop, a level-up, loot or an event's item choice - gets a
   red padlock right on the card, and so do the locked cards in your open stash. Clicks go straight through them,
   and they fade while you read a card's tooltip. Items handed to you with no choice get no padlock; if one of those
-  is locked, just sell it.
+  is locked, just sell it. Cards the game makes for you (spawned or transformed) follow your **Created Items**
+  option.
 - **Notices (top right) - CHECKS ARE BLOCKED:** shown while you hold a locked card, miss a Sell Trap's deadline, play a locked hero or
   owe a DeathLink. It clears by itself once you sell the card (or press **Use Bypass** next to it); a locked hero
   or a DeathLink blocks the rest of that run. A run you started while the client was off or disconnected that was

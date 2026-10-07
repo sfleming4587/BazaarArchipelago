@@ -2,7 +2,8 @@
 
 > ⚠️ **In the client since 2026-10-01 (owner: "yes this is the go ahead, but do not release anything yet til we test
 > it al"), released in v0.8.0 on 2026-10-01 (owner: "I believe we are ready for a release").** `bazaar/memreader.py`
-> reads the screen, the encounter, the offered cards, the stash, the board's UI flags, your Random setting and the
+> reads the screen, the encounter, the offered cards, the stash, your board's cards (2026-10-07, owner: "we should
+> be able to read the board"; see `docs/CREATED-ITEMS.md`), the board's UI flags, your Random setting and the
 > game's input layers; nothing else from this page is used yet. Reading memory needed one-time reverse engineering (EULA
 > section 3); the owner accepted that on 2026-09-30, on the condition that the reader only reads and switches itself
 > off after a breaking patch instead of being re-engineered automatically. **Always on, no switch to turn it off**

@@ -88,6 +88,15 @@ class TestLogParser(unittest.TestCase):
         self.assertEqual(events, [CardGained(GUID, "itm_a", True), CardGained(GUID, "itm_b", False),
                                   CardGained(GUID, "itm_c", False), CardSold("itm_c")])
 
+    def test_a_transform_during_a_fight_is_marked(self) -> None:
+        """Owner, 2026-10-07: a fight's transforms are undone after it, so the client must be able to ignore them."""
+        line = "[x] [GameSimHandler] Transformed: itm_a into: itm_b"
+        fight = RUN_START + [state("ChoiceState", "CombatState"), line, state("CombatState", "ReplayState"), line]
+        after = RUN_START + [state("ChoiceState", "CombatState"), state("CombatState", "ReplayState"),
+                             state("ReplayState", "LootState"), line]
+        self.assertEqual([e.in_fight for e in run_events(fight) if isinstance(e, CardTransformed)], [True, True])
+        self.assertEqual([e.in_fight for e in run_events(after) if isinstance(e, CardTransformed)], [False])
+
     def test_encounter_enter_and_leave(self) -> None:
         shop = "11111111-1111-1111-1111-111111111111"
         lines = RUN_START + [state("ChoiceState", "EncounterState"),

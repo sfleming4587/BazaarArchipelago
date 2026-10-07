@@ -420,4 +420,5 @@ class BazaarWorld(World):
             "event_rarity": self.event_rarity,
             "unlocks_in_logic": True,
             "exempt_expeditions": bool(self.options.exempt_expeditions.value),
+            "created_items": self.options.created_items.value,
         }

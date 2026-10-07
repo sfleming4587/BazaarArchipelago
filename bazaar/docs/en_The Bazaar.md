@@ -134,10 +134,21 @@ A bypass is never used by itself, so buying a card you didn't realise was locked
 Unused bypasses wait for later runs, and the header (top left) always shows how many you have. Like a trap, each bypass
 takes the place of one locked card.
 
-**Items the game makes for you are always allowed.** Items created by other items (for example what you get from
-selling B Note, a Shovel dig, or a transformation) never block checks, even if the card is locked - you didn't
-choose them, and the game's log only shows them as a count. Sell Traps can't pick them either. Rewards the log does
-name (such as Make a Wish) still count as held and must be sold.
+**Items the game makes for you are allowed by default - the Created Items option decides.** These are cards spawned
+by another card (selling Temporary Shelter gives you 2 Scrap) and cards transformed into another outside a fight
+(a Reagent at Alembic, Catalyst, Wink, The Cult, Mandala). Transforms during a fight never count: the fight undoes
+them. Rewards the log names (such as Make a Wish) always count as held and must be sold.
+
+- **Allowed** (default): every created card is yours to keep.
+- **Special Cases:** only cards that are meant to be made are free - the first transform of one of Mak's Reagents,
+  everything Wink and The Cult do, and items that always make the same card (Temporary Shelter or Salvage Yard's
+  Scrap, Colossal Popsicle's Icicle, Froyo Cart's Sorbet, Chum's Piranha, Pasta Maker's Pasta). Anything else is
+  judged like a card you took.
+- **Locked:** a created card that's still locked blocks checks until you sell it, transform it again, or use a
+  Lock Bypass on it.
+
+The client spots created cards by watching your board and stash, so it needs the memory reader (and the Tempo
+launcher's administrator rights, see the setup guide). If the reader is off, created cards are allowed.
 
 ## DeathLink
 

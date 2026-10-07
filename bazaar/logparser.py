@@ -81,6 +81,7 @@ class CardSold:
 class CardTransformed:
     old: str  # the instance that turned into another card
     new: str
+    in_fight: bool = False  # during a fight or its replay: the fight undoes it (owner, 2026-10-07), so it never counts
 
 
 @dataclass(frozen=True)
@@ -216,7 +217,7 @@ class LogParser:
         elif match := SOLD_RE.search(line):
             yield CardSold(match[1])
         elif match := TRANSFORM_RE.search(line):
-            yield CardTransformed(match[1], match[2])
+            yield CardTransformed(match[1], match[2], self.state in ("CombatState", "PVPCombatState", "ReplayState"))
         elif self.in_pvp and EXIT_TASKS_RE.search(line):
             self.pvp_exit_tasks = True
 

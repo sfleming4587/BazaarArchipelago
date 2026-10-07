@@ -69,7 +69,7 @@ class TestRunTornDown(unittest.TestCase):
         reader.memory.ptr.return_value = 1
         reader.mono.is_a.return_value = True
         fields = {"StateName": "Encounter", "CurrentEncounterId": "guid", "SelectionSet": 0}
-        with mock.patch.object(Reader, "_get", lambda self, obj, name: fields[name]),                 mock.patch.object(Reader, "_stat", return_value=7), mock.patch.object(Reader, "_stash", return_value=()):
+        with mock.patch.object(Reader, "_get", lambda self, obj, name: fields[name]),                 mock.patch.object(Reader, "_stat", return_value=7), mock.patch.object(Reader, "_container", return_value=()):
             snapshot = reader.snapshot()
         self.assertEqual((snapshot.level, snapshot.losses, snapshot.prestige), (7, None, 7))
 

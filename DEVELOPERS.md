@@ -39,6 +39,7 @@ nobody should risk their account to play a randomizer.
 | `tools/quick_run.ps1` | a solo test game: generate, host locally, open the client |
 | `docs/UPDATING-GAME-DATA.md` | what to do after a Bazaar patch |
 | `docs/ENCOUNTER-LOCKS.md` | merchant and event locks and Event Rarity Progression: the owner's rulings, how the pool is built, what's built so far |
+| `docs/CREATED-ITEMS.md` | the Created Items option: rulings, how spawns and transforms are spotted, what's unverified |
 | `docs/OVERLAY.md` | what the overlay shows where, when it fades or hides, with an example |
 | `docs/MEMORY-READER.md` | what the game's memory shows that `Player.log` doesn't, the reader's rules, and the shop padlocks |
 | `README.md` | for players only: what changes, how it works, setup, FAQ (shaped after other worlds' READMEs, 2026-10-01) |

@@ -90,6 +90,7 @@ class Snapshot(NamedTuple):
     prestige: Optional[int] = None  # 0 or less: the run is lost (docs/MEMORY-READER.md, "A lost run is known ...")
     day: Optional[int] = None  # Run.Day: the game's own day, right after a game restart too
     victories: Optional[int] = None  # Run.Victories: PvP fights won this run
+    board: Tuple[Tuple[int, Optional[str], Optional[str]], ...] = ()  # your board, like stash (Run.Player.Hand)
 
 
 def blocked(name: Optional[str]) -> bool:
@@ -755,7 +756,8 @@ class Reader:
         return Snapshot(name, encounter, tuple(offers), *self._run_parts())
 
     def _run_parts(self) -> tuple:
-        """Your level, stash, losses, prestige, day and victories, or None/() for any that make no sense this time. They're read through the Run, which
+        """Your level, stash, losses, prestige, day, victories and board, or None/() for any that make no sense this
+        time. They're read through the Run, which
         the game tears down and replaces around a run's end: 8 s after a concede (2026-10-02) Run.Player had no
         Attributes for a moment, and the reader switched off for the whole game session - no padlocks until the
         client restarted. So a failed read here never turns the reader off: the next look tries again. Losses is
@@ -767,28 +769,31 @@ class Reader:
             counts = (None, None, None)
         losses, day, victories = counts
         try:
-            return self._stat(LEVEL_STAT), self._stash(), losses, self._stat(PRESTIGE_STAT), day, victories
+            ids: Dict[int, str] = {}
+            stash, board = self._container("Stash", ids), self._container("Hand", ids)
+            return self._stat(LEVEL_STAT), stash, losses, self._stat(PRESTIGE_STAT), day, victories, board
         except Exception:
-            return None, (), losses, None, day, victories
+            return None, (), losses, None, day, victories, ()
 
-    def _stash(self) -> Tuple[Tuple[int, Optional[str]], ...]:
-        """Your stash's cards and the slot each starts in, from Run.Player.Stash.Container.Sockets (10 slots; a card
-        fills one per slot it covers). Cards can sit in any slot and move freely (owner, 2026-10-01)."""
+    def _container(self, which: str, ids: Dict[int, str]) -> Tuple[Tuple[int, Optional[str], Optional[str]], ...]:
+        """Your stash ("Stash") or board ("Hand", owner 2026-10-07: "we should be able to read the board"): its cards
+        and the slot each starts in, from Run.Player.<which>.Container.Sockets (10 slots; a card fills one per slot it
+        covers). Cards can sit in any slot and move freely (owner, 2026-10-01). Only your own cards are read. `ids`
+        caches Data.Entities' instance ids for the reading (only read when a container isn't empty)."""
         m, run = self.memory, self.memory.ptr(self.statics["<Run>k__BackingField"])
         player = self._get(run, "Player") if run else 0
-        stash = self._get(player, "Stash") if player else 0
-        container = self._get(stash, "Container") if stash else 0
+        box = self._get(player, which) if player else 0
+        container = self._get(box, "Container") if box else 0
         sockets = self._get(container, "Sockets") if container else 0
         if not sockets:
             return ()
         out, seen = [], set()
-        ids = None
         for slot in range(min(m.i32(sockets + 0x18) or 0, 10)):
             card = m.ptr(sockets + 0x20 + 8 * slot)
             if card and card not in seen:
                 seen.add(card)
-                if ids is None:  # instance ids are the Entities keys (only read when the stash isn't empty)
-                    ids = {obj: instance for instance, obj in self._entities().items()}
+                if not ids:  # instance ids are the Entities keys
+                    ids.update({obj: instance for instance, obj in self._entities().items()})
                 out.append((slot, self._get(card, "TemplateId"), ids.get(card)))
         return tuple(out)
 

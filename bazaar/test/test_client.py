@@ -10,8 +10,8 @@ from ..client import BazaarContext, catch_up, dispatch
 from ..data import CARDS
 from ..items import BASE_ID, EVENT_RARITY_ID, GAME, item_name_to_id
 from ..locations import day_location, location_name_to_id, monster_location, pvp_location, win_location
-from ..logparser import (CardGained, CardSold, DayReached, HeroSelected, LogParser, MonsterFought, PvPFought,
-                         RunEnded, RunStarted)
+from ..logparser import (CardGained, CardSold, CardTransformed, DayReached, HeroSelected, LogParser, MonsterFought,
+                         PvPFought, RunEnded, RunStarted)
 
 LOCKED = next(c for c in CARDS if c.shop and c.hero == "Vanessa")
 BRONZE_MONSTER = "bb1e3506-3735-4669-be90-915a55a7ee05"  # Fanged Inglet
@@ -1479,3 +1479,133 @@ class TestAdminRestart(ClientTestBase):
         self.assertNotIn("secret", parameters)
         with mock.patch("Utils.is_frozen", return_value=False):  # from source: python Launcher.py "The Bazaar Client"
             self.assertIn('Launcher.py" "The Bazaar Client" -- --connect', admin_relaunch(self.ctx)[1])
+
+
+class TestCreatedItems(ClientTestBase):
+    """Owner, 2026-10-07: the created_items option - cards the game makes (spawned by another card, or transformed
+    outside a fight) are allowed (0), allowed only in the special cases (1), or judged like any card (2)."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        from ..data import CARDS_BY_NAME
+        self.scrap, self.myrrh = CARDS_BY_NAME["Scrap"], CARDS_BY_NAME["Myrrh"]
+        self.shelter = CARDS_BY_NAME["Temporary Shelter"]
+        self.ctx.slot_data["lock_items"] = [BASE_ID + c.ap_id for c in (LOCKED, self.scrap, self.myrrh)]
+        self.now = 1000.0
+        from types import SimpleNamespace
+        from .. import client
+        patcher = mock.patch.object(client, "time", SimpleNamespace(monotonic=lambda: self.now))
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.play(RunStarted("Vanessa"))
+
+    def level(self, value: int) -> None:
+        self.ctx.slot_data["created_items"] = value
+
+    def look(self, *cards, state: str = "Choice") -> None:
+        """Memory shows these (instance, guid) cards on the board."""
+        from ..memreader import Snapshot
+        board = tuple((slot, guid, instance) for slot, (instance, guid) in enumerate(cards))
+        self.ctx.handle_snapshot(Snapshot(state, None, (), board=board))  # the whole memory path
+
+    def spawn(self, instance: str, guid: str, *others) -> None:
+        """A card appears with no log line and stays past the grace period."""
+        self.look(*others, (instance, guid))
+        self.now += 3
+        self.look(*others, (instance, guid))
+
+    def test_allowed_spawned_locked_card_never_blocks_and_gets_no_padlock(self) -> None:
+        self.look()  # memory's first look at the run
+        self.spawn("itm_s", LOCKED.guid)
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.assertIn("itm_s", self.ctx.run["transformed"])
+
+    def test_locked_spawned_locked_card_blocks_until_sold(self) -> None:
+        self.level(2)
+        self.look()
+        self.spawn("itm_s", LOCKED.guid)
+        self.assertIn("UNTIL", self.ctx.blocked_reason())
+        self.play(CardSold("itm_s"))
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def test_a_bought_card_seen_by_memory_before_its_log_line_is_no_spawn(self) -> None:
+        self.level(0)
+        self.look()
+        self.look(("itm_b", LOCKED.guid))
+        self.now += 1
+        self.play(CardGained(LOCKED.guid, "itm_b", True))  # the log line, inside the grace period
+        self.now += 3
+        self.look(("itm_b", LOCKED.guid))
+        self.assertIn("UNTIL", self.ctx.blocked_reason())  # a bought locked card, judged as always
+        self.assertNotIn("itm_b", self.ctx.run.get("transformed", []))
+
+    def test_cards_there_at_memorys_first_look_are_not_judged(self) -> None:
+        self.level(2)
+        self.now += 5
+        self.look(("itm_old", LOCKED.guid))
+        self.now += 5
+        self.look(("itm_old", LOCKED.guid))
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def test_special_cases_allow_a_fixed_spawn_of_a_sold_card_but_not_a_random_one(self) -> None:
+        self.level(1)
+        self.play(CardGained(self.shelter.guid, "itm_shelter", False))
+        self.look(("itm_shelter", self.shelter.guid))
+        self.play(CardSold("itm_shelter"))
+        self.spawn("itm_scrap", self.scrap.guid)
+        self.assertIsNone(self.ctx.blocked_reason())  # Temporary Shelter always gives Scrap
+        self.spawn("itm_r", LOCKED.guid, ("itm_scrap", self.scrap.guid))
+        self.assertIn("UNTIL", self.ctx.blocked_reason())  # nothing you have always makes this one
+
+    def test_special_cases_free_the_first_reagent_transform_only(self) -> None:
+        self.level(1)
+        self.look()
+        self.play(CardGained(self.myrrh.guid, "itm_m2", False))  # Myrrh itself is locked: held
+        self.play(CardTransformed("itm_m2", "itm_potion"))
+        self.assertIsNone(self.ctx.blocked_reason())  # held Myrrh transformed away; the result is free
+        self.play(CardTransformed("itm_potion", "itm_x"))  # transformed again: not a Reagent - judged
+        self.look(("itm_x", LOCKED.guid))
+        self.assertIn("UNTIL", self.ctx.blocked_reason())
+
+    def test_locked_transform_into_an_unlocked_card_is_fine_and_into_a_locked_one_blocks(self) -> None:
+        self.level(2)
+        self.look()
+        self.play(CardGained(self.shelter.guid, "itm_a", False), CardTransformed("itm_a", "itm_b"))
+        self.look(("itm_b", self.shelter.guid))
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.play(CardTransformed("itm_b", "itm_c"))
+        self.look(("itm_c", LOCKED.guid))
+        self.assertIn("UNTIL", self.ctx.blocked_reason())
+        self.play(CardTransformed("itm_c", "itm_d"))  # "or transform again into a new item"
+        self.look(("itm_d", self.shelter.guid))
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def test_a_transform_during_a_fight_changes_nothing(self) -> None:
+        self.level(0)
+        self.play(CardGained(LOCKED.guid, "itm_x", False), CardTransformed("itm_x", "itm_y", in_fight=True))
+        self.assertIn("UNTIL", self.ctx.blocked_reason())  # still holding it after the fight
+        self.assertNotIn("itm_y", self.ctx.run.get("transformed", []))
+
+    def test_wink_and_the_cult_are_free_under_special_cases_mandala_is_not(self) -> None:
+        from ..logparser import EncounterEntered, EncounterLeft
+        self.level(1)
+        self.look()
+        wink, cult = "3e4c4f1a-fe5d-4e38-887a-08666ce36e71", "bf1594cc-7f65-4236-b95f-ed2f521739de"
+        self.play(EncounterEntered(wink), CardGained(self.shelter.guid, "itm_a", False),
+                  CardTransformed("itm_a", "itm_b"), EncounterLeft())
+        self.assertIn("itm_b", self.ctx.run["transformed"])
+        self.play(EncounterEntered(cult), CardGained(LOCKED.guid, "itm_core", False), EncounterLeft())
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.play(EncounterEntered("255ae0fa-f203-4e9f-855d-e090e6937b5b"),  # Mandala
+                  CardGained(self.shelter.guid, "itm_c", False), CardTransformed("itm_c", "itm_d"), EncounterLeft())
+        self.look(("itm_d", LOCKED.guid))
+        self.assertIn("UNTIL", self.ctx.blocked_reason())
+
+    def test_memory_off_lets_a_waiting_transform_through(self) -> None:
+        self.level(2)
+        self.play(CardGained(self.shelter.guid, "itm_a", False), CardTransformed("itm_a", "itm_b"))
+        self.now += 11
+        self.ctx.judge_created(None)
+        self.assertIn("itm_b", self.ctx.run["transformed"])
+        self.assertIsNone(self.ctx.blocked_reason())
+
