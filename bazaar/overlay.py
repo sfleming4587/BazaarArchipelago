@@ -15,7 +15,8 @@ import threading
 import time
 from typing import Callable, Dict, List, Optional, Sequence, Set
 
-from . import screens
+from . import padlocks, screens
+from .padlocks import Padlock
 from .data import CARDS_BY_GUID
 from .shop_guide import ShopGuide
 from .theme import (ACCENT, BONE, DIM, FG, FLAMES, FONT, LOCKED_X, MUTED, OUTLINE, SEVERITY, TRAP_BG, TRAP_TITLE,
@@ -53,20 +54,6 @@ MENU_COLUMNS = 4  # heroes per row, like the hero select
 MENU_BAR_BG = "#3a3f4b"  # the empty part of a hero's check bar
 POLL_MS = 250
 
-# Padlocks on the locked cards a shop is offering (user, 2026-10-01): placed by proportion of the game window, a
-# small mark at each card's centre, never covering the card. The row is centred across the window, about a third
-# down; a card is 1, 2 or 3 slots wide by its size. 1080p pixels, scaled like the strips.
-# Measured 2026-10-01 on the owner's shop screenshot (Small, Large, Small): the three centres matched within 1 px.
-# Cards sit on a slot grid, so a card's width is its slots times the slot pitch (the thin gap is inside the pitch).
-SHOP_ROW_Y = 0.398  # the cards' centres, as a share of the window's height
-SLOT_WIDTH = 113  # the slot pitch: a Small card plus the gap after it
-# The extra space between two cards, by the screen (memory's state name) showing the row. Measured on the owner's
-# screenshots 2026-10-01: a shop's cards touch; a level-up's Small cards sit 181 px apart (113 + 68). A screen not
-# listed here gets no padlocks: its layout hasn't been measured.
-ROW_GAPS = {"Encounter": 0, "LevelUp": 68, "Stash": 0, "Loot": 0}
-# Screens only measured with one card (a loot's single card sits centred, owner's screenshot 2026-10-01): with more
-# than one, the spacing is unknown, so no padlocks rather than misplaced ones.
-ONE_CARD_ONLY = {"Loot"}
 # Padlocks on locked merchants/events (docs/ENCOUNTER-LOCKS.md): each option's centre at 1080p, (x from the window's
 # centre, y from its top), by screen - "Choice-N" is the hourly choice with N options, "Line-N" an event's own options
 # in a row. Measured 2026-10-02 on the owner's screenshots: the hourly 3 sit where the monster pick's do (Event3.jpg,
@@ -77,21 +64,20 @@ ONE_CARD_ONLY = {"Loot"}
 CHOICE_ROWS = {"Choice-3": ((-245, 303), (0, 364), (245, 303)),
                "Choice-4": ((-367, 303), (-122, 364), (122, 364), (367, 303))}
 LINE_PITCH, LINE_Y = 282, 420
-EVENT_FRAME = (205, 175)  # an option's frame, 1080p (the 3-choice screenshot's left one, x 614-815 y 217-390)
-CARD_HEIGHT = 220  # measured on the same screenshot (the cards' frames, y 322-541 at 1080p)
-YOUR_ROW = (548, 785)  # your own board's cards, top and bottom (their tooltips can open over the shop row too)
-BOARD_SLOTS = {1: 4, 2: 6, 3: 8}  # your board's width by level (owner, 2026-10-01); 10 from level 4 on
 FLICKER_MS = 140  # the Sell Trap's flames
 # A flame's outline, as fractions of the skull's square (x right, y down); the inner flames are it shrunk upward.
 FLAME = ((0.10, 1.0), (0.02, 0.55), (0.17, 0.30), (0.23, 0.46), (0.30, 0.10), (0.41, 0.36), (0.50, 0.0),
          (0.59, 0.36), (0.70, 0.10), (0.77, 0.46), (0.83, 0.30), (0.98, 0.55), (0.90, 1.0))
-HOVERED_ALPHA = 0.3  # a padlock while a card is hovered: see-through, so the tooltip reads (user, 2026-10-01)
 FADE_STEPS, FADE_MS = 6, 25  # opening and closing the Shop Guide: a short fade (owner: "a simple transition")
 FLIP_SECONDS = 1.0  # new cards flip over first: if the game's reveal flag doesn't start by then, show anyway
-FLIP_MAX = 3.0  # and never wait longer than this for a reveal to end
-FLIP_LEAD = 0.3  # once a reveal's length is known, padlocks show this long before it ends (owner, 2026-10-02: sooner)
-HOVER_MS = 60  # how often the mouse is checked while padlocks are up
-SLOTS = {"Small": 1, "Medium": 2, "Large": 3, "Empty": 1}  # Empty: a free slot in a row laid out by slot (the stash)
+FLIP_DELAY = 0.7  # a shop's first card turns face-up this long after the reveal flag (3 of 3 clips, 2026-10-14)
+FLIP_EARLY = 0.5  # a reveal that began this long before new cards' padlocks came in is theirs (the client reads
+# offers every 0.3 s; the game starts flipping 0.3 s after dealing, and an event's flip can be over 0.3 s later)
+HOVER_MS = 2  # how often the Tk thread looks for a new board read (client.MEMORY_SECONDS, 60 a second); the padlocks
+# move on each new read - one clock for both, so they don't drift against each other (owner 2026-10-15: padlocks
+# looked ~20 fps). Needs the client's 1 ms timers (client.main): Windows otherwise rounds a Tk timer up to its
+# ~15.6 ms tick (16 ran ~45 times a second, 8 ~64, measured 2026-10-15)
+FOLLOW_SECONDS = 1 / 60  # ...and at least this often without a new read (the reader off, or a read that failed)
 PADLOCK = 56  # the mark's size
 MIN_PADLOCK = 24  # real pixels, however small the window
 PADLOCK_KEY = "#010203"  # the padlock window's see-through colour
@@ -114,48 +100,6 @@ def strips(x: int, y: int, w: int, h: int) -> tuple:
             (right_x, y, right_end - right_x, round(RIGHT_BOTTOM * k)), k)
 
 
-def card_centres(x: int, y: int, w: int, h: int, sizes: List[Optional[str]], gap: float = 0) -> Optional[List[tuple]]:
-    """
-    Screen centre (x, y) of each card in a shop row of these sizes, left to right, for a game window at x, y of
-    size w x h. None if any size is unknown: a guessed width would put every padlock after it on the wrong card.
-    """
-    if not sizes or any(size not in SLOTS for size in sizes):
-        return None
-    across = min(h / 1080, w / 1920)  # the board's scale, as in strips()
-    widths = [SLOTS[size] * SLOT_WIDTH * across for size in sizes]
-    gap *= across
-    left = x + w / 2 - (sum(widths) + gap * (len(widths) - 1)) / 2
-    centres = []
-    for width in widths:
-        centres.append((round(left + width / 2), round(y + h * SHOP_ROW_Y)))
-        left += width + gap
-    return centres
-
-
-def card_rects(x: int, y: int, w: int, h: int, sizes: List[Optional[str]], gap: float = 0,
-               level: Optional[int] = None) -> List[tuple]:
-    """Where hovering shows a card's tooltip (left, top, right, bottom): each offered card, and your own board at
-    its width for your level, as if full (where your cards sit isn't read; owner, 2026-10-01). Empty if an offered
-    card's size is unknown."""
-    centres = card_centres(x, y, w, h, sizes, gap)
-    if not centres:
-        return []
-    across = min(h / 1080, w / 1920)
-    half_height = CARD_HEIGHT * across / 2
-    rects = [(round(cx - SLOTS[size] * SLOT_WIDTH * across / 2), round(cy - half_height),
-              round(cx + SLOTS[size] * SLOT_WIDTH * across / 2), round(cy + half_height))
-             for (cx, cy), size in zip(centres, sizes) if size != "Empty"]
-    return rects + [board_rect(x, y, w, h, level)]
-
-
-def board_rect(x: int, y: int, w: int, h: int, level: Optional[int]) -> tuple:
-    """Your own board, at its width for your level, as if full (where your cards sit isn't read)."""
-    across, mid = min(h / 1080, w / 1920), x + w / 2
-    board = BOARD_SLOTS.get(level or 0, 10) * SLOT_WIDTH * across / 2  # unknown level: the widest board
-    return (round(mid - board), y + round(YOUR_ROW[0] * h / 1080), round(mid + board),
-            y + round(YOUR_ROW[1] * h / 1080))
-
-
 def event_row(screen: Optional[str]) -> Optional[tuple]:
     """Each option's centre at 1080p on an event screen ("Choice-N" or "Line-N"), left to right; None when that
     layout isn't known."""
@@ -170,27 +114,6 @@ def event_centres(x: int, y: int, w: int, h: int, screen: str) -> List[tuple]:
     across = min(h / 1080, w / 1920)
     return [(round(x + w / 2 + dx * across), round(y + h * cy / 1080)) for dx, cy in event_row(screen)]
 
-
-def event_rects(x: int, y: int, w: int, h: int, screen: str, level: Optional[int] = None) -> List[tuple]:
-    """Where hovering shows a tooltip on an event choice screen: each option's frame, and your board."""
-    across = min(h / 1080, w / 1920)
-    half_w, half_h = EVENT_FRAME[0] * across / 2, EVENT_FRAME[1] * across / 2
-    return [(round(cx - half_w), round(cy - half_h), round(cx + half_w), round(cy + half_h))
-            for cx, cy in event_centres(x, y, w, h, screen)] + [board_rect(x, y, w, h, level)]
-
-
-def mouse_on(rects: List[tuple], held_counts: bool = True) -> bool:
-    """Is the mouse on one of the rects, or (held_counts) is its left button held (dragging a card shows its tooltip
-    anywhere)? Windows only; elsewhere always False."""
-    if sys.platform != "win32" or not rects:
-        return False
-    import ctypes
-    from ctypes import wintypes
-    point = wintypes.POINT()
-    if not ctypes.windll.user32.GetCursorPos(ctypes.byref(point)):
-        return False
-    held = ctypes.windll.user32.GetAsyncKeyState(0x01) & 0x8000  # VK_LBUTTON
-    return bool(held and held_counts) or any(r[0] <= point.x < r[2] and r[1] <= point.y < r[3] for r in rects)
 
 
 def padlock_shape(canvas, x: float, y: float, s: int) -> None:
@@ -323,21 +246,23 @@ class Overlay:
         trap: a Sell Trap is behind it - drawn as a skull in flames."""
         self.commands.put(("locked", (title, list(cards), blocked, trap) if title else None))
 
-    def show_padlocks(self, screen: Optional[str], sizes: List[Optional[str]], locked: List[int], reveal: bool = False,
-                      level: Optional[int] = None) -> None:
-        """A padlock on each locked card on offer: the screen showing them (a ROW_GAPS key), sizes of the row's
-        cards left to right (gaps included), and the positions (0-based) of the locked ones. No locked positions
-        hides them (at once). reveal: these are new cards, so wait until they've flipped over. level: yours."""
-        measured = event_row(screen) or screen in ROW_GAPS and not (screen in ONE_CARD_ONLY and len(sizes) > 1)
-        value = (screen, tuple(sizes), tuple(locked), level) if locked and measured else None
+    def show_padlocks(self, locks: Sequence[Padlock], reveal: bool = False, options: Optional[str] = None) -> None:
+        """The padlocks on what's offered: each on its card (padlocks.Padlock), or on an event option at its spot
+        of the measured layout `options` (an event_row key). None hides them at once. reveal: new cards, so they
+        wait until each has turned face-up."""
+        value = (tuple(locks), options) if locks else None
         self.commands.put(("padlocks", (value, time.monotonic(), reveal and value is not None)))
 
     def show_board_ui(self, ui) -> None:
-        """The board's on-screen flags (memreader.BoardUI), or None when they can't be read: then the padlocks
-        fall back to the mouse's position and a fixed wait."""
+        """The board's on-screen flags (memreader.BoardUI), or None when they can't be read: then no padlocks show
+        (nothing says their art is there)."""
         # picked up every HOVER_MS by the Tk thread, not queued: the queue is only emptied every POLL_MS, which made
         # padlocks show up to a quarter second after a reveal ended (and a queued older reading could undo a newer)
         self.latest_board_ui = ui
+
+    def show_board_padlocks(self, locks: Sequence[Padlock]) -> None:
+        """The padlocks on your own board's locked cards (they don't wait for any reveal)."""
+        self.commands.put(("board_padlocks", tuple(locks) or None))
 
     def show_board(self, title: Optional[str], offered: List[str], merchant: Optional[str]) -> None:
         """Shop Guide: what's on offer on screen (card guids, first, framed in gold) and the merchant you're at (its
@@ -356,6 +281,11 @@ class Overlay:
         """A short pop-up (bottom right) that disappears by itself. trap: a Sell Trap's, with its skull. cards: guids
         whose pictures it shows (an unlock's)."""
         self.commands.put(("toast", (text, time.monotonic() + seconds, warning, trap, tuple(cards))))
+
+    def show_menu_covered(self, covered: bool) -> None:
+        """One of the game's own screens is open over the menu (or not): picked up every HOVER_MS by the Tk thread,
+        like the board's flags, so the hero panel goes and comes back with the game's screens."""
+        self.latest_menu_covered = covered
 
     def show_menu(self, data: Optional[dict]) -> None:
         """The menu's centre panel (see client.menu_data); None hides it."""
@@ -423,19 +353,22 @@ class _Screen:
         self.padlocks_wanted = 0  # how many of them are in use
         self.pending_padlocks = None  # (padlocks, since, wait for the reveal) while new cards are still flipping
         self.reveal_started = False  # the game's reveal began since those padlocks came in
-        self.reveal_began = 0.0  # when the game's current (or last) reveal began
-        self.reveal_seconds = 0.0  # how long the last whole reveal took; 0 until one has been seen
-        self.board_ui = None  # memreader.BoardUI, or None (unreadable: fall back to the mouse)
-        self.padlock_cards: List[tuple] = []  # where hovering makes the padlocks see-through (see card_rects)
-        self.event_options: List[tuple] = []  # an event choice screen's options: hovering one keeps them solid
-        self.padlocks_faded = 1.0  # the padlocks' alpha now (see padlock_alpha)
+        self.reveal_began = -FLIP_EARLY  # when the game's current (or last) reveal began
+        self.reveal_ended = -FLIP_EARLY  # when the game's last reveal ended
+        self.stagger_from = 0.0  # new padlocks show left to right from then, padlocks.FLIP_STAGGER apart (0: all at once)
+        self.locks: List[Padlock] = []  # the padlocks shown now: what's offered (or the stash), then your board
+        self.lock_squares: List[Optional[tuple]] = []  # each one's square on screen now (None: its card isn't)
+        self.option_centres: List[tuple] = []  # an event screen's measured option centres (Padlock.option)
+        self.padlock_alphas: List[float] = []  # each padlock's alpha now (see padlock_alpha)
+        self.board_ui = None  # memreader.BoardUI, or None (unreadable: no padlocks, nothing says the art is there)
         self.overlay_faded = 1.0  # every other window's fade now (see overlay_factor)
+        self.followed = (None, 0.0)  # (board read, when) the padlocks and fades last followed (see fade_padlocks)
         self.guide_fading = False  # the Shop Guide is fading in or out (a second click waits for it)
 
         self.layout: dict = {}  # the strips for where the game window is now (see relayout)
         self.relayout((0, 0, root.winfo_screenwidth(), root.winfo_screenheight()))  # until the game is seen
         self.state = {"locked": None, "deathlink": None, "toasts": [], "status": None,
-                      "padlocks": None, "menu": None}
+                      "padlocks": None, "board_padlocks": None, "menu": None}
         self.hero_pictures: Dict[str, object] = {}  # the menu panel's portraits (Tk drops an image Python lets go)
         self.toast_pictures: Dict[tuple, object] = {}  # UNLOCKED pop-ups' card pictures, (guid, halved) -> image
         # the player hid the menu's hero panel, e.g. over character select, which the game gives no sign of
@@ -470,18 +403,16 @@ class _Screen:
                for kind in ("locked", "deathlink", "status")},
             "menu": self.new_menu,
             "padlocks": self.new_padlocks,
+            "board_padlocks": lambda value: self.set_state("board_padlocks", value),
         }
 
     def overlay_factor(self) -> float:
-        """How visible the whole overlay is, by the game's own flags - the padlocks' rules (owner, 2026-10-01:
-        "infact the entire overlay should follow those rules"): hidden under a dialog (Esc menu) or while your
-        stash slides, 30% while a card's tooltip shows or a card is dragged. 1 when the flags can't be read."""
+        """Whether the overlay shows at all, by the game's own flags: hidden under a dialog (Esc menu, the new-day
+        screen). Not while your stash slides: only the padlocks hide then (owner, 2026-10-15: "the ENTIRE overlay is
+        hidden when this is happening"; was 2026-10-01). Going see-through is each window's own business: only one
+        the game's tooltip or dragged card reaches (owner, 2026-10-14; see fade_padlocks)."""
         ui = self.board_ui
-        if ui is None:
-            return 1.0
-        if ui.dialog or ui.stash_moving:
-            return 0.0
-        return HOVERED_ALPHA if ui.hovering or ui.dragging else 1.0
+        return 0.0 if ui is not None and ui.dialog else 1.0
 
     def faded_windows(self) -> list:
         """(window, its own alpha) for every overlay window the fade scales."""
@@ -493,47 +424,68 @@ class _Screen:
             out.append((self.tracker.win, 1.0))
         return out
 
-    def padlock_alpha(self) -> float:
-        """By the game's own flags (owner, 2026-10-01): hidden while a dialog (Esc menu) covers the board or your
-        stash slides open or shut, see-through while a card's tooltip shows or a card is dragged. Unreadable flags:
-        by the mouse."""
-        ui = self.board_ui
-        if ui is not None and (ui.dialog or ui.stash_moving):  # the client swaps to the stash's own padlocks then
-            return 0.0
-        # owner, 2026-10-02: hovering an event's option keeps the padlocks solid; everything else still fades them.
-        # By the mouse, not the game's hover flag: that one stays on for a moment after leaving an option, which
-        # flashed them see-through on the way out. So on an event screen only your board or a drag fades them.
-        if self.event_options and self.game_in_front:
-            if ui is not None and ui.dragging:
-                return HOVERED_ALPHA
-            return HOVERED_ALPHA if mouse_on(self.padlock_cards[-1:], held_counts=False) else 1.0
-        if ui is None:  # the mouse, but only while the game is in front (owner: nothing outside the game)
-            return HOVERED_ALPHA if self.game_in_front and mouse_on(self.padlock_cards) else 1.0
-        return HOVERED_ALPHA if ui.hovering or ui.dragging else 1.0
+    def padlock_alpha(self, i: int, covers: List[tuple]) -> float:
+        """Padlock i by the rules in padlocks.py; none while the board's flags can't be read (owner, 2026-10-15: a
+        padlock shows only where its card's art is - was: event options followed the mouse, 2026-10-01)."""
+        if self.board_ui is None:
+            return padlocks.HIDDEN
+        return padlocks.alpha(self.locks[i], self.lock_squares[i], self.board_ui, covers,
+                              padlocks.COVER_PAD * self.layout["k"], self.stagger_from, time.monotonic())
+
+    def covers(self) -> List[tuple]:
+        return padlocks.coverings(self.board_ui, self.layout["window"]) if self.board_ui is not None else []
 
     def fade_padlocks(self) -> None:
-        """Every HOVER_MS: the padlocks' see-through-ness follows padlock_alpha; one still waiting checks if it's due."""
+        """Every HOVER_MS: on a new board read (or FOLLOW_SECONDS without one, or after a render) each padlock and
+        window follows what covers it; one still waiting checks if it's due."""
         try:
+            if not self.overlay.commands.empty() and self.tick() == "quit":  # queued news shows now, not at the
+                return  # next POLL_MS round (owner 2026-10-15: the hero panel lagged a hero pick)
             ui = getattr(self.overlay, "latest_board_ui", self.board_ui)
+            rendered = False
             if ui is not self.board_ui and self.new_board_ui(ui):  # a reveal ending is seen within HOVER_MS
                 self.render()
+                rendered = True
             if self.pending_padlocks and self.show_due_padlocks():
                 self.render()
-            alpha = self.padlock_alpha() if self.padlocks_wanted else 1.0
-            if alpha != self.padlocks_faded:
-                self.padlocks_faded = alpha
-                for padlock in self.padlocks:
-                    padlock.attributes("-alpha", alpha)
+                rendered = True
+            covered = getattr(self.overlay, "latest_menu_covered", None)
+            menu = self.state["menu"]
+            if menu and covered is not None and bool(menu.get("covered")) != covered:
+                self.state["menu"] = dict(menu, covered=covered)
+                self.render()
+                rendered = True
+            now = time.perf_counter()
+            if not rendered and ui is self.followed[0] and now - self.followed[1] < FOLLOW_SECONDS:
+                self.root.after(HOVER_MS, self.fade_padlocks)
+                return
+            self.followed = (ui, now)
+            self.place_padlocks()  # they ride on their cards: dragged, sliding, enlarged
+            covers = self.covers()
+            self.apply_padlock_alphas(covers)
             factor = self.overlay_factor()
             if factor != self.overlay_faded:
                 if (factor == 0) != (self.overlay_faded == 0):
                     self.sync_visibility()  # hidden, not just see-through: an invisible window still takes clicks
                 self.overlay_faded = factor
-                for window, own in self.faded_windows():
-                    window.attributes("-alpha", own * factor)
+            for window, own in self.faded_windows():
+                alpha = own * factor
+                if alpha and covers and window.winfo_ismapped():
+                    x, y = window.winfo_rootx(), window.winfo_rooty()
+                    if padlocks.covered((x, y, x + window.winfo_width(), y + window.winfo_height()), covers):
+                        alpha *= padlocks.SEE_THROUGH
+                if abs(float(window.attributes("-alpha")) - alpha) > 0.001:  # others set it too (the guide's fade)
+                    window.attributes("-alpha", alpha)
         except Exception:
             logger.exception("Overlay error (it keeps going)", extra=FILE_ONLY)
         self.root.after(HOVER_MS, self.fade_padlocks)
+
+    def apply_padlock_alphas(self, covers: List[tuple]) -> None:
+        alphas = [self.padlock_alpha(i, covers) for i in range(self.padlocks_wanted)]
+        for i, alpha in enumerate(alphas):
+            if i >= len(self.padlock_alphas) or self.padlock_alphas[i] != alpha:
+                self.padlocks[i].attributes("-alpha", alpha)
+        self.padlock_alphas = alphas
 
     def run(self) -> None:
         # laid out once now: with the game exactly on the primary screen no later tick sees a "move", and an open
@@ -653,7 +605,7 @@ class _Screen:
         if self.guide:  # the whole left column under its header
             self.guide.fit(screens.clamp(below(layout["left"], drawn["alerts_height"]), layout["screen"]),
                            layout["screen"])
-        padlocks = (state["padlocks"], layout["window"])
+        padlocks = (state["padlocks"], state["board_padlocks"], layout["window"])
         if padlocks != drawn["padlocks"]:
             drawn["padlocks"] = padlocks
             self.render_padlocks()
@@ -933,28 +885,35 @@ class _Screen:
         return self.place(moves, self.alert_box, (x, y, width, strip_height // ALERT_SHARE))
 
     def render_padlocks(self) -> None:
-        """Moves a padlock onto the centre of each locked card on offer (see card_centres)."""
+        """The padlocks wanted now: one window each, sized for the game window (placed by place_padlocks)."""
         layout, value = self.layout, self.state["padlocks"]
-        screen, sizes, locked, level = value or (None, (), (), None)
-        self.event_options = []
-        if event_row(screen):
-            centres = event_centres(*layout["window"], screen)
-            self.padlock_cards = event_rects(*layout["window"], screen, level)
-            self.event_options = self.padlock_cards[:-1]  # the options alone, without your board
-        else:
-            gap = ROW_GAPS.get(screen, 0)
-            centres = card_centres(*layout["window"], sizes, gap) if value else None
-            self.padlock_cards = card_rects(*layout["window"], sizes, gap, level) if value else []
-        spots = [centres[i] for i in locked if i < len(centres)] if centres else []
+        locks, options = value or ((), None)
+        self.locks = list(locks) + list(self.state["board_padlocks"] or ())
+        window = layout["window"]
+        self.option_centres = event_centres(*window, options) if event_row(options) else []
         size = max(MIN_PADLOCK, round(PADLOCK * layout["k"]))
-        while len(self.padlocks) < len(spots):
+        while len(self.padlocks) < len(self.locks):
             self.padlocks.append(self.new_padlock())
-        for padlock, (x, y) in zip(self.padlocks, spots):
+        for padlock in self.padlocks[:len(self.locks)]:
             if padlock.drawn_size != size:
                 self.draw_padlock(padlock, size)
-            padlock.geometry(screens.geometry(screens.clamp((x - size // 2, y - size // 2, size, size),
-                                                            layout["screen"])))
-        self.padlocks_wanted = len(spots)
+        self.padlocks_wanted = len(self.locks)
+        self.place_padlocks()
+        self.padlock_alphas = []  # set afresh: a moved padlock may be covered (or not) where it is now
+        self.apply_padlock_alphas(self.covers())
+
+    def place_padlocks(self) -> None:
+        """Each padlock on its card, wherever the card is now (padlocks.spot)."""
+        size = max(MIN_PADLOCK, round(PADLOCK * self.layout["k"]))
+        self.lock_squares = [padlocks.spot(lock, self.board_ui, self.layout["window"], size, self.option_centres)
+                             for lock in self.locks]
+        for padlock, square in zip(self.padlocks, self.lock_squares):
+            if square is None:
+                continue  # hidden by padlock_alpha
+            spot = screens.clamp((round(square[0]), round(square[1]), size, size), self.layout["screen"])
+            if getattr(padlock, "spot", None) != spot:
+                padlock.spot = spot
+                padlock.geometry(screens.geometry(spot))
 
     def new_padlock(self):
         padlock = self.tk.Toplevel(self.root)
@@ -967,7 +926,7 @@ class _Screen:
         padlock.canvas = self.tk.Canvas(padlock, bg=PADLOCK_KEY, highlightthickness=0, bd=0)
         padlock.canvas.pack(fill="both", expand=True)
         padlock.drawn_size = 0
-        padlock.attributes("-alpha", self.padlocks_faded)
+        padlock.attributes("-alpha", 0.0)  # until apply_padlock_alphas says otherwise
         return padlock
 
     @staticmethod
@@ -991,33 +950,41 @@ class _Screen:
         return True
 
     def new_board_ui(self, ui) -> bool:
-        now = time.monotonic()
-        was = self.board_ui is not None and self.board_ui.revealing
-        if ui is not None and ui.revealing and not was:
+        was, now = self.board_ui, time.monotonic()
+        revealing, was_revealing = ui is not None and ui.revealing, was is not None and was.revealing
+        if revealing and not was_revealing:
             self.reveal_began = now
-        elif was and not (ui is not None and ui.revealing) and self.reveal_began:
-            self.reveal_seconds = now - self.reveal_began  # how long the game's flip takes, for next time
+        elif was_revealing and not revealing:
+            self.reveal_ended = now
         self.board_ui = ui
-        return self.show_due_padlocks()
+        cleared = False
+        if ui is not None and ui.dealing and not (was is not None and was.dealing) and self.state["padlocks"]:
+            self.state["padlocks"] = None  # a reroll's old cards dissolve now: their padlocks go with them (clip)
+            cleared = True
+        return self.show_due_padlocks() or cleared
 
     def show_due_padlocks(self) -> bool:
-        """The latest padlocks once they may show (a newer command replaces one still waiting). New cards: once
-        the game's reveal has started and ended; if it hasn't started within FLIP_SECONDS (or can't be read), after
-        FLIP_SECONDS; never later than FLIP_MAX."""
+        """The latest padlocks once they may show (a newer command replaces one still waiting). New cards: as each
+        turns face-up (owner, 2026-10-14: not while face-down, when only size and rarity show, and not after, when
+        the player could buy before noticing). The game's reveal flag starts as the card backs swirl in; the first
+        card turns FLIP_DELAY later and the rest padlocks.FLIP_STAGGER apart (clips, 2026-10-14). Items that don't flip
+        (rewards, events) are up when the flag ends, so whichever comes first. If no reveal starts within
+        FLIP_SECONDS (or the flag can't be read), after FLIP_SECONDS. A dialog still hides them (padlock_alpha)."""
         if not self.pending_padlocks:
             return False
         value, since, reveal = self.pending_padlocks
-        waited, ui = time.monotonic() - since, self.board_ui
-        if ui and ui.revealing:
+        ui, now = self.board_ui, time.monotonic()
+        if ui and ui.revealing or self.reveal_began >= since - FLIP_EARLY:
             self.reveal_started = True
-        if reveal and waited < FLIP_MAX:
-            if self.reveal_started and ui and ui.revealing:
-                # a little before the flip ends, once a flip has been timed (a first one waits for its end)
-                almost = self.reveal_seconds and time.monotonic() - self.reveal_began >= self.reveal_seconds - FLIP_LEAD
-                if not almost:
-                    return False
-            if not self.reveal_started and waited < FLIP_SECONDS:
+        self.stagger_from = 0.0
+        if reveal and self.reveal_started:
+            ended = self.reveal_ended > self.reveal_began
+            if not ended and now < self.reveal_began + FLIP_DELAY:
                 return False
+            if not ended:
+                self.stagger_from = self.reveal_began + FLIP_DELAY
+        elif reveal and now - since < FLIP_SECONDS:
+            return False
         self.state["padlocks"], self.pending_padlocks = value, None
         return True
 

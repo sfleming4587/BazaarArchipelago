@@ -105,7 +105,7 @@ screenshot idea was for: it could mark locked cards on the overlay without match
 | Hour of the day (0-6) | ❌ | ✅ `Run.Hour`, `HoursInADay = 6` |
 | PvP win/loss | ❌ guessed / asked | ✅ `Victories` / `Losses`, when the replay ends |
 | Run lost | ⚠️ only after Continue | ✅ `Losses` up + `Prestige` 0, when the replay ends (DeathLink uses this, 2026-10-06) |
-| Run won | ✅ `EndRunVictoryState`, ~8 s after the 10th win (seen 2026-10-01) | ✅ `Victories` = 10 when the fight ends; state `EndRunVictory` ~7 s later |
+| Run won | ✅ `EndRunVictoryState`, ~8 s after the 10th win (seen 2026-10-01) | ✅ `Victories` = 10 when the fight ends; state `EndRunVictory` when the player moves on, like a loss (~7 s on 2026-10-01; 76 s on 2026-10-14 while the owner looked through the recaps) |
 | Monster tier | ⚠️ only through loot after a win | ✅ on the choice card, before the fight |
 | Monster win/loss | ⚠️ inferred from a loot screen | ✅ health of both sides |
 | Monster's board | ❌ | ✅ once the fight starts |
@@ -197,7 +197,13 @@ Legendary Crash Site Ticket and Sharpening Stone, each with its slot, tier and c
 (350) were live.
 
 ⚠️ The right-click preview on the map did **not** put the monster's cards into the run data. Its board only
-appears once the fight starts.
+appears once the fight starts. **2026-10-15:** the preview lives in the tooltip instead -
+`_cardTooltipController._monsterBoardTooltip` (`MonsterBoardTooltip`): `_activeCards` is a `List<CardPreviewItem>`,
+each a UI element on the tooltip canvas (`_canvasForWorldBounds`) with its card in `_clientCard` (`TemplateId`), and
+`_sockets` the 10 slots. The items slide up from below the window for ~0.5 s, then sit still; their rects matched the
+owner's video (Soda Swiller, Baron Boys) to the pixel. Read only while a right-click view is open on a
+`CombatEncounterCard` whose template's `CombatantType` is a `TCombatantMonster` - never a PvP opponent
+(`memreader._monster_board`).
 
 ### Monster tiers seen on choice cards
 
@@ -292,11 +298,72 @@ of guessing. Offsets found on 2026-09-30: assembly list +0xA0, class cache +0x4D
   2026-10-07: an elevated reader attaches to the Tempo game; a normal one gets `NeedsAdmin`.
 - **K-mem8 (2026-10-01):** some objects nothing static points to (the input manager) are found by searching the
   game's private read-write memory once for their class's vtable pointer (`Memory.find_pointer`, ~4.4 GB in 6-28 s);
-  this Mono's GC never moves objects, so the address holds for the session. Needs PROCESS_QUERY_INFORMATION (to
-  list the regions) on top of VM_READ - still read-only.
+  this Mono's GC never moves objects, so the address holds while the object lives. Needs PROCESS_QUERY_INFORMATION
+  (to list the regions) on top of VM_READ - still read-only. ⚠️ 2026-10-14: the game REPLACES its input manager
+  when a run ends and the menu comes back (watched: the stack size went to None at the concede, a fresh search read
+  1 with the hero-change screen open). Kept "for the session", the hero panel stopped hiding under the game's
+  screens after every run; `menu_layers` now searches again when it's gone (`INPUT_SEARCH_SECONDS`).
 - **K-mem7 (2026-10-01):** `ECardSize` doesn't count from 0, so naming enum values by declaration order read every
   card one size too big. Sizes come from `bazaar_data.json`; only `ECardType` (which does count from 0) is named
   by order.
+- **K-mem10 (2026-10-14): at the main menu `BoardManager` and `CardController` aren't set up yet** (their
+  `MonoClass` runtime info is 0), so learning the board's flags fails there - and it was tried only once per game
+  session, so a client that attached at the menu (the usual case) had no stash padlocks, padlocks in the
+  loading screen, mouse-only fading and the fixed flip wait all session (owner's bugs 1 and 5). The hero preferences
+  (`_learn_prefs`) need the same static blocks and were off too. `Reader.ui()` now retries every
+  `UI_RETRY_SECONDS` until a run's board has loaded (watched: learned at once); the class search (~150 ms) is done
+  once and cached, since `ui()` runs on the client's event loop.
+  ⚠️ Found and dropped the same day: `BaseTooltipController._contentWorldCorners` is NOT the tooltip's shape - it
+  leaves out the cooldown clock and the tag chips, the keyword box isn't the `_auxiliaryTooltipController` (that
+  one sits elsewhere), and it keeps old values in the right-click view; the owner's screenshots showed all four.
+  The pieces are read instead (K-mem11). `BoardManager.Instance` is a static on its generic parent class, not on
+  `BoardManager`.
+- **K-mem12 (2026-10-14): nothing the game can replace is kept for the session.** Swept after the input manager
+  (K-mem8): the reader keeps only class layouts and static-field slots (fixed while the game runs; every value
+  behind them is re-read) and per-reading card ids. A snapshot that fails reads as "no screen" for up to
+  `SNAPSHOT_GRACE` (10 s) - the game swaps objects around a run's end - and only a lasting failure turns the reader
+  off for the session (attach's layout checks catch a patch first). ⚠️ When adding a reader: anything found once
+  must be re-found when it's gone, and a failed read must not count as a patch unless it lasts.
+- **K-mem11 (2026-10-14, amended the same day): a card's on-screen position is not in managed memory - it is in
+  Unity's native objects, and is read from there** (`bazaar/unity.py`, Unity 6000.3.11). Owner, 2026-10-14: "I want
+  the positioning of where UI is supposed to be NEVER GUESSED". How, every offset checked against the owner's
+  screenshots:
+  - A UnityEngine.Object's native object: `+0x10`. Transform: hierarchy `+0x28`, index `+0x30`; hierarchy: local
+    position/rotation/scale `+0x18` (48 bytes per index), parent index `+0x20` (-1 = root), Transform* table `+0x30`.
+    World = the parents composed (`unity.world`).
+  - The camera: `CardController.mainCamera`, native `+0xF0` = world->clip, column-major. Board anchors landed within
+    ~5 px.
+  - A card: its `Rig` transform and its `BoxCollider` (native `+0x60` centre, `+0x6C` size: Small 1.39 x 3.2,
+    Medium 3.0 x 3.2), 8 corners projected (`unity.box_rect`). Matched shop (5/5, Small to Large), loot, level-up,
+    board, stash: 1-4 px vertically, ~7 px inside the gold frame (the collider is the clickable area). Dragging,
+    swapping, the others sliding aside, the hover enlargement and the right-click view all move this same
+    transform, so all of them follow.
+  - Interface pieces: Component `+0x20` = GameObject; GameObject `+0x20` = components (the first is its
+    Transform), `+0x50` = name, `+0x46` = Unity's on/off switch. RectTransform `+0xB8` = rect (x, y, w, h) on a
+    screen canvas whose units are pixels, y up (`unity.ui_rect`).
+  - ⚠️ The game pools card controllers: a scan finds dead ones and other players' cards - never scan; reach cards
+    through the board's sockets (`playerItemSockets`, `playerStorageSockets`; the merchant's `opponent*Sockets` only
+    off fights and only for ids on offer - owner ruling 2026-10-14).
+  - ⚠️ Event options (`BoardManager._opponentBoardSocketControllers`, found by id) have no native Rig; their place
+    needs the GameObject route and wasn't finished - events keep the measured layout (owner: "leave the hard coded
+    positions of padlocks as they are for events").
+    **2026-10-15 (recorded with the owner):** the list is a `List<EncounterSocketController>`; each socket's own
+    GameObject Transform has a world pose that flips with the stash exactly like the shop's cards, and options drop
+    out of the list as they leave after a pick. So an option's padlock shows only while its socket is switched on
+    and faces you (`memreader._card_rects`; `padlocks.spot`).
+    **Second recording, 2026-10-15:** the socket projected ~18 px off the measured centres, but the option's own
+    `CardController` Transform lands on the art's centre (715,305 where the measured spot was 715,303), and when the
+    event is right-clicked it moves into the big view and sits on the enlarged art's centre (0.363, 0.41, matched to
+    the owner's video). So event padlocks are placed there - the socket only says which way it faces. ⚠️ Unverified:
+    that an option's controller carries the camera (else the last camera seen is used).
+  - **The on/off switch of each card (2026-10-15 recording):** a sold card's GameObject turns off one frame before it
+    leaves its slot; cards are skipped while off. Card backs during a reveal are *not* a rotation of the card (it
+    faces you throughout), so the flip timers stay.
+  - ⚠️ The on/off switch hides only some tooltip pieces (the sell box); the keyword boxes and an empty bottom box
+    stay "on" - see `memreader.TOOLTIP_PIECES` for the chosen pieces and the right-click rule for the keyword boxes.
+    A padlock just below a short tooltip can go 30% with nothing over it; never hidden. Not finished: the pieces'
+    own transparency.
+  - ⚠️ A Unity update can move these offsets: then positions read nothing (no padlocks on cards), never wrong ones.
 - **K-mem9 (2026-10-02):** a game that is still loading fails other checks too, not just the assembly list:
   "MonoImage.class_cache not found" 5 s after "still loading" turned the reader off for the whole session (no
   padlocks, menu panel never hidden); it attached fine once loaded. Any failed attach within `LOADING_SECONDS` of
@@ -304,58 +371,53 @@ of guessing. Offsets found on 2026-09-30: assembly list +0xA0, class cache +0x4D
 
 ## Padlocks on locked offers (passed in the game 2026-10-01, released in v0.8.0)
 
-**A padlock sits on the centre of each locked card on offer in a shop or a level-up; the list beside the board
-names only those cards.** Owner, 2026-10-01: place them by proportion ("the shop row of cards is always roughly 1/3
-down from the top ... using their sizes you can accurately put a red X or lock in the middle of the card"), a
-padlock rather than an X. The reader is always on (owner: "a cornerstone for how the archipelago client will
-work").
+**A padlock sits on the centre of each locked card - on offer, in your stash, on your board - wherever the
+card is, read from memory (K-mem11); the list beside the board names only those cards.** Owner, 2026-10-14: "I
+basically want these padlocks to appear as if they are ART on the card"; "NEVER GUESSED". (2026-10-01 to 10-14 they
+were placed by measured proportions of the window; that is gone, event options included since 2026-10-15.)
 
-Passed in the game 2026-10-01 (owner, 1080p, Valpak and other shops, a level-up): padlocks centred on mixed sizes;
-they appear as the flip ends; hovering any card fades them, empty board doesn't; a bought card leaves the others
-in place; stash and Esc menu hide them; a reroll clears them at once and the new ones follow the flip.
-
-- **Driven by memory alone** (`client.refresh_padlocks`), so screens the log never mentions (level-ups) work the
-  same. A screen gets padlocks only if its layout is in `overlay.ROW_GAPS` (measured): `Encounter` (cards touch)
-  and `LevelUp` (68 px apart at 1080p), and `Loot` with one card only (centred; passed in the game 2026-10-01,
-  Drafting Table). `ONE_CARD_ONLY` refuses several-card loot, which never happens: owner, 2026-10-01, "Every
-  monster fight will only provide 1 item". Event item
-  choices on the `Encounter` screen use the shop's touching layout: Wishing Fountain's five cards (M S M M S, 8
-  slots) all centred within 2 px on the owner's screenshot 2026-10-01. Events
-  with their own layouts and anything else: none until measured. The list beside the board still follows the log's merchant line (`offers_at`).
-- **Positions** (`overlay.card_centres`): sizes from `bazaar_data.json` (K-mem7), Small/Medium/Large = 1/2/3 slots
-  of 113 px at 1080p, the row centred across the window at 39.8% of its height (measured on two screenshots,
-  centres within 1-2 px). An unknown size means no padlocks at all - a guessed width would move every padlock after
-  it onto the wrong card.
-- **Bought cards leave a gap** (owner: "cards do not move after a purchase"): the row keeps its layout until new
-  cards (new instance ids) come in. ⚠️ If the client starts or reconnects after something was already bought from
-  the row, it can't know where the gap was; that row's padlocks are off until the next new cards. Offered cards
-  have no slot in memory (`LeftSocketId`/`Section` are empty for them, checked 2026-10-01) and the log doesn't
-  list the row, so there's no exact fix. Owner, 2026-10-01: "no big deal". A cheap option not built: no padlocks
-  in that one case (the log knows a purchase happened in this shop).
-- **Your stash** (passed in the game 2026-10-01: centred on Sharkclaws, followed it to slots 5, 0 and back to 3,
-  shop padlocks back on closing): while it's open the client swaps to padlocks on its locked cards, read from
-  `Run.Player.Stash.Container.Sockets` (cards sit and move freely in any of its 10 slots, owner). It's laid out as a
-  10-slot row with `Empty` in the free slots, so the same centring puts each card on the grid. Your board uses the
-  same 10-slot numbering (level 2 = slots 2-7).
-- **The game's own flags drive them** (`memreader.BoardUI`, read every 60 ms; owner: "apply those useful flags as
+- **Who decides what** (one job each): `client.refresh_padlocks` says *which* cards (their instance ids: locked
+  offers on `ITEM_SCREENS`, locked stash and board cards off fights); `memreader.ui` says
+  *where* every card and tooltip piece is; `padlocks.py` says where each padlock goes and how it shows; the overlay
+  only draws. A card memory can't place gets no padlock.
+- **Event options** are placed from memory too since 2026-10-15 (their art's centre, above). The measured layout
+  (`overlay.event_row`) is used only by `padlocks.spot` for an option with no card, which the client never sends;
+  every option count gets padlocks (an unmeasured hourly count used to get none).
+- **A right-clicked monster's board** (owner, 2026-10-15): each locked item on it gets a padlock, keyed
+  `monster:<i>` (`BoardUI.monster_items`), the same lock list as the shop.
+- **Bought cards**: the others don't move (owner), and their padlocks stay on them because they follow the cards.
+- **The game's own flags drive them** (`memreader.BoardUI`, read 60 times a second, was every 60 ms until 2026-10-15; ⚠️ asyncio.sleep and Tk timers round up to Windows' ~15.6 ms tick, so "16 ms" really ran ~35 and ~45 times a second (owner saw ~20 fps): since 2026-10-15 the client asks Windows for 1 ms timers (timeBeginPeriod, this process only), the read loop runs at 60/s and the overlay looks for a new read every 2 ms (measured ~400/s) and moves the padlocks on each one - one clock, so the two can't drift against each other (they ran 58/s and 64/s before); ⚠️ a board read cost ~0.7 ms a card plus 1-1.5 ms for a tooltip (recorded 2026-10-15, ~50 calls into Windows a card) - too slow for a 144 Hz frame (6.9 ms) - so during one read memory is fetched in page-sized (4 KB) aligned blocks and reused (`READ_BLOCK`; never across reads, so nothing goes stale). Measured 2026-10-15: a call into Windows costs ~5 us whatever its size, 13 cards read in 4.0 ms with 4 KB blocks (4.5 with 256 B) - the rest is Python's own work, and 60 fps (16.7 ms) is the target (owner: a 60 cap is fine); owner: "apply those useful flags as
   the triggers instead"):
 
   | Flag | Where | Padlocks |
   |---|---|---|
-  | stash open | `BoardManager.activeStorageToy.toyOpen` | hidden |
-  | Esc menu / dialog | `BoardManager.DialogOpen` | hidden |
-  | a card's tooltip | `TooltipParentComponent._cardTooltipController._currentCard` (the controller lingers while fading out; the card doesn't) | 30% |
-  | dragging | `CardController.IsAnyCardDragging` (static) | 30% |
-  | cards flipping | `BoardManager._isRevealing` (starts ~1 s after the screen opens, lasts ~1 s) | new padlocks wait for it to start and end; 1 s if it doesn't start, 3 s at most |
+  | stash flipping open or shut | not a flag: each card's own pose. The stash is the back of the shop's panel, which flips 180 degrees about x in ~0.6 s; `toyOpen` and `StorageMoving` turn on at the *start*, so they can't say what's seen (recorded 2026-10-15) | a card has a position only while its face is toward the camera (`unity.faces_camera`): your board's padlocks never hide, the shop's go and the stash's appear as the panel turns edge-on, and back (owner 2026-10-15: "it is not okay to keep 'Hiding padlocks' if the card is still visible"; was hidden by `toyOpen`) |
+  | Esc menu / dialog | `BoardManager.DialogOpen` (also on through the new-day screen, from Continue until the next events are visible; watched 2026-10-14) | hidden |
+  | a card's tooltip | `_cardTooltipController._currentCard`; its pieces' rects (`memreader._tooltip_pieces`, K-mem11) | 30%, only padlocks a piece reaches (plus `padlocks.COVER_PAD`) |
+  | dragging | `CardController.IsAnyCardDragging` + `DraggedCard`'s instance id | the dragged card's padlock rides on it; padlocks under it 30% |
+  | hovering | the tooltip's card | its enlarged picture (its real rect) fades the padlocks it reaches - never its own |
+  | right-click view | `_cardTooltipController.isLocked` (on exactly while it's open: shop card, monster, events; 2026-10-14) | the right-clicked card keeps its padlock (on the big card) - an event's too, since 2026-10-15 - and so do a right-clicked monster's items; all others hidden |
+  | new cards dealt | `BoardManager._cardsBeingDealt` (on as a reroll's old cards start to dissolve) | the old padlocks go at once |
+  | cards flipping | `BoardManager._isRevealing` (on as the card backs swirl in, ~0.1 s after the deal flag; a shop's 1.5 s, a reward choice's 0.55 s, an event's ~0.3 s; clips 2026-10-14) | new padlocks show `FLIP_DELAY` (0.7 s) after it turns on, left to right `padlocks.FLIP_STAGGER` (0.12 s) apart - when the first shop card turns face-up, 3 of 3 clips - or when it ends if sooner (rewards and events don't flip); one that began up to `FLIP_EARLY` before the client noticed the cards counts; 1 s if none starts |
 
-  `BoardManager` is reached through `Data.<TransitionIn>._boardManager`. If these can't be read (a patch), the
-  padlocks fall back to the mouse's position (each card, plus your board's width for your level, as if full: 4/6/8
-  slots at levels 1-3, 10 after; owner) and a fixed 1 s wait.
+  **The rule behind the table (owner, 2026-10-14): can the player buy or click the card right now?** Not -> hidden
+  (turned away under the stash, settings/Esc, dialogs, loading). Covered but still actionable -> 30% (a tooltip, a drag): "with
+  the tooltips you can still buy the item or go to the event so the padlock should remain translucent". New cards:
+  the padlock appears as the card turns face-up, not while face-down ("you can see the size and rarity of a card
+  BEFORE it has flipped") and not after (the player could buy before noticing). "Covered" means reaching the padlock
+  itself, "but add some padding to the edges, not a lot though"; padlocks don't grow with a hovered card (owner,
+  2026-10-14).
+
+  `BoardManager` is reached through `Data.<TransitionIn>._boardManager`. If these can't be read (a patch), no
+  padlocks show, event options included (owner 2026-10-15: "padlocks are to only be seen if the art for what it is
+  supposed to be on top of is there"; until then event options followed the mouse's position, with your board's
+  width for your level as if full: 4/6/8 slots at levels 1-3, 10 after, and a fixed 1 s wait).
 - Each padlock is its own small window: see-through around the lock, click-through (`WS_EX_TRANSPARENT`), never
   focused, shown only while the game is in front.
 - If a check fails the reader turns itself off until the game restarts, says so once, and shops fall back to the
   list. Game not running or still loading is silent.
-- ⚠️ Only 1080p and 16:9 measured; 1440p, 16:10 and 21:9 are untested.
+- ⚠️ Positions are fractions of the game window from the camera, so any size should work - only 1080p 16:9
+  checked.
 
 Not built yet: locked heroes on the character select screen (owner wants it; needs a screenshot).
 
@@ -398,7 +460,6 @@ status line.
 | An event that offers a choice of items: same row as a shop? | padlocks outside merchants |
 | Read gold, health, prestige, level and XP off the screen once and compare | confirms the stat table |
 | An enchanted card on the board | `Enchantment` decoding |
-| Right-click a monster on the map, then check the dump | where the preview lives (it was not in the run data) |
 | Run the real client and the reader together for a whole run | no slowdown, no interference |
 | The 1440p PC | same offsets on another machine |
 

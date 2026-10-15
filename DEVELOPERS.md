@@ -26,6 +26,8 @@ nobody should risk their account to play a randomizer.
 | `bazaar/client.py` | the CommonClient-based client ("The Bazaar Client" in the Launcher); every run check goes through `send_run_checks` |
 | `bazaar/overlay.py` | the overlay: `Overlay` is the client's handle (a command queue), `_Screen` the Tk thread (header, notices, pop-ups, menu panel, padlocks) |
 | `bazaar/memreader.py` | reads the shop's offered cards from game memory, read-only; finds Mono's offsets by probing and turns itself off if a check fails (no Archipelago imports) |
+| `bazaar/unity.py` | where things are on screen, read from the game's Unity objects (transforms, camera, colliders, interface boxes); pure reading, no game rules |
+| `bazaar/padlocks.py` | the padlock rules: where each one goes and whether it shows solid, see-through or hidden; pure, no windows or memory |
 | `bazaar/shop_guide.py` | the Shop Guide window (card pictures, or "no picture" boxes) |
 | `bazaar/theme.py` | colours and the font shared by every window |
 | `bazaar/merchants.py` | which cards a merchant / item choice can offer (from the game's spawn filters) |

@@ -218,133 +218,108 @@ class TestPopUpsFillTheRoom(unittest.TestCase):
             root.destroy()
 
 
-class TestCardCentres(unittest.TestCase):
-    def test_row_is_centred_and_cards_follow_their_sizes(self) -> None:
-        from ..overlay import SHOP_ROW_Y, SLOT_WIDTH, card_centres
-        centres = card_centres(0, 0, 1920, 1080, ["Small", "Large", "Medium"])
-        self.assertEqual([y for _, y in centres], [round(1080 * SHOP_ROW_Y)] * 3)
-        # Small(1) Large(3) Medium(2) = 6 slots centred on 960: the Large card's centre is 0.5 slot left of it
-        self.assertAlmostEqual(centres[1][0], 960 - SLOT_WIDTH / 2, delta=1)
-
-    def test_scales_with_the_window_and_follows_it_on_screen(self) -> None:
-        from ..overlay import card_centres
-        small = card_centres(0, 0, 1920, 1080, ["Medium", "Medium"])
-        big = card_centres(100, 50, 2560, 1440, ["Medium", "Medium"])
-        for (x1, y1), (x2, y2) in zip(small, big):
-            self.assertAlmostEqual(x2 - 100, x1 * 4 / 3, delta=1)
-            self.assertAlmostEqual(y2 - 50, y1 * 4 / 3, delta=1)
-
-    def test_an_unknown_size_means_no_padlocks(self) -> None:
-        from ..overlay import card_centres
-        self.assertIsNone(card_centres(0, 0, 1920, 1080, ["Small", None]))
-        self.assertIsNone(card_centres(0, 0, 1920, 1080, []))
-
-
-class TestPadlockHoverArea(unittest.TestCase):
-    def test_only_the_cards_count_not_the_empty_board_around_them(self) -> None:
-        from ..overlay import card_centres, card_rects
-        sizes = ["Medium", "Medium", "Small"]
-        rects = card_rects(0, 0, 1920, 1080, sizes)
-        inside = lambda x, y: any(r[0] <= x < r[2] and r[1] <= y < r[3] for r in rects)
-        for x, y in card_centres(0, 0, 1920, 1080, sizes):
-            self.assertTrue(inside(x, y))
-        self.assertFalse(inside(500, 430))  # the shop row's empty space, left of the cards
-        self.assertFalse(inside(960, 300))  # the merchant above
-        self.assertTrue(inside(960, 650))  # your own board's row
-        self.assertFalse(inside(380, 650))  # ...but not past its widest (10 slots: x 395-1525)
-        strip_left, strip_right, _ = strips(0, 0, 1920, 1080)
-        self.assertTrue(all(r[0] >= strip_left[0] + strip_left[2] and r[2] <= strip_right[0] for r in rects))
-
-
-class TestEventPadlocksOnHover(unittest.TestCase):
-    """Owner, 2026-10-02: hovering an event option keeps its padlocks solid - and they flashed see-through for a
-    moment on leaving one (the game's hover flag outlives the mouse)."""
-
-    def test_only_your_board_or_a_drag_fades_them_on_an_event_screen(self) -> None:
-        import types
-        from unittest import mock
-        from .. import overlay
-        from ..memreader import BoardUI
-        board = (0, 600, 100, 700)
-        screen = types.SimpleNamespace(event_options=[(0, 0, 10, 10)], padlock_cards=[(0, 0, 10, 10), board],
-                                       game_in_front=True, board_ui=BoardUI(True, False, False, False, False))
-        alpha = lambda: overlay._Screen.padlock_alpha(screen)
-        on = lambda where: mock.patch.object(overlay, "mouse_on", lambda rects, held_counts=True: where in rects)
-        with on("nowhere"):
-            self.assertEqual(alpha(), 1.0)  # just left an option, the game still says "hovering"
-        with on(board):
-            self.assertEqual(alpha(), overlay.HOVERED_ALPHA)
-        screen.board_ui = BoardUI(False, True, False, False, False)
-        with on("nowhere"):
-            self.assertEqual(alpha(), overlay.HOVERED_ALPHA)  # dragging
-        screen.board_ui = BoardUI(True, False, False, True, False)
-        self.assertEqual(alpha(), 0.0)  # the Esc menu
-
-
 class TestPadlocksOnReveal(unittest.TestCase):
-    """Owner, 2026-10-02: padlocks a little sooner on a reveal. The first one waits for the flip to end; once its
-    length is known, they show FLIP_LEAD before the end."""
+    """Owner, 2026-10-14: a new card's padlock shows as the card turns face-up - not while it lies face-down (size and
+    rarity already show), not after (the player could buy it before noticing). Clips that day: the game's reveal flag
+    turns on as the card backs swirl in; the first shop card turns 0.7 s later (3 of 3), the next ~0.12 s apart;
+    rewards don't flip and are up when the flag ends (0.55 s); a reroll's old cards dissolve as the deal flag turns
+    on, and their padlock lingered on them."""
 
-    def test_first_reveal_waits_for_the_end_later_ones_show_just_before(self) -> None:
+    def setUp(self) -> None:
         import types
         from unittest import mock
         from .. import overlay
         from ..memreader import BoardUI
-        now = [100.0]
-        flipping, still = BoardUI(False, False, False, False, True), BoardUI(False, False, False, False, False)
-        screen = types.SimpleNamespace(board_ui=None, reveal_began=0.0, reveal_seconds=0.0, reveal_started=False,
-                                       pending_padlocks=None, state={"padlocks": None})
-        new_ui = lambda ui: overlay._Screen.new_board_ui(screen, ui)
-        due = lambda: overlay._Screen.show_due_padlocks(screen)
-        screen.show_due_padlocks = due
-        with mock.patch.object(overlay.time, "monotonic", lambda: now[0]):
-            for first in (True, False):
-                screen.pending_padlocks, screen.reveal_started = ("locks", now[0], True), False
-                new_ui(flipping)
-                now[0] += 1.0 - overlay.FLIP_LEAD + 0.01  # most of a 1 s flip
-                self.assertEqual(due(), not first)
-                now[0] += overlay.FLIP_LEAD
-                new_ui(still)
-                self.assertEqual(screen.state["padlocks"], "locks")
-                self.assertAlmostEqual(screen.reveal_seconds, 1.01, places=2)
-                screen.state["padlocks"] = None
+        self.overlay, self.now = overlay, [100.0]
+        self.flipping, self.still = BoardUI(False, False, False, False, True), BoardUI(False, False, False, False, False)
+        self.dealing = BoardUI(False, False, False, False, False, dealing=True)
+        self.screen = types.SimpleNamespace(board_ui=None, reveal_began=-overlay.FLIP_EARLY,
+                                            reveal_ended=-overlay.FLIP_EARLY, reveal_started=False, stagger_from=0.0,
+                                            pending_padlocks=None, state={"padlocks": None})
+        self.screen.show_due_padlocks = lambda: overlay._Screen.show_due_padlocks(self.screen)
+        # only the overlay's clock, not time.monotonic for everything else running
+        patch = mock.patch.object(overlay, "time", types.SimpleNamespace(monotonic=lambda: self.now[0]))
+        patch.start()
+        self.addCleanup(patch.stop)
+
+    def ui(self, ui) -> bool:
+        return self.overlay._Screen.new_board_ui(self.screen, ui)
+
+    def new_cards(self) -> None:
+        self.screen.pending_padlocks, self.screen.reveal_started = ("locks", self.now[0], True), False
+
+    def shown(self) -> bool:
+        self.screen.show_due_padlocks()
+        return self.screen.state["padlocks"] == "locks"
+
+    def test_shop_cards_wait_for_the_first_card_to_turn_then_go_left_to_right(self) -> None:
+        self.ui(self.still)
+        self.new_cards()
+        self.ui(self.flipping)  # the card backs swirl in
+        self.now[0] += self.overlay.FLIP_DELAY - 0.05
+        self.assertFalse(self.shown())  # still face-down
+        self.now[0] += 0.1
+        self.assertTrue(self.shown())
+        self.assertAlmostEqual(self.screen.stagger_from, 100.0 + self.overlay.FLIP_DELAY)
+
+    def test_items_that_dont_flip_show_when_the_reveal_ends(self) -> None:
+        self.ui(self.still)
+        self.new_cards()
+        self.ui(self.flipping)
+        self.now[0] += 0.55
+        self.ui(self.still)  # a reward choice's reveal: shorter than FLIP_DELAY
+        self.assertTrue(self.shown())
+        self.assertEqual(self.screen.stagger_from, 0.0)  # all up at once
+
+    def test_a_reveal_that_began_just_before_the_cards_were_noticed_still_counts(self) -> None:
+        """The client reads offers every 0.3 s: a short event reveal can start, even end, before it sees them."""
+        self.ui(self.flipping)
+        self.now[0] += 0.3
+        self.ui(self.still)
+        self.now[0] += 0.1
+        self.new_cards()
+        self.assertTrue(self.shown())
+
+    def test_an_old_reveal_does_not_count_and_no_reveal_waits_flip_seconds(self) -> None:
+        self.ui(self.flipping)
+        self.ui(self.still)
+        self.now[0] += self.overlay.FLIP_EARLY + 0.5
+        self.new_cards()
+        self.assertFalse(self.shown())
+        self.now[0] += self.overlay.FLIP_SECONDS - 0.05
+        self.assertFalse(self.shown())
+        self.now[0] += 0.1
+        self.assertTrue(self.shown())
+
+    def test_unreadable_flags_fall_back_to_flip_seconds(self) -> None:
+        self.ui(None)
+        self.new_cards()
+        self.now[0] += self.overlay.FLIP_SECONDS - 0.05
+        self.assertFalse(self.shown())
+        self.now[0] += 0.1
+        self.assertTrue(self.shown())
+
+    def test_a_reroll_takes_the_old_padlocks_away_as_the_old_cards_dissolve(self) -> None:
+        self.ui(self.still)
+        self.screen.state["padlocks"] = "old locks"
+        self.assertTrue(self.ui(self.dealing))
+        self.assertIsNone(self.screen.state["padlocks"])
 
 
-class TestRowGaps(unittest.TestCase):
-    def test_level_up_small_cards_land_where_they_were_measured(self) -> None:
-        """Owner's level-up screenshot (1919x1079): three Small cards centred near x 779, 960, 1140."""
-        from ..overlay import ROW_GAPS, card_centres
-        xs = [x for x, _ in card_centres(0, 0, 1920, 1080, ["Small"] * 3, ROW_GAPS["LevelUp"])]
-        for got, seen in zip(xs, (779, 960, 1140)):
-            self.assertAlmostEqual(got, seen, delta=3)
-
-    def test_your_board_hover_area_follows_your_level(self) -> None:
-        from ..overlay import card_rects
-        level_1 = card_rects(0, 0, 1920, 1080, ["Small"], level=1)[-1]
-        level_9 = card_rects(0, 0, 1920, 1080, ["Small"], level=9)[-1]
-        self.assertAlmostEqual(level_1[2] - level_1[0], 4 * 113, delta=2)
-        self.assertAlmostEqual(level_9[2] - level_9[0], 10 * 113, delta=2)
-
-
-class TestStashGrid(unittest.TestCase):
-    def test_slots_land_on_the_measured_grid(self) -> None:
-        """Owner's stash screenshot: Small cards in slots 0 and 1 centred near x 452 and 565 at 1080p."""
-        from ..overlay import card_centres
-        xs = [x for x, _ in card_centres(0, 0, 1920, 1080, ["Small", "Small"] + ["Empty"] * 8)]
-        self.assertAlmostEqual(xs[0], 452, delta=3)
-        self.assertAlmostEqual(xs[1], 565, delta=3)
-
-
-class TestOneCardOnlyScreens(unittest.TestCase):
-    def test_a_loot_with_several_cards_gets_no_padlocks_until_measured(self) -> None:
+class TestPadlockCommands(unittest.TestCase):
+    def test_an_event_layout_that_isnt_measured_still_gets_its_padlocks(self) -> None:
+        """Owner, 2026-10-15: event padlocks are placed from memory now, so any option count gets them."""
         import queue
         from ..overlay import Overlay
+        from ..padlocks import Padlock
         overlay = Overlay.__new__(Overlay)  # only the command queue: no windows
         overlay.commands = queue.Queue()
-        overlay.show_padlocks("Loot", ["Medium"], [0])
+        overlay.show_padlocks([Padlock(card="enc_a", option=0)], options="Choice-3")
         self.assertIsNotNone(overlay.commands.get_nowait()[1][0])
-        overlay.show_padlocks("Loot", ["Medium", "Small"], [0])
-        self.assertIsNone(overlay.commands.get_nowait()[1][0])
+        overlay.show_padlocks([Padlock(card="enc_a", option=0)], options="Choice-9")
+        self.assertIsNotNone(overlay.commands.get_nowait()[1][0])
+        overlay.show_padlocks([Padlock(card="itm_a", place=0)])  # cards: placed from memory, on any screen
+        self.assertIsNotNone(overlay.commands.get_nowait()[1][0])
 
 
 class TestShopGuideLists(unittest.TestCase):
@@ -431,11 +406,3 @@ class TestEventCentres(unittest.TestCase):
             self.assertAlmostEqual(x2 - 100, x1 * 4 / 3, delta=1)
             self.assertAlmostEqual(y2 - 50, y1 * 4 / 3, delta=1)
 
-    def test_hover_area_covers_each_option_and_stays_off_the_strips(self) -> None:
-        from ..overlay import CHOICE_ROWS, event_centres, event_rects
-        for screen in [*CHOICE_ROWS, "Line-2", "Line-3", "Line-4"]:
-            rects = event_rects(0, 0, 1920, 1080, screen)
-            for x, y in event_centres(0, 0, 1920, 1080, screen):
-                self.assertTrue(any(r[0] <= x < r[2] and r[1] <= y < r[3] for r in rects))
-            strip_left, strip_right, _ = strips(0, 0, 1920, 1080)
-            self.assertTrue(all(r[0] >= strip_left[0] + strip_left[2] and r[2] <= strip_right[0] for r in rects))

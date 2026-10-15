@@ -91,10 +91,12 @@ so they're never judged. Check this in game.
 
 ## Screens and padlocks
 
-Positions are `overlay.event_row`: each option's centre at 1080p, x from the window's centre (scaled like the
+**Since 2026-10-15 each padlock sits on its option's art from memory** (docs/MEMORY-READER.md K-mem11), and rides
+into the big view when the event is right-clicked. The measured rows below are history. Measured positions (until 2026-10-15) were `overlay.event_row`: each option's centre at 1080p, x from the window's centre (scaled like the
 shop row), y as a share of the window's height. The client picks the row from memory (`client.event_screen`):
-screen `Choice` with N options is `Choice-N`, screen `Encounter` with event options is `Line-N`. An hourly count
-that isn't in `CHOICE_ROWS` gets no padlocks rather than misplaced ones; a line of any count is worked out.
+screen `Choice` with N options is `Choice-N`, screen `Encounter` with event options is `Line-N`. Until 2026-10-15 an
+hourly count that wasn't in `CHOICE_ROWS` got no padlocks rather than misplaced ones; since memory places them,
+every count gets them.
 
 - **Hourly choice:** 3 events at the same positions as the monster pick (owner, 2026-10-02; `Event3.jpg`, the middle
   one lower). Memory screen `Choice`.
@@ -104,7 +106,9 @@ that isn't in `CHOICE_ROWS` gets no padlocks rather than misplaced ones; a line 
   without the portal's bubble "they move to the center", and other events can add such an option too, "so it needs
   to be a generic solution"). An extra option that isn't an event (the portal's left bubble) never gets a padlock,
   but it takes its place in the row.
-- **Hovering an event option keeps the padlocks solid** (owner, 2026-10-02: "dont make padlocks transparent on
+- **Superseded (2026-10-14 "fade only what blocks", and 2026-10-15: the mouse fallback is gone): an option's
+  padlock fades only where a tooltip or a lifted card actually reaches it, never its own card's.** Was:
+  **Hovering an event option keeps the padlocks solid** (owner, 2026-10-02: "dont make padlocks transparent on
   events when hovering an event, in all other cases still hide/make transparent it"). Hovering your board, dragging,
   the Esc menu and the stash still fade or hide them as everywhere else (`overlay.padlock_alpha`). ⚠️ Decided by
   the mouse, not the game's hover flag: the flag stays on for a moment after leaving an option, which flashed the

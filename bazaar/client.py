@@ -13,7 +13,7 @@ import os
 import random
 import sys
 import time
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 import Utils
 from CommonClient import (ClientCommandProcessor, CommonContext, get_base_parser, gui_enabled, handle_url_arg,
@@ -36,14 +36,19 @@ from .logparser import (DEFAULT_LOG_PATH, HERO_ALIASES, PREV_LOG, HeroSelected, 
 from .memreader import NeedsAdmin, NotReady, Reader, ReaderOff, Snapshot, game_pid
 from .merchants import possible_stock
 from .options import CreatedItems
-from .overlay import FILE_ONLY, ROW_GAPS, event_row
+from .overlay import FILE_ONLY
+from .padlocks import Padlock
 from .tracker import hero_order
 # the heroes Random can roll, by the game's own names (PlayerPreferences keys them like this; "Hero8" = The Dragons)
 HEROES_IN_GAME = ("Dooley", "Pygmalien", "Vanessa", "Mak", "Stelle", "Jules", "Karnok", "Hero8")  # FILE_ONLY: to the log file only, not the console or the client window
 
-POLL_SECONDS = 0.5
-MEMORY_SECONDS = 0.06  # how often the board's on-screen flags are read (hover, drag, stash, dialog)
-SNAPSHOT_EVERY = 5  # ...and what's on offer, every this many of those
+POLL_SECONDS = 0.1  # how often the game's log is looked at (a size check when nothing's new). Was 0.5 until owner
+# 2026-10-15: the menu's hero panel took a moment to follow a hero pick (recorded: 0.5-0.75 s with the overlay's wait)
+BOARD_PADLOCK_STATES = {"Encounter", "Choice", "LevelUp", "Loot", "Pedestal"}  # your board sits still on these
+ITEM_SCREENS = ("Encounter", "LevelUp", "Loot")  # screens offering a row of items (shops, level-ups, loot)
+MEMORY_SECONDS = 1 / 60  # how often the board's on-screen flags and card positions are read: about a game frame
+# (owner 2026-10-15: padlocks lagged behind a dragged card at 0.06)
+SNAPSHOT_EVERY = 19  # ...and what's on offer, every this many of those (~0.3 s, as before)
 MEMORY_RETRY = (5, 30)  # seconds before trying the reader again: game not running yet / a check failed
 STATE_FILE = "bazaar_client_state.json"
 
@@ -91,9 +96,9 @@ def menu_hidden(snapshot: Optional[Snapshot]) -> bool:
 
 
 def items_on_screen(snapshot: Optional[Snapshot]) -> Optional[tuple]:
-    """The items offered on screen right now, left to right, as read from memory; None unless it's a row of items on
-    a screen whose layout is known (ROW_GAPS) - e.g. a skill choice, or memory being off."""
-    if not snapshot or snapshot.state not in ROW_GAPS or not snapshot.offers:
+    """The items offered on screen right now, left to right, as read from memory; None unless it's a row of items
+    (ITEM_SCREENS) - e.g. a skill choice, or memory being off."""
+    if not snapshot or snapshot.state not in ITEM_SCREENS or not snapshot.offers:
         return None
     if any(offer.kind != "Item" or offer.template is None for offer in snapshot.offers):
         return None
@@ -101,14 +106,14 @@ def items_on_screen(snapshot: Optional[Snapshot]) -> Optional[tuple]:
 
 
 def event_screen(snapshot: Optional[Snapshot]) -> Optional[tuple]:
-    """(screen, offers) when the screen is a choice of events whose layout is known (overlay.event_row): the hourly
-    choice ("Choice-N") or an event's own options in a row ("Line-N"); None otherwise (monsters, PvP, an unmeasured
-    hourly count)."""
+    """(screen, offers) when the screen is a choice of events: the hourly choice ("Choice-N") or an event's own
+    options in a row ("Line-N"); None otherwise (monsters, PvP). Any count: the padlocks are placed from memory
+    (owner, 2026-10-15), the measured layouts (overlay.event_row) are no longer needed."""
     if not snapshot or snapshot.state not in ("Choice", "Encounter") or not snapshot.offers \
             or not any(o.kind == "EventEncounter" for o in snapshot.offers):
         return None
     key = f"{'Choice' if snapshot.state == 'Choice' else 'Line'}-{len(snapshot.offers)}"
-    return (key, snapshot.offers) if event_row(key) else None
+    return key, snapshot.offers
 
 
 def offers_at(snapshot: Optional[Snapshot], guid: str) -> Optional[tuple]:
@@ -264,6 +269,8 @@ class BazaarContext(CommonContext):
         # others don't move (user, 2026-10-01) - so a row is only replaced when new cards come in, not when another
         # screen (a level-up mid-shop) comes and goes
         self.padlock_rows: Dict[str, tuple] = {}
+        self.on_menu = False  # the game is on its main menu (memreader.board_open; see handle_on_menu)
+        self.board_open: Optional[bool] = None  # memreader.board_open: a run's board is up, None if unreadable
         self.board_ui = None  # memreader.BoardUI: hover/drag/stash/dialog/reveal, None if unreadable
         self.hero_prefs = None  # memreader.HeroPrefs: Random on/off and its exclusions, None if unreadable
         self.menu_layers: Optional[int] = None  # the game's own screens open on the menu (memreader.menu_layers)
@@ -506,7 +513,8 @@ class BazaarContext(CommonContext):
         only if the previous session's log shows that run was left unfinished (the game resumes an unfinished
         run - you can't start another until it's over)."""
         saved = self.run
-        if not saved.get("active") or saved.get("hero") != event.hero or not self.log_session:
+        if not (saved.get("active") or saved.get("before_seed")) or saved.get("hero") != event.hero \
+                or not self.log_session:
             return False
         if saved.get("log") == self.log_session:
             return saved.get("run_index") == event.index
@@ -518,6 +526,9 @@ class BazaarContext(CommonContext):
                 self.run.update(log=self.log_session, run_index=event.index, day_offset=self.run["day"] - 1,
                                 resync=True)  # the game may have moved on while it was closed: memory says
                 self.watched = {"log": self.log_session, "runs": event.index + 1}
+            if not self.run.get("active"):  # the run from before this seed, resumed
+                self.wake_before_seed()
+                return
             self.event(f"Resumed your {event.hero} run on day {self.run['day']}.")
             return
         if self.run.get("active"):
@@ -551,6 +562,19 @@ class BazaarContext(CommonContext):
         self.refresh_held()
         self.update_status()
         self.check_choice_screen(self.memory)  # the run's first choice can be in memory before the log starts it
+
+    def wake_before_seed(self) -> None:
+        """The run that started before this seed's first connection is being played (resumed, or its log moved on):
+        it never counts, so now it needs conceding. Not before: no warning while there's no active run (owner,
+        2026-10-15). Never a DeathLink."""
+        self.run.update(active=True, counting=False, legal=False, held={}, inventory={}, traps=[],
+                        deathlink_owed=False, concede_reason="- THIS RUN STARTED BEFORE THIS SEED: CONCEDE IT")
+        self.event(f"This {self.run['hero']} run started before this seed was connected, so it can't count. Concede "
+                   f"it and start a new one; no DeathLink will be sent.", warning=True)
+        self.beep()
+        self.save_state()
+        self.update_status()
+        self.update_block_banner()
 
     async def handle_day(self, event: DayReached) -> None:
         if not self.run.get("active"):
@@ -681,7 +705,7 @@ class BazaarContext(CommonContext):
         """The DEATHLINK notice: up for as long as the run that got it lasts, gone once it ends (owner, 2026-10-02:
         no Done button, "only goes away on concede"). Also back after a client restart mid-run."""
         if self.overlay:
-            owed = self.run.get("active") and self.run.get("deathlink_owed")
+            owed = self.run.get("active") and self.run.get("deathlink_owed") and not self.on_menu
             text = self.run.get("deathlink_cause", "Someone died.") if owed else None
             if text != self.deathlink_shown:
                 self.deathlink_shown = text
@@ -689,7 +713,9 @@ class BazaarContext(CommonContext):
 
     def update_block_banner(self) -> None:
         self.update_deathlink_notice()
-        if self.overlay:
+        if self.overlay and self.run.get("active") and self.on_menu:  # see handle_on_menu
+            self.overlay.show_locked(None, [])
+        elif self.overlay:
             reason = self.blocked_reason()
             held = self.run.get("held", {}) if self.run.get("active") else {}
             bypass = self.bypasses_ready() > 0  # each held card gets a "Use Bypass" button
@@ -919,7 +945,7 @@ class BazaarContext(CommonContext):
         # every reading, not only when the offers change: memory can have them a reading before the screen reads as
         # the choice, and a friend's v0.9.0 game got three padlocked events with none let through (2026-10-06)
         self.check_choice_screen(snapshot)
-        seen = lambda s: (s.state, items_on_screen(s), event_screen(s), s.level, s.stash) if s else None
+        seen = lambda s: (s.state, items_on_screen(s), event_screen(s), s.level, s.stash, s.board) if s else None
         if seen(before) != seen(snapshot):
             self.refresh_padlocks()
         if self.encounter and offers_at(before, self.encounter.guid) != offers_at(snapshot, self.encounter.guid):
@@ -970,40 +996,49 @@ class BazaarContext(CommonContext):
             Utils.async_start(self.maybe_send_death(self.run.get("day", 0), self.run.get("wins", 0)))
 
     def refresh_padlocks(self) -> None:
-        """A padlock on each locked item on screen (shops, level-ups: whatever ROW_GAPS knows). Driven by memory
-        alone, so a screen the log never mentions works the same. Cards keep their places when one is bought (user,
-        2026-10-01), so the row stays as it was until new cards come in; new cards flip over first, so their
-        padlocks wait for that (overlay, by the game's own reveal flag)."""
+        """Which cards get a padlock: the locked ones offered on screen (shops, level-ups, loot, events), in your
+        stash, on your own board, and on a right-clicked monster's board. Only which cards - where they are on
+        screen, and whether they can be seen (the stash flips over the shop), is the overlay's, from memory
+        (padlocks.py; owner 2026-10-15: a padlock is art on its card). New cards wait until they've turned face-up."""
         if not self.overlay:
             return
         self.refresh_guide()  # the same moments change what the Shop Guide shows
-        if self.board_ui and self.board_ui.inventory and self.memory and self.run.get("active"):
-            self.show_stash_padlocks()  # your stash covers the offers while it's open
-            return
-        snapshot, items = self.memory, items_on_screen(self.memory) if self.run.get("active") else None
-        events = event_screen(snapshot) if self.run.get("active") else None
+        active, snapshot = self.run.get("active"), self.memory
+        still = active and snapshot and snapshot.state in BOARD_PADLOCK_STATES
+        yours = self.locked_cards(snapshot.board) + self.locked_cards(snapshot.stash) if still else []
+        monster = self.board_ui.monster_items if active and self.board_ui else ()  # a right-clicked monster's board
+        yours += [key for key, template in monster if template in self.run_locked_guids()]
+        self.overlay.show_board_padlocks([Padlock(card=card) for card in yours])
+        events = event_screen(snapshot) if active else None
         if events:  # a choice of merchants/events: a padlock on each locked one (docs/ENCOUNTER-LOCKS.md)
             key, offers = events
             new = self.padlock_rows.get(key) != tuple(o.instance for o in offers)
             self.padlock_rows[key] = tuple(o.instance for o in offers)
             locked = self.run_locked_events()
-            self.overlay.show_padlocks(key, ["Event"] * len(offers),
-                                       [i for i, o in enumerate(offers) if o.kind == "EventEncounter"
-                                        and o.template in locked], reveal=new, level=snapshot.level)
+            self.overlay.show_padlocks([Padlock(card=o.instance, place=i, option=i) for i, o in enumerate(offers)
+                                        if o.kind == "EventEncounter" and o.template in locked],
+                                       reveal=new, options=key)
             return
+        items = items_on_screen(snapshot) if active else None
         if not items:
-            self.overlay.show_padlocks(None, [], [])
+            self.overlay.show_padlocks([])
             return
-        here = {o.instance: o.template for o in items}
-        row = self.padlock_rows.get(snapshot.state)
-        new = not (row and set(here) <= {instance for instance, _ in row})
+        ids = tuple(o.instance for o in items)
+        new = not set(ids) <= set(self.padlock_rows.get(snapshot.state, ()))  # a bought card isn't a new row
         if new:
-            row = self.padlock_rows[snapshot.state] = tuple(
-                (o.instance, CARDS_BY_GUID[o.template].size if o.template in CARDS_BY_GUID else None) for o in items)
+            self.padlock_rows[snapshot.state] = ids
         locked = self.run_locked_guids()
-        self.overlay.show_padlocks(snapshot.state, [size for _, size in row],
-                                   [i for i, (instance, _) in enumerate(row) if here.get(instance) in locked],
-                                   reveal=new, level=snapshot.level)
+        self.overlay.show_padlocks([Padlock(card=o.instance, place=i) for i, o in enumerate(items)
+                                    if o.template in locked], reveal=new)
+
+    def locked_cards(self, cards) -> List[str]:
+        """The instance ids of the locked cards among yours (memreader's stash or board: (slot, template, id)) -
+        created cards that are allowed (handle_transform, judge_created), or not judged yet, don't count."""
+        locked = self.run_locked_guids()
+        allowed = set(self.run.get("transformed", [])) | set(self.unexplained) | set(self.pending_transforms) \
+            | set(self.fight_transforms)
+        return [instance for _slot, template, instance in cards
+                if instance and template in locked and instance not in allowed]
 
     def refresh_guide(self) -> None:
         """The Shop Guide (owner, 2026-10-01): your hero and the cards you may not hold, and what's on offer on
@@ -1024,33 +1059,29 @@ class BazaarContext(CommonContext):
         merchant = MERCHANT_DATA[guid]["name"] if guid in MERCHANT_DATA else None
         self.overlay.show_board(title, [o.template for o in items or ()], merchant)
 
-    def show_stash_padlocks(self) -> None:
-        """A padlock on each locked card in your open stash, in whatever slot it sits (owner, 2026-10-01: cards move
-        freely). The stash is laid out as a 10-slot row with Empty filling the free slots."""
-        starts = {slot: (template, instance) for slot, template, instance in self.memory.stash}
-        locked, sizes, spots, slot = self.run_locked_guids(), [], [], 0
-        # created cards that are allowed (handle_transform, judge_created), and those not judged yet
-        allowed = set(self.run.get("transformed", [])) | set(self.unexplained) | set(self.pending_transforms) \
-            | set(self.fight_transforms)
-        while slot < 10:
-            template, instance = starts.get(slot, (None, None))
-            size = CARDS_BY_GUID[template].size if template in CARDS_BY_GUID else None
-            if template is None:  # a free slot
-                sizes.append("Empty")
-                slot += 1
-                continue
-            if size is None:  # a card we can't size: a guess would put every padlock after it in the wrong place
-                self.overlay.show_padlocks(None, [], [])
-                return
-            if template in locked and instance not in allowed:
-                spots.append(len(sizes))
-            sizes.append(size)
-            slot += {"Small": 1, "Medium": 2, "Large": 3}[size]
-        self.overlay.show_padlocks("Stash", sizes, spots, level=self.memory.level)
+    def handle_on_menu(self, on_menu: bool) -> None:
+        """The game is on its main menu (a run may be open behind "Resume"). Nothing about the current run shows
+        there (owner, 2026-10-14: "you cant even concede a run on that screen so it is not worthwhile to have anything
+        pertaining to a current run on the main menu"); it all comes back on Resume."""
+        if on_menu != self.on_menu:
+            self.on_menu = on_menu
+            self.update_block_banner()
+            self.update_status()
+
+    def handle_board_open(self, board: Optional[bool]) -> None:
+        """A run's board is up (True), the main menu (False), or unreadable (None). The board opens before the log
+        says the run started - the menu's hero panel flashed in between (owner's recording, 2026-10-15) - so it
+        hides on this too."""
+        if board != self.board_open:
+            self.board_open = board
+            self.update_status()
+        self.handle_on_menu(board is False)
 
     def handle_menu_layers(self, layers: Optional[int]) -> None:
         if layers != self.menu_layers:
             self.menu_layers = layers
+            if self.overlay:
+                self.overlay.show_menu_covered(bool(layers))  # straight to the overlay's fast tick, not its queue
             self.update_status()
 
     def handle_hero_prefs(self, prefs) -> None:
@@ -1061,9 +1092,10 @@ class BazaarContext(CommonContext):
 
     def handle_board_ui(self, ui) -> None:
         """The board's on-screen flags (memreader.BoardUI, or None): the padlocks hide or fade by them, and swap to
-        the stash's own while it's open."""
+        the stash's own while it's open, or a right-clicked monster's items' while its board shows."""
         if ui != self.board_ui:
-            opened = (ui and ui.inventory) != (self.board_ui and self.board_ui.inventory)
+            opened = (ui and ui.inventory) != (self.board_ui and self.board_ui.inventory) \
+                or (ui and ui.monster_items) != (self.board_ui and self.board_ui.monster_items)
             self.board_ui = ui
             if self.overlay:
                 self.overlay.show_board_ui(ui)
@@ -1339,10 +1371,10 @@ class BazaarContext(CommonContext):
         if not self.slot_data:  # owner, 2026-10-01: warn when there's no connection to the multiworld
             return NOT_CONNECTED, True, False
         goal = f"Goal {len(self.heroes_won())}/{self.setting('heroes_required')}"
-        if self.run.get("active"):
+        if self.run.get("active") and not self.on_menu:  # on the menu: no run details (handle_on_menu)
             hero, day, max_day = self.run["hero"], self.run.get("day", 1), self.setting("max_day")
             return f"{hero}: day {day}/{max_day} · {goal}{self.bypass_text()}", False, False
-        if self.menu_hero:
+        if self.menu_hero and not self.run.get("active"):
             playable = [h for h in self.setting("heroes") if self.hero_unlocked(h)]
             lines = ["HEROES YOU CAN PLAY  (checks done / in logic)"] if playable else ["No hero unlocked yet"]
             for hero in playable:
@@ -1374,7 +1406,8 @@ class BazaarContext(CommonContext):
         """The menu's centre panel (owner, 2026-10-01): every hero in this multiworld with their checks, the one
         you picked, and a warning when it can't be played (locked, or Random, which can roll a locked one). None
         outside the menu (in a run, not connected, no hero picked yet)."""
-        if not self.slot_data or self.run.get("active") or not self.menu_hero or menu_hidden(self.memory):
+        if not self.slot_data or self.run.get("active") or self.board_open or not self.menu_hero \
+                or menu_hidden(self.memory):
             return None
         heroes, locked = [], self.locked_guids()
         for hero in hero_order():
@@ -1427,10 +1460,17 @@ class BazaarContext(CommonContext):
             logger.info(f"Current run: {self.run['hero']} on day {self.run['day']}{note}")
 
 
+# what the log says only while that run is being played (RunEnded isn't: a run that only ends needs no conceding)
+IN_RUN_EVENTS = (DayReached, CardGained, CardSold, CardTransformed, FightStarted, EncounterEntered, MonsterFought,
+                 PvPFought)
+
+
 async def dispatch(ctx: BazaarContext, event) -> None:
     if ctx.run.get("day_offset") and not isinstance(event, RunStarted) and hasattr(event, "day"):
         # a run resumed after a game restart: the new log counts its days from 1 again
         event = dataclasses.replace(event, day=event.day + ctx.run["day_offset"])
+    if ctx.run.get("before_seed") and not ctx.run.get("active") and isinstance(event, IN_RUN_EVENTS):
+        ctx.wake_before_seed()
     if isinstance(event, RunStarted):
         ctx.handle_run_started(event)
     elif isinstance(event, HeroSelected):
@@ -1520,13 +1560,21 @@ async def catch_up(ctx: BazaarContext, parser: LogParser, past: list) -> None:
     progress out loud. Events handled before (up to ctx.position) are never handled again.
     """
     session = ctx.log_session
+    first = not (ctx.watched or ctx.position)  # this seed's first connection
     segments = missed(ctx, past)
     unseen = next((len(past) - len(events) for log, events in segments if log == session), len(past))
     run_start = max((i for i, e in enumerate(past) if isinstance(e, RunStarted)), default=None)         if parser.in_run else None
     if run_start is None:
         loud = len(past)  # no run going: everything missed is quiet
+    elif first:
+        # a seed's first connection: the run in the log started before it and never counts (owner, 2026-10-15: "the
+        # archipelago client should NEVER use a past run that was ran before the archipelago was launched"). Kept
+        # silent until it's played or resumed: no concede warning while there's no active run (see wake_before_seed).
+        loud = len(past)
+        ctx.run = {"active": False, "before_seed": True, "hero": past[run_start].hero, "day": parser.day or 1,
+                   "log": session, "run_index": past[run_start].index, "day_offset": 0}
     elif not segments or run_start >= unseen:
-        loud = run_start  # a run the client never saw start (or its first connection): the whole run, out loud
+        loud = run_start  # a run the client never saw start: the whole run, out loud
     else:
         loud = unseen  # the run the client was already following: just what it missed
     ctx.quiet = True
@@ -1654,8 +1702,16 @@ async def watch_memory(ctx: BazaarContext) -> None:
                 logger.info("Memory reader: reading The Bazaar's shop.", extra=FILE_ONLY)
                 said = None
             for _ in range(SNAPSHOT_EVERY):
+                tick = time.perf_counter()
                 ctx.handle_board_ui(reader.ui())  # a couple of milliseconds: fine on the event loop
-                await asyncio.sleep(MEMORY_SECONDS)
+                ctx.handle_board_open(reader.board_open())
+                if not ctx.run.get("active"):  # the game's screens on the menu, every tick (no search: see below)
+                    layers = reader.menu_layers_now()
+                    if layers is not None:
+                        ctx.handle_menu_layers(layers)
+                # asyncio.sleep rounds up to Windows' ~15.6 ms tick (0.016 ran ~35 times a second, measured 2026-10-15);
+                # time.sleep doesn't, so the wait is done on a worker thread
+                await loop.run_in_executor(None, time.sleep, max(0.0, MEMORY_SECONDS - (time.perf_counter() - tick)))
             ctx.handle_snapshot(await loop.run_in_executor(None, reader.snapshot))
             ctx.handle_hero_prefs(reader.hero_prefs())
             if not ctx.run.get("active"):  # the menu's hero panel hides under the game's own screens
@@ -1694,6 +1750,12 @@ async def watch_memory(ctx: BazaarContext) -> None:
 
 
 async def main(args) -> None:
+    if sys.platform == "win32":
+        # 1 ms timers for this client: Windows rounds every timer up to its ~15.6 ms tick otherwise, and the padlocks
+        # follow their cards 60 times a second (overlay.HOVER_MS; owner 2026-10-15: they looked ~20 fps). Only this
+        # process, until it exits (Windows 10 2004+).
+        import ctypes
+        ctypes.windll.winmm.timeBeginPeriod(1)
     ctx = BazaarContext(args.connect, args.password)
     ctx.auth = args.name
     if args.logpath:

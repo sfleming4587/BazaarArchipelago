@@ -17,6 +17,8 @@ import time
 import uuid
 from typing import Dict, List, NamedTuple, Optional, Tuple
 
+from . import unity
+
 GAME_EXE = "TheBazaar.exe"
 GAME_WINDOW = ("UnityWndClass", "The Bazaar")  # the game's main window: class and title (seen 2026-10-01)
 MONO_DLL = "mono-2.0-bdwgc.dll"
@@ -56,6 +58,29 @@ class NoAssemblies(ReaderOff):
 # How long after a launch a missing assembly list still means "loading" (2026-10-01: twice the reader looked a few
 # seconds after launch, found no list and switched off for the whole session).
 LOADING_SECONDS = 120
+SNAPSHOT_GRACE = 10.0  # a snapshot failing this long in a row turns the reader off (see Reader.snapshot)
+INPUT_SEARCH_SECONDS = 30.0  # a gone input manager is searched for again at once, then at most this often (menu_layers)
+UI_RETRY_SECONDS = 1.0  # how often the board's on-screen flags are looked for again until found (see Reader.ui)
+# During one board read, memory is fetched in aligned blocks of this size and kept until the read ends: a card's fields
+# and its transforms' neighbours sit together, and each fetch is a call into Windows (2026-10-15: ~50 per card, 0.7 ms
+# a card; a 144 Hz frame is 6.9 ms). A power of two that divides a page, so a block never spans an unreadable page.
+READ_BLOCK = 4096  # one page: measured best of 256 / 1024 / 4096 (2026-10-15, 13 cards: 4.5 / 4.3 / 4.0 ms a read)
+FIGHTS = ("Combat", "PVPCombat")
+# The merchant's side of the board, read only off fights and only for the cards on offer to you (owner, 2026-10-14:
+# "no need to look at the other players information... just what pertains to our user"). Their names hold "opponent",
+# which BLOCKED refuses everywhere else.
+OFFER_SOCKETS = ("opponentItemSockets", "opponentSkillSockets")
+# The event options on a choice screen: a List of EncounterSocketController (recorded 2026-10-15); same rules
+EVENT_SOCKETS = "_opponentBoardSocketControllers"
+# A right-clicked monster shows its board in the tooltip's MonsterBoardTooltip (recorded 2026-10-15, its items' rects
+# matched the owner's video to the pixel). Read only for a monster's card - never a PvP opponent's (they have their
+# own view, and the reader never looks at other players).
+MONSTER_CARD, MONSTER = "CombatEncounterCard", "TCombatantMonster"
+# A tooltip's pieces that cover what's under them (2026-10-14, matched on 4 cards in both views). ⚠️ Chosen by name:
+# Unity's switch (unity.active) hides only some of them, and the bottom box can be empty yet "on"; the keyword boxes
+# go by the right-click flag (see _tooltip_pieces).
+TOOLTIP_PIECES = ("Tags", "Box_Header", "Box_Active_Effect", "Box_Passive_Effect")
+TOOLTIP_PIECE_CHILDREN = {"Box_Active_Effect": ("Active_TooltipClock",)}
 
 
 class Offer(NamedTuple):
@@ -72,6 +97,17 @@ class BoardUI(NamedTuple):
     dialog: bool  # the Esc menu or another dialog is open (BoardManager.DialogOpen)
     revealing: bool  # new cards are flipping over (BoardManager._isRevealing)
     stash_moving: bool = False  # your stash is sliding open or shut (BoardManager.StorageMoving)
+    # Where things are on screen, from the game's own objects (bazaar/unity.py), as fractions of the game window
+    # (left, top, right, bottom). tooltips: the visible pieces of the tooltips showing now (see _tooltip_pieces).
+    tooltips: Tuple[Tuple[float, float, float, float], ...] = ()
+    dealing: bool = False  # new cards are being dealt: a reroll's old cards dissolve now (BoardManager._cardsBeingDealt)
+    hovered_card: Optional[str] = None  # the instance id of the card whose tooltip shows (or is right-clicked)
+    dragged_card: Optional[str] = None  # the instance id of the card being dragged
+    inspecting: bool = False  # a right-click inspect view is open (_cardTooltipController.isLocked, 2026-10-14)
+    # each card's rect by instance id while it faces you: your board, your stash, and what's on offer (not in fights)
+    cards: Dict[str, Tuple[float, float, float, float]] = {}
+    # the items on a right-clicked monster's board: (key, template guid); their rects are in cards under the key
+    monster_items: Tuple[Tuple[str, Optional[str]], ...] = ()
 
 
 class HeroPrefs(NamedTuple):
@@ -192,6 +228,7 @@ class Memory:
                                       False, pid)
         if not self.handle:
             raise ReaderOff(f"can't open the game for reading (error {C.get_last_error()})")
+        self.blocks: Optional[dict] = None  # READ_BLOCK-aligned address -> bytes, only during one read (Reader.ui)
 
     def close(self) -> None:
         if self.handle:
@@ -205,6 +242,17 @@ class Memory:
     def read(self, address: int, size: int) -> Optional[bytes]:
         if not address or address < 0x10000 or address > 0x7FFFFFFFFFFF:
             return None
+        if self.blocks is not None:
+            base = address & ~(READ_BLOCK - 1)
+            if address + size <= base + READ_BLOCK:
+                if base not in self.blocks:
+                    self.blocks[base] = self._fetch(base, READ_BLOCK)
+                block = self.blocks[base]
+                if block is not None:
+                    return block[address - base:address - base + size]
+        return self._fetch(address, size)
+
+    def _fetch(self, address: int, size: int) -> Optional[bytes]:
         buffer, got = C.create_string_buffer(size), C.c_size_t()
         if not k32.ReadProcessMemory(self.handle, C.c_void_p(address), buffer, size, C.byref(got)) \
                 or got.value != size:
@@ -272,6 +320,9 @@ class Mono:
         self.domain = self._root_domain()
         self.images = self._images()
         self.field_cache: Dict[int, list] = {}
+        # (class, name) -> field: a lookup walks the class's parents, each step several reads - and the board is
+        # read every frame (2026-10-15: one read of it took 4-6 ms with 3 cards, a 144 Hz frame is 6.9 ms)
+        self.field_index: Dict[tuple, tuple] = {}
 
     def _export(self, name: str) -> int:
         m, base = self.m, self.lo
@@ -447,9 +498,13 @@ class Mono:
         through the object's own class, which may live in another assembly)."""
         if blocked(name) and name not in ALLOWED_NAMES:
             raise ReaderOff(f"refused to read {name}")
+        if (c, name) in self.field_index:
+            return self.field_index[c, name]
+        start = c
         while c:
             for n, offset, static, code, data in self.fields(c):
                 if n in (name, f"<{name}>k__BackingField") and not static:
+                    self.field_index[start, name] = offset, code, data
                     return offset, code, data
             c = self.parent(c)
         raise ReaderOff(f"field {name} not found")
@@ -526,6 +581,9 @@ class Reader:
     def __init__(self) -> None:
         self.memory: Optional[Memory] = None
         self.first_look: Tuple[int, float] = (0, 0.0)  # (game pid, when the reader first looked at it)
+        self.failing_since = 0.0  # when snapshots started failing (0: they aren't)
+        self.offers_now: Tuple[Optional[str], frozenset] = (None, frozenset())  # (screen, offer ids), last snapshot
+        self.camera: tuple = ()  # the cards' camera, last read (see _card_rects)
 
     def attached(self) -> bool:
         return self.memory is not None and self.memory.alive()
@@ -569,10 +627,13 @@ class Reader:
             self.close()
             raise ReaderOff("TheBazaar.Data has changed")
         self.enums: Dict[int, List[str]] = {}
+        self.ui_learn, self.ui_tried, self.ui_classes = (data, base, statics), time.monotonic(), ()
         self.ui_paths = self._learn_ui(data, base, statics)
+        self.board_path = base + statics["<TransitionIn>k__BackingField"] if "<TransitionIn>k__BackingField" in statics \
+            else 0
         self.prefs_path = self._learn_prefs()
         self.input_manager = self.input_class = 0  # found when first needed (menu_layers)
-        self.input_searched = False
+        self.input_searched = -INPUT_SEARCH_SECONDS  # when the input manager was last searched for
 
     def _learn_prefs(self) -> Optional[int]:
         """Where PlayerPreferences keeps its data (a static), or None if this game version doesn't match."""
@@ -588,15 +649,18 @@ class Reader:
         """How many of the game's own screens are open over the board or menu (settings, stores, chests, character
         select ...): the size of InputManager.Context, the game's stack of input layers - each screen pushes
         "Modal" and pops it when it closes (watched 2026-10-01 with the owner). None if it can't be read. The
-        input manager is found once per game session (nothing static points to it; it never moves)."""
+        input manager is found by a search (nothing static points to it) and kept while it lives. ⚠️ 2026-10-14: the
+        game replaces it when a run ends and it's back on the menu - kept "until the game restarts", the hero panel
+        stopped hiding under the game's screens after every run. So a gone one is searched for again, at most every
+        INPUT_SEARCH_SECONDS (a search reads a few GB, ~17 s)."""
         if not self.memory:
             return None
         mono, m = self.mono, self.memory
         try:
             if self.input_manager and mono.klass(self.input_manager) != self.input_class:
-                self.input_manager = None  # gone (it never should): nothing to read until the game restarts
-            if not self.input_searched:  # once per game session: the search reads a few GB
-                self.input_searched = True
+                self.input_manager = None  # gone: replaced at a run's end
+            if not self.input_manager and time.monotonic() - self.input_searched >= INPUT_SEARCH_SECONDS:
+                self.input_searched = time.monotonic()
                 self.input_class = mono.find_class("TheBazaarRuntime", "TheBazaar.Inputs", "InputManager")
                 vtable = m.ptr(m.ptr(self.input_class + mono.off["class_runtime_info"]) + 8)
                 for obj in m.find_pointer(vtable) if vtable else []:
@@ -605,6 +669,31 @@ class Reader:
                         self.input_manager = obj
                         break
             if not self.input_manager:
+                return None
+            stack = self._get(self._get(self.input_manager, "Context"), "_stack")
+            return self._get(stack, "_size") if stack else None
+        except Exception:
+            return None
+
+    def board_open(self) -> Optional[bool]:
+        """Is the game showing a run's board? False on the main menu - even with a run open behind "Resume": the
+        game drops its board there (Data.<TransitionIn> empty, back the moment Resume is pressed; watched
+        2026-10-14). None when it can't be read."""
+        if not self.memory or not self.board_path:
+            return None
+        try:
+            return bool(self.memory.ptr(self.board_path))
+        except Exception:
+            return None
+
+    def menu_layers_now(self) -> Optional[int]:
+        """menu_layers without ever searching (a tenth of a millisecond): None until a search has found the input
+        manager, or once it's gone. Cheap enough for the client's fast loop, so the hero panel keeps up with the
+        game's screens (owner, 2026-10-14: it took "an extra second to go away")."""
+        if not self.memory or not self.input_manager:
+            return None
+        try:
+            if self.mono.klass(self.input_manager) != self.input_class:
                 return None
             stack = self._get(self._get(self.input_manager, "Context"), "_stack")
             return self._get(stack, "_size") if stack else None
@@ -636,8 +725,10 @@ class Reader:
         """Where the board's on-screen flags are (see BoardUI), or None if this game version doesn't match."""
         mono, m = self.mono, self.memory
         try:
-            board = mono.find_class("TheBazaarRuntime", "", "BoardManager")
-            cards = mono.find_class("TheBazaarRuntime", "", "CardController")
+            if not self.ui_classes:  # a search of every class (~150 ms): once, since ui() retries it on the event loop
+                self.ui_classes = (mono.find_class("TheBazaarRuntime", "", "BoardManager"),
+                                   mono.find_class("TheBazaarRuntime", "", "CardController"))
+            board, cards = self.ui_classes
             board_statics = {n: o for n, o, st, _c, _d in mono.fields(board) if st}
             card_statics = {n: o for n, o, st, _c, _d in mono.fields(cards) if st}
             drag = card_statics["<IsAnyCardDragging>k__BackingField"]
@@ -648,15 +739,24 @@ class Reader:
                 return token == "CancellationTokenSource" and dragging in (0, 1)
             if not mono.learn_static_blocks(data, check):
                 return None
-            return {"statics": {n: base + statics[n] for n in UI_STATICS}, "drag": mono.static_block(cards) + drag}
+            return {"statics": {n: base + statics[n] for n in UI_STATICS}, "drag": mono.static_block(cards) + drag,
+                    "dragged": mono.static_block(cards) + card_statics["<DraggedCard>k__BackingField"]}
         except (ReaderOff, KeyError):
             return None
 
     def ui(self) -> Optional[BoardUI]:
         """The board's on-screen state now, or None if it can't be read (not learned, not on the board)."""
+        if self.memory and not self.ui_paths and time.monotonic() - self.ui_tried >= UI_RETRY_SECONDS:
+            # 2026-10-14: at the main menu the board's classes aren't set up yet, so learning them fails there;
+            # it works once a run's board has loaded (watched live). Learned once, kept for the session.
+            self.ui_tried = time.monotonic()
+            self.ui_paths = self._learn_ui(*self.ui_learn)
+            if self.ui_paths and not self.prefs_path:
+                self.prefs_path = self._learn_prefs()  # needs what _learn_ui found (the static blocks)
         if not self.memory or not self.ui_paths:
             return None
         m, paths = self.memory, self.ui_paths
+        m.blocks = {}  # READ_BLOCK: fetched once per read
         try:
             transition = m.ptr(paths["statics"]["<TransitionIn>k__BackingField"])
             board = self._get(transition, "_boardManager") if transition else 0
@@ -665,14 +765,160 @@ class Reader:
             toy = self._get(board, "activeStorageToy")
             tooltips = m.ptr(paths["statics"]["<TooltipParentComponent>k__BackingField"])
             tooltip = self._get(tooltips, "_cardTooltipController") if tooltips else 0
-            return BoardUI(hovering=bool(tooltip and self._get(tooltip, "_currentCard")),
-                           dragging=(m.read(paths["drag"], 1) or b"\0")[0] == 1,
-                           inventory=bool(toy and self._get(toy, "toyOpen")),
+            card = self._get(tooltip, "_currentCard") if tooltip else 0
+            hovering = bool(card)
+            dragging = (m.read(paths["drag"], 1) or b"\0")[0] == 1
+            dragged = m.ptr(paths["dragged"]) if dragging else 0
+            inventory = bool(toy and self._get(toy, "toyOpen"))
+            inspecting = bool(tooltip and self._get(tooltip, "isLocked"))
+            cards = self._card_rects(board)
+            monster = self._monster_board(tooltip, card) if inspecting and card else ()
+            cards.update((key, rect) for key, _template, rect in monster)
+            return BoardUI(hovering=hovering,
+                           dragging=dragging,
+                           inventory=inventory,
                            dialog=bool(self._get(board, "DialogOpen")),
                            revealing=bool(self._get(board, "_isRevealing")),
-                           stash_moving=bool(self._get(board, "StorageMoving")))
+                           stash_moving=bool(self._get(board, "StorageMoving")),
+                           tooltips=self._tooltip_pieces(tooltips, inspecting) if hovering else (),
+                           dealing=bool(self._get(board, "_cardsBeingDealt")),
+                           hovered_card=self._instance_id(card), dragged_card=self._instance_id(dragged),
+                           inspecting=inspecting,
+                           cards=cards, monster_items=tuple((key, template) for key, template, _rect in monster))
         except Exception:  # a read that made no sense this time: the padlocks fall back for now
             return None
+        finally:
+            m.blocks = None
+
+    def _instance_id(self, card: int) -> Optional[str]:
+        """A card's instance id (an object field holding a String)."""
+        if not card:
+            return None
+        value = self._get(card, "InstanceId")
+        return self.memory.mono_string(value) if isinstance(value, int) else value
+
+    def _native(self, obj: int) -> int:
+        return self.memory.ptr(obj + unity.NATIVE) if obj else 0
+
+    def _card_rects(self, board: int) -> Dict[str, Tuple[float, float, float, float]]:
+        """Each card's rect on screen, by instance id, only while its art can be seen (owner, 2026-10-15: "padlocks
+        are to only be seen if the art for what it is supposed to be on top of is there"): switched on and its face
+        turned toward you (unity.faces_camera). Your board; your stash (shut, its cards face away under the shop;
+        they turn into view as it flips open); what's on offer only off fights, and only the offered cards
+        (OFFER_SOCKETS). Through the camera the cards themselves use (CardController.mainCamera). Event options
+        too (EVENT_SOCKETS), as a point: the centre of their art, which rides into the big view when one's
+        right-clicked (recorded 2026-10-15: within 2 px of the measured spots, and on the big art's centre)."""
+        read, out, matrix = self.memory.read, {}, None
+        state, offered = self.offers_now
+        fields = ["playerItemSockets", "playerStorageSockets"]
+        sources = [self._get(board, f) for f in fields]
+        if state not in FIGHTS and offered:
+            sources += [self._offer_sockets(board, f) for f in OFFER_SOCKETS]
+        sockets_lists = [(s, self.memory.i32(s + 0x18) or 0, s) for s in sources if s]  # arrays: length, items
+        events = self._offer_sockets(board, EVENT_SOCKETS) if state not in FIGHTS and offered else 0
+        if events:  # a List: _items, _size
+            sockets_lists.append((self._get(events, "_items"), self._get(events, "_size") or 0, None))
+        for items, count, source in sockets_lists:
+            for i in range(min(count, 20) if items else 0):
+                socket = self.memory.ptr(items + 0x20 + 8 * i)
+                controller = self._get(socket, "CardController") if socket else 0
+                if not controller:
+                    continue
+                card = self._instance_id(self._get(controller, "CardData"))
+                if not card or source not in sources[:len(fields)] and card not in offered:
+                    continue
+                if matrix is None:
+                    matrix = unity.camera_matrix(read, self._native(self._get(controller, "mainCamera"))) or ()
+                    self.camera = matrix or self.camera
+                if source is None:  # an event option: no Rig of its own, its socket moves (flips with the stash)
+                    # ⚠️ unverified that an option's controller has the camera: then the last one seen (the camera
+                    # doesn't move between screens as far as we've seen)
+                    matrix = matrix or self.camera
+                    transform = unity.transform_of(read, self._native(socket))
+                    placed = unity.world(read, transform) if matrix and unity.active(read, transform) else None
+                    facing = placed and unity.faces_camera(matrix, placed)  # the socket says which way it faces
+                    art = unity.world(read, unity.transform_of(read, self._native(controller))) if facing else None
+                    point = unity.project(matrix, art[0]) if art else None
+                    if point:
+                        out[card] = (point[0], point[1], point[0], point[1])
+                    continue
+                if not unity.active(read, unity.transform_of(read, self._native(controller))):
+                    continue  # switched off: a sold card, the frame before it leaves its slot (recorded 2026-10-15)
+                rig = self._native(self._get(controller, "Rig"))
+                placed = unity.world(read, rig) if matrix else None
+                if not placed or not unity.faces_camera(matrix, placed):
+                    continue  # turned away: the shop's under an open stash, a shut stash's under the shop
+                rect = unity.box_rect(read, matrix, self._native(self._get(controller, "BoxCollider")), rig, placed)
+                if rect:
+                    out[card] = rect
+        return out
+
+    def _monster_board(self, tooltip: int, card: int) -> Tuple[Tuple[str, Optional[str], tuple], ...]:
+        """The items on a right-clicked monster's board, while its view is on: (key, template guid, rect)."""
+        read = self.memory.read
+        template = self._get(card, "Template") if self.mono.name(self.mono.klass(card)) == MONSTER_CARD else 0
+        combatant = self._get(template, "CombatantType") if template else 0
+        if not combatant or self.mono.name(self.mono.klass(combatant)) != MONSTER:
+            return ()
+        view = self._get(tooltip, "_monsterBoardTooltip")
+        if not view or not unity.active(read, unity.transform_of(read, self._native(view))):
+            return ()
+        canvas = unity.canvas_size(read, self._native(self._get(tooltip, "_canvasForWorldBounds")))
+        shown = self._get(view, "_activeCards")  # a List
+        items, size = (self._get(shown, "_items"), self._get(shown, "_size") or 0) if shown else (0, 0)
+        out = []
+        for i in range(min(size, 20) if items else 0):
+            item = self.memory.ptr(items + 0x20 + 8 * i)
+            transform = unity.transform_of(read, self._native(item)) if item else 0
+            rect = unity.ui_rect(read, transform, canvas) if transform and unity.active(read, transform) else None
+            data = self._get(item, "_clientCard") if rect else 0
+            if data:
+                out.append((f"monster:{i}", self._get(data, "TemplateId"), rect))
+        return tuple(out)
+
+    def _offer_sockets(self, board: int, name: str) -> int:
+        """One of OFFER_SOCKETS, past BLOCKED (see there); only called off fights."""
+        c = self.mono.klass(board)
+        while c:
+            for n, offset, static, _code, _data in self.mono.fields(c):
+                if n == name and not static:
+                    return self.memory.ptr(board + offset)
+            c = self.mono.parent(c)
+        return 0
+
+    def _tooltip_pieces(self, parent: int, inspecting: bool) -> Tuple[Tuple[float, float, float, float], ...]:
+        """The visible pieces of the card tooltips showing now, as fractions of the game window: TOOLTIP_PIECES (and
+        their children named in TOOLTIP_PIECE_CHILDREN: the cooldown clock), the sell box while Unity has it on, and
+        the keyword box - the big one beside a right-clicked card, else the tray at the bottom left (each keeps its
+        last rect while the other shows, so the right-click flag picks; matched 2026-10-14)."""
+        read, out = self.memory.read, []
+        cstr = lambda a: self.memory.cstr(a, 64)  # noqa: E731
+        for name in ("_cardTooltipController", "_secondaryCardTooltipController"):
+            tip = self._get(parent, name)
+            if not tip or not self._get(tip, "_currentCard"):
+                continue
+            canvas = unity.canvas_size(read, self._native(self._get(tip, "_canvasForWorldBounds")))
+            root = self._native(self._get(tip, "rectTransform"))
+            mains = [c for c in unity.children(read, root) if unity.name_of(read, c, cstr) == "Tooltip_Main"]
+            for piece in unity.children(read, mains[0]) if mains else []:
+                piece_name = unity.name_of(read, piece, cstr)
+                if piece_name not in TOOLTIP_PIECES:
+                    continue
+                out.append(unity.ui_rect(read, piece, canvas))
+                wanted = TOOLTIP_PIECE_CHILDREN.get(piece_name, ())
+                out += [unity.ui_rect(read, c, canvas) for c in unity.children(read, piece)
+                        if unity.name_of(read, c, cstr) in wanted]
+            sell = self._get(tip, "_sellPriceParent")
+            sell_transform = unity.transform_of(read, self._native(sell)) if sell else 0
+            if sell_transform and unity.active(read, sell_transform):
+                out.append(unity.ui_rect(read, sell_transform, canvas))
+            legend = self._get(tip, "_legendTooltipComponent" if inspecting else "_legendTrayTooltipComponent")
+            legend_transform = unity.transform_of(read, self._native(legend)) if legend else 0
+            if legend_transform:
+                backgrounds = [c for c in unity.children(read, legend_transform)
+                               if unity.name_of(read, c, cstr) == "Background"]
+                out.append(unity.ui_rect(read, backgrounds[0] if backgrounds else legend_transform, canvas))
+        return tuple(r for r in out if r)
 
     def close(self) -> None:
         if self.memory:
@@ -716,14 +962,24 @@ class Reader:
         return out
 
     def snapshot(self) -> Snapshot:
+        """What's on screen now. A failed read is "no screen" while it lasts under SNAPSHOT_GRACE: the game swaps its
+        objects around a run's end and a reading can catch one half-made (2026-10-02, and the same class of bug as
+        the input manager, 2026-10-14). Only a failure that lasts turns the reader off (a patch: attach's checks
+        catch most of those first)."""
         if not self.memory:
             raise ReaderOff("not attached")
         try:
-            return self._snapshot()
-        except ReaderOff:
-            raise
+            snapshot = self._snapshot()
         except Exception as error:
+            now = time.monotonic()
+            self.failing_since = self.failing_since or now
+            if now - self.failing_since < SNAPSHOT_GRACE:
+                return Snapshot(None, None, ())
+            if isinstance(error, ReaderOff):
+                raise
             raise ReaderOff(f"unexpected memory layout ({error!r})")
+        self.failing_since = 0.0
+        return snapshot
 
     def _snapshot(self) -> Snapshot:
         m = self.memory
@@ -745,6 +1001,7 @@ class Reader:
             items, size = self._get(selection, "_items"), self._get(selection, "_size") or 0
             ids = [m.mono_string(m.ptr(items + 0x20 + 8 * i)) for i in range(min(size, 20))]
         offers = []
+        self.offers_now = (name, frozenset(ids))  # ui() places these cards (only these) off fights
         if ids:
             by_id = self._entities()
             for instance in ids:

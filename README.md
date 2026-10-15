@@ -197,6 +197,8 @@ They only show while The Bazaar is the active window, and the game must be on **
 **My wifi dropped, or I forgot to start the client.**
 Keep playing! When the client reconnects it reads the game's log and sends everything you earned in the meantime,
 usual rules included. It can look back as far as your previous game session.
+The one exception is a brand-new seed: a run you were already in before you first connected it never counts.
+Once you're connected, start a fresh run; the client will remind you if you carry on with the old one.
 
 **I closed the game mid-run.**
 Just carry on; the client picks the run right back up.

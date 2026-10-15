@@ -207,6 +207,12 @@ class TestPvPWins(ClientTestBase):
 
 
 class TestCatchUp(ClientTestBase):
+    def setUp(self) -> None:
+        super().setUp()
+        # the client followed this seed before (on a first connection an open run never counts: TestMissedRuns)
+        self.ctx.watched = {"log": self.ctx.log_session, "runs": 0}
+        self.ctx.position = {"log": self.ctx.log_session, "events": 0}
+
     def test_catch_up_keeps_log_order(self) -> None:
         """Starting the client mid-run must block the same checks live play would have blocked."""
         past = [RunStarted("Vanessa"), DayReached(1), CardGained(LOCKED.guid, "itm_x", False), DayReached(2)]
@@ -271,6 +277,19 @@ class TestStatusLine(ClientTestBase):
         self.ctx.handle_snapshot(None)  # the reader went off
         self.assertIsNone(self.ctx.overlay.show_menu.call_args.args[0])
 
+    def test_menu_panel_hides_once_a_runs_board_is_up_before_the_log_says_so(self) -> None:
+        """Owner's recording, 2026-10-15: the panel flashed on a new run's first board for ~0.4 s - the loading
+        screen had closed, the log hadn't said the run started."""
+        self.play(HeroSelected("Vanessa"))
+        self.ctx.handle_board_open(True)
+        self.assertIsNone(self.ctx.menu_data())
+        self.assertFalse(self.ctx.on_menu)
+        self.ctx.handle_board_open(None)  # unreadable: the panel isn't held back by it
+        self.assertIsNotNone(self.ctx.menu_data())
+        self.ctx.handle_board_open(False)  # the main menu
+        self.assertIsNotNone(self.ctx.menu_data())
+        self.assertTrue(self.ctx.on_menu)
+
     def test_run_shows_hero_day_and_goal(self) -> None:
         self.play(RunStarted("Vanessa"), DayReached(2))
         text, warning, _ = self.ctx.status_line()
@@ -278,6 +297,20 @@ class TestStatusLine(ClientTestBase):
         self.assertIn("Vanessa: day 2/15", text)
         self.assertNotIn("next", text)  # what's left to check is PopTracker's job
         self.assertIn("Goal 0/2", text)
+
+    def test_nothing_about_the_run_shows_on_the_main_menu(self) -> None:
+        """Owner, 2026-10-14: "you cant even concede a run on that screen so it is not worthwhile to have anything
+        pertaining to a current run on the main menu" - a run open behind Resume, holding a locked card."""
+        from unittest import mock
+        self.ctx.overlay = mock.Mock()
+        self.play(RunStarted("Vanessa"), DayReached(2))
+        self.ctx.run["held"] = {"x": LOCKED.guid}
+        self.ctx.handle_on_menu(True)
+        self.assertNotIn("day 2", self.ctx.status_line()[0])
+        self.assertIsNone(self.ctx.overlay.show_locked.call_args.args[0])
+        self.ctx.handle_on_menu(False)  # Resume
+        self.assertIn("Vanessa: day 2/15", self.ctx.status_line()[0])
+        self.assertIn("CHECKS ARE BLOCKED", self.ctx.overlay.show_locked.call_args.args[0])
 
     def test_no_connection_warns(self) -> None:
         """Owner, 2026-10-01: warn when the client isn't connected to the multiworld."""
@@ -951,15 +984,50 @@ class TestMissedRuns(ClientTestBase):
         self.assertEqual(self.ctx.run["run_index"], 2)
         self.assertIsNone(self.ctx.blocked_reason())
 
-    def test_first_connection_counts_only_the_run_in_progress(self) -> None:
-        """Runs from before the seed's first connection could predate the seed."""
+    def test_first_connection_never_counts_a_run_already_in_the_log(self) -> None:
+        """Owner, 2026-10-15: "the archipelago client should NEVER use a past run that was ran before the
+        archipelago was launched" (a new seed sent last night's run's Reach Day 1). No concede warning while it
+        isn't being played; once it is, it needs conceding, and a new run counts."""
         past = [RunStarted("Vanessa", 0), DayReached(1), DayReached(2), RunEnded(False, 2),
                 RunStarted("Vanessa", 1), DayReached(1)]
         self.reconnect(past, in_run=True)
+        self.assertFalse(self.was_sent(day_location("Vanessa", 1)))
         self.assertFalse(self.was_sent(day_location("Vanessa", 2)))
+        self.assertIsNone(self.ctx.blocked_reason())  # no active run: no warning
+        self.play(DayReached(2))  # it's being played
+        self.assertIn("BEFORE THIS SEED", self.ctx.blocked_reason())
+        self.assertFalse(self.was_sent(day_location("Vanessa", 2)))
+        self.play(RunEnded(False, 2), RunStarted("Vanessa", 2), DayReached(1))
         self.assertTrue(self.was_sent(day_location("Vanessa", 1)))
-        self.reconnect(past + [RunEnded(False, 1)], in_run=False)  # and they stay uncounted later
-        self.assertFalse(self.was_sent(day_location("Vanessa", 2)))
+        self.ctx.send_death.assert_not_called()
+
+    def test_a_new_apworld_on_the_same_seed_carries_the_run_on(self) -> None:
+        """Owner, 2026-10-15: "the first time connecting to a SEED, not the first time an APWORLD connects" - the
+        saved state is the seed's (room seed + slot), so a client restarted on a newer apworld keeps the run."""
+        self.play(RunStarted("Vanessa", 0), DayReached(1))
+        self.ctx.run, self.ctx.watched, self.ctx.position = {}, {}, {}  # the client closed; a newer one starts
+        self.ctx.load_state()
+        self.reconnect([RunStarted("Vanessa", 0), DayReached(1), DayReached(2)], in_run=True)
+        self.assertTrue(self.was_sent(day_location("Vanessa", 2)))
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def test_a_run_from_before_the_seed_resumed_after_a_game_restart_still_never_counts(self) -> None:
+        with open(os.path.join(self.tmp.name, "Player-prev.log"), "w", encoding="utf-8") as f:
+            f.write("\n".join(["[10:00:00.000] [Boot] start",
+                               "[10:00:00.500] Changing EHero to Vanessa",
+                               "[10:00:01.000] [StartRunAppState] Run initialization finalized.",
+                               "[10:00:02.000] [AppState] State changed from [ChoiceState] to [PVPCombatState]",
+                               "[10:00:03.000] [AppState] State changed from [PVPCombatState] to [ReplayState]",
+                               "[10:00:04.000] [AppState] State changed from [ReplayState] to [ChoiceState]"])
+                    + "\n")
+        self.ctx.log_session = "10:00:00.000"
+        self.reconnect([RunStarted("Vanessa", 0), DayReached(1), DayReached(2)], in_run=True)
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.ctx.log_session = "11:00:00.000"  # the game restarted and resumed it
+        self.play(RunStarted("Vanessa", 0))
+        self.assertIn("BEFORE THIS SEED", self.ctx.blocked_reason())
+        self.play(DayReached(2))
+        self.assertFalse(any(self.was_sent(day_location("Vanessa", d)) for d in (1, 2, 3)))
 
     def test_game_restarted_during_the_drop(self) -> None:
         self.play(RunStarted("Vanessa", 0), DayReached(1))
@@ -1123,7 +1191,8 @@ class TestCommandsTakeTextAsTyped(ClientTestBase):
 
 
 class TestShopPadlocks(ClientTestBase):
-    """With the memory reader on, only the locked cards actually on offer are named, and padlocked by position."""
+    """With the memory reader on, only the locked cards actually on offer are named and padlocked - by which card
+    (its instance id); where it is on screen is the overlay's, from memory (padlocks.py)."""
 
     def setUp(self) -> None:
         super().setUp()
@@ -1146,43 +1215,42 @@ class TestShopPadlocks(ClientTestBase):
         self.play(EncounterEntered(self.merchant))
 
     def padlocks(self):
-        """The last show_padlocks call as (screen, sizes, locked positions, waits for the reveal)."""
+        """The last show_padlocks call as (the padlocked cards, waits for the reveal)."""
         call = self.ctx.overlay.show_padlocks.call_args
-        return call.args + (call.kwargs.get("reveal", False),)
+        return [lock.card for lock in call.args[0]], call.kwargs.get("reveal", False)
 
     def test_only_the_locked_card_on_offer_is_named_and_padlocked(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.enter()
-        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [1], True))
+        self.assertEqual(self.padlocks(), ([f"itm_{LOCKED.guid}"], True))
+        self.assertEqual(self.ctx.overlay.show_padlocks.call_args.args[0][0].place, 1)  # turns face-up second
 
     def test_buying_it_takes_the_padlock_away(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.enter()
         self.ctx.handle_snapshot(self.snapshot([self.row[0], self.row[2]]))
-        # the others keep their places (a gap where it was) and were already showing: no flip, no wait
-        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [], False))
+        self.assertEqual(self.padlocks(), ([], False))
 
-    def test_buying_another_card_leaves_the_padlock_where_it_was(self) -> None:
-        """User, 2026-10-01: cards don't move after a purchase; the padlocks thought they did."""
+    def test_buying_another_card_keeps_the_padlock_and_waits_for_no_reveal(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.ctx.handle_snapshot(self.snapshot([LOCKED, self.row[2]]))  # bought the leftmost
-        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [1], False))
+        self.assertEqual(self.padlocks(), ([f"itm_{LOCKED.guid}"], False))
 
-    def test_a_level_up_in_the_middle_of_a_shop_keeps_the_shops_gaps(self) -> None:
-        """Seen 2026-10-01: a purchase levelled the player up; back in the shop the last card was re-centred."""
+    def test_back_in_the_shop_after_a_level_up_is_no_new_row(self) -> None:
+        """Seen 2026-10-01: a purchase levelled the player up, then the shop came back."""
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.ctx.handle_snapshot(self.snapshot([LOCKED, self.row[2]]))  # bought the leftmost
         self.ctx.handle_snapshot(self.snapshot([], encounter=None, state="LevelUp"))
         self.ctx.handle_snapshot(self.snapshot([LOCKED, self.row[2]]))
-        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [1], False))
+        self.assertEqual(self.padlocks(), ([f"itm_{LOCKED.guid}"], False))
 
-    def test_a_reroll_lays_out_the_new_row(self) -> None:
+    def test_a_reroll_is_a_new_row(self) -> None:
         other = [c for c in self.row if c is not LOCKED]
         self.ctx.handle_snapshot(self.snapshot(self.row))
         rerolled = self.snapshot([LOCKED] + other)
         rerolled = rerolled._replace(offers=tuple(o._replace(instance=o.instance + "_new") for o in rerolled.offers))
         self.ctx.handle_snapshot(rerolled)
-        self.assertEqual(self.padlocks(), ("Encounter", [LOCKED.size] + [c.size for c in other], [0], True))
+        self.assertEqual(self.padlocks(), ([f"itm_{LOCKED.guid}_new"], True))
 
     def test_an_unlock_arriving_in_the_shop_takes_its_padlock_away(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
@@ -1190,49 +1258,67 @@ class TestShopPadlocks(ClientTestBase):
         unlock = NetworkItem(BASE_ID + LOCKED.ap_id, 0, 0, 0)
         self.ctx.items_received.append(unlock)
         self.ctx.on_package("ReceivedItems", {"index": 1, "items": [unlock]})
-        self.assertEqual(self.padlocks(), ("Encounter", [c.size for c in self.row], [], False))
+        self.assertEqual(self.padlocks(), ([], False))
 
     def test_a_level_up_is_padlocked_too_though_the_log_never_mentions_it(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row, encounter=None, state="LevelUp"))
-        self.assertEqual(self.padlocks(), ("LevelUp", [c.size for c in self.row], [1], True))
+        self.assertEqual(self.padlocks(), ([f"itm_{LOCKED.guid}"], True))
 
     def test_without_memory_nothing_is_padlocked(self) -> None:
         self.enter()
-        self.assertFalse(self.ctx.overlay.show_padlocks.called and self.padlocks()[2])
+        self.assertFalse(self.ctx.overlay.show_padlocks.called and self.padlocks()[0])
 
-    def test_screens_whose_layout_is_unknown_get_no_padlocks(self) -> None:
+    def test_screens_that_offer_no_row_of_items_get_none(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
-        self.ctx.handle_snapshot(self.snapshot(self.row, state="Pedestal"))  # not measured
-        self.assertEqual(self.padlocks(), (None, [], [], False))
+        self.ctx.handle_snapshot(self.snapshot(self.row, state="Pedestal"))
+        self.assertEqual(self.padlocks(), ([], False))
 
-    def test_an_open_stash_padlocks_its_locked_cards_in_their_slots(self) -> None:
+    def yours(self):
+        """The last show_board_padlocks call: the padlocked cards of your board and stash."""
+        return [lock.card for lock in self.ctx.overlay.show_board_padlocks.call_args.args[0]]
+
+    def test_your_stash_and_the_shop_are_both_padlocked_whether_it_is_open_or_not(self) -> None:
+        """Owner, 2026-10-15: a padlock shows exactly while its card can be seen - the stash flips over the shop,
+        so which of them faces you is memory's (unity.faces_camera), never the open flag."""
         from ..memreader import BoardUI
         free = self.row[0]
         snapshot = self.snapshot(self.row)._replace(stash=((5, LOCKED.guid, "itm_a"), (0, free.guid, "itm_b")))
         self.ctx.handle_snapshot(snapshot)
-        self.ctx.handle_board_ui(BoardUI(False, False, True, False, False))
-        empties = 5 - {"Small": 1, "Medium": 2, "Large": 3}[free.size]
-        expected = [free.size] + ["Empty"] * empties + [LOCKED.size]
-        screen, sizes, locked, _ = self.padlocks()
-        self.assertEqual((screen, sizes[:len(expected)], locked), ("Stash", expected, [len(expected) - 1]))
-        self.ctx.handle_board_ui(BoardUI(False, False, False, False, False))  # closed: the shop's padlocks again
-        self.assertEqual(self.padlocks()[0], "Encounter")
+        for opened in (True, False):
+            self.ctx.handle_board_ui(BoardUI(False, False, opened, False, False))
+            self.assertEqual(self.yours(), ["itm_a"])
+            self.assertEqual(self.padlocks()[0], [f"itm_{LOCKED.guid}"])
+
+    def test_a_right_clicked_monsters_locked_item_gets_a_padlock_and_loses_it_when_the_view_closes(self) -> None:
+        """Owner, 2026-10-15: padlocks on a monster's board when right-clicking it on the fight-choice screen."""
+        from ..memreader import BoardUI
+        self.ctx.handle_snapshot(self.snapshot(self.row, state="Choice"))
+        board = (("monster:0", LOCKED.guid), ("monster:1", self.row[0].guid))
+        self.ctx.handle_board_ui(BoardUI(True, False, False, False, False, inspecting=True, monster_items=board))
+        self.assertEqual(self.yours(), ["monster:0"])
+        self.ctx.handle_board_ui(BoardUI(False, False, False, False, False))
+        self.assertEqual(self.yours(), [])
 
     def test_a_transformed_card_in_the_stash_gets_no_padlock(self) -> None:
         """Owner, 2026-10-01: "Lets allow transformations" - what a card turns into is allowed, locked or not."""
         from ..logparser import CardTransformed
-        from ..memreader import BoardUI
         self.play(CardTransformed("itm_old", "itm_b"))
         self.ctx.handle_snapshot(self.snapshot(self.row)._replace(stash=((0, LOCKED.guid, "itm_b"),)))
-        self.ctx.handle_board_ui(BoardUI(False, False, True, False, False))
-        self.assertEqual(self.padlocks()[:3], ("Stash", [LOCKED.size] + ["Empty"] * (10 - {"Small": 1, "Medium": 2,
-                                                                                          "Large": 3}[LOCKED.size]), []))
+        self.assertEqual(self.yours(), [])
 
-    def test_a_stash_card_that_cant_be_sized_means_no_stash_padlocks(self) -> None:
-        from ..memreader import BoardUI
-        self.ctx.handle_snapshot(self.snapshot(self.row)._replace(stash=((0, "not-a-known-card", "itm_a"), (5, LOCKED.guid, "itm_b"))))
-        self.ctx.handle_board_ui(BoardUI(False, False, True, False, False))
-        self.assertEqual(self.padlocks(), (None, [], [], False))
+    def test_a_card_the_data_doesnt_know_never_stops_the_others_padlocks(self) -> None:
+        """No sizes are needed any more (positions come from memory), so one unknown card costs nothing."""
+        self.ctx.handle_snapshot(self.snapshot(self.row)._replace(
+            stash=((0, "not-a-known-card", "itm_a"), (5, LOCKED.guid, "itm_b"))))
+        self.assertEqual(self.yours(), ["itm_b"])
+
+    def test_your_boards_locked_cards_get_padlocks_off_fights(self) -> None:
+        """Owner, 2026-10-14: "I would like the padlocks to show on items on the board"."""
+        board = ((2, LOCKED.guid, "itm_mine"), (4, self.row[0].guid, "itm_free"))
+        self.ctx.handle_snapshot(self.snapshot(self.row)._replace(board=board))
+        self.assertEqual([lock.card for lock in self.ctx.overlay.show_board_padlocks.call_args.args[0]], ["itm_mine"])
+        self.ctx.handle_snapshot(self.snapshot([], state="PVPCombat")._replace(board=board))
+        self.assertEqual(self.ctx.overlay.show_board_padlocks.call_args.args[0], [])
 
 
 class TestTransforms(ClientTestBase):
@@ -1408,8 +1494,9 @@ class TestEventPadlocks(ClientTestBase):
         return Snapshot(state, None, tuple(Offer(f"enc_{i}", t, k) for i, (t, k) in enumerate(offers)))
 
     def padlocks(self):
+        """The last show_padlocks call as (the measured layout, the padlocked options' places in it)."""
         call = self.ctx.overlay.show_padlocks.call_args
-        return call.args[0], call.args[2]
+        return call.kwargs.get("options"), [lock.option for lock in call.args[0]]
 
     def test_hourly_choice(self) -> None:
         self.ctx.handle_snapshot(self.screen("Choice", (self.free, "EventEncounter"), (self.locked, "EventEncounter"),
@@ -1432,12 +1519,13 @@ class TestEventPadlocks(ClientTestBase):
                                              (self.locked, "EventEncounter")))
         self.assertEqual(self.padlocks(), ("Line-2", [1]))
 
-    def test_monsters_and_unmeasured_counts_get_none(self) -> None:
+    def test_monsters_get_none_and_an_unmeasured_count_still_gets_its_padlocks(self) -> None:
+        """Owner, 2026-10-15: event padlocks come from memory now, so a count never measured isn't left bare."""
         self.ctx.handle_snapshot(self.screen("Choice", (BRONZE_MONSTER, "CombatEncounter")))
         self.assertEqual(self.padlocks(), (None, []))
         self.ctx.handle_snapshot(self.screen("Choice", (self.free, "EventEncounter"),
                                              (self.locked, "EventEncounter")))
-        self.assertEqual(self.padlocks(), (None, []))
+        self.assertEqual(self.padlocks(), ("Choice-2", [1]))
 
 
 class TestUnlocksInLogicCount(ClientTestBase):
@@ -1515,6 +1603,8 @@ class TestCreatedItems(ClientTestBase):
         self.look(*others, (instance, guid))
 
     def test_allowed_spawned_locked_card_never_blocks_and_gets_no_padlock(self) -> None:
+        # a seed from before the option sends no created_items: everything allowed (owner, 2026-10-15)
+        self.assertNotIn("created_items", self.ctx.slot_data)
         self.look()  # memory's first look at the run
         self.spawn("itm_s", LOCKED.guid)
         self.assertIsNone(self.ctx.blocked_reason())
