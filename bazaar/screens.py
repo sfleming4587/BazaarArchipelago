@@ -119,6 +119,17 @@ def click_through(window) -> None:
     _add_style(window, 0x80000 | 0x20)  # WS_EX_LAYERED | WS_EX_TRANSPARENT
 
 
+def pass_clicks(window, passing: bool) -> None:
+    """click_through that can be turned off again (Windows only; elsewhere a no-op)."""
+    if sys.platform != "win32":
+        return
+    import ctypes
+    user32 = ctypes.windll.user32
+    hwnd = window_handle(window)
+    style = user32.GetWindowLongW(hwnd, -20) | 0x80000  # WS_EX_LAYERED
+    user32.SetWindowLongW(hwnd, -20, style | 0x20 if passing else style & ~0x20)  # WS_EX_TRANSPARENT
+
+
 def never_focus(window) -> None:
     """The window never takes the keyboard focus from the game, even when shown or clicked (its buttons and title
     bar still work). Windows only; elsewhere a no-op."""

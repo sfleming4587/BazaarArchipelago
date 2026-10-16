@@ -177,6 +177,19 @@ def active(read: Read, transform: int) -> bool:
     return bool(raw and raw[0])
 
 
+def ancestors(read: Read, transform: int) -> List[int]:
+    """The Transform and its parents up to its hierarchy's root, in that order."""
+    hierarchy, index = ptr(read, transform + TRANSFORM_HIERARCHY), i32(read, transform + TRANSFORM_INDEX)
+    if not hierarchy or index is None:
+        return []
+    parents, table = ptr(read, hierarchy + HIERARCHY_PARENTS), ptr(read, hierarchy + HIERARCHY_TRANSFORMS)
+    out = []
+    while index is not None and 0 <= index and len(out) < 64:
+        out.append(ptr(read, table + 8 * index))
+        index = i32(read, parents + 4 * index)
+    return out
+
+
 def children(read: Read, transform: int, scan: int = 400) -> List[int]:
     """A Transform's direct children (they follow it in its hierarchy's index order)."""
     hierarchy, index = ptr(read, transform + TRANSFORM_HIERARCHY), i32(read, transform + TRANSFORM_INDEX)

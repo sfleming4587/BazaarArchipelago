@@ -59,6 +59,7 @@ class NoAssemblies(ReaderOff):
 # seconds after launch, found no list and switched off for the whole session).
 LOADING_SECONDS = 120
 SNAPSHOT_GRACE = 10.0  # a snapshot failing this long in a row turns the reader off (see Reader.snapshot)
+GEAR_SEARCH_SECONDS = 30.0  # a missing settings gear is searched for at most this often (find_gear)
 INPUT_SEARCH_SECONDS = 30.0  # a gone input manager is searched for again at once, then at most this often (menu_layers)
 UI_RETRY_SECONDS = 1.0  # how often the board's on-screen flags are looked for again until found (see Reader.ui)
 # During one board read, memory is fetched in aligned blocks of this size and kept until the read ends: a card's fields
@@ -108,6 +109,7 @@ class BoardUI(NamedTuple):
     cards: Dict[str, Tuple[float, float, float, float]] = {}
     # the items on a right-clicked monster's board: (key, template guid); their rects are in cards under the key
     monster_items: Tuple[Tuple[str, Optional[str]], ...] = ()
+    gear: Optional[Tuple[float, float, float, float]] = None  # the settings gear at the top right (find_gear)
 
 
 class HeroPrefs(NamedTuple):
@@ -633,6 +635,8 @@ class Reader:
             else 0
         self.prefs_path = self._learn_prefs()
         self.input_manager = self.input_class = 0  # found when first needed (menu_layers)
+        self.gear_button: tuple = ()  # (dialog, its class, the button's Transform, its canvas): find_gear
+        self.gear_searched = -GEAR_SEARCH_SECONDS
         self.input_searched = -INPUT_SEARCH_SECONDS  # when the input manager was last searched for
 
     def _learn_prefs(self) -> Optional[int]:
@@ -784,11 +788,54 @@ class Reader:
                            dealing=bool(self._get(board, "_cardsBeingDealt")),
                            hovered_card=self._instance_id(card), dragged_card=self._instance_id(dragged),
                            inspecting=inspecting,
-                           cards=cards, monster_items=tuple((key, template) for key, template, _rect in monster))
+                           cards=cards, monster_items=tuple((key, template) for key, template, _rect in monster),
+                           gear=self._gear_rect())
         except Exception:  # a read that made no sense this time: the padlocks fall back for now
             return None
         finally:
             m.blocks = None
+
+    def gear_wanted(self) -> bool:
+        """Is it time to search for the settings gear (on the board, not found, not searched lately)?"""
+        return bool(self.memory and not self.gear_button and self.board_open()
+                    and time.monotonic() - self.gear_searched >= GEAR_SEARCH_SECONDS)
+
+    def find_gear(self) -> None:
+        """Find the settings gear at the board's top right: FightMenuDialog.SettingButton, a "Btn_Settings" in the
+        HUD's 1920x1080 "Buttons" canvas (found 2026-10-15 while the owner's run sat open; its rect matched the gear
+        on a capture of the game window to the pixel). Nothing static points to the dialog, so it's searched for like
+        the input manager (a few GB, ~17 s; on a worker thread); several exist, the live one's button is switched on.
+        Kept while it lives (_gear_rect)."""
+        self.gear_searched = time.monotonic()
+        mono, m = self.mono, self.memory
+        read = m.read
+        try:
+            dialog_class = mono.find_class("TheBazaarRuntime", "", "FightMenuDialog")
+            vtable = m.ptr(m.ptr(dialog_class + mono.off["class_runtime_info"]) + 8)
+            for obj in m.find_pointer(vtable) if vtable else []:
+                if mono.klass(obj) != dialog_class:
+                    continue
+                button = self._get(obj, "SettingButton")
+                transform = unity.transform_of(read, self._native(button)) if button else 0
+                if not transform or not unity.active(read, transform):
+                    continue
+                canvases = [t for t in unity.ancestors(read, transform) if unity.canvas_size(read, t)[0] >= 1]
+                if canvases:  # the outermost one with a size is the screen's canvas (the root's reads ~1e-44)
+                    self.gear_button = (obj, dialog_class, transform, canvases[-1])
+                    return
+        except Exception:
+            pass
+
+    def _gear_rect(self) -> Optional[Tuple[float, float, float, float]]:
+        """The settings gear as fractions of the game window, while the dialog that owns it lives."""
+        if not self.gear_button:
+            return None
+        dialog, dialog_class, transform, canvas = self.gear_button
+        read = self.memory.read
+        if self.mono.klass(dialog) != dialog_class or not unity.active(read, transform):
+            self.gear_button = ()  # replaced (a new run, the menu): searched for again
+            return None
+        return unity.ui_rect(read, transform, unity.canvas_size(read, canvas))
 
     def _instance_id(self, card: int) -> Optional[str]:
         """A card's instance id (an object field holding a String)."""

@@ -421,6 +421,21 @@ were placed by measured proportions of the window; that is gone, event options i
 
 Not built yet: locked heroes on the character select screen (owner wants it; needs a screenshot).
 
+## The settings gear (found 2026-10-15, owner's run left open)
+
+**The gear at the board's top right is `FightMenuDialog.SettingButton`, a "Btn_Settings" in the HUD's 1920x1080
+"Buttons" canvas** (path Dialogs/Buttons/ScalerOffset/Resources_Tabs_P/BtnContainer_Settings/Btn_Settings).
+Read as fractions of the window it was (0.928, 0.030, 0.973, 0.109); a capture of the game window put that box
+exactly on the gear. Used for the overlay windows that get out of its way (docs/OVERLAY.md).
+
+- Nothing static points to the dialog: `find_gear` searches for it by its vtable like the input manager (~16 s,
+  worker thread, on the board only, at most every `GEAR_SEARCH_SECONDS`). Seven FightMenuDialogs existed; only the
+  live one's button is switched on. Kept while its class still matches and the button is on; then searched again.
+- ⚠️ The hierarchy's root ("Dialogs") reads a canvas size of ~1e-44, not 0: the canvas is the outermost ancestor
+  with a size of at least 1 ("Buttons").
+- ⚠️ Not looked at: the main menu's gear (a different object, `LoginScreen/.../Btn_Settings` exists) - the measured
+  place is used there.
+
 ## Bringing the rest into the client (plan, nothing built)
 
 **Memory adds to the log; it never replaces it.** Everything the client does from `Player.log` today keeps

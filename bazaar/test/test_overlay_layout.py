@@ -406,3 +406,58 @@ class TestEventCentres(unittest.TestCase):
             self.assertAlmostEqual(x2 - 100, x1 * 4 / 3, delta=1)
             self.assertAlmostEqual(y2 - 50, y1 * 4 / 3, delta=1)
 
+
+
+class TestHoverLetsClicksThrough(unittest.TestCase):
+    """Owner, 2026-10-15: the concede notice sat on the settings gear - under the mouse an overlay window lets clicks
+    reach the game, but for its own buttons (a held card's "Use Bypass")."""
+
+    def test_only_the_windows_own_button_keeps_the_click(self) -> None:
+        import tkinter
+        from ..overlay import on_a_button
+        root = tkinter.Tk()
+        try:
+            root.geometry("300x200+100+100")
+            frame = tkinter.Frame(root)
+            frame.pack(fill="x")
+            button = tkinter.Button(frame, text="Use Bypass")
+            button.pack(side="right")
+            tkinter.Label(frame, text="Sharkclaws (Vanessa)").pack(side="left")
+            root.update()
+            x, y = button.winfo_rootx() + 3, button.winfo_rooty() + 3
+            self.assertTrue(on_a_button(root, (x, y)))
+            self.assertFalse(on_a_button(root, (root.winfo_rootx() + 3, root.winfo_rooty() + 150)))  # empty part
+            button.pack_forget()
+            root.update()
+            self.assertFalse(on_a_button(root, (x, y)))  # a button that isn't shown can't take the click
+        finally:
+            root.destroy()
+
+    def test_the_mouse_on_the_settings_gear_padded_finds_it_and_elsewhere_nothing(self) -> None:
+        """Owner, 2026-10-15: "once a mouse starts to hover above the position of the settings icon (With some
+        padding)" - only then does the window on it get out of the way. The gear's place was measured on the owner's
+        recording (centre 1823, 75 at 1080p); at 1440p it's the same spot scaled."""
+        from types import SimpleNamespace
+        from ..overlay import BUTTON_PAD, _Screen
+        screen = SimpleNamespace(layout={"k": 1.0, "window": (0, 0, 1920, 1080)})
+        self.assertEqual(_Screen.game_button_at(screen, (1823, 75)), (1791, 43, 1855, 107))
+        self.assertIsNotNone(_Screen.game_button_at(screen, (1791 - BUTTON_PAD, 75)))  # in the padding
+        self.assertIsNone(_Screen.game_button_at(screen, (1700, 75)))  # the notice, away from the gear
+        big = SimpleNamespace(layout={"k": 4 / 3, "window": (100, 50, 2560, 1440)})  # 1440p, moved
+        self.assertIsNotNone(_Screen.game_button_at(big, (100 + 2560 - 97 * 4 / 3, 50 + 75 * 4 / 3)))
+        self.assertIsNone(_Screen.game_button_at(big, (1823, 75)))
+
+    def test_on_the_board_the_gear_comes_from_memory(self) -> None:
+        """The rect read from the owner's open run (2026-10-15), as fractions of the game window: it wins over the
+        measured spot, at any window size."""
+        from types import SimpleNamespace
+        from ..memreader import BoardUI
+        from ..overlay import _Screen
+        gear = (0.9284, 0.0301, 0.9727, 0.1088)
+        ui = BoardUI(False, False, False, False, False, gear=gear)
+        screen = SimpleNamespace(layout={"k": 4 / 3, "window": (100, 50, 2560, 1440)}, board_ui=ui)
+        point = (100 + 0.95 * 2560, 50 + 0.07 * 1440)
+        self.assertEqual(_Screen.game_button_at(screen, point),
+                         (100 + gear[0] * 2560, 50 + gear[1] * 1440, 100 + gear[2] * 2560, 50 + gear[3] * 1440))
+        moved = SimpleNamespace(layout=screen.layout, board_ui=ui._replace(gear=(0.5, 0.5, 0.55, 0.55)))
+        self.assertIsNone(_Screen.game_button_at(moved, point))  # memory wins over the measured spot

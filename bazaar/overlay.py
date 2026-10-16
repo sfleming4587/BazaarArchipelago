@@ -77,6 +77,12 @@ HOVER_MS = 2  # how often the Tk thread looks for a new board read (client.MEMOR
 # move on each new read - one clock for both, so they don't drift against each other (owner 2026-10-15: padlocks
 # looked ~20 fps). Needs the client's 1 ms timers (client.main): Windows otherwise rounds a Tk timer up to its
 # ~15.6 ms tick (16 ran ~45 times a second, 8 ~64, measured 2026-10-15)
+# The game's settings gear, top right: (left, top, right, bottom) in 1080p pixels from the window's top-right corner.
+# MEASURED, not read: the owner chose a fixed place after three memory probes found only the Esc menu's settings
+# button (2026-10-15, gear_probe 1-3: FightMenuDialog.SettingButton, collapsed). From the owner's 1080p recording
+# (ring 1791-1855 x 43-107). ⚠️ Only 16:9 measured; assumed to stay in the corner and scale with the height.
+SETTINGS_GEAR = (129, 43, 65, 107)
+BUTTON_PAD = 16  # 1080p pixels around it where the mouse already makes the overlay get out of its way
 FOLLOW_SECONDS = 1 / 60  # ...and at least this often without a new read (the reader off, or a read that failed)
 PADLOCK = 56  # the mark's size
 MIN_PADLOCK = 24  # real pixels, however small the window
@@ -98,6 +104,23 @@ def strips(x: int, y: int, w: int, h: int) -> tuple:
     right_x, right_end = round(centre + RIGHT_START * across), x + w - margin
     return ((left_x, y, left_end - left_x, round(LEFT_BOTTOM * k)),
             (right_x, y, right_end - right_x, round(RIGHT_BOTTOM * k)), k)
+
+
+def inside(point: tuple, box: tuple) -> bool:
+    return box[0] <= point[0] < box[2] and box[1] <= point[1] < box[3]
+
+
+def on_a_button(window, point: tuple) -> bool:
+    """The point is on one of the window's own buttons (a Lock Bypass's "Use Bypass")."""
+    widgets = list(window.winfo_children())
+    while widgets:
+        widget = widgets.pop()
+        if widget.winfo_class() == "Button" and widget.winfo_ismapped():
+            x, y = widget.winfo_rootx(), widget.winfo_rooty()
+            if inside(point, (x, y, x + widget.winfo_width(), y + widget.winfo_height())):
+                return True
+        widgets += widget.winfo_children()
+    return False
 
 
 def event_row(screen: Optional[str]) -> Optional[tuple]:
@@ -342,6 +365,12 @@ class _Screen:
         self.panels = [self.alert_box, self.notice_box, self.toast_box, self.menu_box]
         # nothing to click in these (the menu panel must never block the game's menu buttons)
         self.click_through = {self.toast_box, self.menu_box}
+        # ...and these go see-through and let clicks reach the game while the mouse is over the game's settings gear
+        # under them (SETTINGS_GEAR, padded), but never on their own buttons (owner, 2026-10-15: the concede
+        # notice sat on the settings gear - "it has to have a UI element behind it that is interactable and being
+        # blocked", "once a mouse starts to hover above the position of the settings icon (With some padding)")
+        self.hover_through = (self.alert_box, self.notice_box, self.toast_box, self.menu_box)
+        self.passing: Dict[object, bool] = {}  # window -> letting clicks through now (see fade_padlocks)
         for panel in self.panels:
             panel.withdraw()
             panel.overrideredirect(True)
@@ -468,17 +497,41 @@ class _Screen:
                 if (factor == 0) != (self.overlay_faded == 0):
                     self.sync_visibility()  # hidden, not just see-through: an invisible window still takes clicks
                 self.overlay_faded = factor
+            pointer = self.root.winfo_pointerxy() if self.game_in_front else None  # never read off the game
+            button = self.game_button_at(pointer) if pointer is not None else None  # the mouse is on it (padded)
             for window, own in self.faded_windows():
                 alpha = own * factor
-                if alpha and covers and window.winfo_ismapped():
+                over = False
+                if alpha and window.winfo_ismapped():
                     x, y = window.winfo_rootx(), window.winfo_rooty()
-                    if padlocks.covered((x, y, x + window.winfo_width(), y + window.winfo_height()), covers):
+                    box = (x, y, x + window.winfo_width(), y + window.winfo_height())
+                    # only the window that sits on that button gets out of its way
+                    over = window in self.hover_through and button is not None and padlocks.touches(box, button)
+                    if over or covers and padlocks.covered(box, covers):
                         alpha *= padlocks.SEE_THROUGH
+                if window in self.hover_through and window not in self.click_through:
+                    passing = over and not on_a_button(window, pointer)
+                    if self.passing.get(window) != passing:
+                        screens.pass_clicks(window, passing)
+                        self.passing[window] = passing
                 if abs(float(window.attributes("-alpha")) - alpha) > 0.001:  # others set it too (the guide's fade)
                     window.attributes("-alpha", alpha)
         except Exception:
             logger.exception("Overlay error (it keeps going)", extra=FILE_ONLY)
         self.root.after(HOVER_MS, self.fade_padlocks)
+
+    def game_button_at(self, point: tuple) -> Optional[tuple]:
+        """The game's settings gear on screen if the point is on it, padded by BUTTON_PAD. From memory on the board
+        (memreader.find_gear); the measured SETTINGS_GEAR where the reader hasn't got it (the menu, reader off)."""
+        k, (x, y, w) = self.layout["k"], self.layout["window"][:3]
+        ui = getattr(self, "board_ui", None)
+        if ui is not None and ui.gear:
+            gear = padlocks.to_screen(ui.gear, self.layout["window"])
+        else:
+            gear = (x + w - SETTINGS_GEAR[0] * k, y + SETTINGS_GEAR[1] * k, x + w - SETTINGS_GEAR[2] * k,
+                    y + SETTINGS_GEAR[3] * k)
+        pad = BUTTON_PAD * k
+        return gear if inside(point, (gear[0] - pad, gear[1] - pad, gear[2] + pad, gear[3] + pad)) else None
 
     def apply_padlock_alphas(self, covers: List[tuple]) -> None:
         alphas = [self.padlock_alpha(i, covers) for i in range(self.padlocks_wanted)]

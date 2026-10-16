@@ -1736,6 +1736,8 @@ async def watch_memory(ctx: BazaarContext) -> None:
                 await loop.run_in_executor(None, time.sleep, max(0.0, MEMORY_SECONDS - (time.perf_counter() - tick)))
             ctx.handle_snapshot(await loop.run_in_executor(None, reader.snapshot))
             ctx.handle_hero_prefs(reader.hero_prefs())
+            if reader.gear_wanted():  # the settings gear's place, for the windows that get out of its way
+                await loop.run_in_executor(None, reader.find_gear)
             if not ctx.run.get("active"):  # the menu's hero panel hides under the game's own screens
                 ctx.handle_menu_layers(await loop.run_in_executor(None, reader.menu_layers))
         except ReaderOff as error:
