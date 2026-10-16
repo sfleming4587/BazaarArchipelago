@@ -28,7 +28,8 @@ reached their goal. You can play solo too.
   - beating monsters of each rarity;
   - a 10-win run.
 - **The goal:** a 10-win run with a set number of different heroes (3 by default). Only runs you play count:
-  when another player finishes and collects their items from your world, your goal and Tracker don't move.
+  when another player finishes and collects their items from your world, the Tracker shows those checks as done,
+  but your goal doesn't move.
 - **Optional spice:**
   - **Sell Traps:** sell the item it names within a couple of days, or your checks pause.
   - **Lock Bypasses:** keep a locked card for the rest of a run.

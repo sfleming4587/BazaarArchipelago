@@ -1315,14 +1315,18 @@ class BazaarContext(CommonContext):
         return self.setting("monster_tiers").get(str(day), [])
 
     def done(self) -> Set[int]:
-        """Checks you sent yourself, from any computer (kept in the server's data storage). Not the server's
-        checked_locations: another player's collect ticks your checks there too, which filled the tracker for a hero
-        never played and won a seed on its own (owner, 2026-10-15)."""
+        """Every check done, also those another player's collect ticked: the Tracker and counts show them, as Hollow
+        Knight's client does (owner, 2026-10-15). The goal never reads this - see sent_by_you."""
+        return self.checked_locations | self.sent_by_you()
+
+    def sent_by_you(self) -> Set[int]:
+        """Checks you sent yourself, from any computer (kept in the server's data storage). Collect ticks your checks
+        on the server too, which won a seed on its own (owner, 2026-10-15)."""
         return set(self.stored_data.get(self.sent_key()) or ()) | self.locations_checked
 
     def heroes_won(self) -> list:
         """Heroes whose 10-win check you sent: the goal counts these (/status and the overlay show the same)."""
-        return [h for h in self.setting("heroes") if location_name_to_id[win_location(h)] in self.done()]
+        return [h for h in self.setting("heroes") if location_name_to_id[win_location(h)] in self.sent_by_you()]
 
     def check_goal(self) -> None:
         if self.goal_sent or not self.slot_data:
@@ -1468,7 +1472,7 @@ class BazaarContext(CommonContext):
         max_day = self.setting("max_day")
         for hero in self.setting("heroes"):
             days = sum(location_name_to_id[day_location(hero, d)] in done for d in range(1, max_day + 1))
-            won = location_name_to_id[win_location(hero)] in done
+            won = hero in self.heroes_won()
             lock = "unlocked" if self.hero_unlocked(hero) else "LOCKED"
             logger.info(f"{hero:12} {lock:9} days {days}/{max_day}  10 wins: {'yes' if won else 'no'}")
         logger.info(f"Goal: {len(self.heroes_won())}/{self.setting('heroes_required')} heroes with 10 wins")

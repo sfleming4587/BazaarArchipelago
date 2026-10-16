@@ -200,10 +200,11 @@ class TestCollectedChecks(ClientTestBase):
     async def _reply(self, cmd, args) -> None:
         self.ctx.on_package(cmd, args)
 
-    def test_checks_collected_by_another_player_are_not_done(self) -> None:
+    def test_checks_collected_by_another_player_show_done_but_never_win(self) -> None:
+        """Like Hollow Knight's client: collected checks show as done; the goal is the player's own."""
         collected = {location_name_to_id[win_location(h)] for h in ("Vanessa", "Dooley")}             | {location_name_to_id[day_location("Dooley", d)] for d in range(1, 8)}
         self.ctx.checked_locations = set(collected)
-        self.assertEqual(self.ctx.done() & collected, set())
+        self.assertEqual(self.ctx.done() & collected, collected)
         self.assertEqual(self.ctx.heroes_won(), [])
         self.play(RunStarted("Vanessa"), DayReached(1))  # the next check sent is what fired the goal before
         self.assertFalse(self.ctx.goal_sent)
