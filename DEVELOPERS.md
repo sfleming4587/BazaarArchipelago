@@ -92,6 +92,15 @@ bazaar/data/bazaar_data.json` must show no changed `ap_id`s.
 - Never renumber item or location ids. The extractor keeps existing `ap_id`s and appends new cards; heroes are
   append-only (their index sets their location ids).
 - Retired options become `Removed` options (so old YAMLs get a clear message), never silently deleted.
+- **"Done" means checks this client sent, never the server's `checked_locations`** (owner, 2026-10-15). Another
+  player's collect marks your locations checked on the server (`collect_player` in MultiServer.py); a seed was
+  won that way and the Tracker showed 42 checks done for a hero never played. The client stores every id it
+  sends in data storage key `bazaar_sent_<team>_<slot>` (one list, follows the player across computers) and
+  `done()` reads only that, so the goal, Tracker, menu, overlay and `/status` agree. The goal is also checked
+  when that key arrives on connect, and checks sent while offline are stored again on reconnect.
+  ⚠️ Official clients differ on showing collected checks (Factorio, SMW, KDL3, DKC3, KH2 show them done; ALttP
+  and SM have an `allow_collect` option; OoT ignores them), but none derives its goal from them.
+  ⚠️ Checks sent before 2026-10-15 aren't in the key; they show as done again once replayed.
 - The Windows Archipelago installer does **not** include Pillow: client code must never need it (only tools/ may).
   Shop Guide pictures are decoded by the SDL2_image Archipelago ships for its GUI, called through ctypes - never by
   importing Kivy, which Archipelago's GUI must set up first (`KIVY_DATA_DIR`, `KIVY_HOME`).

@@ -182,6 +182,64 @@ class TestTenWins(ClientTestBase):
         self.assertTrue(self.was_sent(monster_location("Vanessa", 4, "Bronze")))
 
 
+class TestCollectedChecks(ClientTestBase):
+    """Owner, 2026-10-15: skel's goal collected Jules/Stelle/Mak - 10 Wins (and 225 more) out of Sulldog's world;
+    Sulldog's client then declared the goal, and its tracker would show checks done for a hero never played. Only
+    checks your own client sent count, from any computer; the goal is also checked on connect."""
+    heroes_owned = ("Vanessa", "Dooley")
+
+    def sent_record(self) -> set:
+        return set(self.ctx.stored_data.get(self.ctx.sent_key()) or ())
+
+    def store(self, ids) -> None:
+        """What the server's Set reply does: CommonClient writes stored_data, then calls on_package."""
+        self.ctx.stored_data[self.ctx.sent_key()] = sorted(ids)
+        self.play()  # inside the loop: check_goal starts a task
+        self.loop.run_until_complete(self._reply("SetReply", {"key": self.ctx.sent_key(), "value": sorted(ids)}))
+
+    async def _reply(self, cmd, args) -> None:
+        self.ctx.on_package(cmd, args)
+
+    def test_checks_collected_by_another_player_are_not_done(self) -> None:
+        collected = {location_name_to_id[win_location(h)] for h in ("Vanessa", "Dooley")}             | {location_name_to_id[day_location("Dooley", d)] for d in range(1, 8)}
+        self.ctx.checked_locations = set(collected)
+        self.assertEqual(self.ctx.done() & collected, set())
+        self.assertEqual(self.ctx.heroes_won(), [])
+        self.play(RunStarted("Vanessa"), DayReached(1))  # the next check sent is what fired the goal before
+        self.assertFalse(self.ctx.goal_sent)
+
+    def test_every_check_you_send_is_stored_on_the_server(self) -> None:
+        self.play(RunStarted("Vanessa"), DayReached(1))
+        sets = [m for call in self.ctx.send_msgs.call_args_list for m in call.args[0] if m["cmd"] == "Set"]
+        self.assertEqual([(m["key"], m["operations"]) for m in sets],
+                         [(self.ctx.sent_key(), [{"operation": "update",
+                                                   "value": [location_name_to_id[day_location("Vanessa", 1)]]}])])
+
+    def test_your_own_10_win_runs_reach_the_goal(self) -> None:
+        self.play(RunStarted("Vanessa"), DayReached(1), RunEnded(True, 10))
+        self.assertEqual((self.ctx.heroes_won(), self.ctx.goal_sent), (["Vanessa"], False))
+        self.play(RunStarted("Dooley"), DayReached(1), RunEnded(True, 10))
+        self.assertTrue(self.ctx.goal_sent)
+
+    def test_wins_sent_from_another_computer_reach_the_goal_on_connect(self) -> None:
+        self.store({location_name_to_id[win_location(h)] for h in ("Vanessa", "Dooley")})
+        self.assertTrue(self.ctx.goal_sent)
+
+    def test_checks_sent_while_offline_are_stored_on_reconnect(self) -> None:
+        self.ctx.locations_checked = {location_name_to_id[day_location("Vanessa", 1)]}
+        self.ctx.set_notify = mock.Mock()
+        self.loop.run_until_complete(self._reply("Connected", {"slot_data": self.ctx.slot_data}))
+        self.play()  # let the started task run
+        sets = [m for call in self.ctx.send_msgs.call_args_list for m in call.args[0] if m["cmd"] == "Set"]
+        self.assertEqual([m["operations"][0]["value"] for m in sets], [[location_name_to_id[day_location("Vanessa", 1)]]])
+        self.ctx.set_notify.assert_called_once_with(self.ctx.sent_key())
+
+    def test_a_blocked_10_win_run_sends_and_stores_nothing(self) -> None:
+        self.ctx.items_received = self.ctx.items_received[:1]  # Dooley locked
+        self.play(RunStarted("Dooley"), DayReached(1), RunEnded(True, 10))
+        self.assertEqual((self.ctx.heroes_won(), self.ctx.done()), ([], set()))
+
+
 class TestLockedHero(ClientTestBase):
     def test_locked_hero_blocks_everything(self) -> None:
         self.play(RunStarted("Dooley"), DayReached(1), MonsterFought(BRONZE_MONSTER, 1, True), PvPFought(1, True),
@@ -367,7 +425,7 @@ class TestStatusLine(ClientTestBase):
         self.ctx.slot_data.update(logic={"day_10": 15, "diamond": 10, "legendary": 20}, lock_items=[])
         self.play(HeroSelected("Vanessa"))
         self.assertIn("   Vanessa   0 / 61", self.ctx.status_line()[0])
-        self.ctx.checked_locations = {location_name_to_id[day_location("Vanessa", 1)]}
+        self.ctx.stored_data[self.ctx.sent_key()] = [location_name_to_id[day_location("Vanessa", 1)]]
         self.assertIn("   Vanessa   1 / 61", self.ctx.status_line()[0])
 
     def test_locked_items_keep_late_checks_out_of_logic(self) -> None:

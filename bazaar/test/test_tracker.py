@@ -54,7 +54,7 @@ class TestTrackerData(ClientTestBase):
         return next(c[4] for c in self.ctx.tracker_data()[hero]["checks"] if c[0] == kind and c[1] == day)
 
     def test_colours(self) -> None:
-        self.ctx.checked_locations = {location_name_to_id[day_location("Vanessa", 1)]}
+        self.ctx.stored_data[self.ctx.sent_key()] = [location_name_to_id[day_location("Vanessa", 1)]]
         self.assertEqual(self.status("Vanessa", "day", 1), "done")
         self.assertEqual(self.status("Vanessa", "day", 2), "green")  # days 1-7 need no cards
         self.assertEqual(self.status("Vanessa", "day", 9), "yellow")  # needs cards Vanessa doesn't have yet

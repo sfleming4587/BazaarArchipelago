@@ -302,6 +302,9 @@ class BazaarContext(CommonContext):
             self.update_status()  # the "not connected" warning goes
             on = self.setting("death_link") if self.death_link_override is None else self.death_link_override
             Utils.async_start(self.update_death_link(bool(on)))
+            self.set_notify(self.sent_key())  # its Retrieved reply checks the goal: a win sent from another computer
+            if self.locations_checked:  # sent while the connection was down: CommonClient resends them, and so do we
+                Utils.async_start(self.store_sent(self.locations_checked))
             logger.info(f"Watching {self.log_path}", extra=FILE_ONLY)
         elif cmd == "ReceivedItems":
             for item in args["items"]:
@@ -325,6 +328,9 @@ class BazaarContext(CommonContext):
             self.receive_traps()
             self.update_status()
         elif cmd == "RoomUpdate" and "checked_locations" in args:
+            self.update_status()
+        elif self.slot_data and (cmd == "Retrieved" and self.sent_key() in args["keys"]
+                                 or cmd == "SetReply" and args["key"] == self.sent_key()):
             self.check_goal()
             self.update_status()
 
@@ -1273,7 +1279,16 @@ class BazaarContext(CommonContext):
         ids = {location_name_to_id[n] for n in names if n in location_name_to_id}
         self.locations_checked |= ids
         await self.check_locations(ids)
+        if ids:
+            await self.store_sent(ids)
         self.check_goal()
+
+    async def store_sent(self, ids) -> None:
+        await self.send_msgs([{"cmd": "Set", "key": self.sent_key(), "default": [], "want_reply": True,
+                               "operations": [{"operation": "update", "value": sorted(ids)}]}])
+
+    def sent_key(self) -> str:
+        return f"bazaar_sent_{self.team}_{self.slot}"
 
     def beep(self) -> None:
         if not self.quiet:
@@ -1300,10 +1315,13 @@ class BazaarContext(CommonContext):
         return self.setting("monster_tiers").get(str(day), [])
 
     def done(self) -> Set[int]:
-        return self.checked_locations | self.locations_checked
+        """Checks you sent yourself, from any computer (kept in the server's data storage). Not the server's
+        checked_locations: another player's collect ticks your checks there too, which filled the tracker for a hero
+        never played and won a seed on its own (owner, 2026-10-15)."""
+        return set(self.stored_data.get(self.sent_key()) or ()) | self.locations_checked
 
     def heroes_won(self) -> list:
-        """Heroes whose 10-win check is done: the goal counts these (/status and the overlay show the same)."""
+        """Heroes whose 10-win check you sent: the goal counts these (/status and the overlay show the same)."""
         return [h for h in self.setting("heroes") if location_name_to_id[win_location(h)] in self.done()]
 
     def check_goal(self) -> None:
