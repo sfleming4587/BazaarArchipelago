@@ -16,7 +16,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 from . import screens
 from .cardart import TIER_COLORS, CardArt, card_shape
-from .data import CARDS, CARDS_BY_GUID, MERCHANT_DATA, TIERS
+from .data import CARDS_BY_GUID, MERCHANT_DATA, SHOP_CARDS, TIERS
 from .merchants import possible_stock
 from .theme import ACCENT, DIM, FG, FONT, GOOD, LOCKED_X, WARN, WINDOW_BG
 
@@ -24,17 +24,19 @@ TILE_BG = "#1d1a24"  # a card with no picture
 
 CARD_HEIGHT = 96  # every card this tall, 1/2/3 slots wide like in game (see cardart.card_shape)
 CARD_PAD = 4  # around each card
+MIN_GAP = 2  # px between two cards when a row needs the room for one more (owner 2026-11-10: borders shrink, images
+#   never; "a minimum border count of a couple pixels")
+NORMAL_GAP = 4 * CARD_PAD  # between two cards when there's room (what each card had before)
+ROW_PAD = 2  # px left and right of every row
+REFLOW_DELAY_MS = 150  # a resize re-flows the rows once it stops, not at every pixel of the drag
 HEADER_RESERVE = 170  # header text width left for the Locked only and X buttons beside it
-ROW_MARGIN = 24  # a row is closed this far before the edge (borders, names a bit wider than their card)
 SAVE_DELAY_MS = 500  # while you drag it, its position is saved once you stop, not on every move
 FILTER_DELAY_MS = 250  # typing in the search box redraws once you pause
-REFLOW_PX = 8  # re-flow the rows only when the width changed by more than this
 DEFAULT_WIDTH = 300
 MAX_SHOWN = 300  # pictures drawn at once; more than that and the filters are needed (Tk slows down)
 
 ANY = "Any"
 SIZES = ("Small", "Medium", "Large")
-SHOP_CARDS = [c for c in CARDS if c.shop]
 # Merchants by the name you see (a name can belong to several encounters, e.g. a tutorial copy); debug ones never
 # show up in real play.
 MERCHANTS: Dict[str, List[dict]] = {}
@@ -64,6 +66,31 @@ def _saved_rect(value) -> Optional[tuple]:
     if isinstance(value, list) and len(value) == 4 and all(isinstance(v, int) for v in value):
         return tuple(value)
     return None
+
+
+def rows_of(widths: List[int], room: int) -> List[Tuple[int, List[int]]]:
+    """Cells of these widths, left to right, in rows of `room` px - laid out like justified text (owner, 2026-11-10:
+    "Think of it similar to how text looks in a book"): a row takes every cell that fits with MIN_GAP between them;
+    then, unless it's the last row, its gaps grow evenly until its first cell touches the left edge and its last the
+    right. The last row (and a row of one) stays on the left with the normal gap, or less if that's all that fits.
+    Returns [(cells in the row, the gaps between them)]; never a gap under MIN_GAP, nothing for no cells."""
+    rows: List[List[int]] = []
+    for width in widths:
+        if rows and sum(rows[-1]) + width + MIN_GAP * len(rows[-1]) <= room:
+            rows[-1].append(width)
+        else:
+            rows.append([width])  # also a cell wider than the room: on its own, it can't be helped
+    laid = []
+    for number, row in enumerate(rows):
+        spaces, free = len(row) - 1, room - sum(row)
+        if not spaces:
+            laid.append((1, []))
+            continue
+        last = number == len(rows) - 1
+        gap = min(NORMAL_GAP, free // spaces) if last else free // spaces
+        extra = 0 if last else free - gap * spaces  # the odd pixels, one each to the first gaps
+        laid.append((len(row), [max(MIN_GAP, gap + (k < extra)) for k in range(spaces)]))
+    return laid
 
 
 class ShopGuide:
@@ -101,10 +128,14 @@ class ShopGuide:
         # every card offered on this screen so far, bought ones included: always in the list (owner, 2026-10-01: a
         # bought card "should be in the list at the bottom ... otherwise it is missing from the list")
         self.pinned: Dict[str, None] = {}
-        self.cells: Dict[tuple, List[object]] = {}  # (guid, locked) -> the frames showing that card right now
-        self.blocks: Dict[str, tuple] = {}  # section -> (what it shows, its frame, its cells): see render
+        # (guid, locked) -> (canvas tag, x, y) of each place showing that card's picture right now (see refresh)
+        self.cells: Dict[tuple, List[tuple]] = {}
         self.photos: Dict[tuple, object] = {}
         self.width = DEFAULT_WIDTH
+        self.pending_reflow = None
+        self.name_widths: Dict[str, int] = {}
+        from tkinter import font as tkfont
+        self.name_font = tkfont.Font(root=root, family=FONT, size=8)
         self.drawn = None  # what's on screen, so a redraw that changes nothing is skipped
 
         win = self.win = tk.Toplevel(root)
@@ -133,9 +164,6 @@ class ShopGuide:
         self.canvas.configure(yscrollcommand=scroll.set)
         scroll.pack(side="right", fill="y")
         self.canvas.pack(side="left", fill="both", expand=True)
-        self.inner = tk.Frame(self.canvas, bg=WINDOW_BG)
-        self.canvas.create_window((0, 0), window=self.inner, anchor="nw")
-        self.inner.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
         win.bind("<MouseWheel>", lambda e: self.canvas.yview_scroll(-1 if e.delta > 0 else 1, "units"))
         self.canvas.bind("<Configure>", self.on_resize)
         win.bind("<Configure>", self.on_moved)
@@ -295,73 +323,90 @@ class ShopGuide:
                 return None
         return self.photos[key]
 
-    def placeholder(self, parent, card, locked: bool):
-        """In place of a missing picture: a box of the card's in-game shape in its tier colour (red if locked).
-        Its name goes under it like a picture's; a 1-slot box is too narrow for many names (measured)."""
+    def draw_picture(self, tag: str, card, locked: bool, x: float, y: float) -> None:
+        """The card's picture at x, y (top left), or until it has one a box of its in-game shape in its tier colour
+        (red if locked) saying "no picture"."""
+        canvas, tags = self.canvas, (tag, tag + "pic")
+        photo = self.picture(card, locked)
+        if photo is not None:
+            canvas.create_image(x, y, image=photo, anchor="nw", tags=tags)
+            return
         width, height = card_shape(card, CARD_HEIGHT)
-        box = self.tk.Frame(parent, width=width, height=height, bg=TILE_BG, highlightthickness=3,
-                            highlightbackground=LOCKED_X if locked else TIER_COLORS.get(card.tier, DIM))
-        box.pack_propagate(False)
-        self.tk.Label(box, text="no\npicture", bg=TILE_BG, fg=DIM, font=(FONT, 7)).pack(expand=True)
-        return box
+        canvas.create_rectangle(x + 1, y + 1, x + width - 2, y + height - 2, fill=TILE_BG, width=3,
+                                outline=LOCKED_X if locked else TIER_COLORS.get(card.tier, DIM),
+                                tags=tags + ("placeholder",))
+        canvas.create_text(x + width / 2, y + height / 2, text="no\npicture", fill=DIM, font=(FONT, 7),
+                           justify="center", tags=tags)
 
     def refresh(self, guid: str) -> None:
-        """A card's picture arrived: swap it in where that card is shown, touching nothing else (rebuilding the
-        whole guide for every picture kept Tk from painting while a first shop's pictures streamed in)."""
+        """A card's picture arrived: swap it in where that card is shown, touching nothing else."""
         for locked in (False, True):
             self.photos.pop((guid, locked), None)
-            for cell in self.cells.get((guid, locked), []):
-                if cell.winfo_exists():
-                    for child in cell.winfo_children():
-                        child.destroy()
-                    self.fill(cell, CARDS_BY_GUID[guid], locked)
+            for tag, x, y in self.cells.get((guid, locked), []):
+                self.canvas.delete(tag + "pic")
+                self.draw_picture(tag, CARDS_BY_GUID[guid], locked, x, y)
 
     def on_resize(self, event) -> None:
-        if abs(event.width - self.width) > REFLOW_PX:  # rows are filled by width: re-flow when it really changed
-            self.width = event.width
+        """Rows are justified to the exact width (rows_of), so any change re-flows them - once the resize stops."""
+        if event.width == self.width:
+            return
+        if self.pending_reflow:
+            self.win.after_cancel(self.pending_reflow)
+        self.pending_reflow = self.win.after(REFLOW_DELAY_MS, self.reflow, event.width)
+
+    def reflow(self, width: int) -> None:
+        self.pending_reflow = None
+        if width != self.width and self.header.winfo_exists():
+            self.width = width
             self.render(force=True)
+
+    def cell_width(self, card, border: int) -> int:
+        """A card's cell, exactly: its picture, or the longest word of its name if that's wider (a word can't wrap:
+        159 names have one wider than a Small card, 2026-11-10), plus its frame."""
+        key = card.guid
+        if key not in self.name_widths:
+            self.name_widths[key] = max(self.name_font.measure(word) for word in card.name.split()) + 4
+        return max(card_shape(card, CARD_HEIGHT)[0], self.name_widths[key]) + 2 * border
 
     # --- drawing ----------------------------------------------------------------------------------------------
 
-    def block(self, title: str, color: str, cards: List, framed: bool) -> tuple:
-        """One section in a frame of its own: (frame, its cells by (guid, locked)). Cards go left to right in
-        rows, each as wide as its slots (like the board)."""
-        tk = self.tk
-        frame, cells = tk.Frame(self.inner, bg=WINDOW_BG), {}
-        tk.Label(frame, text=title, bg=WINDOW_BG, fg=color, font=(FONT, 11, "bold")).grid(
-            row=0, column=0, sticky="w", padx=6, pady=(8, 2))
-        row, line, used = 1, None, 0
-        for card in cards:
-            locked = card.guid in self.locked
-            width = card_shape(card, CARD_HEIGHT)[0] + 2 * CARD_PAD
-            if line is None or used + width > self.width - ROW_MARGIN:
-                line, used = tk.Frame(frame, bg=WINDOW_BG), 0
-                line.grid(row=row, column=0, sticky="w", padx=2)
-                row += 1
-            used += width
-            cell = tk.Frame(line, bg=WINDOW_BG, width=width, highlightthickness=2 if framed else 0,
-                            highlightbackground=ACCENT)
-            cell.pack(side="left", anchor="n", padx=CARD_PAD, pady=3)
-            cells.setdefault((card.guid, locked), []).append(cell)
-            self.fill(cell, card, locked)
-        return frame, cells
-
-    def fill(self, cell, card, locked: bool) -> None:
-        """A card's picture (or a placeholder until it has one) and its name."""
-        photo = self.picture(card, locked)
-        if photo is None:
-            self.placeholder(cell, card, locked).pack()
-        else:
-            self.tk.Label(cell, image=photo, bg=WINDOW_BG).pack()
-        width = card_shape(card, CARD_HEIGHT)[0] + 2 * CARD_PAD
-        self.tk.Label(cell, text=card.name, bg=WINDOW_BG, fg=DIM if locked else "#eeeeee", font=(FONT, 8),
-                      wraplength=max(40, width - 4), justify="center").pack()
+    def draw_section(self, y: float, title: str, color: str, cards: List, framed: bool) -> float:
+        """One section from height y: its title, then its cards left to right in justified rows (rows_of), each as
+        wide as its slots like on the board, its name wrapped under it. Canvas items, not widgets: a few hundred
+        cards draw in a blink. Returns the height under it."""
+        canvas = self.canvas
+        title_id = canvas.create_text(6, y + 8, text=title, fill=color, font=(FONT, 11, "bold"), anchor="nw")
+        y = canvas.bbox(title_id)[3] + 2
+        border = 2 if framed else 0
+        widths = [self.cell_width(card, border) for card in cards]
+        queue = list(zip(cards, widths))
+        for count, gaps in rows_of(widths, self.width - 2 * ROW_PAD):
+            x, bottom = ROW_PAD, y
+            for k in range(count):
+                card, width = queue.pop(0)
+                locked = card.guid in self.locked
+                tag = f"cell{len(self.canvas.find_all())}"  # unique: every cell adds items
+                top, inner = y + 3 + border, width - 2 * border
+                picture_x = x + border + (inner - card_shape(card, CARD_HEIGHT)[0]) / 2
+                self.draw_picture(tag, card, locked, picture_x, top)
+                self.cells.setdefault((card.guid, locked), []).append((tag, picture_x, top))
+                name = canvas.create_text(x + width / 2, top + CARD_HEIGHT, text=card.name, width=inner,
+                                          justify="center", anchor="n", font=(FONT, 8),
+                                          fill=DIM if locked else "#eeeeee", tags=tag)
+                cell_bottom = canvas.bbox(name)[3] + border
+                if framed:
+                    canvas.create_rectangle(x + 1, y + 4, x + width - 1, cell_bottom, outline=ACCENT, width=border,
+                                            tags=tag)
+                bottom = max(bottom, cell_bottom + 3)
+                x += width + (gaps[k] if k < len(gaps) else 0)
+            y = bottom
+        return y
 
     def render(self, force: bool = False) -> None:
         """Draws what's on offer, then the filtered list (allowed and locked, the shorter part on top).
-        A silent refresh (owner, 2026-10-01: "please make it a silent refresh like before"): each section is its
-        own block and only a block whose cards changed is rebuilt - buying a card redraws "On offer now", not the
-        list - and the scroll only jumps to the top when you change a filter."""
+        A silent refresh (owner, 2026-10-01: "please make it a silent refresh like before"): nothing changed, nothing
+        drawn; otherwise the whole canvas is redrawn in one go (canvas items, owner 2026-11-11: "not so performance
+        heavy") - no flicker - and the scroll only jumps to the top when you change a filter."""
         if self.pending_filter:
             self.win.after_cancel(self.pending_filter)
             self.pending_filter = None
@@ -401,25 +446,13 @@ class ShopGuide:
             lists.reverse()
         wanted = [("offer", f"On offer now ({len(offered)})", ACCENT, offered, True)]
         wanted += [(key, title, color, cards, False) for key, title, color, cards in lists]
-        kept: Dict[str, tuple] = {}
-        for row, (key, title, color, cards, framed) in enumerate(b for b in wanted if b[3]):
-            signature = (title, tuple((c.guid, c.guid in self.locked) for c in cards), self.width)
-            old = self.blocks.pop(key, None)
-            if old and old[0] == signature:
-                frame, cells = old[1], old[2]
-            else:  # built first, then the old one goes: the window never shows the section missing (no flicker)
-                frame, cells = self.block(title, color, cards, framed)
-                if old:
-                    old[1].destroy()
-            frame.grid(row=row, column=0, sticky="nw")
-            kept[key] = (signature, frame, cells)
-        for _signature, frame, _cells in self.blocks.values():  # sections with nothing in them now
-            frame.destroy()
-        self.blocks = kept
+        # everything is drawn again: canvas items are cheap, and it all lands in one paint (no flicker)
+        self.canvas.delete("all")
         self.cells = {}
-        for _signature, _frame, cells in kept.values():
-            for key, found in cells.items():
-                self.cells.setdefault(key, []).extend(found)
+        y = 0.0
+        for _key, title, color, cards, framed in (b for b in wanted if b[3]):
+            y = self.draw_section(y, title, color, cards, framed)
+        self.canvas.configure(scrollregion=(0, 0, self.width, y + 6))
         if filters_changed:
             self.canvas.yview_moveto(0)
 

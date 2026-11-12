@@ -46,7 +46,7 @@ class TestSquareColour(unittest.TestCase):
 class TestTrackerData(ClientTestBase):
     def setUp(self) -> None:
         super().setUp()
-        self.ctx.slot_data["logic"] = {"day_10": 15, "diamond": 10, "legendary": 20}
+        self.ctx.slot_data["logic"] = {"day_10": 15, "last_day": 15, "diamond": 10, "legendary": 20}
         vanessa = [BASE_ID + c.ap_id for c in CARDS if c.hero == "Vanessa" and c.shop][:20]
         self.ctx.slot_data["lock_items"] = vanessa
 

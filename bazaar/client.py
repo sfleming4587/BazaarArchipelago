@@ -13,6 +13,7 @@ import os
 import random
 import sys
 import time
+from collections import Counter
 from typing import Any, Dict, List, Optional, Set
 
 import Utils
@@ -21,14 +22,16 @@ from CommonClient import (ClientCommandProcessor, CommonContext, get_base_parser
 from MultiServer import mark_raw
 from NetUtils import ClientStatus
 
-from .data import (CARDS, CARDS_BY_GUID, EVENT_NAMES, EVENTS, FIXED_SPAWNS, GAME_VERSION, HEROES, MERCHANT_DATA,
-                   MONSTERS, OFFER_DATA, TIERS)
+from .data import (CARDS_BY_GUID, EVENT_NAMES, EVENTS, FIXED_SPAWNS, GAME_VERSION, HEROES, MERCHANT_DATA, MONSTERS,
+                   OFFER_DATA, SHOP_CARDS, TIERS)
 from .deathlink_lines import deathlink_message
-from .encounters import let_through, locked_events, rarity_bypasses
-from .items import (ENCOUNTER_UNLOCKS, EVENT_RARITY_ID, GAME, HERO_ITEM_IDS, LEGENDARY_ITEMS, LOCK_BYPASS_ID, SELL_TRAP,
-                    SELL_TRAP_ID, UNLOCKS, hero_item, item_id_to_name, item_name_to_id, lock_items_by_hero)
-from .locations import (card_requirements, day_location, hero_checks, item_requirements, location_name_to_id,
-                        monster_location, pvp_location, win_location)
+from .encounters import EVENT_KINDS, let_through, locked_events, rarity_bypasses
+from .items import (COUNTED_IDS, ENCOUNTER_UNLOCKS, EVENT_RARITY_ID, GAME, GOOD_UNLOCK_IDS, HERO_ITEM_IDS,
+                    LEGENDARY_ITEMS, LOCK_BYPASS_ID, SELL_TRAP_ID, SINGLE_UNLOCK_IDS, SLOT_DATA_VERSION, TRAP_SHIELD_ID,
+                    UNLOCK_IDS,
+                    hero_item, item_id_to_name, item_name_to_id, lock_items_by_hero, unlock_steps)
+from .locations import (day_location, hero_checks, hero_needs, location_name_to_id,
+                        meets, monster_location, pvp_location, win_location)
 from .logparser import (DEFAULT_LOG_PATH, HERO_ALIASES, PREV_LOG, HeroSelected, CardGained, CardSold, CardTransformed, DayReached,
                         EncounterEntered,
                         EncounterLeft, FightStarted, GameVersion, LogParser, LogTailer, MonsterFought, PvPFought,
@@ -38,13 +41,13 @@ from .merchants import possible_stock
 from .options import CreatedItems
 from .overlay import FILE_ONLY
 from .padlocks import Padlock
-from .tracker import hero_order
-# the heroes Random can roll, by the game's own names (PlayerPreferences keys them like this; "Hero8" = The Dragons)
-HEROES_IN_GAME = ("Dooley", "Pygmalien", "Vanessa", "Mak", "Stelle", "Jules", "Karnok", "Hero8")  # FILE_ONLY: to the log file only, not the console or the client window
+from .tracker import TrackedCheck, hero_order
 
 POLL_SECONDS = 0.1  # how often the game's log is looked at (a size check when nothing's new). Was 0.5 until owner
 # 2026-10-15: the menu's hero panel took a moment to follow a hero pick (recorded: 0.5-0.75 s with the overlay's wait)
-BOARD_PADLOCK_STATES = {"Encounter", "Choice", "LevelUp", "Loot", "Pedestal"}  # your board sits still on these
+# where your own board and stash get padlocks: everywhere their art shows, fights included. Owner, 2026-11-09: "Unless
+# its PVP ... meant that we dont see padlocks on the opposing players side. In every other scenario they are visible"
+BOARD_PADLOCK_STATES = {"Encounter", "Choice", "LevelUp", "Loot", "Pedestal", "Combat", "PVPCombat"}
 ITEM_SCREENS = ("Encounter", "LevelUp", "Loot")  # screens offering a row of items (shops, level-ups, loot)
 MEMORY_SECONDS = 1 / 60  # how often the board's on-screen flags and card positions are read: about a game frame
 # (owner 2026-10-15: padlocks lagged behind a dragged card at 0.06)
@@ -52,16 +55,21 @@ SNAPSHOT_EVERY = 19  # ...and what's on offer, every this many of those (~0.3 s,
 MEMORY_RETRY = (5, 30)  # seconds before trying the reader again: game not running yet / a check failed
 STATE_FILE = "bazaar_client_state.json"
 
-SHOP_CARDS = [c for c in CARDS if c.shop]
 NOT_CONNECTED = ("NOT CONNECTED to your multiworld - click Connect at the top of the Bazaar Client (or type "
                  "/connect). Nothing you do in the game counts until then.")
+WRONG_VERSION = ("THIS SEED WAS MADE WITH ANOTHER VERSION of The Bazaar apworld - install the version it was "
+                 "generated with to play it.")
 SCREEN_TITLES = {"LevelUp": "Level-up", "Loot": "Loot"}  # the Shop Guide's title where there's no event name
-# what the client assumes when a seed's slot_data lacks a setting (older apworlds); read through BazaarContext.setting()
-SLOT_DEFAULTS = {"heroes": [], "max_day": 15, "pvp_win_checks": False, "monster_tiers": {}, "heroes_required": 1,
-                 "lock_items": [], "logic": None, "death_link": False, "death_link_amnesty": 0, "sell_trap_days": 2,
-                 "death_link_on_concede": False, "death_links_before_concede": 1, "death_links_same_run": False,
-                 "encounter_locks": [],
-                 "event_rarity": 0, "exempt_expeditions": True, "unlocks_in_logic": False, "created_items": 0}
+# What the client goes by while it isn't connected to a seed (BazaarContext.setting): an empty seed - nothing locked,
+# nothing counts. The memory reader keeps running then (padlocks, the menu, commands ask). Every key the world sends
+# must be here (test_generation checks it), or a disconnected client would crash on it.
+NOT_CONNECTED_SETTINGS = {"heroes": [], "starting_hero": "", "max_day": 15, "pvp_win_checks": False, "monster_tiers": {},
+                 "heroes_required": 1, "lock_items": [], "expedition_ticket_unlocks": "progressive",
+                 "sizeinator_unlock": "with_tiny_world_ticket", "death_link": False, "death_link_amnesty": 0,
+                 "death_links_before_concede": 1, "death_links_same_run": False, "sell_trap_days": 2,
+                 "logic": {"day_10": 0, "last_day": 0, "diamond": 0, "legendary": 0}, "power_items": 0,
+                 "death_link_on_concede": False, "encounter_locks": [], "event_rarity": 0,
+                 "slot_data_version": SLOT_DATA_VERSION, "exempt_expeditions": True, "created_items": 0}
 
 # Created items (owner, 2026-10-07; see docs/CREATED-ITEMS.md): cards the game makes for you - spawned by another card
 # or transformed. Wink and The Cult are the only events whose cards are free under Special Cases ("to not totally
@@ -76,16 +84,31 @@ MYSTERY_FLAVOR = "78eb19fd-4da4-45d5-b4cb-d669b50b6ed6"
 OWNER_SPAWNS = {"16005305-bce3-4cae-8c90-8b6560def112": (MYSTERY_FLAVOR,),   # Soda Machine
                 "7827d946-0204-4897-b3e4-bd7cec8e3979": (MYSTERY_FLAVOR,)}   # Vending Machine
 FIGHT_SCREENS = ("Combat", "PVPCombat")
+EVENT_SCREENS = {"Choice": "Choice", "Encounter": "Line", "LevelUp": "LevelUp"}  # screens offering events -> row key
+FORFEIT = "forfeit"  # the "Use Bypass" key of the kept-into-PvP line (held cards' buttons use their guids)
 SPAWN_GRACE = 2.0  # seconds a card may sit on your board/stash before its "gained" log line; after that it was made
 TRANSFORM_WAIT = 10.0  # seconds memory gets to show what a card transformed into; then it's allowed (can't tell)
 UNDONE_AFTER = 3.0  # seconds after a fight transform's line before the old card back on your board means it was undone
 SOLD_MEMORY = 10.0  # seconds a sold card still counts as the source of a fixed spawn (Temporary Shelter -> Scrap)
 
 
+def trap_due(deadline: int) -> str:
+    """When a Sell Trap's item must be gone: by the end of the day before its deadline, since that day's PvP fight
+    is its last before the deadline and taking it in locks the run (owner, 2026-11-10: "At the start of day 3" ->
+    "Before the end of day 2")."""
+    return f"before the end of day {deadline - 1}"
+
+
 def own_popup(item_id: int) -> bool:
-    """Items announced by their own pop-up (UNLOCKED, a Sell Trap, a Lock Bypass) rather than the generic ones."""
-    return item_id in UNLOCKS or item_id in HERO_ITEM_IDS or item_id in ENCOUNTER_UNLOCKS \
-        or item_id in (SELL_TRAP_ID, LOCK_BYPASS_ID, EVENT_RARITY_ID)
+    """Items announced by their own pop-up (UNLOCKED, a trap, a buff) rather than the generic ones."""
+    return item_id in UNLOCK_IDS or item_id in COUNTED_IDS
+
+
+def good_unlock(item_id: int) -> bool:
+    """An unlock whose pop-up gets the rainbow (owner, 2026-11-11: "Pretty much everything except the
+    traps/buffs/single card locks"): a hero, a card pack, Legendary Items, an Expedition Ticket, Event Rarity
+    Progression - never a single card or one merchant/event (items.GOOD_UNLOCK_IDS)."""
+    return item_id in GOOD_UNLOCK_IDS
 
 
 def menu_hidden(snapshot: Optional[Snapshot]) -> bool:
@@ -106,13 +129,14 @@ def items_on_screen(snapshot: Optional[Snapshot]) -> Optional[tuple]:
 
 
 def event_screen(snapshot: Optional[Snapshot]) -> Optional[tuple]:
-    """(screen, offers) when the screen is a choice of events: the hourly choice ("Choice-N") or an event's own
-    options in a row ("Line-N"); None otherwise (monsters, PvP). Any count: the padlocks are placed from memory
-    (owner, 2026-10-15), the measured layouts (overlay.event_row) are no longer needed."""
-    if not snapshot or snapshot.state not in ("Choice", "Encounter") or not snapshot.offers \
-            or not any(o.kind == "EventEncounter" for o in snapshot.offers):
+    """(screen, offers) when the screen is a choice of events: the hourly choice ("Choice-N"), an event's own
+    options in a row ("Line-N") or a level-up's ("LevelUp-N", owner 2026-11-11: Shiny!); None otherwise (monsters,
+    PvP, a row of items). Any count: the padlocks are placed from memory (owner, 2026-10-15). The key only tells a new
+    row from the last one."""
+    if not snapshot or snapshot.state not in EVENT_SCREENS or not snapshot.offers \
+            or not any(o.kind in EVENT_KINDS for o in snapshot.offers):
         return None
-    key = f"{'Choice' if snapshot.state == 'Choice' else 'Line'}-{len(snapshot.offers)}"
+    key = f"{EVENT_SCREENS[snapshot.state]}-{len(snapshot.offers)}"
     return key, snapshot.offers
 
 
@@ -214,11 +238,11 @@ class BazaarCommandProcessor(ClientCommandProcessor):
         return True
 
     def _cmd_tracker(self) -> bool:
-        """Open or close the tracker (also the Tracker button on the overlay)."""
+        """Open the tracker, or bring it to the front if it's open (also the Tracker button on the overlay)."""
         if not self.ctx.overlay or not self.ctx.overlay.available:
             self.output("The tracker needs the overlay, which can't open on this PC.")
             return False
-        self.ctx.overlay.toggle_tracker()
+        self.ctx.overlay.show_tracker()
         return True
 
     @mark_raw  # the whole text as typed: Windows paths have backslashes and spaces (review 2026-09-30)
@@ -250,11 +274,13 @@ class BazaarContext(CommonContext):
         self.defeats_since_death = 0
         self.deathlinks_received = 0  # toward death_links_before_concede, across runs; dodges don't count
         self.goal_sent = False
+        self.refused = False  # the last seed connected to was made with another apworld version (see on_package)
         self.overlay = None
         self.shop_guide = True  # the picture window next to the game; --no-shop-guide turns it off
         self.notices_shown: Set[str] = set()  # patch warnings are shown once per session
         self.traps_seen = 0
         self.bypasses_used = 0  # Lock Bypasses spent; the rest of those received are ready
+        self.shields_used = 0  # Trap Shields spent
         self.watched: Dict[str, Any] = {}  # {"log": game session, "runs": runs of that log already seen}
         # {"log": game session, "events": how many of its events were handled}: a reconnect carries on from here
         # instead of judging the run again with today's unlocks (review 2026-09-30)
@@ -297,7 +323,15 @@ class BazaarContext(CommonContext):
         if cmd == "RoomInfo":
             self.room_seed = args.get("seed_name", "")
         elif cmd == "Connected":
-            self.slot_data = args.get("slot_data") or {}
+            slot_data = args.get("slot_data") or {}
+            self.refused = slot_data.get("slot_data_version") != SLOT_DATA_VERSION
+            if self.refused:  # owner 2026-11-11: no old-seed support
+                self.update_status()  # the overlay says why, not just "not connected"
+                logger.error("This seed was made with a different version of The Bazaar apworld than this client. "
+                             "Install the apworld version the seed was generated with, then connect again.")
+                Utils.async_start(self.disconnect())
+                return
+            self.slot_data = slot_data
             self.load_state()
             self.update_status()  # the "not connected" warning goes
             on = self.setting("death_link") if self.death_link_override is None else self.death_link_override
@@ -306,25 +340,38 @@ class BazaarContext(CommonContext):
             if self.locations_checked:  # sent while the connection was down: CommonClient resends them, and so do we
                 Utils.async_start(self.store_sent(self.locations_checked))
             logger.info(f"Watching {self.log_path}", extra=FILE_ONLY)
+        elif not self.slot_data:  # a seed this client refused (see Connected): nothing of it is used
+            return
         elif cmd == "ReceivedItems":
-            for item in args["items"]:
+            for position, item in enumerate(args["items"]):
                 name = self.item_names.lookup_in_game(item.item)
-                if item.item in UNLOCKS or item.item in HERO_ITEM_IDS or item.item in ENCOUNTER_UNLOCKS \
-                        or item.item == EVENT_RARITY_ID:
+                if item.item in UNLOCK_IDS:
                     logger.info(f"Unlocked: {name}", extra=FILE_ONLY)
                     if self.overlay and args.get("index", 0) > 0:  # index 0 = the full list resent on connect
-                        cards = sorted(UNLOCKS.get(item.item, ()), key=lambda g: CARDS_BY_GUID[g].name)
+                        # what this copy unlocked (progressive Expedition Tickets: the next ticket)
+                        copy = sum(i.item == item.item for i in self.items_received[:args["index"] + position])
+                        steps = self.unlock_steps().get(item.item, ())
+                        cards = sorted(steps[copy] if copy < len(steps) else (), key=lambda g: CARDS_BY_GUID[g].name)
                         what = HERO_ITEM_IDS.get(item.item, name)
-                        self.overlay.toast(f"{self.got(item.player)}: {what}{self.sender(item.player)}", cards=cards)
+                        # a later copy that unlocks nothing new (Plentiful Items, owner 2026-11-10) says so; Event
+                        # Rarity Progression's extra copies are Lock Bypasses, never spares
+                        spare = bool(copy) and copy >= len(steps) and item.item != EVENT_RARITY_ID
+                        if spare:
+                            what += " (spare copy)"
+                            if len(steps) == 1:  # still show what it is; a spare progressive ticket shows nothing
+                                cards = sorted(steps[0], key=lambda g: CARDS_BY_GUID[g].name)
+                        self.overlay.toast(f"{self.got(item.player)}: {what}{self.sender(item.player)}", cards=cards,
+                                           good=good_unlock(item.item) and not spare)  # a spare: no rainbow
+                elif item.item == TRAP_SHIELD_ID and args.get("index", 0) > 0:
+                    self.event("Trap Shield received: it blocks the next trap you receive.")
+                    self.toast(f"{self.got(item.player)} a TRAP SHIELD{self.sender(item.player)}!")
                 elif item.item == LOCK_BYPASS_ID and args.get("index", 0) > 0:
                     self.event("Lock Bypass received: use it on a locked card you're holding (the button next to it).")
                     self.toast(f"{self.got(item.player)} a LOCK BYPASS{self.sender(item.player)}! Use it on a locked "
                                f"card you're holding.",
                                seconds=12)
             self.refresh_held()
-            if self.encounter:  # an unlock that arrives while you're in a shop takes it off the list at once
-                self.handle_encounter(self.encounter)
-            self.refresh_padlocks()  # ...and its padlock away, on any screen
+            self.refresh_padlocks()  # an unlock takes its padlock and Shop Guide entry away at once, on any screen
             self.receive_traps()
             self.update_status()
         elif cmd == "RoomUpdate" and "checked_locations" in args:
@@ -399,11 +446,10 @@ class BazaarContext(CommonContext):
         self.defeats_since_death = saved.get("defeats_since_death", 0)
         self.deathlinks_received = saved.get("deathlinks_received", 0)
         self.traps_seen = saved.get("traps_seen", 0)  # Sell Traps already handled (items_received is resent)
+        self.shields_used = saved.get("shields_used", 0)
         self.bypasses_used = saved.get("bypasses_used", 0)
-        # state saved before "watched" existed: the tracked run is the last one seen
         self.position = saved.get("position", {})
-        self.watched = saved.get("watched") or ({"log": self.run["log"], "runs": self.run["run_index"] + 1}
-                                                if self.run.get("log") else {})
+        self.watched = saved.get("watched", {})
 
     def save_state(self) -> None:
         path = Utils.user_path(STATE_FILE)
@@ -415,6 +461,7 @@ class BazaarContext(CommonContext):
         everything[self.state_key()] = {"run": self.run, "defeats_since_death": self.defeats_since_death,
                                         "deathlinks_received": self.deathlinks_received,
                                         "traps_seen": self.traps_seen, "bypasses_used": self.bypasses_used,
+                                        "shields_used": self.shields_used,
                                         "watched": self.watched, "position": self.position}
         with open(path + ".tmp", "w", encoding="utf-8") as f:
             json.dump(everything, f, indent=1)
@@ -428,11 +475,38 @@ class BazaarContext(CommonContext):
     def hero_unlocked(self, hero: str) -> bool:
         return item_name_to_id.get(hero_item(hero)) in self.received_ids()
 
+    def unlock_steps(self) -> Dict[int, tuple]:
+        """This seed's item id -> what each copy unlocks (items.unlock_steps; progressive Expedition Tickets)."""
+        return unlock_steps(self.setting("expedition_ticket_unlocks"), self.setting("sizeinator_unlock"))
+
+    def still_locked(self) -> Dict[int, Set[str]]:
+        """This seed's lock items -> the cards each still keeps locked, after the copies of it you've received."""
+        received = Counter(item.item for item in self.items_received)
+        steps = self.unlock_steps()
+        return {item_id: set().union(*steps.get(item_id, ())[received[item_id]:])
+                for item_id in self.setting("lock_items")}
+
+    def locked_behind(self, guid: Optional[str]) -> Optional[str]:
+        """The right-click view's "Locked behind" item for a card (owner, 2026-11-10); None if it isn't locked, or if
+        that item unlocks only the card itself (owner, 2026-11-11: never "Locked behind: this card")."""
+        if guid not in self.locked_guids():
+            return None
+        item_id = next((i for i, guids in self.still_locked().items() if guid in guids), None)
+        return None if item_id is None or item_id in SINGLE_UNLOCK_IDS else self.item_names.lookup_in_game(item_id)
+
+    def event_locked_behind(self, guid: str) -> Optional[str]:
+        """The same for a merchant/event: nothing while its own unlock is what's missing (it would only name the event
+        itself), else Event Rarity Progression (its rarity is what keeps it locked, encounters.locked_events)."""
+        received = self.received_ids()
+        for item_id in self.setting("encounter_locks"):  # the seed's merchant/event lock items
+            if item_id not in received and guid in ENCOUNTER_UNLOCKS.get(item_id, ()):
+                return None
+        return item_id_to_name[EVENT_RARITY_ID]
+
     def unlock_item_for(self, guid: str) -> str:
         """The name of the item (card, pack or group) in this seed that unlocks a locked card."""
-        received = self.received_ids()
-        for item_id in self.setting("lock_items"):
-            if item_id not in received and guid in UNLOCKS.get(item_id, set()):
+        for item_id, guids in self.still_locked().items():
+            if guid in guids:
                 return self.item_names.lookup_in_game(item_id)
         return CARDS_BY_GUID[guid].name
 
@@ -442,7 +516,7 @@ class BazaarContext(CommonContext):
         for hint in self.stored_data.get(f"_read_hints_{self.team}_{self.slot}") or []:
             if hint.get("receiving_player") != self.slot or hint.get("found"):
                 continue
-            guids = UNLOCKS.get(hint.get("item"))
+            guids = set().union(*self.unlock_steps().get(hint.get("item"), ()))
             if not guids:
                 continue
             finder = hint.get("finding_player")
@@ -452,12 +526,7 @@ class BazaarContext(CommonContext):
         return found
 
     def locked_guids(self) -> Set[str]:
-        received = self.received_ids()
-        locked: Set[str] = set()
-        for item_id in self.setting("lock_items"):
-            if item_id not in received:
-                locked |= UNLOCKS.get(item_id, set())
-        return locked
+        return set().union(*self.still_locked().values())
 
     def bypasses_ready(self) -> int:
         """Lock Bypasses received, plus Event Rarity Progression copies past its two stages, minus those spent."""
@@ -478,13 +547,27 @@ class BazaarContext(CommonContext):
             - set(self.run.get("let_through", []))
 
     def event_name(self, guid: str) -> str:
-        return EVENTS[guid]["name"] if guid in EVENTS else "that event"
+        known = EVENTS.get(guid) or OFFER_DATA.get(guid)  # a level-up event (Shiny!) is an offer, not a map event
+        return known["name"] if known else "that event"
 
     def use_bypass(self, guid: str) -> None:
         """The "Use Bypass" button next to a locked card you're holding: that card (its copies and upgrades too) is
         allowed for the rest of the run, using up one Lock Bypass. The only way a bypass is spent, and only on a card
         that's blocking checks (user, 2026-09-30) - never automatically, so one isn't lost on a card you didn't
         realise was locked. Checked again here: the button may be a moment behind."""
+        if self.run.get("active") and self.bypasses_ready() > 0 and guid == FORFEIT and self.run.get("forfeit") \
+                and not self.run["forfeit"].get("trap"):
+            # one bypass brings the run back: the cards kept into the fight are allowed for the rest of it, and the
+            # checks refused meanwhile go out once nothing else blocks them (owner, 2026-11-09)
+            self.bypasses_used += 1
+            kept = self.run.pop("forfeit")
+            self.run.setdefault("bypassed", []).extend(g for g in kept["cards"] if g not in self.run["bypassed"])
+            self.event(f"Lock Bypass used: this run counts again ({', '.join(kept['names'])} allowed).")
+            self.toast("LOCK BYPASS USED: this run counts again", seconds=12)
+            self.refresh_held()
+            self.refresh_padlocks()
+            self.update_status()
+            return
         if self.run.get("active") and self.bypasses_ready() > 0 and guid in self.run.get("event_blocks", []):
             self.bypasses_used += 1
             self.run["event_blocks"].remove(guid)
@@ -502,9 +585,7 @@ class BazaarContext(CommonContext):
         self.event(f"Lock Bypass used: {self.held_text(guid)} is allowed for the rest of this run.")
         self.toast(f"LOCK BYPASS USED: {CARDS_BY_GUID[guid].name} is yours for this run", seconds=12)
         self.refresh_held()  # every copy of it you hold stops blocking checks
-        if self.encounter:  # the shop warning and the Shop Guide show it as allowed now
-            self.handle_encounter(self.encounter)
-        self.refresh_padlocks()
+        self.refresh_padlocks()  # ...and the Shop Guide shows it as allowed now
         self.update_status()
 
     def run_locked_guids(self) -> Set[str]:
@@ -616,38 +697,67 @@ class BazaarContext(CommonContext):
                 blocks.remove(guid)
                 self.event(f"{self.event_name(guid)} is unlocked now.")
         self.update_block_banner()
+        self.send_withheld()
         if self.run:
             self.save_state()
+
+    def send_withheld(self) -> None:
+        """Checks refused while the run was kept into a PvP fight go out once a Lock Bypass brought it back and nothing
+        else blocks them (owner, 2026-11-09: "Lock bypass will re-unlock the run and send the checks that were
+        missed")."""
+        if self.run.get("withheld") and self.run.get("active") and not self.run.get("forfeit") \
+                and not self.blocked_reason():
+            names, self.run["withheld"] = self.run["withheld"], []
+            self.event(f"Sending the checks held back: {', '.join(names)}")
+            Utils.async_start(self.send_checks(names))
 
     def receive_traps(self) -> None:
         """Start every Sell Trap received since last time (the server resends all items on connect). Not before the
         log is read up to now: a trap that arrived while disconnected gets today's day and today's items."""
         if not self.caught_up:
             return
-        traps = [item for item in self.items_received if item.item == item_name_to_id[SELL_TRAP]]
+        traps = [item for item in self.items_received if item.item == SELL_TRAP_ID]
         while self.traps_seen < len(traps):
             self.traps_seen += 1
-            self.start_trap(self.sender(traps[self.traps_seen - 1].player))
+            sender = self.sender(traps[self.traps_seen - 1].player)
+            if self.shields_ready() and self.trap_choices():  # a trap that would miss anyway keeps the shield
+                self.shields_used += 1
+                self.event(f"Trap Shield blocked a Sell Trap{sender}.")
+                self.toast(f"TRAP SHIELD blocked a Sell Trap{sender}!")
+            else:
+                self.start_trap(sender)
         self.save_state()
 
-    def start_trap(self, sender: str = "") -> None:
-        """Pick a random item the player holds; it must be sold before the deadline day starts. sender: " from X"."""
-        # never a locked card you hold: that one must be sold anyway (owner, 2026-10-01: "checks are blocked AND i can
-        # wait to sell til I reach day 3, so what is it?")
+    def shields_ready(self) -> int:
+        """Trap Shields received minus those used. A shield only blocks a trap that arrives after it, on arrival
+        (owner, 2026-11-10: "the only time a trap can be blocked is upon receiving it")."""
+        return sum(item.item == TRAP_SHIELD_ID for item in self.items_received) - self.shields_used
+
+    def trap_choices(self) -> list:
+        """What a trap could hit now: an item you hold that isn't a locked card (that one must be sold anyway, owner
+        2026-10-01) or already a trap's target. Empty out of a run: the trap misses."""
         targeted = {t["instance"] for t in self.run.get("traps", [])} | set(self.run.get("held", {}))
-        choices = [i for i in self.run.get("inventory", {}) if i not in targeted] if self.run.get("active") else []
+        return [i for i in self.run.get("inventory", {}) if i not in targeted] if self.run.get("active") else []
+
+    def start_trap(self, sender: str = "") -> None:
+        """Pick a random item the player holds; it must be sold by the end of the day before its deadline (trap_due).
+        sender: " from X"."""
+        choices = self.trap_choices()
         if not choices:  # not in a run, or holding nothing it can target: the trap misses
             self.event("Sell Trap DODGED - you had nothing it could make you sell.")
             self.toast(f"Sell Trap{sender} DODGED!")
             return
         instance = random.choice(choices)
         guid = self.run["inventory"][instance]
-        deadline = self.run.get("day", 1) + self.setting("sell_trap_days")
+        # after the day's PvP fight the day is over: it counts as hour 1 of the next (owner, 2026-11-10)
+        day = self.run.get("day", 1) + (self.run.get("pvp_day") == self.run.get("day", 1))
+        deadline = day + self.setting("sell_trap_days")
         self.run.setdefault("traps", []).append({"instance": instance, "guid": guid, "deadline": deadline})
         name = self.card_name(guid)
-        self.event(f"SELL TRAP! Sell {name} before day {deadline} starts, or checks get blocked.", warning=True)
+        self.event(f"SELL TRAP! Sell {name} {trap_due(deadline)}, or this run is lost at that day's PvP fight.",
+                   warning=True)
         self.beep()
-        self.toast(f"SELL TRAP{sender}! Sell {name} before day {deadline} starts.", seconds=15, trap=True)
+        self.toast(f"SELL TRAP{sender}! Sell {name} {trap_due(deadline)}.", seconds=15, trap=True)
         self.update_block_banner()
 
     def trap_target(self, trap: dict) -> str:
@@ -687,6 +797,9 @@ class BazaarContext(CommonContext):
             return "- DEATHLINK: CONCEDE THIS RUN"
         if self.run.get("concede_reason"):
             return self.run["concede_reason"]
+        if self.run.get("forfeit"):
+            way = "CONCEDE THIS RUN" if self.run["forfeit"].get("trap") else "USE A LOCK BYPASS OR CONCEDE"
+            return f"- YOU KEPT {' AND '.join(self.run['forfeit']['names']).upper()} INTO A PVP FIGHT: {way}"
         if not self.run.get("counting"):
             return f"- {self.run.get('hero', 'this hero').upper()} IS LOCKED: CONCEDE THIS RUN"
         events = sorted({self.event_name(g).upper() for g in self.run.get("event_blocks", [])})
@@ -725,22 +838,39 @@ class BazaarContext(CommonContext):
             reason = self.blocked_reason()
             held = self.run.get("held", {}) if self.run.get("active") else {}
             bypass = self.bypasses_ready() > 0  # each held card gets a "Use Bypass" button
-            lines = [(f"{self.held_text(g)} - SELL OR USE BYPASS", g) if bypass else self.held_text(g)
-                     for g in held.values()]
+            kept = self.run.get("forfeit") if self.run.get("active") else None
+            lines = []
+            if kept:  # one bypass covers the run and its cards (use_bypass), so they get no buttons of their own
+                text = f"Kept {', '.join(kept['names'])} into a PvP fight"
+                lines.append((f"{text} - USE BYPASS OR CONCEDE", FORFEIT) if bypass and not kept.get("trap")
+                             else f"{text} - CONCEDE THIS RUN")
+            lines += [(f"{self.held_text(g)} - SELL OR USE BYPASS", g) if bypass and not (kept and g in kept["cards"])
+                      else self.held_text(g) for g in held.values()]
+            # hours 4-5 holding a blocker: the same notice, louder (owner, 2026-11-09: "bolder and surrounded by flames")
+            danger = bool(self.run.get("active") and not kept and self.before_pvp() and self.pvp_blockers())
+            if danger:
+                lines.insert(0, "SELL IT BEFORE THE PVP FIGHT OR THIS RUN IS LOST")
+                if self.run.get("warned_day") != self.run.get("day"):
+                    self.run["warned_day"] = self.run.get("day")
+                    self.beep()
             for g in self.run.get("event_blocks", []) if self.run.get("active") else []:
                 text = f"{self.event_name(g)} (locked event)"
                 lines.append((f"{text} - USE BYPASS OR CONCEDE", g) if bypass else f"{text} - CONCEDE THIS RUN")
             upcoming = [t for t in self.run.get("traps", []) if t not in self.overdue_traps()] \
                 if self.run.get("active") else []
-            lines += [f"Sell Trap: sell {self.trap_target(t)} before day {t['deadline']} starts"
+            lines += [f"Sell Trap: sell {self.trap_target(t)} {trap_due(t['deadline'])}"
                       for t in upcoming]
             title = f"CHECKS ARE BLOCKED {reason}" if reason else ("SELL TRAP" if upcoming else None)
             trap = bool(self.run.get("traps")) and bool(self.run.get("active"))
-            self.overlay.show_locked(title, lines, blocked=bool(reason), trap=trap)
+            self.overlay.show_locked(title, lines, blocked=bool(reason), trap=trap, danger=danger)
 
     async def send_run_checks(self, names) -> None:
         """The only way checks earned in a run are sent: refused while cheating (locked hero or locked card)."""
         reason = self.blocked_reason()
+        if reason and self.run.get("forfeit"):  # kept for a Lock Bypass to send (owner, 2026-11-09)
+            withheld = self.run.setdefault("withheld", [])
+            withheld += [n for n in names if n not in withheld]
+            self.save_state()
         if reason:
             self.event(f"CHECKS ARE BLOCKED {reason}. Not sent: {', '.join(names)}", warning=True)
             self.beep()
@@ -932,12 +1062,49 @@ class BazaarContext(CommonContext):
             self.event(f"Sold {CARDS_BY_GUID[guid].name}." + ("" if self.run.get("held") else " Checks unblocked."))
             self.refresh_held()
 
+    def blockers(self) -> List[str]:
+        """What you hold that blocks checks: locked cards (from a locked merchant too) and overdue Sell Trap items."""
+        return sorted({CARDS_BY_GUID[g].name for g in self.run.get("held", {}).values()}
+                      | {self.trap_target(t) for t in self.overdue_traps()})
+
+    def pvp_blockers(self) -> List[str]:
+        """What locks the run if you take it into today's PvP fight: the blockers, plus every Sell Trap item whose
+        deadline is tomorrow - this fight is its last before the deadline (owner, 2026-11-10: "This also applies to
+        sell traps"). A monster fight still only counts blockers(): the trap isn't due yet."""
+        day = self.run.get("day", 1)
+        return sorted(set(self.blockers())
+                      | {self.trap_target(t) for t in self.run.get("traps", []) if day >= t["deadline"] - 1})
+
+    def before_pvp(self) -> bool:
+        """After the day's monster fight and before its PvP fight (hours 4-5): nothing in between sends a check, so
+        it's the last chance to sell (owner, 2026-11-09)."""
+        return self.run.get("monster_day") == self.run.get("day")
+
     def handle_fight(self, event: FightStarted) -> None:
-        held = self.run.get("held", {})
-        if not self.run.get("active") or not held:
+        if event.pvp:
+            self.run.pop("monster_day", None)  # the flaming warning's window ends
+            self.run["pvp_day"] = self.run.get("day", 1)  # a Sell Trap from now on starts tomorrow (start_trap)
+        active = self.run.get("active")
+        kept = self.pvp_blockers() if active and event.pvp and not self.run.get("forfeit") else []
+        blockers = kept or (self.blockers() if active else [])
+        if not blockers:
             return
-        names = ", ".join(CARDS_BY_GUID[g].name for g in held.values())
+        names = ", ".join(blockers)
         self.beep()
+        if kept:
+            # Owner, 2026-11-09: a locked item kept past a day (into its PvP fight) helped the run - "I would constitute
+            # that as cheating and the run should be invalid". Only a Lock Bypass brings the run back (it then sends
+            # the checks refused meanwhile); otherwise concede.
+            # a Sell Trap's item among them: no Lock Bypass brings it back, concede (owner, 2026-11-10: "it cant be
+            # used with a sell trap period")
+            trapped = {self.trap_target(t) for t in self.run.get("traps", [])} & set(blockers)
+            self.run["forfeit"] = {"cards": sorted(set(self.run.get("held", {}).values())), "names": blockers,
+                                   "trap": bool(trapped)}
+            way = "Concede it." if trapped else "Use a Lock Bypass or concede."
+            self.event(f"You went into a PvP fight holding {names}: this run no longer counts. {way}", warning=True)
+            self.save_state()
+            self.update_block_banner()
+            return
         self.event(f"You went into a fight holding locked cards ({names}). Nothing from this fight counts.",
                    warning=True)
 
@@ -1003,7 +1170,7 @@ class BazaarContext(CommonContext):
 
     def refresh_padlocks(self) -> None:
         """Which cards get a padlock: the locked ones offered on screen (shops, level-ups, loot, events), in your
-        stash, on your own board, and on a right-clicked monster's board. Only which cards - where they are on
+        stash, on your own board, and on a monster's board (right-clicked, or fighting you). Only which cards - where they are on
         screen, and whether they can be seen (the stash flips over the shop), is the overlay's, from memory
         (padlocks.py; owner 2026-10-15: a padlock is art on its card). New cards wait until they've turned face-up."""
         if not self.overlay:
@@ -1011,19 +1178,23 @@ class BazaarContext(CommonContext):
         self.refresh_guide()  # the same moments change what the Shop Guide shows
         active, snapshot = self.run.get("active"), self.memory
         still = active and snapshot and snapshot.state in BOARD_PADLOCK_STATES
+        templates = {instance: template for _slot, template, instance in
+                     (list(snapshot.board) + list(snapshot.stash) if still else [])}
         yours = self.locked_cards(snapshot.board) + self.locked_cards(snapshot.stash) if still else []
-        monster = self.board_ui.monster_items if active and self.board_ui else ()  # a right-clicked monster's board
+        monster = self.board_ui.monster_items if active and self.board_ui else ()  # see BoardUI.monster_items
+        templates.update(monster)
         yours += [key for key, template in monster if template in self.run_locked_guids()]
-        self.overlay.show_board_padlocks([Padlock(card=card) for card in yours])
+        self.overlay.show_board_padlocks([Padlock(card=card, why=self.locked_behind(templates.get(card)))
+                                          for card in yours])
         events = event_screen(snapshot) if active else None
         if events:  # a choice of merchants/events: a padlock on each locked one (docs/ENCOUNTER-LOCKS.md)
             key, offers = events
             new = self.padlock_rows.get(key) != tuple(o.instance for o in offers)
             self.padlock_rows[key] = tuple(o.instance for o in offers)
             locked = self.run_locked_events()
-            self.overlay.show_padlocks([Padlock(card=o.instance, place=i, option=i) for i, o in enumerate(offers)
-                                        if o.kind == "EventEncounter" and o.template in locked],
-                                       reveal=new, options=key)
+            self.overlay.show_padlocks([Padlock(card=o.instance, place=i, why=self.event_locked_behind(o.template))
+                                        for i, o in enumerate(offers)
+                                        if o.kind in EVENT_KINDS and o.template in locked], reveal=new)
             return
         items = items_on_screen(snapshot) if active else None
         if not items:
@@ -1034,8 +1205,8 @@ class BazaarContext(CommonContext):
         if new:
             self.padlock_rows[snapshot.state] = ids
         locked = self.run_locked_guids()
-        self.overlay.show_padlocks([Padlock(card=o.instance, place=i) for i, o in enumerate(items)
-                                    if o.template in locked], reveal=new)
+        self.overlay.show_padlocks([Padlock(card=o.instance, place=i, why=self.locked_behind(o.template))
+                                    for i, o in enumerate(items) if o.template in locked], reveal=new)
 
     def locked_cards(self, cards) -> List[str]:
         """The instance ids of the locked cards among yours (memreader's stash or board: (slot, template, id)) -
@@ -1134,7 +1305,7 @@ class BazaarContext(CommonContext):
         """A choice screen where every option is a locked event lets the least rare one through (owner, 2026-10-01),
         with a message saying so. Safe to call on every reading: once one is let through the screen isn't all
         locked any more."""
-        if not (snapshot and self.run.get("active") and snapshot.state in ("Choice", "Encounter")):
+        if not (snapshot and self.run.get("active") and snapshot.state in EVENT_SCREENS):
             return
         guid = let_through(snapshot.offers, self.run_locked_events())
         if guid:
@@ -1166,6 +1337,9 @@ class BazaarContext(CommonContext):
         self.refresh_guide()
 
     async def handle_monster(self, event: MonsterFought) -> None:
+        if self.run.get("active"):  # from here to the PvP fight: the flaming warning (see before_pvp)
+            self.run["monster_day"] = event.day
+            self.update_block_banner()
         if not self.run.get("active") or not event.won:
             return
         monster = MONSTERS.get(event.guid)
@@ -1307,8 +1481,8 @@ class BazaarContext(CommonContext):
             (logger.warning if warning else logger.info)(text)
 
     def setting(self, key: str):
-        """A setting of the connected seed (slot_data), or what older seeds meant when they didn't send it."""
-        return self.slot_data.get(key, SLOT_DEFAULTS[key])
+        """A setting of the connected seed (only seeds of this apworld version connect), or NOT_CONNECTED_SETTINGS'."""
+        return self.slot_data[key] if self.slot_data else NOT_CONNECTED_SETTINGS[key]
 
     def tiers(self, day: int) -> list:
         """The monster rarities with a check on this day (slot_data keys are strings after the server)."""
@@ -1337,34 +1511,21 @@ class BazaarContext(CommonContext):
             Utils.async_start(self.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}]))
             logger.info("Goal complete! Congratulations, champion of the Bazaar.")
 
-    def check_states(self, hero: str) -> Optional[list]:
-        """[(Check, done, in logic)] for every check of a hero, from the same card requirements the world's rules
-        use. The menu's hero list and the tracker both read this. None for seeds made before the client could
-        tell (no "logic" in slot_data)."""
-        logic = self.setting("logic")
-        if not logic or "lock_items" not in self.slot_data:
-            return None
+    def check_states(self, hero: str) -> list:
+        """[(Check, done, in logic)] for every check of a hero, from the world's own rules (locations.hero_needs and
+        meets). The menu's hero list and the tracker both read this."""
         items, groups = lock_items_by_hero(self.setting("lock_items"))
         items = items.get(hero, [])
-        received = [item_id_to_name.get(item.item) for item in self.items_received]
-        have = len(set(items) & set(received))
-        tiers = self.setting("monster_tiers")
-        max_day, pvp = self.setting("max_day"), bool(self.setting("pvp_win_checks"))
-        needs = card_requirements(hero, len(items), max_day, pvp, lambda day: tiers.get(str(day), []), logic)
+        received = Counter(item_id_to_name.get(item.item) for item in self.items_received)
         unlocked, done = self.hero_unlocked(hero), self.done()
+        return [(check, location_name_to_id[check.name] in done, unlocked and meets(needs, items, received.__getitem__))
+                for check, needs in hero_needs(hero, items, LEGENDARY_ITEMS in groups, self.setting("max_day"),
+                                               bool(self.setting("pvp_win_checks")), self.tiers, self.setting("logic"),
+                                               self.setting("event_rarity"), self.setting("power_items"))]
 
-        def in_logic(check) -> bool:
-            unlocks = item_requirements(check, LEGENDARY_ITEMS in groups, self.setting("event_rarity"))                 if self.setting("unlocks_in_logic") else {}  # seeds from before 2026-10-06 never needed them
-            return (unlocked and have >= needs[check.name]
-                    and all(received.count(name) >= copies for name, copies in unlocks.items()))
-        return [(check, location_name_to_id[check.name] in done, in_logic(check))
-                for check in hero_checks(hero, max_day, pvp, lambda day: tiers.get(str(day), []))]
-
-    def hero_progress(self, hero: str) -> Optional[tuple]:
+    def hero_progress(self, hero: str) -> tuple:
         """(checks done, checks in logic) for the menu's hero list."""
         states = self.check_states(hero)
-        if states is None:
-            return None
         return sum(done for _, done, _ in states), sum(in_logic for _, _, in_logic in states)
 
     def tracker_data(self) -> Dict[str, dict]:
@@ -1374,14 +1535,14 @@ class BazaarContext(CommonContext):
         if not self.slot_data:
             return data
         for hero in HEROES:
-            states = self.check_states(hero) if hero in self.setting("heroes") else None
-            if states is None:
+            if hero not in self.setting("heroes"):
                 data[hero] = {"in_seed": False, "unlocked": False, "checks": []}
                 continue
+            states = self.check_states(hero)
             unlocked = self.hero_unlocked(hero)
             data[hero] = {"in_seed": True, "unlocked": unlocked, "checks": [
-                (check.kind, check.day, check.tier, check.name,
-                 "done" if done else "red" if not unlocked else "green" if in_logic else "yellow")
+                TrackedCheck(check.kind, check.day, check.tier, check.name,
+                             "done" if done else "red" if not unlocked else "green" if in_logic else "yellow")
                 for check, done, in_logic in states]}
         return data
 
@@ -1391,7 +1552,7 @@ class BazaarContext(CommonContext):
         may play with (checks done / checks in logic), and a warning if the picked one is locked (user, 2026-09-29:
         "make it more obvious on the homescreen which heros are available")."""
         if not self.slot_data:  # owner, 2026-10-01: warn when there's no connection to the multiworld
-            return NOT_CONNECTED, True, False
+            return (WRONG_VERSION if self.refused else NOT_CONNECTED), True, False
         goal = f"Goal {len(self.heroes_won())}/{self.setting('heroes_required')}"
         if self.run.get("active") and not self.on_menu:  # on the menu: no run details (handle_on_menu)
             hero, day, max_day = self.run["hero"], self.run.get("day", 1), self.setting("max_day")
@@ -1401,7 +1562,7 @@ class BazaarContext(CommonContext):
             lines = ["HEROES YOU CAN PLAY  (checks done / in logic)"] if playable else ["No hero unlocked yet"]
             for hero in playable:
                 progress = self.hero_progress(hero)
-                lines.append(f"   {hero}   {progress[0]} / {progress[1]}" if progress else f"   {hero}")
+                lines.append(f"   {hero}   {progress[0]} / {progress[1]}")
             lines.append(goal + self.bypass_text())
             if self.menu_hero not in HEROES:  # Random (or a hero newer than this apworld): it can roll a locked one
                 return "\n".join([f"{self.menu_hero.upper()} can pick a locked hero (or one not in this multiworld) - "
@@ -1420,7 +1581,7 @@ class BazaarContext(CommonContext):
     def update_status(self) -> None:
         self.update_deathlink_notice()
         if self.overlay:
-            self.overlay.show_status(*self.status_line())
+            self.overlay.show_status(*self.status_line(), shields=self.shields_ready())
             self.overlay.show_menu(self.menu_data())
             self.overlay.show_tracker_data(self.tracker_data())
 
@@ -1435,7 +1596,7 @@ class BazaarContext(CommonContext):
         for hero in hero_order():
             if hero not in self.setting("heroes"):
                 continue
-            states = self.check_states(hero) or []
+            states = self.check_states(hero)
             cards = [c.guid for c in SHOP_CARDS if c.hero == hero]  # this hero's own cards (owner, 2026-10-01)
             heroes.append({"name": hero, "unlocked": self.hero_unlocked(hero), "total": len(states),
                            "done": sum(done for _, done, _ in states),
@@ -1443,7 +1604,9 @@ class BazaarContext(CommonContext):
         prefs, note = self.hero_prefs, None
         if prefs and prefs.random:  # memory: Random is picked (the log only says the setting changed)
             picked = "Random"
-            pool = [HERO_ALIASES.get(h, h) for h in HEROES_IN_GAME if h not in prefs.excluded]
+            # Random rolls any hero not excluded (PlayerPreferences names them the game's way: "Hero8")
+            excluded = {HERO_ALIASES.get(h, h) for h in prefs.excluded}
+            pool = [h for h in hero_order() if h not in excluded]
             risky = [h for h in pool if h not in self.setting("heroes") or not self.hero_unlocked(h)]
             if risky:
                 warning = (f"RANDOM can pick {', '.join(risky)} - locked or not in this multiworld. Exclude "
@@ -1458,7 +1621,7 @@ class BazaarContext(CommonContext):
         # hidden while any of the game's own screens is open over the menu (settings, stores, character select ...)
         return {"picked": picked, "warning": warning, "note": note, "heroes": heroes, "covered": bool(self.menu_layers),
                 "won": len(self.heroes_won()), "required": self.setting("heroes_required"),
-                "bypasses": self.bypasses_ready()}
+                "bypasses": self.bypasses_ready(), "shields": self.shields_ready()}
 
     def handle_hero_selected(self, event: HeroSelected) -> None:
         self.menu_hero = event.hero
@@ -1543,11 +1706,6 @@ def run_left_open(path: str, saved: dict) -> bool:
     return bool(started) and not any(isinstance(e, (RunStarted, RunEnded)) for e in events[started[0] + 1:])
 
 
-def from_run(events: list, index: int) -> list:
-    """The events from run number `index` of a log on (nothing if the log has no such run)."""
-    return next((events[i:] for i, e in enumerate(events) if isinstance(e, RunStarted) and e.index >= index), [])
-
-
 def missed(ctx: BazaarContext, past: list) -> list:
     """
     What the game logged while the client wasn't watching, as (game session, events) oldest first: the rest of the
@@ -1555,14 +1713,10 @@ def missed(ctx: BazaarContext, past: list) -> list:
     It starts exactly where the client stopped (ctx.position), so nothing already judged is judged again.
     On a seed's first connection that's nothing: runs from before could predate the seed.
     """
-    seen, where = ctx.watched, ctx.position
-    if not (seen or where) or not ctx.log_session:
+    where = ctx.position
+    if not where or not ctx.log_session:
         return []
-    if where:
-        stopped_log, since = where["log"], (lambda events: events[where["events"]:])
-    else:  # saved by a client from before positions were kept: from the tracked run on
-        first = ctx.run["run_index"] if ctx.run.get("active") else seen["runs"]
-        stopped_log, since = seen["log"], (lambda events: from_run(events, first))
+    stopped_log, since = where["log"], (lambda events: events[where["events"]:])
     if stopped_log == ctx.log_session:
         return [(ctx.log_session, since(past))]
     earlier = []

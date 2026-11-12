@@ -21,12 +21,19 @@ sit behind a progressive item. Designed with the owner 2026-10-01 and 2026-10-02
 - **Only choices count:** events the game forces on you never do (2026-10-01). Level-up rewards are never locked
   (2026-10-02: "Level ups not included"). Monster fights are not part of this (2026-10-02: "this does NOT include
   fights with monsters").
+- **Except listed level-up events (2026-11-11):** "Shiny!" (the first level-up's pick of 1 of 3 small enchanted
+  items, an `EncounterStep`) has its own unlock, **Level Up: Shiny!** - always in the pool, "treat it like a locked
+  merchant in all ways" (anything taken there blocks checks until sold; padlock; Lock Bypass; let through when every
+  option on the level-up screen is locked), and a power item. A new one is one row in `items.LEVEL_UPS` (guid, rarity
+  for the let-through). The log names the pick (`ste_`/`enc_` Card Purchased) and memory reads the level-up screen's
+  options (watcher 2026-11-11). ⚠️ Event Rarity Progression still never locks level-ups. ⚠️ Unverified: whether memory
+  places padlocks on level-up options (if not, none shows - never a guessed spot).
 - **Event Rarity Progression:** until the first copy, Diamond merchants/events are locked; the second unlocks
   Legendary (2026-10-02). Default 3 copies; a copy past the two stages counts as a Lock Bypass (2026-10-02: "if
   there is an extra, turn it to a buff like the lock bypass").
 - **Exempt Expeditions, on by default:** expeditions are never rarity-locked (2026-10-02), and that covers the
-  whole expedition, follow-up events included (2026-10-02). The ticket cards still need the Expedition Tickets
-  unlock, and stay out of the Legendary Items group (they aren't shop cards).
+  whole expedition, follow-up events included (2026-10-02). The ticket cards still need their unlock
+  (`expedition_ticket_unlocks`, 2026-11-09), and stay out of the Legendary Items group (they aren't shop cards).
 - **`locked_encounters_percent` default 25, `starter_merchants` default 5** (2026-10-02).
 
 ## How the world builds it
@@ -92,11 +99,10 @@ so they're never judged. Check this in game.
 ## Screens and padlocks
 
 **Since 2026-10-15 each padlock sits on its option's art from memory** (docs/MEMORY-READER.md K-mem11), and rides
-into the big view when the event is right-clicked. The measured rows below are history. Measured positions (until 2026-10-15) were `overlay.event_row`: each option's centre at 1080p, x from the window's centre (scaled like the
-shop row), y as a share of the window's height. The client picks the row from memory (`client.event_screen`):
-screen `Choice` with N options is `Choice-N`, screen `Encounter` with event options is `Line-N`. Until 2026-10-15 an
-hourly count that wasn't in `CHOICE_ROWS` got no padlocks rather than misplaced ones; since memory places them,
-every count gets them.
+into the big view when the event is right-clicked; every option count gets them. History: until 2026-10-15 they sat
+at measured 1080p positions (`overlay.event_row`/`CHOICE_ROWS`, an unmeasured hourly count got none); that code was
+unreachable once memory placed every option and was removed 2026-11-11 (owner: "Remove"). `client.event_screen`'s
+`Choice-N`/`Line-N` key now only tells a new row of options from the last one.
 
 - **Hourly choice:** 3 events at the same positions as the monster pick (owner, 2026-10-02; `Event3.jpg`, the middle
   one lower). Memory screen `Choice`.

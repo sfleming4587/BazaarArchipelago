@@ -21,7 +21,8 @@ reached their goal. You can play solo too.
   cards merchants sell turn up one by one as items. Until a card is unlocked, you leave it on the shelf.
 - **Some merchants and events are locked too** (a quarter by default). Visiting a locked merchant is fine, but what
   you take there counts as locked; stepping into any other locked event costs you that run's checks. Diamond and
-  Legendary ones wait for **Event Rarity Progression**.
+  Legendary ones wait for **Event Rarity Progression**. Even the first level-up's **Shiny!** pick waits for its own
+  item, **Level Up: Shiny!**.
 - **Your progress sends items to others.** Each hero has checks for:
   - reaching each day;
   - winning that day's PvP fight;
@@ -32,6 +33,7 @@ reached their goal. You can play solo too.
   but your goal doesn't move.
 - **Optional spice:**
   - **Sell Traps:** sell the item it names within a couple of days, or your checks pause.
+  - **Trap Shields:** block the next trap you receive.
   - **Lock Bypasses:** keep a locked card for the rest of a run.
   - **DeathLink:** when one player loses, everyone loses.
 
@@ -109,8 +111,9 @@ New to Archipelago? Just follow the steps in order. It takes about ten minutes t
      your seed.
    - `heroes_required:` - how many heroes need a 10-win run to finish (default 3).
 
-**Want a gentler game?** Turn on `duplicate_all_cards` (**Duplicate All Cards (casual)**). Every locked card gets
-a second copy out in the multiworld, so each one turns up sooner.
+**Want a gentler game?** Turn on `plentiful_items` (**Plentiful Items**) for a second copy of every hero, pack and
+merchant/event unlock, or `duplicate_all_cards` (**Duplicate All Cards (casual)**) for a second copy of every locked
+card. Either way, things turn up sooner. The Casual preset turns on Plentiful Items for you.
 
 ### 5. Generate the game
 Whoever hosts collects everyone's YAML files, and **the host needs `bazaar.apworld` installed too**.
@@ -137,7 +140,11 @@ checks and the notices box says **CHECKS ARE BLOCKED** and why.
 
 - **Only play heroes you've received.** A run with a locked hero sends nothing.
 - **Don't keep locked cards.** If one lands in your hands anyway (a reward, say), just sell it: checks resume the
-  moment the game logs the sale. Items the game makes for you by itself (spawned by another item, or transformed
+  moment the game logs the sale. **Never take one into a PvP fight:** if you still hold a locked card (or a Sell
+  Trap item on its last day) when the day's PvP fight starts, the rest of that run counts for nothing - concede it,
+  or use a Lock Bypass on the notice to bring the run back (the checks you missed meanwhile are sent then). A run
+  lost to a Sell Trap item can't be brought back: concede it.
+  Between the monster fight and the PvP fight the notice turns into a flaming warning, so you can't miss it. Items the game makes for you by itself (spawned by another item, or transformed
   outside a fight) follow the **Created Items** option: by default they're fine in a few special cases (Mak's
   Reagents, Wink, The Cult, Soda and Vending Machines, items that always make the same card) and count like any card otherwise.
 - **Sell Traps** (3 by default): sell the item it names before the day shown.
@@ -211,8 +218,8 @@ No problem - everything keeps working. Cards or heroes a patch adds just aren't 
 ## Updating
 
 Download the newest `bazaar.apworld` from the [latest release](https://github.com/sfleming4587/BazaarArchipelago/releases/latest)
-and install it as in step 3. Finish your current seed first: a seed generated with an older version may not work
-with a newer client.
+and install it as in step 3. Finish your current seed first: a seed generated with another version won't connect -
+the client tells you so, and you can play it again by installing the version it was made with.
 
 ## Found a bug?
 

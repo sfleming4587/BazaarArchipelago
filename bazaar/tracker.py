@@ -11,7 +11,7 @@ in the overlay's Tk thread and needs no Pillow: the hero cards are small PNGs th
 """
 import base64
 import pkgutil
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, NamedTuple, Optional
 
 from . import screens
 from .data import HEROES, TIERS, hero_key
@@ -31,6 +31,15 @@ NOTE_AT, SQUARES_AT = 0.2, 0.36  # "LOCKED" and the squares, as a share of the c
 FIT_WIDTH, FIT_HEIGHT = 0.95, 0.9  # the window must fit this share of the screen, else half-size cards
 POPUP_OFFSET = (16, 12)  # the list opens this far right of and below the pointer (or mirrored, near an edge)
 LIST_ROWS = 12  # more checks than this: the list gets two columns
+
+
+class TrackedCheck(NamedTuple):
+    """One check as the tracker shows it (client.tracker_data builds them)."""
+    kind: str
+    day: int
+    tier: str
+    name: str
+    status: str  # done / green / yellow / red
 
 
 def square_status(statuses: List[str]) -> Optional[str]:
@@ -80,12 +89,6 @@ class Tracker:
 
     def is_open(self) -> bool:
         return bool(self.win) and self.win.state() == "normal"
-
-    def toggle(self) -> None:
-        if self.is_open():
-            self.close()
-        else:
-            self.open()
 
     def windows(self) -> List[int]:
         """Window handles of the tracker and its list (so using them doesn't count as leaving the game)."""
@@ -202,7 +205,7 @@ class Tracker:
             canvas.itemconfigure("dim", state="normal" if note else "hidden")
             canvas.itemconfigure("note", text=note)
             for kind, *_ in SQUARES:
-                status = square_status([c[4] for c in self.checks(hero, kind)]) if info and info["in_seed"] \
+                status = square_status([c.status for c in self.checks(hero, kind)]) if info and info["in_seed"] \
                     else None
                 canvas.itemconfigure(kind, state="hidden" if status is None else "normal")
                 if status:
@@ -211,7 +214,7 @@ class Tracker:
             self.show_popup(*self.popup_for, keep_position=True)
 
     def checks(self, hero: str, kind: str) -> list:
-        return [c for c in (self.data.get(hero) or {}).get("checks", []) if c[0] == kind]
+        return [c for c in (self.data.get(hero) or {}).get("checks", []) if c.kind == kind]
 
     # --- hover / click lists -----------------------------------------------------------------------------------
 

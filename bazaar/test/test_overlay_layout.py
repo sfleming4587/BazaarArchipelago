@@ -60,21 +60,21 @@ class TestShopGuideWithoutPillow(unittest.TestCase):
                 guide.cards = [small, large]
                 guide.set_context(None, {large.guid})
                 root.update()
-                self.assertEqual(sorted((f.winfo_reqwidth(), f.winfo_reqheight()) for f in _placeholders(guide)),
-                                 [(48, 96), (144, 96)])  # the cards' in-game shapes, border included
-                names = {w.cget("text") for w in _all_widgets(guide.inner) if isinstance(w, tkinter.Label)}
-                self.assertLessEqual({small.name, large.name}, names)
+                self.assertEqual(sorted(_placeholders(guide)), [(48, 96), (144, 96)])  # the cards' in-game shapes
+                self.assertLessEqual({small.name, large.name}, _guide_texts(guide))
 
                 # the Small card's pictures arrive: only its cell changes, the Large card keeps its placeholder
                 for is_locked in (False, True):
                     with open(guide.art.path(small, is_locked), "wb") as f:
                         f.write(cardart.png((48, 96, bytes(48 * 96 * 3))))
-                untouched = guide.cells[(large.guid, True)][0].winfo_children()
+                large_tag = guide.cells[(large.guid, True)][0][0]
+                untouched = guide.canvas.find_withtag(large_tag)
                 guide.refresh(small.guid)
                 root.update()
-                self.assertEqual([(f.winfo_reqwidth(), f.winfo_reqheight()) for f in _placeholders(guide)],
-                                 [(144, 96)])
-                self.assertEqual(guide.cells[(large.guid, True)][0].winfo_children(), untouched)
+                self.assertEqual(_placeholders(guide), [(144, 96)])
+                self.assertEqual(guide.canvas.find_withtag(large_tag), untouched)
+                small_tag = guide.cells[(small.guid, False)][0][0]
+                self.assertIn("image", [guide.canvas.type(i) for i in guide.canvas.find_withtag(small_tag)])
                 guide.shutdown()
             finally:
                 root.destroy()
@@ -87,7 +87,16 @@ def _all_widgets(widget):
 
 
 def _placeholders(guide) -> list:
-    return [w for w in _all_widgets(guide.inner) if w.winfo_class() == "Frame" and w.cget("highlightthickness") == 3]
+    """(width, height) of each "no picture" box the Shop Guide draws."""
+    out = []
+    for item in guide.canvas.find_withtag("placeholder"):
+        x0, y0, x1, y1 = guide.canvas.coords(item)
+        out.append((round(x1 - x0 + 3), round(y1 - y0 + 3)))  # drawn 1 px in, 2 px short: its 3 px outline inside
+    return out
+
+
+def _guide_texts(guide) -> set:
+    return {guide.canvas.itemcget(i, "text") for i in guide.canvas.find_all() if guide.canvas.type(i) == "text"}
 
 
 class TestPanelsStack(unittest.TestCase):
@@ -136,6 +145,37 @@ class TestAlertBoxWithManyHeldCards(unittest.TestCase):
             root.destroy()
 
 
+class TestFlamingPvPWarning(unittest.TestCase):
+    """Owner, 2026-11-09: before the PvP fight, the same notice "bolder and surrounded by flames"."""
+
+    def test_flames_above_and_below_and_the_notice_fits_its_share(self) -> None:
+        import queue
+        import tkinter
+        import types
+        from ..overlay import _Screen
+        root = tkinter.Tk()
+        try:
+            fake = types.SimpleNamespace(only_over_game=False, game_window=(0, 0, 1280, 720), art_cache_dir=None,
+                                         guide_file=None, commands=queue.Queue(), on_bypass=None)
+            screen = _Screen(fake, tkinter, root)
+            screen.relayout((0, 0, 1280, 720))
+            lines = ["SELL IT BEFORE THE PVP FIGHT OR THIS RUN IS LOST", ("Cutlass (Vanessa) - SELL OR USE BYPASS", "g")]
+            screen.state["locked"] = ("CHECKS ARE BLOCKED UNTIL CUTLASS IS SOLD", lines, True, False, True)
+            screen.render()
+            root.update()
+            widgets = list(_all_widgets(screen.notice_box))
+            canvases = [w for w in widgets if isinstance(w, tkinter.Canvas)]
+            self.assertEqual(len(canvases), 2)  # a band of flames above, one below
+            self.assertEqual(canvases[0].winfo_y() < canvases[1].winfo_y(), True)
+            self.assertLessEqual(screen.notice_box.winfo_reqheight(), screen.layout["right"][3] // 2)
+            screen.state["locked"] = ("CHECKS ARE BLOCKED UNTIL CUTLASS IS SOLD", lines[1:], True, False, False)
+            screen.render()
+            root.update()
+            self.assertFalse([w for w in _all_widgets(screen.notice_box) if isinstance(w, tkinter.Canvas)])
+        finally:
+            root.destroy()
+
+
 class TestUnlockPopupPictures(unittest.TestCase):
     """Owner, 2026-10-02: an UNLOCKED pop-up shows the unlocked cards' pictures."""
 
@@ -147,7 +187,7 @@ class TestUnlockPopupPictures(unittest.TestCase):
         import types
         from unittest import mock
         from .. import cardart
-        from ..overlay import MAX_TOAST_PICTURES, _Screen
+        from ..overlay import MAX_TOAST_PICTURES, Toast, _Screen
         cards = [c for c in CARDS if c.shop and c.size == "Small"][:MAX_TOAST_PICTURES + 2]
         with mock.patch.dict(sys.modules, {"PIL": None}), \
                 tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp, \
@@ -159,8 +199,8 @@ class TestUnlockPopupPictures(unittest.TestCase):
                 screen = _Screen(fake, tkinter, root)
                 screen.relayout((0, 0, 1920, 1080))
                 guids = tuple(c.guid for c in cards)
-                screen.new_toast(("UNLOCKED: a pack", 1e12, False, False, guids))
-                screen.new_toast(("FOUND: something", 1e12, False, False, ()))
+                screen.new_toast(Toast("UNLOCKED: a pack", 1e12, False, False, guids, False))
+                screen.new_toast(Toast("FOUND: something", 1e12, False, False, (), False))
                 screen.render()
                 root.update()
 
@@ -193,7 +233,7 @@ class TestPopUpsFillTheRoom(unittest.TestCase):
         import queue
         import tkinter
         import types
-        from ..overlay import _Screen
+        from ..overlay import Toast, _Screen
         root = tkinter.Tk()
         try:
             fake = types.SimpleNamespace(only_over_game=False, game_window=(0, 0, 1280, 720), art_cache_dir=None,
@@ -202,8 +242,8 @@ class TestPopUpsFillTheRoom(unittest.TestCase):
             screen.relayout((0, 0, 1280, 720))
             screen.state["deathlink"] = "Friend fell."
             for i in range(8):
-                screen.new_toast((f"RECEIVED: a rather long item name number {i} " + "and more words " * 12,
-                                  1e12, False, False, ()))
+                screen.new_toast(Toast(f"RECEIVED: a rather long item name number {i} " + "and more words " * 12,
+                                  1e12, False, False, (), False))
             screen.render()
             root.update()
             rows = screen.toast_box.winfo_children()[0].winfo_children()
@@ -307,19 +347,18 @@ class TestPadlocksOnReveal(unittest.TestCase):
 
 
 class TestPadlockCommands(unittest.TestCase):
-    def test_an_event_layout_that_isnt_measured_still_gets_its_padlocks(self) -> None:
-        """Owner, 2026-10-15: event padlocks are placed from memory now, so any option count gets them."""
+    def test_padlocks_on_any_screen_and_none_hides_them(self) -> None:
+        """Owner, 2026-10-15: every padlock is placed from memory (an event option's too), on any screen."""
         import queue
         from ..overlay import Overlay
         from ..padlocks import Padlock
         overlay = Overlay.__new__(Overlay)  # only the command queue: no windows
         overlay.commands = queue.Queue()
-        overlay.show_padlocks([Padlock(card="enc_a", option=0)], options="Choice-3")
-        self.assertIsNotNone(overlay.commands.get_nowait()[1][0])
-        overlay.show_padlocks([Padlock(card="enc_a", option=0)], options="Choice-9")
-        self.assertIsNotNone(overlay.commands.get_nowait()[1][0])
-        overlay.show_padlocks([Padlock(card="itm_a", place=0)])  # cards: placed from memory, on any screen
-        self.assertIsNotNone(overlay.commands.get_nowait()[1][0])
+        for lock in (Padlock(card="enc_a", place=0), Padlock(card="itm_a", place=0)):
+            overlay.show_padlocks([lock])
+            self.assertEqual(overlay.commands.get_nowait()[1][0], (lock,))
+        overlay.show_padlocks([])
+        self.assertIsNone(overlay.commands.get_nowait()[1][0])
 
 
 class TestShopGuideLists(unittest.TestCase):
@@ -362,8 +401,7 @@ class TestShopGuideKeepsOfferedCards(unittest.TestCase):
             guide.show_offer(("An event", [last.guid], None))
             guide.show_offer(("An event", [], None))  # bought: gone from the offer
             root.update()
-            names = {w.cget("text") for w in _all_widgets(guide.inner) if isinstance(w, tkinter.Label)}
-            self.assertIn(last.name, names)
+            self.assertIn(last.name, _guide_texts(guide))
             self.assertGreater(len(SHOP_CARDS), MAX_SHOWN)
             guide.shutdown()
         finally:
@@ -377,35 +415,6 @@ class TestTrackerOverMenu(unittest.TestCase):
         self.assertTrue(overlaps(panel, (500, 200, 300, 200)))  # the Tracker's corner on the panel
         self.assertFalse(overlaps(panel, (1300, 300, 400, 400)))  # dragged off to the right: touching isn't covering
         self.assertFalse(overlaps(panel, (0, 0, 200, 200)))
-
-
-class TestEventCentres(unittest.TestCase):
-    """Event padlocks sit on the options' centres, measured on the owner's screenshots 2026-10-02."""
-
-    def test_hourly_three_match_the_screenshot(self) -> None:
-        from ..overlay import event_centres
-        # Event3.jpg (1920x1080): frames centred at about (715, 303), (960, 364), (1205, 303)
-        for (x, y), (ex, ey) in zip(event_centres(0, 0, 1920, 1080, "Choice-3"), ((715, 303), (960, 364), (1205, 303))):
-            self.assertAlmostEqual(x, ex, delta=3)
-            self.assertAlmostEqual(y, ey, delta=3)
-
-    def test_a_line_is_centred_whatever_its_count(self) -> None:
-        """Owner, 2026-10-02: without the portal's bubble its two events move to the centre."""
-        from ..overlay import event_centres, event_row
-        self.assertEqual(event_centres(0, 0, 1920, 1080, "Line-3"), [(678, 420), (960, 420), (1242, 420)])
-        self.assertEqual(event_centres(0, 0, 1920, 1080, "Line-2"), [(819, 420), (1101, 420)])
-        self.assertEqual(event_centres(0, 0, 1920, 1080, "Line-1"), [(960, 420)])
-        self.assertIsNone(event_row("Choice-2"))  # an hourly count never measured
-        self.assertIsNone(event_row("Line-0"))
-
-    def test_scales_with_the_window(self) -> None:
-        from ..overlay import event_centres
-        small = event_centres(0, 0, 1920, 1080, "Choice-4")
-        big = event_centres(100, 50, 2560, 1440, "Choice-4")
-        for (x1, y1), (x2, y2) in zip(small, big):
-            self.assertAlmostEqual(x2 - 100, x1 * 4 / 3, delta=1)
-            self.assertAlmostEqual(y2 - 50, y1 * 4 / 3, delta=1)
-
 
 
 class TestHoverLetsClicksThrough(unittest.TestCase):
@@ -461,3 +470,34 @@ class TestHoverLetsClicksThrough(unittest.TestCase):
                          (100 + gear[0] * 2560, 50 + gear[1] * 1440, 100 + gear[2] * 2560, 50 + gear[3] * 1440))
         moved = SimpleNamespace(layout=screen.layout, board_ui=ui._replace(gear=(0.5, 0.5, 0.55, 0.55)))
         self.assertIsNone(_Screen.game_button_at(moved, point))  # memory wins over the measured spot
+
+
+class TestDropdownsStayOpen(unittest.TestCase):
+    """Owner's video, 2026-11-11: the Shop Guide's Merchant/Size/Rarity lists closed at once - the overlay re-claimed
+    "always on top" every POLL_MS and lifted the guide over its own open list. Not while you use our windows."""
+
+    def test_no_top_claiming_while_one_of_ours_is_in_front(self) -> None:
+        import queue
+        import tkinter
+        import types
+        from unittest import mock
+        from ..overlay import _Screen
+        root = tkinter.Tk()
+        try:
+            fake = types.SimpleNamespace(only_over_game=False, game_window=(0, 0, 1280, 720), art_cache_dir=None,
+                                         guide_file=None, commands=queue.Queue(), on_bypass=None)
+            screen = _Screen(fake, tkinter, root)
+            screen.relayout((0, 0, 1280, 720))
+            screen.panels[0].deiconify()  # a shown panel (the header)
+            root.update()
+            shown = [p for p in screen.panels if p.state() == "normal"]
+            self.assertTrue(shown)
+            with mock.patch.object(type(shown[0]), "attributes") as attributes:
+                screen.ours_in_front = True
+                screen.keep_on_top()
+                self.assertFalse(attributes.called)
+                screen.ours_in_front = False  # the game in front: the windows claim the top back, as before
+                screen.keep_on_top()
+                self.assertTrue(attributes.called)
+        finally:
+            root.destroy()

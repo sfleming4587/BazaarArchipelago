@@ -20,6 +20,8 @@ Per hero, for each day from 1 up to `max_day` (default 13, at most 16):
   day 1 up to Silver, day 2 up to Gold, days 3-5 up to Diamond, day 6+ up to Legendary.
   Beating a monster sends its rarity and every rarity below it for that day. Monsters from events don't count.
   `max_monster_tier` caps the highest rarity with a check (default Diamond, so no Legendary monster checks).
+  `monster_rarities` keeps the day's **top three** rarities (default), **all** of them (Hardcore) or the **bottom
+  three** (Casual): with top three, a Bronze monster on day 3 or later sends nothing.
 
 Plus **10 Wins** with each hero. Getting 10 wins sends every check that hero has left: every day, PvP and monster
 check, even a monster you skipped or lost to earlier in that run.
@@ -39,21 +41,34 @@ impossible); you can always try anything. It keeps important items off hard chec
 - Day 10 expects `logic_day_10_cards` (default 16) of that hero's own locked cards, and days 8-9 half as many.
   After day 10 the number climbs evenly up to `logic_last_day_cards` (default 28) on your last day (`max_day`),
   since late days are much harder. The 10-win check expects the last day's amount too. A day's PvP win is
-  treated like the next day (winning is harder than just reaching it). Locked Common cards never count.
+  treated like the next day (winning is harder than just reaching it). Locked Common cards never count. A
+  **pack counts as its 10 cards**.
+- **10 wins** also needs **2 of that hero's packs** (or every pack the hero has, if your seed gives it fewer).
 - Bronze, Silver and Gold monsters follow their day. Diamond and Legendary monsters also expect
   `logic_diamond_cards` / `logic_legendary_cards` (defaults 10 / 20) of the hero's locked cards.
 - Legendary monsters also need **Legendary Items** (when your seed has it).
+- **Power items** for late Diamond and Legendary monsters: the Expedition Tickets (3), Legendary Items (the first),
+  Event Rarity Progression (the first 2) and **Level Up: Shiny!** - 7 with default settings. They start mattering on
+  your seed's last day minus that number (day 6 by default: day 13 minus 7): that day a Legendary monster wants 1 power item, and each
+  later day wants one more, so on the last day a Diamond monster wants them all; a Diamond monster wants one fewer
+  than a Legendary on the same day. Never more than your seed has. Spare copies
+  never count twice.
 - PvP wins from day 8 need one **Event Rarity Progression**, and from day 14 two (when your seed has them).
   Legendary events are rare, so the second copy only matters on long runs.
 
 ## How many cards are locked?
 
 `locked_cards_percent` (default 80) is the share of the checks left over - after hero, pack and group unlocks,
-traps and bypasses - that hold a different locked card. The rest hold duplicates: extra hero unlocks first (up to
-3 of each), then extra copies of locked cards. Copy counts you set yourself never change: you get exactly
-`legendary_items` Legendary Items unlocks and `expedition_tickets` Expedition Tickets unlocks, and cards in
+traps and bypasses - that hold a different locked card. The rest hold filler. A seed has **one copy of each unlock**:
+no item is duplicated unless you ask for it. Copy counts you set yourself never change: you get exactly
+`legendary_items` Legendary Items unlocks, one Expedition Tickets per ticket when they're progressive, and cards in
 `duplicate_cards` keep their two copies. With `duplicate_all_cards` (casual mode) the percent doesn't apply: every
 spare check holds a locked card, each with a second copy somewhere in the multiworld.
+
+**Plentiful Items** (`plentiful_items`, off by default, on in the Casual preset) adds a second copy of every hero
+unlock, pack and merchant/event unlock, and a second set of Expedition Tickets (any 3 of the 6 reach Tiny World).
+Either copy unlocks it. The copies take checks that would otherwise hold locked cards, so you also get fewer locked
+cards. Single cards, Legendary Items, Event Rarity Progression, Sell Traps, Trap Shields and Lock Bypasses keep their own counts.
 
 ## Locked merchants and events
 
@@ -68,7 +83,7 @@ own unlock, **Merchant: X** or **Event: X** (one item covers every rarity versio
 - **Event Rarity Progression** (`event_rarity_progression`, default 3 copies; 0 turns it off): until you find the
   first copy, Diamond merchants and events are locked; the second unlocks Legendary ones. Every copy past those two
   counts as a Lock Bypass. With `exempt_expeditions` (on by default) the expeditions and every event inside them are
-  never locked this way; the tickets themselves still need **Expedition Tickets**.
+  never locked this way; the tickets themselves still need their unlock (see below).
 - **Only your choices count.** Monster fights, level-up rewards and events the game puts you in without a choice are
   never locked. If every event offered is locked, the least rare one is let through (a tie is picked at random, and a
   pop-up says which) - unless the screen also has an option that isn't an event.
@@ -86,16 +101,25 @@ you have enabled).
 - **Hero: X** - you may now play hero X.
 - **Individual cards** - you may now buy that card. With `duplicate_cards` / `duplicate_all_cards` a card can
   have two copies in the multiworld; either one unlocks it.
-- **Legendary Items** (`legendary_items`, default 2 copies) - unlocks every Legendary item. The first copy found
-  unlocks them; the other copy is a spare.
-- **Expedition Tickets** (`expedition_tickets`, default 2 copies) - unlocks the expedition ticket cards.
+- **Legendary Items** (`legendary_items`, default 1 copy) - unlocks every Legendary item. With more copies, the
+  first one found unlocks them; the others are spares.
+- **Expedition Tickets** - the expedition ticket cards, set by `expedition_ticket_unlocks`. **Progressive**
+  (default): three Expedition Tickets items, each one unlocking the next ticket - Crash Site, then Temple, then Tiny
+  World. **Separate**: Crash Site Ticket, Temple Expedition Ticket and Tiny World Ticket are each their own item.
+  **Off**: the tickets are never locked.
+- **Sizeinator** - `sizeinator_unlock` decides what unlocks it: the Tiny World Ticket (default, the easy way) or
+  Legendary Items (hard).
 - **Pack: X** (optional, `legacy_card_packs`) - one of the ten original hero expansions, such as Mysteries of the
   Deep or Dooltron. Unlocks all of its cards at once. Every pack has its own switch (`pack_dooley_dooltron` and so
   on), all on by default, so you can keep just the packs you like. Packs lock a lot more cards in total (10 per
   check), so turning on **Duplicate All Cards (casual)** as well is a good idea.
+- **Pack: X** (on by default, `custom_card_packs`) - hand-made packs of about 10 strong cards from one build, three for
+  each DLC hero plus one more for Mak and Dooley, such as Swarm Protocol (Stelle's drones), Seeing Red (Karnok's Rage)
+  or Overclocked (Dooley's tech). They work just like the original packs, with a switch each, and never share a card
+  with them.
 - **Merchant: X** / **Event: X** - you may now use that merchant or event (see above).
 - **Event Rarity Progression** - first Diamond, then Legendary merchants and events; extra copies are Lock Bypasses.
-- **Sell Trap** / **Lock Bypass** (see below).
+- **Sell Trap** / **Trap Shield** / **Lock Bypass** (see below).
 - Filler items with no effect (only if the pool somehow runs out of anything else).
 
 ## Checks are blocked while you break a rule
@@ -117,9 +141,19 @@ earned in a later run.
 ## Sell Traps
 
 The multiworld contains `sell_traps` Sell Traps (default 3; 0 turns them off). When you receive one, the client
-picks a random item you're holding and gives you `sell_trap_days` days (default 2) to sell it. If you still have it
-when that day starts, checks are blocked until you sell it. A trap never blocks the fight you're in. If it arrives
-while you're between runs or holding nothing it can pick, it's **dodged** and does nothing.
+picks a random item you're holding and gives you `sell_trap_days` days (default 2) to sell it: a trap on day 2 says
+**before the end of day 3**. That day's PvP fight is the line, just like a locked card: still holding the item when it
+starts loses the rest of the run - and **no Lock Bypass brings back a run lost to a Sell Trap**, you have to concede
+it. Between that day's monster fight and its PvP fight the notice turns into the flaming warning. A trap that arrives
+after the day's PvP fight counts from the next day (it's hour 1 of tomorrow), so it always gets its full days. If it
+arrives while you're between runs or holding nothing it can pick, it's **dodged** and does nothing.
+
+## Trap Shields
+
+The multiworld contains `trap_shields` Trap Shields (default 3; 0 turns them off). A shield blocks the next trap you
+receive after it, the moment that trap arrives; a trap you already had stays. A trap that would be dodged anyway
+doesn't use a shield, and unused shields carry over to later runs. The shields you have show as stacked shield icons
+next to your Lock Bypasses at the top of the overlay.
 
 ## Lock Bypasses
 

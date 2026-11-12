@@ -14,7 +14,7 @@ FLIP_STAGGER = 0.12  # s between the cards of a new row turning face-up, left to
 class Padlock(NamedTuple):
     card: Optional[str] = None  # the card's instance id: the padlock sits on that card, read from memory
     place: Optional[int] = None  # its place in a new row, which turns face-up left to right; None: not turning
-    option: Optional[int] = None  # an event option: its place in the measured layout, used only without a card
+    why: Optional[str] = None  # the item that unlocks it, shown under it in the right-click view (owner 2026-11-10)
 
 
 def to_screen(rect: Rect, window: tuple) -> Rect:
@@ -46,30 +46,28 @@ def covered(rect: Rect, covers: Sequence[Tuple[Rect, Optional[str]]], pad: float
     return any(touches(padded, r) for r, card in covers if card is None or card != own)
 
 
-def spot(padlock: Padlock, ui, window: tuple, size: float, options: Sequence[tuple] = ()) -> Optional[Rect]:
+def spot(padlock: Padlock, ui, window: tuple, size: float) -> Optional[Rect]:
     """The padlock's square on screen: the centre of its card (from memory: event options and a right-clicked
-    monster's items too, owner 2026-10-15), or of an event option with no card (measured); None when its card isn't
-    on screen - never a guess (owner, 2026-10-14)."""
-    if padlock.card is not None:
-        rect = ui.cards.get(padlock.card) if ui is not None else None
-        if not rect:
-            return None
-        left, top, right, bottom = to_screen(rect, window)
-        centre = (left + right) / 2, (top + bottom) / 2
-        x, y, w, h = window
-        if not (x + size / 2 <= centre[0] <= x + w - size / 2 and y + size / 2 <= centre[1] <= y + h - size / 2):
-            return None  # off the game window (sliding in or out): no art there, and never clamped to the edge
-            # (owner, 2026-10-15: a padlock shows only where its card's art is)
-    elif padlock.option is not None and padlock.option < len(options) and ui is not None:
-        centre = options[padlock.option]
-    else:
+    monster's items too, owner 2026-10-15); None when its card isn't on screen - never a guess (owner, 2026-10-14)."""
+    rect = ui.cards.get(padlock.card) if ui is not None and padlock.card is not None else None
+    if not rect:
         return None
+    left, top, right, bottom = to_screen(rect, window)
+    centre = (left + right) / 2, (top + bottom) / 2
+    x, y, w, h = window
+    if not (x + size / 2 <= centre[0] <= x + w - size / 2 and y + size / 2 <= centre[1] <= y + h - size / 2):
+        return None  # off the game window (sliding in or out): no art there, and never clamped to the edge
+        # (owner, 2026-10-15: a padlock shows only where its card's art is)
     return centre[0] - size / 2, centre[1] - size / 2, centre[0] + size / 2, centre[1] + size / 2
 
 
-def alpha(padlock: Padlock, square: Optional[Rect], ui, covers, pad: float, turning_since: float, now: float) -> float:
-    """How the padlock shows (ui must be readable: the overlay shows none otherwise)."""
+def alpha(padlock: Padlock, square: Optional[Rect], ui, covers, pad: float, turning_since: float, now: float,
+          windows: Sequence[Rect] = ()) -> float:
+    """How the padlock shows (ui must be readable: the overlay shows none otherwise). windows: our own windows on
+    screen (the tracker, the Shop Guide): its card can't be seen under one, so it hides there (owner, 2026-11-11)."""
     if square is None or ui.dialog:  # square None: its card isn't on screen or is turned away (memreader)
+        return HIDDEN
+    if any(touches(square, w) for w in windows):
         return HIDDEN
     if ui.inspecting:  # the right-clicked card fills the screen: its padlock rides on it (an event's too), and so do
         # a right-clicked monster's items' (owner, 2026-10-15); nothing else can be seen or clicked
@@ -78,3 +76,21 @@ def alpha(padlock: Padlock, square: Optional[Rect], ui, covers, pad: float, turn
     if padlock.place is not None and turning_since and now < turning_since + padlock.place * FLIP_STAGGER:
         return HIDDEN  # its card hasn't turned face-up yet
     return SEE_THROUGH if covered(square, covers, pad, padlock.card) else SOLID
+
+
+def inspected(locks, squares, ui, window: tuple) -> Optional[Tuple[str, float, float]]:
+    """The right-clicked card's "Locked behind" line (owner, 2026-11-10): (text, centre x, top y) on screen, just under
+    the card's art - its rect from memory, or under its padlock for an event (memory has the event as a point). None
+    when nothing locked is being inspected. squares: each lock's padlock square on screen (spot)."""
+    if ui is None or not ui.inspecting or ui.dialog:
+        return None
+    for lock, square in zip(locks, squares):
+        if lock.card is not None and lock.card == ui.hovered_card and lock.why and square is not None:
+            rect = ui.cards.get(lock.card)
+            if rect is None:
+                return None
+            left, top, right, bottom = to_screen(rect, window)
+            if bottom - top < square[3] - square[1]:  # a point: under the padlock instead
+                return f"Locked behind: {lock.why}", (square[0] + square[2]) / 2, square[3]
+            return f"Locked behind: {lock.why}", (left + right) / 2, bottom
+    return None

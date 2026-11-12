@@ -1,16 +1,14 @@
 import unittest
 
 from ..data import CARDS, CARDS_BY_NAME
-from ..items import hero_item
+from ..items import TICKET_ITEMS, hero_item
 from ..locations import day_location, monster_location, pvp_location, win_location
 from BaseClasses import CollectionState
 
-from .bases import BazaarTestBase
+from .bases import ALL_HEROES, BazaarTestBase
 
 # merchant/event locks take slots card locks would get; tests about card locks and logic fitting leave them out
 NO_ENCOUNTER_LOCKS = {"locked_encounters_percent": 0, "event_rarity_progression": 0}
-ALL_DLC = {"include_mak": True, "include_stelle": True, "include_jules": True, "include_karnok": True,
-           "include_the_dragons": True}
 
 
 class TestDefaults(BazaarTestBase):
@@ -20,8 +18,9 @@ class TestDefaults(BazaarTestBase):
 
     def test_location_count(self) -> None:
         real = [loc for loc in self.multiworld.get_locations(self.player) if loc.address is not None]
-        # per day: reach + PvP + monster rarities up to Diamond (d1 2, d2 3, d3-13 4 each) = 13 + 13 + 49, + 10 wins
-        self.assertEqual(len(real), 3 * (13 + 13 + 49 + 1))
+        # per day: reach + PvP + the top three monster rarities up to Diamond (d1 2, d2 3, d3-13 3 each, owner
+        # 2026-11-10) = 13 + 13 + 38, + 10 wins
+        self.assertEqual(len(real), 3 * (13 + 13 + 38 + 1))
 
     def test_monster_tiers_by_day(self) -> None:
         hero = self.world.starting_hero
@@ -47,11 +46,11 @@ class TestLegendaryMonsters(BazaarTestBase):
     def test_starting_hero_is_precollected_not_in_pool(self) -> None:
         start = hero_item(self.world.starting_hero)
         self.assertIn(start, [i.name for i in self.multiworld.precollected_items[self.player]])
-        self.assertNotIn(start, [i.name for i in self.multiworld.itempool if i.player == self.player])
+        self.assertNotIn(start, self.pool_names())
 
     def test_no_loot_items_locked(self) -> None:
         from ..data import CARDS_BY_NAME
-        pool = [i.name for i in self.multiworld.itempool if i.player == self.player]
+        pool = self.pool_names()
         self.assertFalse([n for n in pool if n in CARDS_BY_NAME and "Loot" in CARDS_BY_NAME[n].tags])
 
     def test_early_days_need_only_the_hero(self) -> None:
@@ -74,8 +73,9 @@ class TestSomePacks(BazaarTestBase):
 
     def test_unticked_packs_are_left_out(self) -> None:
         from ..data import PACKS
-        names = [i.name for i in self.multiworld.itempool if i.player == self.player]
+        names = self.pool_names()
         packs = {n for n in names if n.startswith("Pack: ")}
+        packs -= {f"Pack: {p.name}" for p in PACKS if p.custom}  # custom packs are on by default (see test_custom_packs)
         self.assertNotIn("Pack: Dooltron", packs)
         self.assertNotIn("Pack: The Gang", packs)
         self.assertIn("Pack: Mysteries of the Deep", packs)
@@ -94,7 +94,7 @@ class TestPackSwitchesMatchTheData(unittest.TestCase):
 
 class TestEverything(BazaarTestBase):
     options = {
-        **ALL_DLC,
+        **ALL_HEROES,
         "legacy_card_packs": True,
         "heroes_required": 8,
         "starting_hero": "the_dragons",
@@ -106,8 +106,8 @@ class TestEverything(BazaarTestBase):
         self.assertEqual(self.world.starting_hero, "The Dragons")
 
     def test_packs_in_pool(self) -> None:
-        names = [i.name for i in self.multiworld.itempool if i.player == self.player]
-        self.assertEqual(sum(n.startswith("Pack: ") for n in names), 10)
+        names = self.pool_names()
+        self.assertEqual(sum(n.startswith("Pack: ") for n in names), 24)  # 10 legacy + 14 custom (on by default)
         self.assertIn("Pack: Mysteries of the Deep", names)
 
     def test_pack_cards_not_locked_individually(self) -> None:
@@ -131,7 +131,7 @@ class TestTightSpace(BazaarTestBase):
     def test_clamped(self) -> None:
         self.assertEqual(self.world.heroes, ["Vanessa"])
         self.assertEqual(self.world.goal_count, 1)
-        pool = [i for i in self.multiworld.itempool if i.player == self.player]
+        pool = self.pool_items()
         self.assertEqual(len(pool), 6)
 
 
@@ -139,12 +139,13 @@ class TestNoLocks(BazaarTestBase):
     options = {"locked_cards_percent": 0, "lock_common_cards": False, "pvp_win_checks": False,
                "monster_checks": False, **NO_ENCOUNTER_LOCKS}
 
-    def test_duplicates_before_filler(self) -> None:
-        names = [i.name for i in self.multiworld.itempool if i.player == self.player]
+    def test_one_copy_of_each_then_filler(self) -> None:
+        """Owner 2026-11-10: no duplicates of anything in a default seed; spare checks hold filler."""
+        names = self.pool_names()
         self.assertEqual(len(names), 42)
-        self.assertEqual(sum(n.startswith("Hero: ") for n in names), 2 * 3)  # two heroes to find, 3 copies each
-        self.assertEqual(names.count("Legendary Items"), 2)  # the option's copies, never topped up
-        self.assertEqual(names.count("Expedition Tickets"), 2)
+        self.assertEqual(sum(n.startswith("Hero: ") for n in names), 2)  # two heroes to find, one copy each
+        self.assertEqual(names.count("Legendary Items"), 1)  # the option's default: one copy
+        self.assertEqual(names.count("Expedition Tickets"), 3)  # progressive: one per ticket
 
 
 class TestMonsterCap(BazaarTestBase):
@@ -159,20 +160,17 @@ class TestMonsterCap(BazaarTestBase):
 class TestGroupsAndStarters(BazaarTestBase):
     options = {"locked_cards_percent": 100, "lock_common_cards": True}
 
-    def pool(self) -> list:
-        return [i.name for i in self.multiworld.itempool if i.player == self.player]
-
-    def test_group_items_have_two_copies(self) -> None:
-        self.assertEqual(self.pool().count("Legendary Items"), 2)
-        self.assertEqual(self.pool().count("Expedition Tickets"), 2)
+    def test_group_items_have_one_copy(self) -> None:
+        self.assertEqual(self.pool_names().count("Legendary Items"), 1)
+        self.assertEqual(self.pool_names().count("Expedition Tickets"), 3)  # progressive: one per ticket
 
     def test_legendary_cards_are_not_locked_individually(self) -> None:
         from ..data import CARDS_BY_NAME
-        self.assertFalse([n for n in self.pool() if n in CARDS_BY_NAME and CARDS_BY_NAME[n].tier == "Legendary"])
+        self.assertFalse([n for n in self.pool_names() if n in CARDS_BY_NAME and CARDS_BY_NAME[n].tier == "Legendary"])
 
     def test_starter_cards_are_never_locked(self) -> None:
         from ..data import CARDS_BY_NAME
-        pool = set(self.pool())
+        pool = set(self.pool_names())
         for group, starters in self.world.starters.items():
             self.assertEqual(len(starters), 20, group)
             self.assertTrue(all(CARDS_BY_NAME[n].tier == "Bronze" for n in starters))
@@ -255,8 +253,10 @@ class TestUnlocksFromThePoolAtStart(unittest.TestCase):
 
 
 class TestUnlocksStayUsefulWhenNothingNeedsThem(BazaarTestBase):
-    options = {"max_monster_tier": "diamond", "pvp_win_checks": False, "legendary_items": 1,
-               "event_rarity_progression": 2}
+    # power items count down from the last day (owner 2026-11-11): a seed with no Diamond or Legendary monster
+    # checks never needs them, so they stay useful
+    options = {"max_monster_tier": "gold", "pvp_win_checks": False, "legendary_items": 1,
+               "event_rarity_progression": 2, "max_day": 10}
 
     def test_useful(self) -> None:
         from BaseClasses import ItemClassification
@@ -265,30 +265,32 @@ class TestUnlocksStayUsefulWhenNothingNeedsThem(BazaarTestBase):
         self.assertEqual(names["Event Rarity Progression"], ItemClassification.useful)
 
 
-class TestFullPoolHasNoFiller(BazaarTestBase):
-    def test_default_fills_every_check_with_real_unlocks(self) -> None:
-        from ..items import FILLER_ITEMS
-        names = [i.name for i in self.multiworld.itempool if i.player == self.player]
-        self.assertFalse([n for n in names if n in FILLER_ITEMS])
+class TestDefaultHasNoDuplicates(BazaarTestBase):
+    """Owner 2026-11-10: "no duplicates of anything should exist by default"."""
+    def test_every_unlock_once(self) -> None:
+        from ..items import EXPEDITION_TICKETS, FILLER_ITEMS, LOCK_BYPASS, SELL_TRAP
+        names = self.pool_names()
+        counted = {SELL_TRAP, LOCK_BYPASS, "Trap Shield", "Event Rarity Progression", EXPEDITION_TICKETS,
+                   *FILLER_ITEMS}
+        self.assertEqual([n for n in set(names) if n not in counted and names.count(n) > 1], [])
+        self.assertEqual(names.count(EXPEDITION_TICKETS), 3)  # progressive: one per ticket, not a duplicate
 
 
 class TestHalfPercent(BazaarTestBase):
-    options = {"locked_cards_percent": 50, "legendary_items": 2, "expedition_tickets": 1,
+    options = {"locked_cards_percent": 50, "legendary_items": 2, "expedition_ticket_unlocks": "separate",
                "duplicate_cards": ["Cutlass"]}
 
-    def test_rest_are_duplicates_in_order(self) -> None:
+    def test_rest_is_filler_not_copies(self) -> None:
         from ..items import FILLER_ITEMS
-        names = [i.name for i in self.multiworld.itempool if i.player == self.player]
-        self.assertFalse([n for n in names if n in FILLER_ITEMS])
-        self.assertEqual(sum(n.startswith("Hero: ") for n in names), 2 * 3)
-        unlocks = [n for n in names if n not in ("Sell Trap", "Lock Bypass")]  # those are counts, not copies
-        self.assertTrue(max(unlocks.count(n) for n in set(unlocks)) <= 3)
+        names = self.pool_names()
+        self.assertTrue([n for n in names if n in FILLER_ITEMS])
+        self.assertEqual(sum(n.startswith("Hero: ") for n in names), 2)
 
     def test_copy_counts_you_set_never_grow(self) -> None:
         """User, 2026-09-30: asking for 2 Legendary Items and then finding a 3rd would feel wrong."""
-        names = [i.name for i in self.multiworld.itempool if i.player == self.player]
+        names = self.pool_names()
         self.assertEqual(names.count("Legendary Items"), 2)
-        self.assertEqual(names.count("Expedition Tickets"), 1)
+        self.assertEqual(sorted(n for n in names if n in TICKET_ITEMS), sorted(TICKET_ITEMS))  # separate: one each
         self.assertIn(names.count("Cutlass"), (0, 2))  # 0 if Cutlass wasn't picked as a lock
 
 
@@ -328,7 +330,7 @@ class TestSellTrapsInPool(BazaarTestBase):
     options = {"sell_traps": 5}
 
     def test_traps_are_placed(self) -> None:
-        names = [i.name for i in self.multiworld.itempool if i.player == self.player]
+        names = self.pool_names()
         self.assertEqual(names.count("Sell Trap"), 5)
 
 
@@ -336,7 +338,7 @@ class TestLockBypassesInPool(BazaarTestBase):
     options = {"sell_traps": 2, "lock_bypasses": 3}
 
     def test_bypasses_are_placed_next_to_traps(self) -> None:
-        names = [i.name for i in self.multiworld.itempool if i.player == self.player]
+        names = self.pool_names()
         self.assertEqual(names.count("Lock Bypass"), 3)
         self.assertEqual(names.count("Sell Trap"), 2)
 
@@ -378,7 +380,20 @@ class TestOnlyDayChecks(BazaarTestBase):
     options = {"pvp_win_checks": False, "monster_checks": False, **NO_ENCOUNTER_LOCKS}
 
     def test_logic_fits_the_free_checks(self) -> None:
-        self.assertLessEqual(-(-self.world.logic["day_10"] // 2), 7 - 2)
+        """What fitting must give: each check needing K cards has K + FREE_MARGIN checks needing fewer. (Was a bound
+        on logic["day_10"], which only caps the needs: a hero with 5 locked cards fits unlowered - 2026-11-09, when
+        progressive tickets took one more slot.)"""
+        from .. import FREE_MARGIN
+        from ..locations import card_requirements, card_total, items_for_cards
+        w = self.world
+        for hero in w.heroes:
+            items = w.lock_items.get(hero, [])
+            needs = sorted(card_requirements(hero, card_total(items), w.options.max_day.value, False,
+                                             w.monster_tiers, w.logic).values())
+            for need in needs:  # since 2026-11-10 a pack is 10 cards in one item (owner)
+                if need:
+                    self.assertGreaterEqual(sum(n < need for n in needs), items_for_cards(items, need) + FREE_MARGIN,
+                                            hero)
 
 
 class TestNoLegendaryItemsUnlock(BazaarTestBase):
@@ -447,10 +462,10 @@ class TestOneUnlockPerCard(unittest.TestCase):
         {"legacy_card_packs": True},
         {"legacy_card_packs": True, "pack_vanessa_the_gang": False, "pack_dooley_primal_dooley": False},
         {"legacy_card_packs": True, "duplicate_all_cards": True, "locked_cards_percent": 50},
-        {"legendary_items": 0, "expedition_tickets": 0},
-        {"legendary_items": 3, "expedition_tickets": 3, "locked_cards_percent": 100, "lock_common_cards": True,
+        {"legendary_items": 0, "expedition_ticket_unlocks": "off"},
+        {"legendary_items": 3, "expedition_ticket_unlocks": "separate", "locked_cards_percent": 100, "lock_common_cards": True,
          "lock_loot_items": True, "starter_cards": 0},
-        {**ALL_DLC, "legacy_card_packs": True, "heroes_required": 8, "locked_cards_percent": 100,
+        {**ALL_HEROES, "legacy_card_packs": True, "heroes_required": 8, "locked_cards_percent": 100,
          "duplicate_cards": ["Cutlass", "Dooltron"]},
     ]
 
@@ -504,11 +519,6 @@ class TestLogicClimbsAfterDay10(unittest.TestCase):
             needs = self.needs(max_day, {"day_10": 16, "last_day": 28, "diamond": 10, "legendary": 20})
             self.assertEqual(needs[win_location("Vanessa")], 16, max_day)
 
-    def test_seeds_from_before_the_climb_keep_their_flat_logic(self) -> None:
-        needs = self.needs(13, {"day_10": 15, "diamond": 10, "legendary": 20})
-        self.assertEqual({needs[day_location("Vanessa", d)] for d in range(10, 14)}, {15})
-        self.assertEqual(needs[win_location("Vanessa")], 15)
-
 
 class TestHardcoreLogicGenerates(BazaarTestBase):
     options = {"max_day": 16, "locked_cards_percent": 100, "logic_day_10_cards": 25, "logic_last_day_cards": 50,
@@ -537,17 +547,17 @@ class TestTightOneHeroDaysOnly(BazaarTestBase):
 
 
 class TestTightOneHeroPvPOnly(BazaarTestBase):
-    options = {**TIGHT, **ONE_HERO, "monster_checks": False, "legendary_items": 0, "expedition_tickets": 0,
+    options = {**TIGHT, **ONE_HERO, "monster_checks": False, "legendary_items": 0, "expedition_ticket_unlocks": "off",
                "logic_day_10_cards": 18}
 
 
 class TestTightOneHeroShortRun(BazaarTestBase):
-    options = {**TIGHT, **ONE_HERO, "max_day": 5, "legendary_items": 0, "expedition_tickets": 0}
+    options = {**TIGHT, **ONE_HERO, "max_day": 5, "legendary_items": 0, "expedition_ticket_unlocks": "off"}
 
 
 class TestTightThreeHeroesShortRun(BazaarTestBase):
     options = {**TIGHT, "max_day": 7, "pvp_win_checks": False, "monster_checks": False, "legendary_items": 0,
-               "expedition_tickets": 0}
+               "expedition_ticket_unlocks": "off"}
 
     def test_logic_was_lowered_to_fit(self) -> None:
         self.assertLess(self.world.logic["day_10"], 16)
@@ -559,8 +569,9 @@ class TestDuplicateAllHasNoFiller(BazaarTestBase):
 
     def test_pairs_not_filler(self) -> None:
         from ..items import FILLER_ITEMS
-        names = [i.name for i in self.multiworld.itempool if i.player == self.player]
-        self.assertFalse([n for n in names if n in FILLER_ITEMS])
+        names = self.pool_names()
+        # an odd number of spare checks leaves one filler: since 2026-11-10 nothing tops it up with a 3rd copy
+        self.assertLessEqual(len([n for n in names if n in FILLER_ITEMS]), 1)
         cards = {n for n in names if n in CARDS_BY_NAME}
         self.assertTrue(cards and all(names.count(n) == 2 for n in cards))
 
@@ -573,11 +584,14 @@ class TestEncounterLocks(BazaarTestBase):
     def test_a_quarter_of_the_meetable_ones_are_locked(self) -> None:
         from ..data import ENCOUNTERS, EVENTS
         from ..items import encounter_item
+        from ..items import LEVEL_UP_ITEMS
         heroes = set(self.world.heroes) | {"Common"}
         meetable = [encounter_item(e) for e in ENCOUNTERS
                     if heroes & {h for g in e.guids for h in EVENTS[g]["heroes"]}]
-        self.assertEqual(len(self.world.encounter_locks), (len(meetable) - 5) * 25 // 100)
-        self.assertTrue(set(self.world.encounter_locks) <= set(meetable))
+        on_map = [n for n in self.world.encounter_locks if n not in LEVEL_UP_ITEMS]  # level-ups are always locked
+        self.assertEqual(len(on_map), (len(meetable) - 5) * 25 // 100)
+        self.assertTrue(set(on_map) <= set(meetable))
+        self.assertEqual(self.world.encounter_locks[:len(LEVEL_UP_ITEMS)], LEVEL_UP_ITEMS)
 
     def test_starters_are_low_tier_merchants_never_locked(self) -> None:
         from ..data import EVENTS
@@ -590,12 +604,16 @@ class TestEncounterLocks(BazaarTestBase):
             self.assertTrue(any(EVENTS[g]["tier"] in ("Bronze", "Silver", "Gold") for g in encounter.guids))
 
     def test_items_are_in_the_pool_and_locks_never_progression(self) -> None:
-        items = [i for i in self.multiworld.itempool if i.player == self.player]
+        items = self.pool_items()
         names = [i.name for i in items]
         self.assertEqual(names.count("Event Rarity Progression"), 3)
         for name in self.world.encounter_locks:
             self.assertEqual(names.count(name), 1)
-        self.assertFalse([i.name for i in items if i.advancement and i.name in self.world.encounter_locks])
+        # merchant/event locks are never progression; a level-up lock is a power item (owner, 2026-11-11), so it is
+        # whenever late monster checks need power
+        from ..items import LEVEL_UP_ITEMS
+        self.assertFalse([i.name for i in items if i.advancement and i.name in self.world.encounter_locks
+                          and i.name not in LEVEL_UP_ITEMS])
 
     def test_slot_data_carries_them(self) -> None:
         from ..items import item_name_to_id
@@ -613,7 +631,7 @@ class TestEncounterLocksMeetOnlySeedHeroes(BazaarTestBase):
     def test_only_vanessa_or_common_encounters(self) -> None:
         from ..data import EVENTS
         from ..items import ENCOUNTERS_BY_ITEM
-        for name in self.world.encounter_locks:
+        for name in [n for n in self.world.encounter_locks if n in ENCOUNTERS_BY_ITEM]:  # not level-ups (Common)
             heroes = {h for g in ENCOUNTERS_BY_ITEM[name].guids for h in EVENTS[g]["heroes"]}
             self.assertTrue(heroes & {"Vanessa", "Common"}, name)
 
@@ -637,3 +655,42 @@ class TestEncounterData(unittest.TestCase):
         from ..data import EVENTS
         marked = {e["name"] for e in EVENTS.values() if e["expedition"]}
         self.assertTrue({"Crash Site Expedition", "Temple Expedition", "Temple Vault", "Temple Reliquary"} <= marked)
+
+
+class TestMonsterRarities(unittest.TestCase):
+    """Owner 2026-11-10: "by default its top 3", "Hard core should have them all on", "easy is bottom 3"."""
+    def tiers(self, mode: str, highest: str = "legendary") -> dict:
+        from .bases import BazaarTestBase
+        test = type("T", (BazaarTestBase,), {"options": {"monster_rarities": mode, "max_monster_tier": highest}})
+        case = test("test_empty_state_can_reach_something")
+        case.world_setup()
+        return {day: case.world.monster_tiers(day) for day in (1, 2, 3, 6, 13)}
+
+    def test_top_three_is_the_default_and_drops_low_rarities(self) -> None:
+        from ..options import MonsterRarities
+        self.assertEqual(MonsterRarities.default, MonsterRarities.option_top_three)
+        self.assertEqual(self.tiers("top_three"), {1: ["Bronze", "Silver"], 2: ["Bronze", "Silver", "Gold"],
+                                                   3: ["Silver", "Gold", "Diamond"], 6: ["Gold", "Diamond", "Legendary"],
+                                                   13: ["Gold", "Diamond", "Legendary"]})
+
+    def test_all_and_bottom_three(self) -> None:
+        self.assertEqual(self.tiers("all")[6], ["Bronze", "Silver", "Gold", "Diamond", "Legendary"])
+        self.assertEqual(self.tiers("bottom_three")[13], ["Bronze", "Silver", "Gold"])
+
+    def test_cap_applies_first(self) -> None:
+        self.assertEqual(self.tiers("top_three", "diamond")[13], ["Silver", "Gold", "Diamond"])
+
+    def test_presets(self) -> None:
+        from ..options import option_presets
+        self.assertEqual(option_presets["Hardcore"]["monster_rarities"], "all")
+        self.assertEqual(option_presets["Casual"]["monster_rarities"], "bottom_three")
+
+
+
+class TestClientKnowsEverySlotDataKey(BazaarTestBase):
+    """The client has no old-seed defaults (owner, 2026-11-11), so a key the world sends but NOT_CONNECTED_SETTINGS lacks
+    would crash a disconnected client the first time something asks for it - and a new key must not be forgotten."""
+
+    def test_not_connected_has_exactly_the_worlds_keys(self) -> None:
+        from ..client import NOT_CONNECTED_SETTINGS
+        self.assertEqual(set(NOT_CONNECTED_SETTINGS), set(self.world.fill_slot_data()))

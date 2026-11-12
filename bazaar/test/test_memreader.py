@@ -214,6 +214,32 @@ class TestFieldLookupsAreRemembered(unittest.TestCase):
             mono.field(1, "opponentItemSockets")
 
 
+class TestFightBoardNeverInPvP(unittest.TestCase):
+    """Owner, 2026-11-09: padlocks on a monster's items in its fight "(Unless its a pvp fight)"; the reader never looks
+    at another player (2026-10-14)."""
+
+    def sockets_read(self, state: str, now="same") -> list:
+        reader = memreader.Reader()
+        reader.memory = mock.Mock()
+        reader.offers_now = (state, frozenset())
+        reader._get = mock.Mock(return_value=0)
+        reader._offer_sockets = mock.Mock(return_value=0)
+        reader._state_now = mock.Mock(return_value=state if now == "same" else now)
+        reader._card_rects(0x1000, [])
+        return [c.args[1] for c in reader._offer_sockets.call_args_list]
+
+    def test_a_monster_or_event_fight_reads_the_monsters_items(self) -> None:
+        self.assertEqual(self.sockets_read("Combat"), ["opponentItemSockets"])
+
+    def test_a_pvp_fight_reads_nothing_of_the_opponent(self) -> None:
+        self.assertEqual(self.sockets_read("PVPCombat"), [])
+
+    def test_a_stale_fight_reading_never_reads_a_pvp_opponent(self) -> None:
+        """Review 2026-11-09: the last full snapshot can be ~0.3 s old (or older through failed reads)."""
+        self.assertEqual(self.sockets_read("Combat", now="PVPCombat"), [])
+        self.assertEqual(self.sockets_read("Combat", now=None), [])
+
+
 class TestBoardReadFetchesBlocks(unittest.TestCase):
     """2026-10-15: a board read made ~50 calls into Windows per card (0.7 ms a card); a 144 Hz frame is 6.9 ms."""
 

@@ -40,6 +40,10 @@ VERSION_RE = re.compile(r"\[VersionShow\]\s+Version: (\d+\.\d+\.\d+)")
 CONCEDE_RE = re.compile(r"type=AbandonRunCommand|Sending AbandonRunCommand")
 SOLD_RE = re.compile(r"\[BoardManager\] Sold Card (itm_\S+) for \d+ gold")
 TRANSFORM_RE = re.compile(r"\[GameSimHandler\] Transformed: (itm_\S+) into: (itm_\S+)")
+# The end of one game message from the server. Leaving a choice screen and the item you picked there come in the same
+# message, and the log prints the state change FIRST (owner's log, 2026-11-11: Shiny! and 5 event picks) - so the
+# leave only counts once its message is handled, and the pick still counts as taken there.
+HANDLED_RE = re.compile(r"\[GameMessageHandler\] Handled: type=NetMessageGameSim")
 
 # states in which the game shows you something to pick from (a shop, an event, a level-up, loot)
 CHOICE_STATES = ("EncounterState", "LevelUpState", "LootState", "PedestalState")
@@ -150,8 +154,14 @@ class LogParser:
         self.conceded = False
         self.warned_unrecognized = False
         self.runs_started = 0  # runs started so far in this log
+        self.leaving = False  # a choice screen was left: EncounterLeft waits for its game message (HANDLED_RE)
 
     def feed(self, line: str) -> Iterator[Event]:
+        if self.leaving and not GAIN_RE.search(line) and (HANDLED_RE.search(line) or STATE_RE.search(line)
+                                                           or ENCOUNTER_RE.search(line) or RUN_READY_RE.search(line)):
+            self.leaving = False
+            if self.in_run:
+                yield EncounterLeft()
         if match := VERSION_RE.search(line):
             yield GameVersion(match[1])
             return
@@ -170,7 +180,7 @@ class LogParser:
             old, new = match[1], match[2]
             self.state = new
             if old in CHOICE_STATES and new != old and self.in_run:
-                yield EncounterLeft()
+                self.leaving = True  # said once this game message is handled: its item gains come first
             if new in ("PVPCombatState", "CombatState"):
                 self.in_pvp = new == "PVPCombatState"
                 self.in_combat = new == "CombatState"

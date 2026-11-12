@@ -15,6 +15,9 @@ def run_events(lines):
     return [e for e in LogParser().feed_all(lines) if not isinstance(e, HeroSelected)]
 
 
+HANDLED = "[x] [GameMessageHandler] Handled: type=NetMessageGameSim, id=a, durationMs=1, result=success"
+
+
 def state(old: str, new: str) -> str:
     return f"[12:00:00.000] [AppState] State changed from [{old}] to [{new}]"
 
@@ -102,7 +105,7 @@ class TestLogParser(unittest.TestCase):
         lines = RUN_START + [state("ChoiceState", "EncounterState"),
                              f"[x] [BoardManager] Card Purchased: InstanceId: enc_abc - TemplateId{shop} - "
                              "Target:OpponentSocket_5 - SectionOpponent",
-                             state("EncounterState", "ChoiceState")]
+                             state("EncounterState", "ChoiceState"), HANDLED]
         events = [e for e in LogParser().feed_all(lines) if isinstance(e, (EncounterEntered, EncounterLeft))]
         self.assertEqual(events, [EncounterEntered(shop), EncounterLeft()])
 
@@ -111,10 +114,38 @@ class TestLogParser(unittest.TestCase):
         lines = RUN_START + [state("EncounterState", "LevelUpState"),
                              f"[x] [BoardManager] Card Purchased: InstanceId: ste_abc - TemplateId{step} - "
                              "Target:OpponentSocket_5 - SectionOpponent",
-                             state("LevelUpState", "ChoiceState")]
+                             state("LevelUpState", "ChoiceState"), HANDLED]
         events = [e for e in LogParser().feed_all(lines) if isinstance(e, (EncounterEntered, EncounterLeft))]
         # leaving the event that triggered the level-up closes its warning first
         self.assertEqual(events, [EncounterLeft(), EncounterEntered(step), EncounterLeft()])
+
+    def test_the_pick_logged_after_the_leave_still_counts_as_taken_there(self) -> None:
+        """The owner's Player.log, 2026-11-11 (Shiny!, and 5 event picks the same way): the state change comes before
+        the picked item, inside one game message - the item is taken at the event, then the event is left."""
+        shiny = "e286d583-65b1-4fc3-b76e-c182c5c34604"
+        item = "4caeadbe-7637-4e40-805d-39d4bfc08816"
+        lines = RUN_START + [
+            state("EncounterState", "LevelUpState"),
+            f"[14:38:42.832] [BoardManager] Card Purchased: InstanceId: ste_C1-aWZc - TemplateId{shiny} - "
+            "Target:OpponentSocket_5 - SectionOpponent",
+            "[14:38:42.834] [GameMessageHandler] Handled: type=NetMessageGameSim, id=QyQ, durationMs=9, result=success",
+            "[14:40:26.140] [NetMessageProcessor] Received: type=NetMessageGameSim, id=2Ef",
+            "[14:40:26.140] [AppState] State changed from [LevelUpState] to [ChoiceState]",
+            f"[14:40:26.160] [BoardManager] Card Purchased: InstanceId: itm_Wk2cUj5 - TemplateId{item} - "
+            "Target:PlayerSocket_2 - SectionPlayer",
+            "[14:40:26.161] [GameMessageHandler] Handled: type=NetMessageGameSim, id=2Ef, durationMs=21, result=success"]
+        events = [e for e in LogParser().feed_all(lines) if isinstance(e, (EncounterEntered, EncounterLeft, CardGained))]
+        self.assertEqual([type(e).__name__ for e in events][-3:], ["EncounterEntered", "CardGained", "EncounterLeft"])
+        self.assertEqual(events[-3], EncounterEntered(shiny))
+
+    def test_a_leave_without_its_handled_line_comes_out_at_the_next_screen(self) -> None:
+        shop = "11111111-1111-1111-1111-111111111111"
+        lines = RUN_START + [state("ChoiceState", "EncounterState"),
+                             f"[x] [BoardManager] Card Purchased: InstanceId: enc_abc - TemplateId{shop} - "
+                             "Target:OpponentSocket_5 - SectionOpponent",
+                             state("EncounterState", "ChoiceState"), state("ChoiceState", "CombatState")]
+        events = [e for e in LogParser().feed_all(lines) if isinstance(e, (EncounterEntered, EncounterLeft))]
+        self.assertEqual(events, [EncounterEntered(shop), EncounterLeft()])
 
     def test_fight_without_a_recognised_run_start_is_reported_once(self) -> None:
         # e.g. a patch renamed the run-start line: nothing counts, but the client can say why

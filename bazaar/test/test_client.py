@@ -8,7 +8,7 @@ from NetUtils import NetworkItem, NetworkSlot, SlotType
 
 from ..client import BazaarContext, catch_up, dispatch
 from ..data import CARDS
-from ..items import BASE_ID, EVENT_RARITY_ID, GAME, item_name_to_id
+from ..items import BASE_ID, EVENT_RARITY_ID, GAME, SLOT_DATA_VERSION, item_name_to_id
 from ..locations import day_location, location_name_to_id, monster_location, pvp_location, win_location
 from ..logparser import (CardGained, CardSold, CardTransformed, DayReached, HeroSelected, LogParser, MonsterFought,
                          PvPFought, RunEnded, RunStarted)
@@ -33,9 +33,16 @@ class ClientTestBase(unittest.TestCase):
             return BazaarContext()
         self.ctx = self.loop.run_until_complete(make())
         self.ctx.caught_up = True  # as after watch_log's catch-up: tests feed events straight in
-        self.ctx.slot_data = {"heroes": ["Vanessa", "Dooley"], "max_day": 15, "heroes_required": 2,
-                              "pvp_win_checks": True, "lock_items": [BASE_ID + LOCKED.ap_id],
-                              "monster_tiers": {str(d): ["Bronze", "Silver"] for d in range(1, 16)}}
+        # a complete slot_data, as the world sends it (the client has no defaults for missing keys any more)
+        self.ctx.slot_data = {"heroes": ["Vanessa", "Dooley"], "starting_hero": "Vanessa", "max_day": 15,
+                              "heroes_required": 2, "pvp_win_checks": True, "lock_items": [BASE_ID + LOCKED.ap_id],
+                              "monster_tiers": {str(d): ["Bronze", "Silver"] for d in range(1, 16)},
+                              "expedition_ticket_unlocks": "progressive", "sizeinator_unlock": "with_tiny_world_ticket",
+                              "death_link": False, "death_link_amnesty": 0, "death_links_before_concede": 1,
+                              "death_links_same_run": False, "sell_trap_days": 2, "death_link_on_concede": False,
+                              "logic": {"day_10": 0, "last_day": 0, "diamond": 0, "legendary": 0}, "power_items": 0,
+                              "encounter_locks": [], "event_rarity": 0, "exempt_expeditions": True,
+                              "created_items": 0, "slot_data_version": SLOT_DATA_VERSION}
         self.ctx.items_received = [NetworkItem(item_name_to_id[f"Hero: {h}"], 0, 0, 0) for h in self.heroes_owned]
         self.sent: set = set()
 
@@ -407,10 +414,12 @@ class TestStatusLine(ClientTestBase):
         self.assertIn("Mak", data["warning"])  # not in this multiworld
 
     def test_random_that_can_only_roll_unlocked_heroes_is_fine(self) -> None:
-        from ..client import HEROES_IN_GAME
+        from ..data import HEROES
         from ..memreader import HeroPrefs
         self.play(HeroSelected("Vanessa"))
-        self.ctx.handle_hero_prefs(HeroPrefs(True, frozenset(h for h in HEROES_IN_GAME if h != "Vanessa")))
+        # PlayerPreferences names the heroes the game's way ("Hero8" = The Dragons)
+        excluded = {h for h in HEROES if h not in ("Vanessa", "The Dragons")} | {"Hero8"}
+        self.ctx.handle_hero_prefs(HeroPrefs(True, frozenset(excluded)))
         data = self.ctx.menu_data()
         self.assertIsNone(data["warning"])
         self.assertIn("Random is on", data["note"])
@@ -423,7 +432,7 @@ class TestStatusLine(ClientTestBase):
     def test_menu_lists_checks_done_and_in_logic(self) -> None:
         """Vanessa has no locked items in this test seed, so every check (days 1-15, PvP, 2 monsters a day,
         10 wins) is in logic: 15 * 4 + 1 = 61. Nothing done yet."""
-        self.ctx.slot_data.update(logic={"day_10": 15, "diamond": 10, "legendary": 20}, lock_items=[])
+        self.ctx.slot_data.update(logic={"day_10": 15, "last_day": 15, "diamond": 10, "legendary": 20}, lock_items=[])
         self.play(HeroSelected("Vanessa"))
         self.assertIn("   Vanessa   0 / 61", self.ctx.status_line()[0])
         self.ctx.stored_data[self.ctx.sent_key()] = [location_name_to_id[day_location("Vanessa", 1)]]
@@ -433,7 +442,7 @@ class TestStatusLine(ClientTestBase):
         """With 20 of Vanessa's cards locked and none received, day 8+ checks aren't in logic yet (days 1-7:
         reach, 2 monsters = 21, plus PvP days 1-6 = 6 -> 27)."""
         vanessa = [BASE_ID + c.ap_id for c in CARDS if c.hero == "Vanessa" and c.shop][:20]
-        self.ctx.slot_data.update(logic={"day_10": 15, "diamond": 10, "legendary": 20}, lock_items=vanessa)
+        self.ctx.slot_data.update(logic={"day_10": 15, "last_day": 15, "diamond": 10, "legendary": 20}, lock_items=vanessa)
         self.play(HeroSelected("Vanessa"))
         self.assertIn("   Vanessa   0 / 27", self.ctx.status_line()[0])
 
@@ -724,7 +733,7 @@ class TestSellTraps(ClientTestBase):
         title, lines, blocked = self.ctx.overlay.show_locked.call_args.args[:2] + (
             self.ctx.overlay.show_locked.call_args.kwargs["blocked"],)
         self.assertEqual((title, blocked), ("SELL TRAP", False))  # a warning first, not a block
-        self.assertIn(f"sell {self.ITEM.name} before day 4", lines[0])
+        self.assertIn(f"sell {self.ITEM.name} before the end of day 3", lines[0])
         self.ctx.save_state()
         self.ctx.load_state()  # the client restarts mid-trap: the trap is still there
         self.play(DayReached(5))  # days can be skipped past the deadline
@@ -838,6 +847,132 @@ class TestLockBypass(ClientTestBase):
         self.assertIn("Lock Bypasses: 2", self.ctx.status_line()[0])
 
 
+class TestKeptIntoPvP(ClientTestBase):
+    """Owner, 2026-11-09: "If you have a padlocked item for more than a day AKA when entering a PVP fight then the rest
+    of the run is locked and you are forced to concede"; "Lock bypass will re-unlock the run and send the checks that
+    were missed"; before that, checks pause while you hold it, as before; the warning shows "after the monster fight
+    and before PVP", "the exact same notice ... bolder and surrounded by flames"."""
+    from ..logparser import FightStarted as _Fight
+    PVP, MONSTER_FIGHT = _Fight(True), _Fight(False)
+
+    def receive_bypass(self) -> None:
+        self.ctx.items_received.append(NetworkItem(item_name_to_id["Lock Bypass"], 0, 0, 0))
+        self.ctx.refresh_held()
+
+    def bypass_run(self) -> None:
+        """The notice's Use Bypass button, as the client runs it: on the event loop (main: call_soon_threadsafe)."""
+        async def press():
+            self.ctx.use_bypass("forfeit")
+            await asyncio.sleep(0.01)  # the held-back checks go out as a task
+        self.await_(press())
+
+    def hold_into_pvp(self) -> None:
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True), MonsterFought(BRONZE_MONSTER, 1, True),
+                  self.PVP, PvPFought(1, True), DayReached(2))
+
+    def test_sold_before_the_pvp_fight_the_run_carries_on(self) -> None:
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True), MonsterFought(BRONZE_MONSTER, 1, True))
+        self.assertFalse(self.was_sent(monster_location("Vanessa", 1, "Bronze")))  # paused while held, as before
+        self.play(CardSold("itm_x"), self.PVP, PvPFought(1, True), DayReached(2))
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.assertTrue(self.was_sent(pvp_location("Vanessa", 1)))
+        self.assertTrue(self.was_sent(day_location("Vanessa", 2)))
+
+    def test_kept_into_the_pvp_fight_the_rest_of_the_run_is_locked(self) -> None:
+        self.hold_into_pvp()
+        self.assertIn("INTO A PVP FIGHT", self.ctx.blocked_reason())
+        self.assertFalse(self.was_sent(pvp_location("Vanessa", 1)))
+        self.assertFalse(self.was_sent(day_location("Vanessa", 2)))
+        self.play(CardSold("itm_x"), DayReached(3))  # selling it afterwards doesn't bring the run back
+        self.assertIn("INTO A PVP FIGHT", self.ctx.blocked_reason())
+        self.assertFalse(self.was_sent(day_location("Vanessa", 3)))
+
+    def test_receiving_the_cards_unlock_afterwards_doesnt_bring_it_back(self) -> None:
+        self.hold_into_pvp()
+        self.ctx.items_received.append(NetworkItem(BASE_ID + LOCKED.ap_id, 0, 0, 0))
+        self.ctx.refresh_held()
+        self.assertIn("INTO A PVP FIGHT", self.ctx.blocked_reason())
+
+    def test_a_lock_bypass_brings_the_run_back_and_sends_what_was_missed(self) -> None:
+        self.hold_into_pvp()
+        self.play(CardSold("itm_x"), DayReached(3))
+        self.receive_bypass()
+        self.bypass_run()
+        self.assertIsNone(self.ctx.blocked_reason())
+        for name in (pvp_location("Vanessa", 1), day_location("Vanessa", 2), day_location("Vanessa", 3)):
+            self.assertTrue(self.was_sent(name), name)
+        self.assertEqual(self.ctx.bypasses_ready(), 0)
+        self.play(DayReached(4))
+        self.assertTrue(self.was_sent(day_location("Vanessa", 4)))
+
+    def test_one_bypass_also_covers_the_card_still_held(self) -> None:
+        self.hold_into_pvp()
+        self.receive_bypass()
+        self.bypass_run()
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.assertTrue(self.was_sent(day_location("Vanessa", 2)))
+
+    def test_no_bypass_ready_means_concede(self) -> None:
+        self.ctx.overlay = mock.Mock()
+        self.hold_into_pvp()
+        self.ctx.use_bypass("forfeit")  # none to use: nothing happens
+        self.assertIn("INTO A PVP FIGHT", self.ctx.blocked_reason())
+        self.assertIn("CONCEDE THIS RUN", self.ctx.overlay.show_locked.call_args.args[1][0])
+
+    def test_a_monster_fight_holding_it_is_not_the_pvp_fight(self) -> None:
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True), self.MONSTER_FIGHT,
+                  MonsterFought(BRONZE_MONSTER, 1, True), CardSold("itm_x"), DayReached(2))
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def test_a_card_bypassed_before_the_fight_is_fine(self) -> None:
+        self.receive_bypass()
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True))
+        self.ctx.use_bypass(LOCKED.guid)
+        self.play(self.PVP, PvPFought(1, True), DayReached(2))
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.assertTrue(self.was_sent(day_location("Vanessa", 2)))
+
+    def test_an_overdue_sell_trap_item_counts_too(self) -> None:
+        item = TestSellTraps.ITEM
+        self.play(RunStarted("Vanessa"), CardGained(item.guid, "itm_a", False), DayReached(2))
+        self.ctx.items_received.append(NetworkItem(item_name_to_id["Sell Trap"], 0, 0, 0))
+        self.ctx.receive_traps()  # sell before day 4 starts
+        self.play(self.PVP, PvPFought(3, True), DayReached(4), self.PVP)  # day 4's fight: overdue
+        self.assertIn("INTO A PVP FIGHT", self.ctx.blocked_reason())
+
+    def test_it_survives_a_client_restart_and_a_new_run_starts_clean(self) -> None:
+        self.hold_into_pvp()
+        self.ctx.load_state()
+        self.assertIn("INTO A PVP FIGHT", self.ctx.blocked_reason())
+        self.play(RunEnded(False, 2, conceded=True), RunStarted("Vanessa"), DayReached(2))
+        self.assertIsNone(self.ctx.blocked_reason())
+
+    def test_the_flaming_warning_shows_from_the_monster_fight_to_the_pvp_fight(self) -> None:
+        self.ctx.overlay = mock.Mock()
+        danger = lambda: self.ctx.overlay.show_locked.call_args.kwargs.get("danger")  # noqa: E731
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True))
+        self.assertFalse(danger())  # before the monster fight: the usual notice
+        self.play(MonsterFought(BRONZE_MONSTER, 1, False))  # won or lost, the PvP fight is next
+        self.assertTrue(danger())
+        self.assertIn("CHECKS ARE BLOCKED", self.ctx.overlay.show_locked.call_args.args[0])  # the same notice
+        self.assertIn("OR THIS RUN IS LOST", self.ctx.overlay.show_locked.call_args.args[1][0])
+        self.play(CardSold("itm_x"))
+        self.assertIsNone(self.ctx.overlay.show_locked.call_args.args[0])  # sold: gone
+        self.play(CardGained(LOCKED.guid, "itm_y", True))  # loot after the fight: back at once
+        self.assertTrue(danger())
+        self.play(self.PVP)
+        self.assertFalse(danger())  # too late: the kept-into-PvP block instead
+
+    def test_the_warning_beeps_once_a_day(self) -> None:
+        self.ctx.overlay = mock.Mock()
+        self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True))
+        with mock.patch.object(self.ctx, "beep") as beep:
+            self.play(MonsterFought(BRONZE_MONSTER, 1, False))  # lost: no check refused, only the warning beeps
+            self.ctx.refresh_held()
+            self.ctx.refresh_held()
+        self.assertEqual(beep.call_count, 1)
+
+
 class TestUnblockCommand(ClientTestBase):
     def test_unblock_needs_confirm_and_then_clears_everything(self) -> None:
         from ..client import BazaarCommandProcessor
@@ -920,10 +1055,12 @@ class TestRunIdentity(ClientTestBase):
 
     def test_new_run_after_an_unseen_loss_starts_clean(self) -> None:
         self.play(RunStarted("Vanessa", 0), DayReached(1), DayReached(2))
+        self.ctx.position = {"log": self.ctx.log_session, "events": 3}  # where the live loop had got to
         self.ctx.on_deathlink({"time": 1.0, "source": "Friend", "cause": "Friend fell."})
         # client closed; the run was lost; client opened again at the menu of the same game session
         self.parser.in_run = False
-        self.await_(catch_up(self.ctx, self.parser, [RunStarted("Vanessa", 0), DayReached(1), RunEnded(False, 2)]))
+        self.await_(catch_up(self.ctx, self.parser, [RunStarted("Vanessa", 0), DayReached(1), DayReached(2),
+                                                     RunEnded(False, 2)]))
         self.assertFalse(self.ctx.run["active"])
         self.play(RunStarted("Vanessa", 1), DayReached(1), DayReached(2))
         self.assertIsNone(self.ctx.blocked_reason())
@@ -1024,6 +1161,7 @@ class TestMissedRuns(ClientTestBase):
 
     def test_run_that_ended_during_the_drop_still_counts(self) -> None:
         self.play(RunStarted("Vanessa", 0), DayReached(1))
+        self.ctx.position = {"log": self.ctx.log_session, "events": 2}  # where the live loop had got to
         self.reconnect([RunStarted("Vanessa", 0), DayReached(1), DayReached(2), PvPFought(2, True), DayReached(3),
                         RunEnded(False, 3)], in_run=False)
         self.assertTrue(self.was_sent(day_location("Vanessa", 3)))
@@ -1371,13 +1509,24 @@ class TestShopPadlocks(ClientTestBase):
             stash=((0, "not-a-known-card", "itm_a"), (5, LOCKED.guid, "itm_b"))))
         self.assertEqual(self.yours(), ["itm_b"])
 
-    def test_your_boards_locked_cards_get_padlocks_off_fights(self) -> None:
-        """Owner, 2026-10-14: "I would like the padlocks to show on items on the board"."""
+    def test_your_boards_locked_cards_get_padlocks_in_pvp_too(self) -> None:
+        """Owner, 2026-10-14: "I would like the padlocks to show on items on the board"; 2026-11-09: only the PvP
+        opponent's side has none ("In every other scenario they are visible")."""
         board = ((2, LOCKED.guid, "itm_mine"), (4, self.row[0].guid, "itm_free"))
         self.ctx.handle_snapshot(self.snapshot(self.row)._replace(board=board))
         self.assertEqual([lock.card for lock in self.ctx.overlay.show_board_padlocks.call_args.args[0]], ["itm_mine"])
         self.ctx.handle_snapshot(self.snapshot([], state="PVPCombat")._replace(board=board))
-        self.assertEqual(self.ctx.overlay.show_board_padlocks.call_args.args[0], [])
+        self.assertEqual([lock.card for lock in self.ctx.overlay.show_board_padlocks.call_args.args[0]], ["itm_mine"])
+
+    def test_a_monster_fight_padlocks_the_monsters_locked_items_and_your_board(self) -> None:
+        """Owner, 2026-11-09: "During the fight show the padlocks ... treat it in every scenario (Unless its a pvp
+        fight) that the items have padlocks on them"."""
+        from ..memreader import BoardUI
+        board = ((2, LOCKED.guid, "itm_mine"),)
+        self.ctx.handle_snapshot(self.snapshot([], state="Combat")._replace(board=board))
+        fight = (("itm_theirs", LOCKED.guid), ("itm_free", self.row[0].guid))
+        self.ctx.handle_board_ui(BoardUI(False, False, False, False, False, monster_items=fight))
+        self.assertEqual(sorted(self.yours()), ["itm_mine", "itm_theirs"])
 
 
 class TestTransforms(ClientTestBase):
@@ -1539,7 +1688,8 @@ class TestAllLockedChoice(ClientTestBase):
 
 
 class TestEventPadlocks(ClientTestBase):
-    """A padlock on each locked merchant/event on a choice screen whose layout is measured (docs/ENCOUNTER-LOCKS.md)."""
+    """A padlock on each locked merchant/event on a choice screen, on its option from memory
+    (docs/ENCOUNTER-LOCKS.md)."""
 
     def setUp(self) -> None:
         super().setUp()
@@ -1553,38 +1703,37 @@ class TestEventPadlocks(ClientTestBase):
         return Snapshot(state, None, tuple(Offer(f"enc_{i}", t, k) for i, (t, k) in enumerate(offers)))
 
     def padlocks(self):
-        """The last show_padlocks call as (the measured layout, the padlocked options' places in it)."""
-        call = self.ctx.overlay.show_padlocks.call_args
-        return call.kwargs.get("options"), [lock.option for lock in call.args[0]]
+        """The last show_padlocks call: the padlocked options' places in the row."""
+        return [lock.place for lock in self.ctx.overlay.show_padlocks.call_args.args[0]]
 
     def test_hourly_choice(self) -> None:
         self.ctx.handle_snapshot(self.screen("Choice", (self.free, "EventEncounter"), (self.locked, "EventEncounter"),
                                              (self.free, "EventEncounter")))
-        self.assertEqual(self.padlocks(), ("Choice-3", [1]))
+        self.assertEqual(self.padlocks(), [1])
 
     def test_ticket_day_has_four(self) -> None:
         self.ctx.handle_snapshot(self.screen("Choice", *[(self.free, "EventEncounter")] * 3,
                                              (self.locked, "EventEncounter")))
-        self.assertEqual(self.padlocks(), ("Choice-4", [3]))
+        self.assertEqual(self.padlocks(), [3])
 
     def test_a_line_with_the_portal_bubble(self) -> None:
         bubble = next(c.guid for c in CARDS if c.shop)
         self.ctx.handle_snapshot(self.screen("Encounter", (bubble, "Item"), (self.free, "EventEncounter"),
                                              (self.locked, "EventEncounter")))
-        self.assertEqual(self.padlocks(), ("Line-3", [2]))
+        self.assertEqual(self.padlocks(), [2])
 
     def test_a_line_without_the_bubble(self) -> None:
         self.ctx.handle_snapshot(self.screen("Encounter", (self.free, "EventEncounter"),
                                              (self.locked, "EventEncounter")))
-        self.assertEqual(self.padlocks(), ("Line-2", [1]))
+        self.assertEqual(self.padlocks(), [1])
 
     def test_monsters_get_none_and_an_unmeasured_count_still_gets_its_padlocks(self) -> None:
         """Owner, 2026-10-15: event padlocks come from memory now, so a count never measured isn't left bare."""
         self.ctx.handle_snapshot(self.screen("Choice", (BRONZE_MONSTER, "CombatEncounter")))
-        self.assertEqual(self.padlocks(), (None, []))
+        self.assertEqual(self.padlocks(), [])
         self.ctx.handle_snapshot(self.screen("Choice", (self.free, "EventEncounter"),
                                              (self.locked, "EventEncounter")))
-        self.assertEqual(self.padlocks(), ("Choice-2", [1]))
+        self.assertEqual(self.padlocks(), [1])
 
 
 class TestUnlocksInLogicCount(ClientTestBase):
@@ -1592,8 +1741,7 @@ class TestUnlocksInLogicCount(ClientTestBase):
 
     def test_legendary_monsters_and_late_pvp_wait_for_their_unlocks(self) -> None:
         legendary_id = item_name_to_id["Legendary Items"]
-        self.ctx.slot_data.update({"logic": {"day_10": 0, "diamond": 0, "legendary": 0}, "event_rarity": 2,
-                                   "unlocks_in_logic": True,
+        self.ctx.slot_data.update({"logic": {"day_10": 0, "last_day": 0, "diamond": 0, "legendary": 0}, "event_rarity": 2,
                                    "lock_items": [legendary_id],
                                    "monster_tiers": {str(d): ["Bronze", "Legendary"] for d in range(1, 16)}})
 
@@ -1608,9 +1756,6 @@ class TestUnlocksInLogicCount(ClientTestBase):
         self.assertIn(monster_location("Vanessa", 6, "Legendary"), after)
         self.assertIn(pvp_location("Vanessa", 13), after)
         self.assertNotIn(pvp_location("Vanessa", 14), after)
-        del self.ctx.slot_data["unlocks_in_logic"]  # a seed from before 2026-10-06: its logic never needed them
-        self.ctx.items_received = self.ctx.items_received[:-2]
-        self.assertIn(pvp_location("Vanessa", 14), in_logic())
 
 
 class TestAdminRestart(ClientTestBase):
@@ -1662,8 +1807,7 @@ class TestCreatedItems(ClientTestBase):
         self.look(*others, (instance, guid))
 
     def test_allowed_spawned_locked_card_never_blocks_and_gets_no_padlock(self) -> None:
-        # a seed from before the option sends no created_items: everything allowed (owner, 2026-10-15)
-        self.assertNotIn("created_items", self.ctx.slot_data)
+        self.ctx.slot_data["created_items"] = 0  # Allowed
         self.look()  # memory's first look at the run
         self.spawn("itm_s", LOCKED.guid)
         self.assertIsNone(self.ctx.blocked_reason())
@@ -1822,3 +1966,58 @@ class TestCreatedItems(ClientTestBase):
         self.assertIn("itm_b", self.ctx.run["transformed"])
         self.assertIsNone(self.ctx.blocked_reason())
 
+
+
+class TestDisconnectedNeverCrashes(TestShopPadlocks):
+    """Review 2026-11-11: the memory reader, the commands and the overlay's buttons keep running while the client
+    isn't connected (slot_data empty). Old-seed defaults used to cover that by accident; now NOT_CONNECTED_SETTINGS does,
+    and nothing is locked or judged meanwhile (as before)."""
+
+    def test_every_entry_point_runs_with_no_seed(self) -> None:
+        from ..client import BazaarCommandProcessor
+        from ..logparser import EncounterEntered
+        from ..memreader import HeroPrefs
+        self.ctx.slot_data = {}  # the connection dropped mid-run
+        self.ctx.overlay.reset_mock()
+        self.ctx.handle_snapshot(self.snapshot(self.row))
+        self.ctx.handle_snapshot(self.snapshot(self.row, state="Choice"))
+        self.ctx.handle_snapshot(None)
+        self.ctx.handle_board_ui(None)
+        self.ctx.handle_board_open(True)
+        self.ctx.handle_board_open(False)
+        self.ctx.handle_menu_layers(0)
+        self.ctx.handle_hero_prefs(HeroPrefs(True, frozenset()))
+        self.ctx.menu_hero = "Vanessa"
+        self.ctx.handle_encounter(EncounterEntered(self.merchant))
+        self.ctx.refresh_padlocks()
+        self.ctx.refresh_held()
+        self.ctx.update_status()
+        self.ctx.use_bypass(LOCKED.guid)
+        self.assertIn("NOT CONNECTED", self.ctx.status_line()[0])
+        self.assertIsNone(self.ctx.menu_data())  # no hero panel without a seed
+        self.assertEqual(self.ctx.tracker_data(), {})
+        self.ctx.on_package("ReceivedItems", {"index": 1, "items": [NetworkItem(BASE_ID + LOCKED.ap_id, 0, 0, 0)]})
+        processor = BazaarCommandProcessor(self.ctx)
+        for command in ("/status", "/locked", f"/where {LOCKED.name}", "/tracker", "/guide"):
+            processor(command)
+        padlocked = [lock for call in self.ctx.overlay.show_padlocks.call_args_list for lock in call.args[0]]
+        self.assertEqual(padlocked, [])  # nothing is locked while there's no seed
+        self.assertFalse(self.ctx.overlay.toast.called)  # a refused seed's items never pop up
+
+
+class TestOtherVersionSeedRefused(ClientTestBase):
+    """Owner, 2026-11-11: seeds from another apworld version don't connect; the overlay says why."""
+
+    def test_refused_says_so_then_a_good_seed_connects(self) -> None:
+        good = dict(self.ctx.slot_data)
+        self.ctx.slot_data = {}
+        old = {k: v for k, v in good.items() if k != "slot_data_version"}
+        with mock.patch("Utils.async_start") as started:
+            self.ctx.on_package("Connected", {"slot_data": old})
+        self.assertTrue(started.called)  # the disconnect
+        self.assertEqual(self.ctx.slot_data, {})
+        self.assertIn("ANOTHER VERSION", self.ctx.status_line()[0])
+        with mock.patch.object(self.ctx, "set_notify"), mock.patch("Utils.async_start"):
+            self.ctx.on_package("Connected", {"slot_data": good})
+        self.assertEqual(self.ctx.slot_data, good)
+        self.assertNotIn("ANOTHER VERSION", self.ctx.status_line()[0] or "")

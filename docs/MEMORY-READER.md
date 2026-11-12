@@ -246,7 +246,8 @@ cards ... even if it is when you right click a monster", "Just dont involve play
 - **Blocked by name anywhere below that:** anything containing seed, rng, random, opponent, steam, store, title,
   account, ticket, token, auth.
 - **Real players are never read:** no opponent during PvP, no `SimPvpOpponent`, no PvP encounter cards, and no
-  entity owned by a hero. `Run.Opponent` is read only when the current encounter is one of our known monsters and
+  entity owned by a hero. The board's `opponentItemSockets` are read only off PvP: on offer screens, and for the
+  monster's items in a `Combat` fight (2026-11-09; `test_memreader.TestFightBoardNeverInPvP`). `Run.Opponent` is read only when the current encounter is one of our known monsters and
   the screen isn't PvP.
 - **Read-only:** the process is opened with `PROCESS_VM_READ` only. No writes, no injection, no network, no game
   files.
@@ -343,7 +344,8 @@ of guessing. Offsets found on 2026-09-30: assembly list +0xA0, class cache +0x4D
     screen canvas whose units are pixels, y up (`unity.ui_rect`).
   - ⚠️ The game pools card controllers: a scan finds dead ones and other players' cards - never scan; reach cards
     through the board's sockets (`playerItemSockets`, `playerStorageSockets`; the merchant's `opponent*Sockets` only
-    off fights and only for ids on offer - owner ruling 2026-10-14).
+    off fights and only for ids on offer - owner ruling 2026-10-14; and in a monster/event fight, state `Combat`,
+    the monster's items in `opponentItemSockets` - owner 2026-11-09, never in `PVPCombat`).
   - ⚠️ Event options (`BoardManager._opponentBoardSocketControllers`, found by id) have no native Rig; their place
     needs the GameObject route and wasn't finished - events keep the measured layout (owner: "leave the hard coded
     positions of padlocks as they are for events").
@@ -377,14 +379,19 @@ basically want these padlocks to appear as if they are ART on the card"; "NEVER 
 were placed by measured proportions of the window; that is gone, event options included since 2026-10-15.)
 
 - **Who decides what** (one job each): `client.refresh_padlocks` says *which* cards (their instance ids: locked
-  offers on `ITEM_SCREENS`, locked stash and board cards off fights); `memreader.ui` says
+  offers on `ITEM_SCREENS`, locked stash and board cards everywhere, PvP fights included); `memreader.ui` says
   *where* every card and tooltip piece is; `padlocks.py` says where each padlock goes and how it shows; the overlay
   only draws. A card memory can't place gets no padlock.
-- **Event options** are placed from memory too since 2026-10-15 (their art's centre, above). The measured layout
-  (`overlay.event_row`) is used only by `padlocks.spot` for an option with no card, which the client never sends;
-  every option count gets padlocks (an unmeasured hourly count used to get none).
+- **Event options** are placed from memory too since 2026-10-15 (their art's centre, above); every option count gets
+  padlocks. The old measured layout (`overlay.event_row`) was removed 2026-11-11 (unreachable, owner: "Remove").
 - **A right-clicked monster's board** (owner, 2026-10-15): each locked item on it gets a padlock, keyed
   `monster:<i>` (`BoardUI.monster_items`), the same lock list as the shop.
+- **A monster or event fight** (owner, 2026-11-09: "treat it in every scenario (Unless its a pvp fight) that the
+  items have padlocks on them"): the monster's locked items get padlocks, keyed by instance id in the same
+  `BoardUI.monster_items`, and so does your own board (in every state, PvP too: `client.BOARD_PADLOCK_STATES`). Found in the
+  owner's patch 20.1 test run: in `Combat` the monster's items sit in `opponentItemSockets` with the same
+  CardController / Rig / BoxCollider as a shop's cards; their rects followed the attack animations. ⚠️ A PvP fight
+  (`PVPCombat`) reads nothing of the opponent; only your own board's padlocks show (owner, 2026-11-09).
 - **Bought cards**: the others don't move (owner), and their padlocks stay on them because they follow the cards.
 - **The game's own flags drive them** (`memreader.BoardUI`, read 60 times a second, was every 60 ms until 2026-10-15; ⚠️ asyncio.sleep and Tk timers round up to Windows' ~15.6 ms tick, so "16 ms" really ran ~35 and ~45 times a second (owner saw ~20 fps): since 2026-10-15 the client asks Windows for 1 ms timers (timeBeginPeriod, this process only), the read loop runs at 60/s and the overlay looks for a new read every 2 ms (measured ~400/s) and moves the padlocks on each one - one clock, so the two can't drift against each other (they ran 58/s and 64/s before); ⚠️ a board read cost ~0.7 ms a card plus 1-1.5 ms for a tooltip (recorded 2026-10-15, ~50 calls into Windows a card) - too slow for a 144 Hz frame (6.9 ms) - so during one read memory is fetched in page-sized (4 KB) aligned blocks and reused (`READ_BLOCK`; never across reads, so nothing goes stale). Measured 2026-10-15: a call into Windows costs ~5 us whatever its size, 13 cards read in 4.0 ms with 4 KB blocks (4.5 with 256 B) - the rest is Python's own work, and 60 fps (16.7 ms) is the target (owner: a 60 cap is fine); owner: "apply those useful flags as
   the triggers instead"):

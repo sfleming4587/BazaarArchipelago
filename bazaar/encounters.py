@@ -6,7 +6,15 @@ import hashlib
 from typing import Iterable, Optional, Set
 
 from .data import EVENTS, TIERS
-from .items import ENCOUNTER_UNLOCKS
+from .items import ENCOUNTER_UNLOCKS, LEVEL_UP_TIERS
+
+# what a choice screen's event options are: map events, and the steps a level-up offers (owner, 2026-11-11: Shiny!)
+EVENT_KINDS = ("EventEncounter", "EncounterStep")
+
+
+def event_tier(guid: str) -> Optional[str]:
+    """A choosable event's rarity: a map event's, or a lockable level-up event's (items.LEVEL_UPS); None if unknown."""
+    return EVENTS[guid]["tier"] if guid in EVENTS else LEVEL_UP_TIERS.get(guid)
 
 # Event templates Event Rarity Progression locks until its first / second copy: never level-up rewards (owner,
 # 2026-10-02: "Level ups not included"); expeditions only when they aren't exempt
@@ -36,11 +44,11 @@ def let_through(offers, locked: Set[str]) -> Optional[str]:
     2026-10-01); a tie is broken by the screen's own instance ids, so the pick is the same on every reading and
     reconnect. None when there's an allowed way on: an unlocked event, or anything that isn't an event (the
     Mysterious Portal's item bubble, owner 2026-10-02)."""
-    if not offers or any(o.kind != "EventEncounter" or o.template not in EVENTS for o in offers):
+    if not offers or any(o.kind not in EVENT_KINDS or event_tier(o.template) is None for o in offers):
         return None
     if any(o.template not in locked for o in offers):
         return None
-    rank = lambda o: TIERS.index(EVENTS[o.template]["tier"])
+    rank = lambda o: TIERS.index(event_tier(o.template))
     lowest = min(rank(o) for o in offers)
     tied = sorted((o for o in offers if rank(o) == lowest), key=lambda o: o.instance)
     digest = hashlib.sha256("|".join(o.instance for o in offers).encode()).digest()

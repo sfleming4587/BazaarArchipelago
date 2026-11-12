@@ -36,11 +36,12 @@ class Pack:
     name: str
     hero: str
     cards: Tuple[str, ...]  # card guids
+    custom: bool = False  # hand-made (custom_packs.json), not one of the game's original expansions
 
 
-def _load() -> dict:
+def _load(name: str = "bazaar_data.json") -> dict:
     # pkgutil works both from a source checkout and from inside a zipped .apworld
-    return json.loads(pkgutil.get_data(__name__, "bazaar_data.json").decode("utf-8"))
+    return json.loads(pkgutil.get_data(__name__, name).decode("utf-8"))
 
 
 _raw = _load()
@@ -58,7 +59,11 @@ def hero_key(hero: str) -> str:
 CARDS: List[Card] = [Card(c["guid"], c["ap_id"], c["name"], c["hero"], c["tier"], c["size"], tuple(c["tags"]),
                           c["shop"], tuple(c.get("hidden_tags", ())), tuple(c.get("enchants", ())),
                           tuple(c.get("tiers", ())), c.get("ticket", False)) for c in _raw["cards"]]
+# Legacy packs come from the extractor; custom packs are hand-made and live in their own file, so an extractor run
+# never touches them (see docs/CARD-PACKS.md). Both share the pack item range: legacy 100.., custom 150..
 PACKS: List[Pack] = [Pack(p["key"], p["ap_id"], p["name"], p["hero"], tuple(p["cards"])) for p in _raw["packs"]]
+PACKS += [Pack(p["key"], p["ap_id"], p["name"], p["hero"], tuple(c["guid"] for c in p["cards"]), custom=True)
+          for p in _load("custom_packs.json")["packs"]]
 
 # encounter guid -> {"name": ..., "stock": SpawnContext}; taking an item inside one of these costs gold
 MERCHANT_DATA: Dict[str, dict] = {m["guid"]: m for m in _raw.get("merchants", [])}
@@ -88,6 +93,7 @@ def tiers_on_day(day: int, highest: str) -> List[str]:
 
 
 # Cards unlocked together by one group item.
+SHOP_CARDS = [c for c in CARDS if c.shop]  # cards a shop can sell (the Shop Guide's list, the menu's card counts)
 LEGENDARY_GUIDS = frozenset(c.guid for c in CARDS if c.shop and c.tier == "Legendary")
 TICKET_GUIDS = frozenset(c.guid for c in CARDS if c.ticket)
 # item guid -> the lockable card it always spawns (Temporary Shelter -> Scrap); random spawns aren't listed

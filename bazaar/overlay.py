@@ -8,12 +8,13 @@ Tk runs in its own thread; the client only talks to it through the command queue
 Rules (user, 2026-09-28/29): beside the board, never on it; never overlapping each other; never off screen;
 only while the game is the active window; never taking the keyboard from the game; redrawing only what changed.
 """
+import colorsys
 import logging
 import queue
 import sys
 import threading
 import time
-from typing import Callable, Dict, List, Optional, Sequence, Set
+from typing import Callable, Dict, List, NamedTuple, Optional, Sequence, Set
 
 from . import padlocks, screens
 from .padlocks import Padlock
@@ -54,17 +55,13 @@ MENU_COLUMNS = 4  # heroes per row, like the hero select
 MENU_BAR_BG = "#3a3f4b"  # the empty part of a hero's check bar
 POLL_MS = 250
 
-# Padlocks on locked merchants/events (docs/ENCOUNTER-LOCKS.md): each option's centre at 1080p, (x from the window's
-# centre, y from its top), by screen - "Choice-N" is the hourly choice with N options, "Line-N" an event's own options
-# in a row. Measured 2026-10-02 on the owner's screenshots: the hourly 3 sit where the monster pick's do (Event3.jpg,
-# owner: "they show the same positions the monsters are in"), 245 apart, the middle one 61 lower; the ticket day's 4
-# keep that pitch and those heights (OffCenter4Event.jpg). A line is 282 apart (EventToEvents.webp) and centred
-# whatever its count (owner, 2026-10-02: without the portal's extra bubble its events move to the centre, and other
-# events can add such options too). A hourly count not listed gets no padlocks: its layout hasn't been measured.
-CHOICE_ROWS = {"Choice-3": ((-245, 303), (0, 364), (245, 303)),
-               "Choice-4": ((-367, 303), (-122, 364), (122, 364), (367, 303))}
-LINE_PITCH, LINE_Y = 282, 420
 FLICKER_MS = 140  # the Sell Trap's flames
+# A good unlock's pop-up (a pack, a hero, a group, a merchant/event, Event Rarity Progression): a soft rainbow that
+# drifts over the usual green (owner, 2026-11-11: "just an opaque rainbow over the green background of the normal
+# toast. Nothing crazy but something noticeable too")
+RAINBOW_TINT = 0.3  # how much of each rainbow colour is mixed into the green
+RAINBOW_BANDS = 24  # colour bands across the pop-up, one whole rainbow from left to right
+RAINBOW_MS = 60  # the rainbow moves one band this often
 # A flame's outline, as fractions of the skull's square (x right, y down); the inner flames are it shrunk upward.
 FLAME = ((0.10, 1.0), (0.02, 0.55), (0.17, 0.30), (0.23, 0.46), (0.30, 0.10), (0.41, 0.36), (0.50, 0.0),
          (0.59, 0.36), (0.70, 0.10), (0.77, 0.46), (0.83, 0.30), (0.98, 0.55), (0.90, 1.0))
@@ -123,20 +120,15 @@ def on_a_button(window, point: tuple) -> bool:
     return False
 
 
-def event_row(screen: Optional[str]) -> Optional[tuple]:
-    """Each option's centre at 1080p on an event screen ("Choice-N" or "Line-N"), left to right; None when that
-    layout isn't known."""
-    kind, _, count = (screen or "").partition("-")
-    if kind == "Line" and count.isdigit() and int(count) > 0:
-        return tuple(((i - (int(count) - 1) / 2) * LINE_PITCH, LINE_Y) for i in range(int(count)))
-    return CHOICE_ROWS.get(screen)
 
-
-def event_centres(x: int, y: int, w: int, h: int, screen: str) -> List[tuple]:
-    """Screen centre (x, y) of each option on an event choice screen (see event_row), left to right."""
-    across = min(h / 1080, w / 1920)
-    return [(round(x + w / 2 + dx * across), round(y + h * cy / 1080)) for dx, cy in event_row(screen)]
-
+class Toast(NamedTuple):
+    """A pop-up (Overlay.toast)."""
+    text: str
+    expires: float  # time.monotonic() when it goes
+    warning: bool = False
+    trap: bool = False
+    cards: tuple = ()  # card guids whose pictures it shows
+    good: bool = False  # a good unlock's: on a drifting rainbow
 
 
 def padlock_shape(canvas, x: float, y: float, s: int) -> None:
@@ -244,6 +236,92 @@ def draw_skull(tk, parent, size: int, bg: str):
     return canvas
 
 
+SHIELD_FILL, SHIELD_EDGE = "#8fb8de", "#23405f"
+
+
+def draw_shields(tk, parent, count: int, size: int, bg: str):
+    """`count` Trap Shields as stacked shield icons, each one a little to the right of the last (owner, 2026-11-10:
+    "a shield icon (stacked to show how many shield you have)")."""
+    step = max(3, round(size * 0.45))
+    canvas = tk.Canvas(parent, width=size + step * (count - 1), height=size, bg=bg, highlightthickness=0, bd=0)
+    for i in range(count):  # left to right: each new one in front of the last
+        x = i * step
+        outline = [(0.12, 0.10), (0.5, 0.02), (0.88, 0.10), (0.86, 0.52), (0.5, 0.98), (0.14, 0.52)]
+        canvas.create_polygon([v for px, py in outline for v in (x + px * size, py * size)], fill=SHIELD_FILL,
+                              outline=SHIELD_EDGE, width=max(1, size // 12))
+        canvas.create_line(x + 0.5 * size, 0.14 * size, x + 0.5 * size, 0.84 * size, fill=SHIELD_EDGE,
+                           width=max(1, size // 14))
+    return canvas
+
+
+def rainbow(base: str, tint: float = RAINBOW_TINT, count: int = RAINBOW_BANDS) -> List[str]:
+    """`count` colours round the colour wheel, each mixed `tint` into `base` (a "#rrggbb")."""
+    under = [int(base[i:i + 2], 16) for i in (1, 3, 5)]
+    out = []
+    for n in range(count):
+        hue = colorsys.hsv_to_rgb(n / count, 1, 1)
+        out.append("#" + "".join(f"{round(c * 255 * tint + u * (1 - tint)):02x}" for c, u in zip(hue, under)))
+    return out
+
+
+def draw_rainbow_row(tk, parent, width: int, bg: str, text: str, font: tuple, small_font: tuple, pictures: list,
+                     more: int):
+    """A good unlock's pop-up: its text and card pictures on a rainbow that drifts sideways over `bg`."""
+    canvas = tk.Canvas(parent, width=width, height=1, bg=bg, highlightthickness=0, bd=0)
+    colours = rainbow(bg)
+    step = width / RAINBOW_BANDS
+    bands = [canvas.create_rectangle(round(n * step), 0, round((n + 1) * step) + 1, 10_000, fill=colour, outline="")
+             for n, colour in enumerate(colours)]
+    text_id = canvas.create_text(8, 4, text=text, fill=FG, font=font, width=width - 16, anchor="nw")
+    bottom = canvas.bbox(text_id)[3] + 4
+    if pictures:
+        x, top = 8, bottom
+        for picture in pictures:
+            canvas.create_image(x, top, image=picture, anchor="nw")
+            x += picture.width() + 4
+        if more:
+            canvas.create_text(x + 4, top + max(p.height() for p in pictures) / 2, text=f"+ {more} more", fill=FG,
+                               font=small_font, anchor="w")
+        bottom = top + max(p.height() for p in pictures) + 6
+    canvas.configure(height=bottom)
+
+    def drift(tick: int = 1) -> None:
+        if not canvas.winfo_exists():  # the pop-up was redrawn or went
+            return
+        for n, band in enumerate(bands):
+            canvas.itemconfigure(band, fill=colours[(n - tick) % RAINBOW_BANDS])
+        canvas.after(RAINBOW_MS, drift, tick + 1)
+    canvas.after(RAINBOW_MS, drift)
+    return canvas
+
+
+def draw_flame_band(tk, parent, width: int, height: int, bg: str):
+    """A row of the Sell Trap's flickering flames (FLAME, FLAMES), side by side across `width`: the border of the
+    warning before a PvP fight (owner, 2026-11-09: "bolder and surrounded by flames")."""
+    canvas = tk.Canvas(parent, width=width, height=height, bg=bg, highlightthickness=0, bd=0)
+    count = max(3, width // max(1, height))
+    step = width / count
+    rows = []
+    for n in range(count):
+        layers = []
+        for i, (grow, lift) in enumerate(((1.0, 0.0), (0.7, 0.3))):
+            points = [v for x, y in FLAME for v in (n * step + step * (0.5 + (x - 0.5) * grow),
+                                                    height * (lift + y * (1 - lift)))]
+            layers.append(canvas.create_polygon(points, smooth=True, fill=FLAMES[0][i], outline=""))
+        rows.append(layers)
+
+    def flicker(tick: int = 1) -> None:
+        if not canvas.winfo_exists():  # the panel was redrawn
+            return
+        for n, layers in enumerate(rows):  # neighbours out of step, so the row dances
+            colours = FLAMES[(tick + n) % len(FLAMES)]
+            for layer, colour in zip(layers, colours):
+                canvas.itemconfigure(layer, fill=colour)
+        canvas.after(FLICKER_MS, flicker, tick + 1)
+    canvas.after(FLICKER_MS, flicker)
+    return canvas
+
+
 class Overlay:
     """The client's handle on the windows: every method only queues a command for the Tk thread."""
 
@@ -262,18 +340,19 @@ class Overlay:
 
     # --- called from the client ---------------------------------------------------------------------------------
 
-    def show_locked(self, title: Optional[str], cards: list, blocked: bool = False, trap: bool = False) -> None:
+    def show_locked(self, title: Optional[str], cards: list, blocked: bool = False, trap: bool = False,
+                    danger: bool = False) -> None:
         """The alert box's banner and the lines under it (held locked cards, Sell Traps). title=None hides it.
         A line is text, or (text, card guid) to give it a "Use Bypass" button (a Lock Bypass is ready).
         blocked: checks are blocked (critical, red) rather than just a warning (a Sell Trap coming up).
-        trap: a Sell Trap is behind it - drawn as a skull in flames."""
-        self.commands.put(("locked", (title, list(cards), blocked, trap) if title else None))
+        trap: a Sell Trap is behind it - drawn as a skull in flames.
+        danger: the PvP fight is next and keeping what's listed would lose the run - bolder, between flames."""
+        self.commands.put(("locked", (title, list(cards), blocked, trap, danger) if title else None))
 
-    def show_padlocks(self, locks: Sequence[Padlock], reveal: bool = False, options: Optional[str] = None) -> None:
-        """The padlocks on what's offered: each on its card (padlocks.Padlock), or on an event option at its spot
-        of the measured layout `options` (an event_row key). None hides them at once. reveal: new cards, so they
-        wait until each has turned face-up."""
-        value = (tuple(locks), options) if locks else None
+    def show_padlocks(self, locks: Sequence[Padlock], reveal: bool = False) -> None:
+        """The padlocks on what's offered, each on its card or event option (padlocks.Padlock). None hides them at
+        once. reveal: new cards, so they wait until each has turned face-up."""
+        value = tuple(locks) if locks else None
         self.commands.put(("padlocks", (value, time.monotonic(), reveal and value is not None)))
 
     def show_board_ui(self, ui) -> None:
@@ -300,10 +379,10 @@ class Overlay:
         self.commands.put(("guide_toggle", None))
 
     def toast(self, text: str, seconds: float = 6, warning: bool = False, trap: bool = False,
-              cards: Sequence[str] = ()) -> None:
+              cards: Sequence[str] = (), good: bool = False) -> None:
         """A short pop-up (bottom right) that disappears by itself. trap: a Sell Trap's, with its skull. cards: guids
-        whose pictures it shows (an unlock's)."""
-        self.commands.put(("toast", (text, time.monotonic() + seconds, warning, trap, tuple(cards))))
+        whose pictures it shows (an unlock's). good: a big unlock's, on a drifting rainbow (draw_rainbow_row)."""
+        self.commands.put(("toast", Toast(text, time.monotonic() + seconds, warning, trap, tuple(cards), good)))
 
     def show_menu_covered(self, covered: bool) -> None:
         """One of the game's own screens is open over the menu (or not): picked up every HOVER_MS by the Tk thread,
@@ -314,16 +393,17 @@ class Overlay:
         """The menu's centre panel (see client.menu_data); None hides it."""
         self.commands.put(("menu", data))
 
-    def show_status(self, text: Optional[str], warning: bool = False, big: bool = False) -> None:
-        """The bottom of the alert box: run progress, or (big) the heroes you may pick on the menu. None hides it."""
-        self.commands.put(("status", (text, warning, big) if text else None))
+    def show_status(self, text: Optional[str], warning: bool = False, big: bool = False, shields: int = 0) -> None:
+        """The bottom of the alert box: run progress, or (big) the heroes you may pick on the menu. None hides it.
+        shields: Trap Shields ready, drawn as stacked icons after the text (next to the Lock Bypasses)."""
+        self.commands.put(("status", (text, warning, big, shields) if text else None))
 
     def show_tracker_data(self, data: Dict[str, dict]) -> None:
         """What the tracker shows (see tracker.Tracker.update); sent whenever items or checks change."""
         self.commands.put(("tracker", data))
 
-    def toggle_tracker(self) -> None:
-        self.commands.put(("tracker_toggle", None))
+    def show_tracker(self) -> None:
+        self.commands.put(("tracker_show", None))
 
     def show_deathlink(self, text: Optional[str]) -> None:
         self.commands.put(("deathlink", text))
@@ -387,7 +467,6 @@ class _Screen:
         self.stagger_from = 0.0  # new padlocks show left to right from then, padlocks.FLIP_STAGGER apart (0: all at once)
         self.locks: List[Padlock] = []  # the padlocks shown now: what's offered (or the stash), then your board
         self.lock_squares: List[Optional[tuple]] = []  # each one's square on screen now (None: its card isn't)
-        self.option_centres: List[tuple] = []  # an event screen's measured option centres (Padlock.option)
         self.padlock_alphas: List[float] = []  # each padlock's alpha now (see padlock_alpha)
         self.board_ui = None  # memreader.BoardUI, or None (unreadable: no padlocks, nothing says the art is there)
         self.overlay_faded = 1.0  # every other window's fade now (see overlay_factor)
@@ -412,6 +491,7 @@ class _Screen:
                             "notices_height": 0, "toasts_height": 0, "padlocks": None}
         self.wanted: set = set()  # windows that have something to show (shown only while the game is in front)
         self.game_in_front = not overlay.only_over_game
+        self.ours_in_front = False  # one of our own windows is the active one (see keep_on_top)
         self.rendering = self.render_again = False
         self.guide = ShopGuide.create(
             tk, root, overlay.art_cache_dir, overlay.guide_file, self.layout["right"],
@@ -426,7 +506,7 @@ class _Screen:
             "guide_toggle": self.toggle_guide,
             "redraw": lambda _: True,
             "tracker": self.new_tracker_data,
-            "tracker_toggle": lambda _: self.tracker.toggle(),
+            "tracker_show": lambda _: self.tracker.open(),
             "toast": self.new_toast,
             **{kind: (lambda value, kind=kind: self.set_state(kind, value))
                for kind in ("locked", "deathlink", "status")},
@@ -453,13 +533,25 @@ class _Screen:
             out.append((self.tracker.win, 1.0))
         return out
 
-    def padlock_alpha(self, i: int, covers: List[tuple]) -> float:
+    def padlock_alpha(self, i: int, covers: List[tuple], windows: Sequence[tuple] = ()) -> float:
         """Padlock i by the rules in padlocks.py; none while the board's flags can't be read (owner, 2026-10-15: a
         padlock shows only where its card's art is - was: event options followed the mouse, 2026-10-01)."""
         if self.board_ui is None:
             return padlocks.HIDDEN
         return padlocks.alpha(self.locks[i], self.lock_squares[i], self.board_ui, covers,
-                              padlocks.COVER_PAD * self.layout["k"], self.stagger_from, time.monotonic())
+                              padlocks.COVER_PAD * self.layout["k"], self.stagger_from, time.monotonic(), windows)
+
+    def windows_over_board(self) -> List[tuple]:
+        """Our own windows that can sit over the board, as (left, top, right, bottom) on screen: the tracker, its
+        list and the Shop Guide while shown."""
+        out = []
+        shown = [self.tracker.win, self.tracker.popup] + ([self.guide.win] if self.guide and not self.guide.hidden else [])
+        for window in shown:
+            if window is not None and window.winfo_exists() and window.winfo_ismapped():
+                box = screens.visible_bounds(window) or (window.winfo_rootx(), window.winfo_rooty(),
+                                                         window.winfo_width(), window.winfo_height())
+                out.append((box[0], box[1], box[0] + box[2], box[1] + box[3]))
+        return out
 
     def covers(self) -> List[tuple]:
         return padlocks.coverings(self.board_ui, self.layout["window"]) if self.board_ui is not None else []
@@ -534,7 +626,8 @@ class _Screen:
         return gear if inside(point, (gear[0] - pad, gear[1] - pad, gear[2] + pad, gear[3] + pad)) else None
 
     def apply_padlock_alphas(self, covers: List[tuple]) -> None:
-        alphas = [self.padlock_alpha(i, covers) for i in range(self.padlocks_wanted)]
+        windows = self.windows_over_board() if self.padlocks_wanted else []
+        alphas = [self.padlock_alpha(i, covers, windows) for i in range(self.padlocks_wanted)]
         for i, alpha in enumerate(alphas):
             if i >= len(self.padlock_alphas) or self.padlock_alphas[i] != alpha:
                 self.padlocks[i].attributes("-alpha", alpha)
@@ -643,7 +736,7 @@ class _Screen:
         if notices != drawn["notices"]:
             drawn["notices"] = notices
             drawn["notices_height"] = self.render_notices(moves, right)
-        toasts = (tuple((text, warning, trap, cards) for text, _, warning, trap, cards in state["toasts"]),
+        toasts = (tuple(t._replace(expires=0) for t in state["toasts"]),
                   drawn["notices_height"])
         if toasts != drawn["toasts"]:
             drawn["toasts"] = toasts
@@ -676,7 +769,8 @@ class _Screen:
         """(label, action) for the buttons in the alert box (the list and pop-ups let clicks through): the tracker
         (user: "on the permanent top-left overlay"), the Shop Guide when it's closed, and hiding the list."""
         state = self.state
-        buttons = [("Tracker", self.tracker.toggle)] if self.tracker.data else []
+        # it never closes the tracker, only brings it up (owner, 2026-11-11); its own window has the close button
+        buttons = [("Tracker", self.tracker.open)] if self.tracker.data else []
         if self.guide:  # any time, not only in a shop; the same button closes it (owner, 2026-10-01)
             buttons.append(("Shop Guide" if self.guide.hidden else "Hide guide", self.toggle_guide))
         if state["menu"]:
@@ -770,8 +864,13 @@ class _Screen:
             tk.Label(tile, text=f"{hero['done']} / {hero['total']} checks", fg=MUTED, bg=bg, font=f(9)).pack()
             cards.pack()
         bypasses = f"   ·   Lock Bypasses: {data['bypasses']}" if data["bypasses"] else ""
-        tk.Label(frame, text=f"Goal: {data['won']} / {data['required']} heroes won{bypasses}", fg=MUTED, bg=bg,
-                 font=f(10)).pack(pady=(6, 0))
+        goal = tk.Frame(frame, bg=bg)
+        goal.pack(pady=(6, 0))
+        tk.Label(goal, text=f"Goal: {data['won']} / {data['required']} heroes won{bypasses}", fg=MUTED, bg=bg,
+                 font=f(10)).pack(side="left")
+        if data.get("shields"):
+            draw_shields(tk, goal, data["shields"], max(MIN_FONT + 2, round(16 * self.layout["k"])),
+                         bg).pack(side="left", padx=(6, 0))
         show()
         self.menu_box.update_idletasks()
         width, height = self.menu_box.winfo_reqwidth(), self.menu_box.winfo_reqheight()
@@ -813,7 +912,15 @@ class _Screen:
         frame, show = self.swap(self.toast_box, SEVERITY["info"])
         wrap = layout["right"][2] - 2 * (PAD + BORDER) - 16
         rows = []  # newest first, packed up from the bottom
-        for text, _, warning, trap, cards in reversed(self.state["toasts"]):
+        for text, _, warning, trap, cards, good in reversed(self.state["toasts"]):  # Toast
+            if good:
+                pictures = [p for p in (self.toast_picture(guid) for guid in cards) if p is not None]
+                row = draw_rainbow_row(tk, frame, wrap + 16, SEVERITY["ok"], text, self.font(11, "bold"),
+                                       self.font(10, "bold"), pictures[:MAX_TOAST_PICTURES],
+                                       max(0, len(cards) - MAX_TOAST_PICTURES) if pictures else 0)
+                row.pack(side="bottom", fill="x", pady=2)
+                rows.append(row)
+                continue
             if trap:
                 row = tk.Frame(frame, bg=TRAP_BG, padx=6, pady=4)
                 row.pack(side="bottom", fill="x", pady=2)
@@ -864,8 +971,12 @@ class _Screen:
             moves.append((self.notice_box, None))
             return 0
         trap = bool(state["locked"] and state["locked"][3])
-        bg = TRAP_BG if trap else SEVERITY[self.notice_severity()]
+        danger = bool(state["locked"] and len(state["locked"]) > 4 and state["locked"][4])
+        bg = TRAP_BG if trap or danger else SEVERITY[self.notice_severity()]
         frame, show = self.swap(self.notice_box, bg)
+        band = max(14, round(22 * self.layout["k"]))  # the flames' height
+        if danger:  # owner, 2026-11-09: the same notice, "bolder and surrounded by flames"
+            draw_flame_band(tk, frame, inner_w, band, bg).pack(fill="x")
         if state["deathlink"]:
             tk.Label(frame, text="DEATHLINK", fg=ACCENT, bg=bg, font=f(16, "bold")).pack(anchor="w")
             tk.Label(frame, text=state["deathlink"], fg=FG, bg=bg, font=f(11), wraplength=inner_w,
@@ -873,7 +984,7 @@ class _Screen:
             tk.Label(frame, text="Concede your current run.", fg=FG, bg=bg,
                      font=f(11, "bold"), wraplength=inner_w, justify="left").pack(anchor="w", pady=(2, 6))
         if state["locked"]:
-            title, cards, blocked, _ = state["locked"]
+            title, cards, blocked = state["locked"][:3]
             head = tk.Frame(frame, bg=bg)
             head.pack(fill="x", pady=(6 if state["deathlink"] else 0, 2 if cards else 0))
             room = inner_w
@@ -881,15 +992,17 @@ class _Screen:
                 skull = draw_skull(tk, head, max(40, round(64 * self.layout["k"])), bg)
                 skull.pack(side="left", padx=(0, 8))
                 room -= skull.winfo_reqwidth() + 8
-            tk.Label(head, text=title, fg=(WARN if blocked else TRAP_TITLE) if trap else ACCENT, bg=bg,
-                     font=f(16 if trap else 14, "bold"), wraplength=room, justify="left").pack(side="left", anchor="w")
+            colour = WARN if danger else (WARN if blocked else TRAP_TITLE) if trap else ACCENT
+            tk.Label(head, text=title, fg=colour, bg=bg, font=f(18 if danger else 16 if trap else 14, "bold"),
+                     wraplength=room, justify="left").pack(side="left", anchor="w")
             if len(cards) > MAX_ALERT_LINES:  # the box would grow past its share and hide its own buttons
                 cards = cards[:MAX_ALERT_LINES - 1] + [f"+ {len(cards) - MAX_ALERT_LINES + 1} more"]
             for line in cards:  # cleared automatically when the log says it was sold
                 text, guid = line if isinstance(line, tuple) else (line, None)
                 if not guid:
-                    tk.Label(frame, text=text, fg=FG, bg=bg, font=f(11), wraplength=inner_w,
-                             justify="left").pack(anchor="w")
+                    loud = danger and line is cards[0]  # the warning's own line (client.update_block_banner)
+                    tk.Label(frame, text=text, fg=WARN if loud else FG, bg=bg, font=f(13, "bold") if loud else f(11),
+                             wraplength=inner_w, justify="left").pack(anchor="w")
                     continue
                 card = tk.Frame(frame, bg=bg)
                 card.pack(fill="x")
@@ -899,6 +1012,8 @@ class _Screen:
                 use.update_idletasks()
                 tk.Label(card, text=text, fg=FG, bg=bg, font=f(11), wraplength=inner_w - use.winfo_reqwidth() - 8,
                          justify="left").pack(side="left", anchor="w")
+        if danger:
+            draw_flame_band(tk, frame, inner_w, band, bg).pack(fill="x", pady=(4, 0))
         show()
         x, y, width, height = right
         return self.place(moves, self.notice_box, (x, y, width, height // ALERT_SHARE))
@@ -929,10 +1044,14 @@ class _Screen:
         if buttons:
             bar.pack(side="bottom" if own_row else "right", anchor="e", pady=(4, 0) if own_row else 0)
         if status:
-            text, warning, big = status
+            text, warning, big, shields = (*status, 0)[:4]
+            size = max(MIN_FONT + 2, round(16 * self.layout["k"]))
+            room -= (size + round(size * 0.45) * (shields - 1) + 6) if shields else 0
             tk.Label(row, text=text, fg=WARN if warning else (FG if big else MUTED), bg=bg,
                      font=f(12 if big else 11 if warning else 10, "bold" if warning or big else "normal"),
                      wraplength=inner_w if own_row else room, justify="left").pack(side="left", anchor="w")
+            if shields:
+                draw_shields(tk, row, shields, size, bg).pack(side="left", anchor="w", padx=(6, 0))
         show()
         x, y, width, strip_height = self.layout["left"]
         return self.place(moves, self.alert_box, (x, y, width, strip_height // ALERT_SHARE))
@@ -940,10 +1059,7 @@ class _Screen:
     def render_padlocks(self) -> None:
         """The padlocks wanted now: one window each, sized for the game window (placed by place_padlocks)."""
         layout, value = self.layout, self.state["padlocks"]
-        locks, options = value or ((), None)
-        self.locks = list(locks) + list(self.state["board_padlocks"] or ())
-        window = layout["window"]
-        self.option_centres = event_centres(*window, options) if event_row(options) else []
+        self.locks = list(value or ()) + list(self.state["board_padlocks"] or ())
         size = max(MIN_PADLOCK, round(PADLOCK * layout["k"]))
         while len(self.padlocks) < len(self.locks):
             self.padlocks.append(self.new_padlock())
@@ -958,7 +1074,7 @@ class _Screen:
     def place_padlocks(self) -> None:
         """Each padlock on its card, wherever the card is now (padlocks.spot)."""
         size = max(MIN_PADLOCK, round(PADLOCK * self.layout["k"]))
-        self.lock_squares = [padlocks.spot(lock, self.board_ui, self.layout["window"], size, self.option_centres)
+        self.lock_squares = [padlocks.spot(lock, self.board_ui, self.layout["window"], size)
                              for lock in self.locks]
         for padlock, square in zip(self.padlocks, self.lock_squares):
             if square is None:
@@ -967,6 +1083,37 @@ class _Screen:
             if getattr(padlock, "spot", None) != spot:
                 padlock.spot = spot
                 padlock.geometry(screens.geometry(spot))
+        self.place_why()
+
+    def place_why(self) -> None:
+        """Under a right-clicked locked card or event: "Locked behind: <the item that unlocks it>" (owner, 2026-11-10),
+        placed from the card's own rect in memory (padlocks.inspected). Hidden the rest of the time."""
+        line = padlocks.inspected(self.locks, self.lock_squares, self.board_ui, self.layout["window"])             if self.game_in_front else None
+        box = getattr(self, "why_box", None)
+        if line is None:
+            if box is not None and box.state() == "normal":
+                box.withdraw()
+            return
+        if box is None:
+            box = self.why_box = self.tk.Toplevel(self.root)
+            box.withdraw()
+            box.overrideredirect(True)
+            box.attributes("-topmost", True)
+            screens.never_focus(box)
+            box.label = self.tk.Label(box, fg=FG, bg=SEVERITY["info"], padx=PAD, pady=PAD // 2)
+            box.label.pack()
+        text, centre_x, top = line
+        box.label.configure(text=text, font=self.font(12, "bold"))
+        box.update_idletasks()
+        width, height = box.winfo_reqwidth(), box.winfo_reqheight()
+        spot = screens.clamp((round(centre_x - width / 2), round(top + PAD), width, height), self.layout["screen"])
+        if getattr(box, "spot", None) != spot:
+            box.spot = spot
+            box.geometry(screens.geometry(spot))
+        if box.state() != "normal":
+            box.deiconify()
+            box.lift()
+            screens.click_through(box)  # the inspect view stays clickable under it
 
     def new_padlock(self):
         padlock = self.tk.Toplevel(self.root)
@@ -1045,12 +1192,12 @@ class _Screen:
         """A card's pictures are ready: the guide shows them, and so does a pop-up still waiting for them."""
         if self.guide:
             self.guide.refresh(guid)
-        if any(guid in t[4] for t in self.state["toasts"]):
+        if any(guid in t.cards for t in self.state["toasts"]):
             self.drawn["toasts"] = None
             return True
         return False
 
-    def new_toast(self, value) -> bool:  # (text, expires, warning, trap, card guids)
+    def new_toast(self, value: "Toast") -> bool:
         self.state["toasts"] = (self.state["toasts"] + [value])[-MAX_TOASTS:]
         return True
 
@@ -1099,14 +1246,15 @@ class _Screen:
             changed = bool(self.handlers[kind](value)) or changed
         changed = self.show_due_padlocks() or changed
         now = time.monotonic()
-        if any(t[1] <= now for t in self.state["toasts"]):
-            self.state["toasts"] = [t for t in self.state["toasts"] if t[1] > now]
+        if any(t.expires <= now for t in self.state["toasts"]):
+            self.state["toasts"] = [t for t in self.state["toasts"] if t.expires > now]
             changed = True
         game, window = game_in_front(self.own_windows()) if overlay.only_over_game else (True, overlay.game_window)
         if window and window != self.layout["window"]:  # the game window moved, was resized or changed resolution
             self.relayout(window)
             self.drawn.update(alerts=None, shop=None, toasts=None)  # everything is laid out again
             changed = True
+        self.ours_in_front = game is None  # you're using one of our windows (the Shop Guide and its lists, ...)
         if game is not None and game != self.game_in_front:
             self.game_in_front = game
             self.sync_visibility()
@@ -1123,7 +1271,11 @@ class _Screen:
             self.keep_on_top()
 
     def keep_on_top(self) -> None:
-        """Games sometimes take the top spot; the shown windows claim it back."""
+        """Games sometimes take the top spot; the shown windows claim it back - but not while you're using one of
+        ours: claiming it lifted the Shop Guide over its own open Merchant/Size/Rarity list every POLL_MS, so the
+        list vanished at once (owner's video, 2026-11-11)."""
+        if self.ours_in_front:
+            return
         for panel in self.panels:
             if panel.state() == "normal":
                 panel.attributes("-topmost", True)

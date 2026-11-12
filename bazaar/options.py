@@ -2,7 +2,7 @@ import types
 from dataclasses import dataclass, make_dataclass
 
 from Options import (Choice, DeathLink, DefaultOnToggle, ItemSet, Option, OptionGroup, PerGameCommonOptions, Range,
-                     StartInventoryPool, Toggle)
+                     Removed, StartInventoryPool, Toggle)
 
 from .data import BASE_HEROES, CARDS, HEROES, PACKS, TIERS, hero_key
 
@@ -26,13 +26,20 @@ INCLUDE_SWITCHES = {name: _switch(f"Include{hero.replace(' ', '')}", hero,
                                   + f"\n\nIf disabled, {hero} has no checks, cards or unlock item.",
                                   on=hero in BASE_HEROES)
                     for name, hero in INCLUDE_HERO_OPTIONS.items()}
-# One switch per legacy pack (user 2026-09-30: "doesn't have to be all or none"), named from the pack's data key so a
-# renamed pack keeps its option. On by default: legacy_card_packs alone still means every pack. option name -> key.
+# One switch per pack (user 2026-09-30: "doesn't have to be all or none"), named from the pack's data key so a
+# renamed pack keeps its option. On by default: a section's master switch alone still means every pack in it.
+# Legacy and custom packs each get their own section (owner 2026-11-10). option name -> key.
 PACK_OPTIONS = {f"pack_{p.key.lower()}": p.key for p in PACKS}
-PACK_SWITCHES = {name: _switch(f"Pack{p.key.replace('_', '')}", f"{p.hero}: {p.name}",
-                               f"Locks {p.name} as a single item.\n\nOnly matters when Legacy Card Packs is enabled. "
-                               f"If disabled, its cards are locked one by one like any other card.", on=True)
-                 for name, p in zip(PACK_OPTIONS, PACKS)}
+
+
+def _pack_switch(pack) -> type:
+    section = "Custom Card Packs" if pack.custom else "Legacy Card Packs"
+    return _switch(f"Pack{pack.key.replace('_', '')}", f"{pack.hero}: {pack.name}",
+                   f"Locks {pack.name} as a single item.\n\nOnly matters when {section} is enabled. "
+                   f"If disabled, its cards are locked one by one like any other card.", on=True)
+
+
+PACK_SWITCHES = {name: _pack_switch(p) for name, p in zip(PACK_OPTIONS, PACKS)}
 
 
 def _starting_hero_body(namespace: dict) -> None:
@@ -97,8 +104,9 @@ class MonsterChecks(DefaultOnToggle):
     Adds checks for beating the monster you pick each day.
 
     There's one check per rarity that day's monsters can be: day 1 goes up to Silver, day 2 up to Gold, days 3 to 5
-    up to Diamond and day 6 onward up to Legendary. Beating a monster sends its rarity and every rarity below it.
-    Only the monster you pick at hour 3 counts, not monsters from events.
+    up to Diamond and day 6 onward up to Legendary. Monster Rarities decides which of those keep a check. Beating a
+    monster sends its rarity's check and every lower one the day has. Only the monster you pick at hour 3 counts, not
+    monsters from events.
     """
     display_name = "Monster Checks"
 
@@ -117,15 +125,31 @@ def _max_monster_tier_body(namespace: dict) -> None:
 MaxMonsterTier = types.new_class("MaxMonsterTier", (Choice,), exec_body=_max_monster_tier_body)
 
 
+class MonsterRarities(Choice):
+    """
+    Which of each day's monster rarities have checks.
+
+    Top Three keeps the three highest rarities a day's monster can be (up to Highest Monster Rarity), so beating a
+    low-rarity monster late in a run sends nothing. All keeps every rarity. Bottom Three keeps the three lowest. Days
+    1 and 2 have at most three rarities, so they're the same either way.
+    """
+    display_name = "Monster Rarities"
+    option_top_three = 0
+    option_all = 1
+    option_bottom_three = 2
+    default = 0  # owner 2026-11-10: top 3 by default, all in Hardcore, bottom 3 in Casual
+
+
 class LockedCardsPercent(Range):
     """
     How many of your spare checks hold a locked card.
 
     Locked cards can't be bought or kept until you receive them, and they're spread evenly across your heroes.
-    Spare checks are the ones left after hero unlocks, packs, group unlocks, Sell Traps and Lock Bypasses.
+    Spare checks are the ones left after hero unlocks, packs, group unlocks, Sell Traps, Trap Shields and
+    Lock Bypasses.
 
-    Below 100, the rest get extra copies instead: extra hero unlocks first, then extra copies of locked cards (up to
-    3 of each). Copy counts you set yourself never change. Does nothing if Duplicate All Cards is enabled.
+    Below 100, the rest hold filler: a seed never duplicates anything unless you turn on Plentiful Items or the
+    Duplicate Cards options. Does nothing if Duplicate All Cards is enabled.
     """
     display_name = "Locked Cards Percent"
     range_start = 0
@@ -155,19 +179,47 @@ class LegendaryItems(Range):
     display_name = "Legendary Items Unlocks"
     range_start = 0
     range_end = 3
-    default = 2
+    default = 1  # owner 2026-11-10: no duplicates of anything in a default seed
 
 
-class ExpeditionTickets(Range):
+class PlentifulItems(Toggle):
     """
-    Number of Expedition Tickets unlocks in the item pool.
+    Adds a second copy of every hero unlock, pack and merchant/event unlock, and a second set of Expedition Tickets.
 
-    The Crash Site and Temple tickets are locked until you find the first one. Set to 0 to never lock the tickets.
+    Either copy unlocks it, so the important items turn up sooner. The copies take checks that would otherwise hold
+    locked cards, so you also get fewer locked cards. Without this, a seed has one copy of each. Copy counts with their
+    own option (Legendary Items, Event Rarity Progression, Duplicate Cards) are never changed by this.
     """
-    display_name = "Expedition Tickets Unlocks"
-    range_start = 0
-    range_end = 3
-    default = 2
+    display_name = "Plentiful Items"
+
+
+class ExpeditionTicketUnlocks(Choice):
+    """
+    How the expedition tickets (Crash Site, Temple, Tiny World) are unlocked.
+
+    Progressive: one Expedition Tickets item per ticket. Each one you find unlocks the next ticket, in the order they
+    came to the game: Crash Site, then Temple, then Tiny World.
+    Separate: each ticket is its own item to find, in any order.
+    Off: the tickets are never locked.
+    """
+    display_name = "Expedition Ticket Unlocks"
+    option_off = 0
+    option_progressive = 1
+    option_separate = 2
+    default = 1
+
+
+class SizeinatorUnlock(Choice):
+    """
+    What unlocks the Sizeinator, the Legendary item that shrinks one of your items when you sell it.
+
+    With Tiny World Ticket (easy): it unlocks together with the Tiny World Ticket.
+    Legendary Items (hard): it stays locked with the other Legendary items until you find Legendary Items.
+    """
+    display_name = "Sizeinator Unlock"
+    option_with_tiny_world_ticket = 0
+    option_legendary_items = 1
+    default = 0
 
 
 class LockedEncountersPercent(Range):
@@ -214,9 +266,9 @@ class EventRarityProgression(Range):
 
 class ExemptExpeditions(DefaultOnToggle):
     """
-    Keeps the Crash Site and Temple expeditions unlocked by Event Rarity Progression.
+    Keeps the expeditions (Crash Site, Temple, Tiny World) unlocked by Event Rarity Progression.
 
-    The tickets still need the Expedition Tickets unlock.
+    The tickets still need their unlock (see Expedition Ticket Unlocks).
     """
     display_name = "Exempt Expeditions"
 
@@ -259,7 +311,9 @@ class SellTrapDays(Range):
     """
     How many days you get to sell a Sell Trap's item.
 
-    For example, getting one on day 3 with 2 days means you have to sell it before day 5 starts.
+    For example, getting one on day 3 with 2 days means you have to sell it before the end of day 4 (one that
+    arrives after the day's PvP fight counts from the next day). Taking it into that day's PvP fight loses the run,
+    and no Lock Bypass brings it back.
     """
     display_name = "Sell Trap Days"
     range_start = 1
@@ -281,9 +335,23 @@ class LockBypasses(Range):
     default = 5
 
 
+class TrapShields(Range):
+    """
+    Number of Trap Shields in the item pool.
+
+    A Trap Shield blocks the next trap you receive after it, the moment that trap arrives. It never touches a trap
+    you already had. A trap that misses anyway doesn't use a shield, and unused ones carry over to later runs. Each
+    one replaces a locked card in the pool.
+    """
+    display_name = "Trap Shields"
+    range_start = 0
+    range_end = 20
+    default = 3
+
+
 class LogicDay10Cards(Range):
     """
-    How many of a hero's locked cards logic expects you to have before day 10.
+    How many of a hero's locked cards logic expects you to have before day 10. A pack counts as its 10 cards.
 
     Days 8 and 9 expect half as many, and days 1 to 7 only need the hero, since every run makes it to day 7. Later
     days climb from here up to Logic: Cards Before The Last Day. This only affects where items get placed, you can
@@ -382,6 +450,18 @@ class LegacyCardPacks(Toggle):
     display_name = "Legacy Card Packs"
 
 
+class CustomCardPacks(DefaultOnToggle):
+    """
+    Locks hand-made packs as single items: three for each DLC hero, plus one more each for Mak and Dooley.
+
+    Each pack is about 10 strong cards from one build, like Swarm Protocol (Stelle's drones), Seeing Red (Karnok's
+    Rage) or Brewing Trouble (Mak's potions), picked from player guides, 10-win boards and tier lists. Receiving a pack
+    unlocks all of its cards at once. Only packs for your included heroes are used, and you can leave out any pack with
+    its switch below. No card is in two packs, so this works together with Legacy Card Packs.
+    """
+    display_name = "Custom Card Packs"
+
+
 class BazaarDeathLink(DeathLink):
     """
     When you lose a run, everyone else with DeathLink dies, and when they die, you have to concede your run.
@@ -444,13 +524,15 @@ class _BazaarOptions(PerGameCommonOptions):
     pvp_win_checks: PvPWinChecks
     monster_checks: MonsterChecks
     max_monster_tier: MaxMonsterTier
+    monster_rarities: MonsterRarities
     locked_cards_percent: LockedCardsPercent
     lock_common_cards: LockCommonCards
     lock_loot_items: LockLootItems
     created_items: CreatedItems
     starter_cards: StarterCards
     legendary_items: LegendaryItems
-    expedition_tickets: ExpeditionTickets
+    expedition_ticket_unlocks: ExpeditionTicketUnlocks
+    sizeinator_unlock: SizeinatorUnlock
     duplicate_all_cards: DuplicateAllCards
     duplicate_cards: DuplicateCards
     locked_encounters_percent: LockedEncountersPercent
@@ -460,17 +542,22 @@ class _BazaarOptions(PerGameCommonOptions):
     sell_traps: SellTraps
     sell_trap_days: SellTrapDays
     lock_bypasses: LockBypasses
+    trap_shields: TrapShields
     logic_day_10_cards: LogicDay10Cards
     logic_last_day_cards: LogicLastDayCards
     logic_diamond_cards: LogicDiamondCards
     logic_legendary_cards: LogicLegendaryCards
+    plentiful_items: PlentifulItems
     legacy_card_packs: LegacyCardPacks
+    custom_card_packs: CustomCardPacks
     death_link: BazaarDeathLink
     death_link_on_concede: DeathLinkOnConcede
     death_link_amnesty: DeathLinkAmnesty
     death_links_before_concede: DeathLinksBeforeConcede
     death_links_same_run: DeathLinksSameRun
     start_inventory_from_pool: StartInventoryPool
+    # retired options: an old YAML that still sets one gets a clear message (DEVELOPERS.md)
+    expedition_tickets: Removed  # 2026-11-09: replaced by expedition_ticket_unlocks
 
 
 # the hero and pack switches are generated (see above), so they're added to the options here
@@ -484,19 +571,21 @@ BazaarOptions = make_dataclass("BazaarOptions", [(name, option) for name, option
 # Included heroes are never set by a preset.
 option_presets = {
     "Casual": {
-        "heroes_required": 1, "early_hero_unlock": True, "max_day": 12, "max_monster_tier": "gold",
-        "locked_cards_percent": 60, "starter_cards": 30, "legendary_items": 3, "expedition_tickets": 3,
+        "heroes_required": 1, "early_hero_unlock": True, "max_day": 12, "max_monster_tier": "gold", "monster_rarities": "bottom_three",
+        "locked_cards_percent": 60, "starter_cards": 30, "legendary_items": 3,
         "locked_encounters_percent": 10, "starter_merchants": 10,
-        "sell_traps": 0, "lock_bypasses": 10, "created_items": "allowed",
+        "sell_traps": 0, "lock_bypasses": 10, "trap_shields": 0, "created_items": "allowed",
         "logic_day_10_cards": 8, "logic_last_day_cards": 12, "logic_diamond_cards": 5, "logic_legendary_cards": 10,
-        "death_link": False,
+        "custom_card_packs": False, "plentiful_items": True, "death_link": False,
     },
     "Standard": {},
     "Hardcore": {
-        "heroes_required": 6, "max_day": 16, "max_monster_tier": "legendary", "locked_cards_percent": 100,
-        "starter_cards": 10, "legendary_items": 1, "expedition_tickets": 1, "legacy_card_packs": True,
+        "heroes_required": 6, "max_day": 16, "max_monster_tier": "legendary", "monster_rarities": "all", "locked_cards_percent": 100,
+        "starter_cards": 10, "legendary_items": 1, "sizeinator_unlock": "legendary_items", "legacy_card_packs": True,
+        "custom_card_packs": True,
         "locked_encounters_percent": 50, "starter_merchants": 2, "event_rarity_progression": 2,
-        "sell_traps": 10, "sell_trap_days": 1, "lock_bypasses": 0, "created_items": "locked",
+        "sell_traps": 10, "sell_trap_days": 1, "lock_bypasses": 0, "trap_shields": 0,
+        "created_items": "locked",
         "logic_day_10_cards": 25, "logic_last_day_cards": 50, "logic_diamond_cards": 20, "logic_legendary_cards": 30,
         "death_link": True, "death_link_on_concede": True, "death_links_before_concede": 1,
     },
@@ -505,13 +594,17 @@ option_presets = {
 option_groups = [
     OptionGroup("Included Heroes (Must own)", list(INCLUDE_SWITCHES.values())),
     OptionGroup("Heroes", [StartingHero, HeroesRequired, EarlyHeroUnlock]),
-    OptionGroup("Checks", [MaxDay, PvPWinChecks, MonsterChecks, MaxMonsterTier]),
+    OptionGroup("Checks", [MaxDay, PvPWinChecks, MonsterChecks, MaxMonsterTier, MonsterRarities]),
     OptionGroup("Card Locks", [LockedCardsPercent, LockCommonCards, LockLootItems, CreatedItems, StarterCards,
-                               LegendaryItems, ExpeditionTickets, DuplicateAllCards, DuplicateCards]),
+                               LegendaryItems, ExpeditionTicketUnlocks, SizeinatorUnlock, PlentifulItems,
+                               DuplicateAllCards, DuplicateCards]),
     OptionGroup("Merchant and Event Locks", [LockedEncountersPercent, StarterMerchants, EventRarityProgression,
                                               ExemptExpeditions]),
-    OptionGroup("Legacy Card Packs", [LegacyCardPacks, *PACK_SWITCHES.values()]),
-    OptionGroup("Traps and Buffs", [SellTraps, SellTrapDays, LockBypasses]),
+    OptionGroup("Legacy Card Packs", [LegacyCardPacks, *(o for o, p in zip(PACK_SWITCHES.values(), PACKS)
+                                                         if not p.custom)]),
+    OptionGroup("Custom Card Packs", [CustomCardPacks, *(o for o, p in zip(PACK_SWITCHES.values(), PACKS)
+                                                         if p.custom)]),
+    OptionGroup("Traps and Buffs", [SellTraps, SellTrapDays, LockBypasses, TrapShields]),
     OptionGroup("Logic", [LogicDay10Cards, LogicLastDayCards, LogicDiamondCards, LogicLegendaryCards]),
     OptionGroup("DeathLink", [BazaarDeathLink, DeathLinkOnConcede, DeathLinkAmnesty,
                                    DeathLinksBeforeConcede, DeathLinksSameRun]),

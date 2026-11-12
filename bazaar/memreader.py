@@ -67,9 +67,11 @@ UI_RETRY_SECONDS = 1.0  # how often the board's on-screen flags are looked for a
 # a card; a 144 Hz frame is 6.9 ms). A power of two that divides a page, so a block never spans an unreadable page.
 READ_BLOCK = 4096  # one page: measured best of 256 / 1024 / 4096 (2026-10-15, 13 cards: 4.5 / 4.3 / 4.0 ms a read)
 FIGHTS = ("Combat", "PVPCombat")
-# The merchant's side of the board, read only off fights and only for the cards on offer to you (owner, 2026-10-14:
-# "no need to look at the other players information... just what pertains to our user"). Their names hold "opponent",
-# which BLOCKED refuses everywhere else.
+MONSTER_FIGHT = "Combat"  # a monster or event fight; a PvP fight is "PVPCombat" and its opponent is never read
+# The merchant's side of the board, read off fights only for the cards on offer to you (owner, 2026-10-14: "no need
+# to look at the other players information... just what pertains to our user"), and in a monster/event fight for the
+# monster's items (owner, 2026-11-09: padlocks "in every scenario (Unless its a pvp fight)"). Their names hold
+# "opponent", which BLOCKED refuses everywhere else.
 OFFER_SOCKETS = ("opponentItemSockets", "opponentSkillSockets")
 # The event options on a choice screen: a List of EncounterSocketController (recorded 2026-10-15); same rules
 EVENT_SOCKETS = "_opponentBoardSocketControllers"
@@ -107,7 +109,8 @@ class BoardUI(NamedTuple):
     inspecting: bool = False  # a right-click inspect view is open (_cardTooltipController.isLocked, 2026-10-14)
     # each card's rect by instance id while it faces you: your board, your stash, and what's on offer (not in fights)
     cards: Dict[str, Tuple[float, float, float, float]] = {}
-    # the items on a right-clicked monster's board: (key, template guid); their rects are in cards under the key
+    # the items on a monster's board, right-clicked or fighting you (never PvP): (key, template guid); their rects are
+    # in cards under the key
     monster_items: Tuple[Tuple[str, Optional[str]], ...] = ()
     gear: Optional[Tuple[float, float, float, float]] = None  # the settings gear at the top right (find_gear)
 
@@ -775,7 +778,8 @@ class Reader:
             dragged = m.ptr(paths["dragged"]) if dragging else 0
             inventory = bool(toy and self._get(toy, "toyOpen"))
             inspecting = bool(tooltip and self._get(tooltip, "isLocked"))
-            cards = self._card_rects(board)
+            fight: list = []
+            cards = self._card_rects(board, fight)
             monster = self._monster_board(tooltip, card) if inspecting and card else ()
             cards.update((key, rect) for key, _template, rect in monster)
             return BoardUI(hovering=hovering,
@@ -788,7 +792,8 @@ class Reader:
                            dealing=bool(self._get(board, "_cardsBeingDealt")),
                            hovered_card=self._instance_id(card), dragged_card=self._instance_id(dragged),
                            inspecting=inspecting,
-                           cards=cards, monster_items=tuple((key, template) for key, template, _rect in monster),
+                           cards=cards, monster_items=tuple(fight) + tuple((key, template) for key, template, _rect
+                                                                           in monster),
                            gear=self._gear_rect())
         except Exception:  # a read that made no sense this time: the padlocks fall back for now
             return None
@@ -847,20 +852,28 @@ class Reader:
     def _native(self, obj: int) -> int:
         return self.memory.ptr(obj + unity.NATIVE) if obj else 0
 
-    def _card_rects(self, board: int) -> Dict[str, Tuple[float, float, float, float]]:
+    def _card_rects(self, board: int, fight: list) -> Dict[str, Tuple[float, float, float, float]]:
         """Each card's rect on screen, by instance id, only while its art can be seen (owner, 2026-10-15: "padlocks
         are to only be seen if the art for what it is supposed to be on top of is there"): switched on and its face
         turned toward you (unity.faces_camera). Your board; your stash (shut, its cards face away under the shop;
         they turn into view as it flips open); what's on offer only off fights, and only the offered cards
         (OFFER_SOCKETS). Through the camera the cards themselves use (CardController.mainCamera). Event options
         too (EVENT_SOCKETS), as a point: the centre of their art, which rides into the big view when one's
-        right-clicked (recorded 2026-10-15: within 2 px of the measured spots, and on the big art's centre)."""
+        right-clicked (recorded 2026-10-15: within 2 px of the measured spots, and on the big art's centre). In a
+        monster or event fight the monster's items too: their (instance id, template) go into `fight`."""
         read, out, matrix = self.memory.read, {}, None
         state, offered = self.offers_now
         fields = ["playerItemSockets", "playerStorageSockets"]
         sources = [self._get(board, f) for f in fields]
         if state not in FIGHTS and offered:
             sources += [self._offer_sockets(board, f) for f in OFFER_SOCKETS]
+        # A monster or event fight (never PvP): the monster's items sit in the same sockets as a shop's (recorded
+        # 2026-11-09, patch 20.1: Calico's 8 items, rects following their attack animations)
+        # ⚠️ offers_now is only as fresh as the last full snapshot (~0.3 s, kept through failed reads): never in PvP
+        # is checked against the screen read now too (review 2026-11-09)
+        fight_source = self._offer_sockets(board, OFFER_SOCKETS[0]) \
+            if state == MONSTER_FIGHT and self._state_now() == MONSTER_FIGHT else 0
+        sources.append(fight_source)
         sockets_lists = [(s, self.memory.i32(s + 0x18) or 0, s) for s in sources if s]  # arrays: length, items
         events = self._offer_sockets(board, EVENT_SOCKETS) if state not in FIGHTS and offered else 0
         if events:  # a List: _items, _size
@@ -871,8 +884,9 @@ class Reader:
                 controller = self._get(socket, "CardController") if socket else 0
                 if not controller:
                     continue
-                card = self._instance_id(self._get(controller, "CardData"))
-                if not card or source not in sources[:len(fields)] and card not in offered:
+                data = self._get(controller, "CardData")
+                card = self._instance_id(data)
+                if not card or source not in sources[:len(fields)] and source != fight_source and card not in offered:
                     continue
                 if matrix is None:
                     matrix = unity.camera_matrix(read, self._native(self._get(controller, "mainCamera"))) or ()
@@ -898,6 +912,8 @@ class Reader:
                 rect = unity.box_rect(read, matrix, self._native(self._get(controller, "BoxCollider")), rig, placed)
                 if rect:
                     out[card] = rect
+                    if source == fight_source:
+                        fight.append((card, self._get(data, "TemplateId")))
         return out
 
     def _monster_board(self, tooltip: int, card: int) -> Tuple[Tuple[str, Optional[str], tuple], ...]:
@@ -923,8 +939,13 @@ class Reader:
                 out.append((f"monster:{i}", self._get(data, "TemplateId"), rect))
         return tuple(out)
 
+    def _state_now(self) -> Optional[str]:
+        """The screen's name read this moment (None if it isn't a RunState now), for gates that must never be stale."""
+        state = self.memory.ptr(self.statics["<CurrentState>k__BackingField"])
+        return self._get(state, "StateName") if state and self.mono.is_a(state, "RunState") else None
+
     def _offer_sockets(self, board: int, name: str) -> int:
-        """One of OFFER_SOCKETS, past BLOCKED (see there); only called off fights."""
+        """One of OFFER_SOCKETS, past BLOCKED (see there); never called in a PvP fight."""
         c = self.mono.klass(board)
         while c:
             for n, offset, static, _code, _data in self.mono.fields(c):

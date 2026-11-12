@@ -1,0 +1,677 @@
+{
+ "_comment": "Hand-made packs (owner 2026-11-10): one build archetype each, ~10 strong cards from guides, 10-win boards and bazaardb tier lists. Cards are keyed by guid; 'name' is for reading only and is checked by test_custom_packs. ap_id: append only, never reuse. See docs/CARD-PACKS.md.",
+ "packs": [
+  {
+   "key": "Custom_Stelle_Swarm_Protocol",
+   "ap_id": 150,
+   "name": "Swarm Protocol",
+   "hero": "Stelle",
+   "cards": [
+    {
+     "guid": "c47744c9-d3bd-42ba-ae49-5fbff2f5d785",
+     "name": "Parts Picker"
+    },
+    {
+     "guid": "d208b6ac-fb07-466c-b895-625405bfc3e7",
+     "name": "Seeker Probe"
+    },
+    {
+     "guid": "1543f7d4-b984-420d-a747-23dfe38f6933",
+     "name": "Delivery Drone"
+    },
+    {
+     "guid": "f97422bf-fbee-4bc3-a9c8-da799a53a716",
+     "name": "Targeting Drone"
+    },
+    {
+     "guid": "560450e3-8700-4ef9-b7c1-d3ae9937b55e",
+     "name": "Rocket Drone"
+    },
+    {
+     "guid": "c8daaaa2-e652-465a-8d5b-718c33674f0c",
+     "name": "Angle Grinder Drone"
+    },
+    {
+     "guid": "f321478b-7741-4d36-a567-ef428ad11ea9",
+     "name": "Boom Boom Bot"
+    },
+    {
+     "guid": "0a9d659c-f71c-4c82-aa71-1897ee78f551",
+     "name": "Battle Drone"
+    },
+    {
+     "guid": "461e9a8d-331b-46a2-b604-6b04312b3214",
+     "name": "Lightning Butterfly"
+    },
+    {
+     "guid": "04fc1f55-0618-4766-b40e-fa85f8036b5b",
+     "name": "Repair Drone"
+    }
+   ]
+  },
+  {
+   "key": "Custom_Stelle_Skyward_Bound",
+   "ap_id": 151,
+   "name": "Skyward Bound",
+   "hero": "Stelle",
+   "cards": [
+    {
+     "guid": "82893892-afc0-458a-af94-160aaf8642bd",
+     "name": "Space Laser"
+    },
+    {
+     "guid": "3a9f3d16-9022-4709-9903-8b08b1f918dc",
+     "name": "Skyliner"
+    },
+    {
+     "guid": "c6c9d2dd-7463-4171-83a9-4a1c2a83edb8",
+     "name": "Vortex Cannon"
+    },
+    {
+     "guid": "c8e95316-8a46-43cd-8fc7-09ce609e8b38",
+     "name": "MagShield"
+    },
+    {
+     "guid": "458e19fa-9c19-420a-90cd-d7fb3943271c",
+     "name": "Observatory"
+    },
+    {
+     "guid": "223bc3f1-8dc6-429b-8c17-af64b24836ec",
+     "name": "Sirens"
+    },
+    {
+     "guid": "e8dea331-db8e-4f11-84ad-1869c6d593b5",
+     "name": "Headset"
+    },
+    {
+     "guid": "b5f82e87-ffb1-4cc6-a3b3-7193b5f8862a",
+     "name": "Ornithopter"
+    },
+    {
+     "guid": "c984adcc-6a42-4b0b-a964-fd64fd2fdaa7",
+     "name": "Aerial Turret"
+    },
+    {
+     "guid": "6e576444-85ce-4922-84e1-8ad88c5b83f1",
+     "name": "Gatling Gun"
+    }
+   ]
+  },
+  {
+   "key": "Custom_Stelle_Tinkerer_s_Toolbox",
+   "ap_id": 152,
+   "name": "Tinkerer's Toolbox",
+   "hero": "Stelle",
+   "cards": [
+    {
+     "guid": "58928d1a-27ef-43be-89e2-81e627dae954",
+     "name": "Stelle's Workshop"
+    },
+    {
+     "guid": "27e2ea0b-4e39-4826-be29-9f5505d5938a",
+     "name": "Wrench"
+    },
+    {
+     "guid": "f8dd1239-f4a3-4bca-b975-2125906e7fcb",
+     "name": "Hammer"
+    },
+    {
+     "guid": "6cf87784-bca9-4735-a431-15bc88c97f78",
+     "name": "Compass"
+    },
+    {
+     "guid": "03842226-6605-466f-9ea3-a8a2dbea67e1",
+     "name": "Atlas"
+    },
+    {
+     "guid": "d619c665-1d58-46e8-828f-6e7e36a86a7d",
+     "name": "Orbital Polisher"
+    },
+    {
+     "guid": "175b351d-f28a-4f74-8bc2-6568eeb075ca",
+     "name": "Drafting Table"
+    },
+    {
+     "guid": "f8b41c46-8adc-4e84-835a-831e2e3d84d1",
+     "name": "Goggles"
+    },
+    {
+     "guid": "18100c8e-24db-4568-bd8c-4c8914557e11",
+     "name": "Hydrogen Tank"
+    },
+    {
+     "guid": "3310f7e3-025e-4212-9e95-756fe3af8ab1",
+     "name": "Precision Calipers"
+    }
+   ]
+  },
+  {
+   "key": "Custom_Jules_Turn_Up_the_Heat",
+   "ap_id": 153,
+   "name": "Turn Up the Heat",
+   "hero": "Jules",
+   "cards": [
+    {
+     "guid": "b0f345cb-a769-487d-9fd4-fa5fe130f8b9",
+     "name": "Giant Lollipop"
+    },
+    {
+     "guid": "c905d622-051e-4250-934c-3acb82c3ab35",
+     "name": "Dragon Steak"
+    },
+    {
+     "guid": "83befde2-64f9-4cd3-a2bd-a080a0c85ae3",
+     "name": "Cutlery Forge"
+    },
+    {
+     "guid": "027ef534-d047-4e18-8496-d9fd4773e15d",
+     "name": "Dishwasher"
+    },
+    {
+     "guid": "16667da1-b904-4a3f-a1b5-a18fe4e6705a",
+     "name": "Oven"
+    },
+    {
+     "guid": "58644fca-df07-48f8-808e-85c9cbf5fccb",
+     "name": "Cookbook"
+    },
+    {
+     "guid": "eaad7107-19ac-4f35-b1fb-9359ca33968d",
+     "name": "Pizza Cutter"
+    },
+    {
+     "guid": "fcf57212-34e9-4049-b40c-751d18b1af40",
+     "name": "Microwave"
+    },
+    {
+     "guid": "6260416a-6433-456a-9c5c-14a18d82f940",
+     "name": "Scorchpepper"
+    },
+    {
+     "guid": "2ffce1c9-e5da-4f9f-b8ed-69fd61befded",
+     "name": "Baked Potato"
+    }
+   ]
+  },
+  {
+   "key": "Custom_Jules_Chill_Out",
+   "ap_id": 154,
+   "name": "Chill Out",
+   "hero": "Jules",
+   "cards": [
+    {
+     "guid": "fdd78910-3e5c-4244-8c13-ac90a223fae3",
+     "name": "Ice Swan"
+    },
+    {
+     "guid": "26a15140-798a-4ac5-9df9-711ccc3cf89d",
+     "name": "Froyo Cart"
+    },
+    {
+     "guid": "6254a491-e424-4573-bb8d-a7d51a26144d",
+     "name": "Freezer"
+    },
+    {
+     "guid": "23ece463-2e2b-40a0-b39d-035e090bb6bb",
+     "name": "Decanter"
+    },
+    {
+     "guid": "d6eda7aa-d4fa-4992-88c7-87b89fe7f5ec",
+     "name": "Refrigerator"
+    },
+    {
+     "guid": "a8b604d0-de28-400f-8a4b-d5b29ccfba27",
+     "name": "Sorbet"
+    },
+    {
+     "guid": "18593111-fd25-4494-8eb4-1f279759ae33",
+     "name": "Cornucopia"
+    },
+    {
+     "guid": "5ee8749e-0274-4516-bbea-0830bb2953b7",
+     "name": "Cake Batter"
+    },
+    {
+     "guid": "74015476-fea8-4aed-ae77-01e66b28cbfe",
+     "name": "Durian"
+    },
+    {
+     "guid": "82edae84-1f2a-4154-9273-b7274be2cf92",
+     "name": "Dragonmelon"
+    }
+   ]
+  },
+  {
+   "key": "Custom_Jules_Farm_to_Table",
+   "ap_id": 155,
+   "name": "Farm to Table",
+   "hero": "Jules",
+   "cards": [
+    {
+     "guid": "90acad0b-2154-4af1-a448-5f8dc304612e",
+     "name": "Farmer's Market"
+    },
+    {
+     "guid": "c8abacb3-3d98-4266-9842-775a5683ac8c",
+     "name": "Pantry"
+    },
+    {
+     "guid": "0c4265a2-a374-4f10-a16d-cf718a3ede42",
+     "name": "Luau"
+    },
+    {
+     "guid": "a1734319-3c24-430b-9f6c-e4dfb5abd9d1",
+     "name": "Veggie Garden"
+    },
+    {
+     "guid": "c25780af-ae03-4fcf-b8ea-a2bd096ec215",
+     "name": "Bread Knife"
+    },
+    {
+     "guid": "30da8c8f-4252-4ab7-848a-eaede3922266",
+     "name": "Basket"
+    },
+    {
+     "guid": "a16f1388-d900-4871-8baf-873e38190f9a",
+     "name": "Trail Mix"
+    },
+    {
+     "guid": "5e95fcfd-bacb-4bb6-bf65-fb16ba602b3d",
+     "name": "Jambalaya"
+    },
+    {
+     "guid": "f105f32c-d601-4624-9971-5cb16ff0b091",
+     "name": "Pasta"
+    },
+    {
+     "guid": "9d7b0b38-aaac-40b9-a189-4f1a0635ccb4",
+     "name": "Pumpkin"
+    }
+   ]
+  },
+  {
+   "key": "Custom_Karnok_Seeing_Red",
+   "ap_id": 156,
+   "name": "Seeing Red",
+   "hero": "Karnok",
+   "cards": [
+    {
+     "guid": "0660ace1-2d6a-4f7b-bfc2-05e8582d27b9",
+     "name": "Outlands Terror"
+    },
+    {
+     "guid": "b57734a7-642e-4c57-861c-b8a488596047",
+     "name": "Tree Club"
+    },
+    {
+     "guid": "e69fe274-6cdf-484e-887c-cc431ad999d8",
+     "name": "Great Eagle"
+    },
+    {
+     "guid": "1bfdb3c5-dece-4a67-a9ed-255fbc060f4e",
+     "name": "Karst"
+    },
+    {
+     "guid": "b86d7698-70b2-4caa-b373-2f377125d6d2",
+     "name": "Battle Axe"
+    },
+    {
+     "guid": "22c8b252-e36d-4564-9588-06febd4b358d",
+     "name": "Wolf Mask"
+    },
+    {
+     "guid": "50039402-e84e-4698-90fa-7cbaffca9ce8",
+     "name": "Boar Mask"
+    },
+    {
+     "guid": "82cdc29a-cb0e-40e4-b2b8-d4ea79d3555f",
+     "name": "Firefly Lantern"
+    },
+    {
+     "guid": "904ffad8-86e3-4e3b-8a26-723604cc4f0e",
+     "name": "Flame Sigil"
+    },
+    {
+     "guid": "b3b0f6a4-bad5-49dc-a6f7-128be2565869",
+     "name": "Assault Sigil"
+    }
+   ]
+  },
+  {
+   "key": "Custom_Karnok_Trapper_s_Kit",
+   "ap_id": 157,
+   "name": "Trapper's Kit",
+   "hero": "Karnok",
+   "cards": [
+    {
+     "guid": "0f878177-bec7-4698-b834-0f37ef332488",
+     "name": "Trapvine"
+    },
+    {
+     "guid": "a7f36ca3-2ed2-453e-9e44-260ade42500e",
+     "name": "Fairy Circle"
+    },
+    {
+     "guid": "7d718c5d-e50e-46dd-ada7-f3eb0f8a16b2",
+     "name": "Chains"
+    },
+    {
+     "guid": "7a504eff-6d75-40fd-b048-70a6d69dd6d4",
+     "name": "Boa Constrictor"
+    },
+    {
+     "guid": "f7da5278-8608-4161-a8cd-938c600e645a",
+     "name": "Bat"
+    },
+    {
+     "guid": "3c265982-4144-44de-bf69-2d86c137de20",
+     "name": "Night Vision"
+    },
+    {
+     "guid": "2e2815d0-fa7c-45ab-a0f2-65ebe1c815d8",
+     "name": "Enervating Sigil"
+    },
+    {
+     "guid": "6c80dddf-31ea-4e2a-8d7a-78c5cf672597",
+     "name": "Worry Wart"
+    },
+    {
+     "guid": "991efa4e-b4d6-4a20-9de5-81ce00c3e2ae",
+     "name": "River Otter"
+    },
+    {
+     "guid": "02d7a406-a6eb-4b46-8975-1f69b0fde428",
+     "name": "Security Blanket"
+    }
+   ]
+  },
+  {
+   "key": "Custom_Karnok_Killer_Instinct",
+   "ap_id": 158,
+   "name": "Killer Instinct",
+   "hero": "Karnok",
+   "cards": [
+    {
+     "guid": "94a184be-98f2-4a65-8334-e15deff2c082",
+     "name": "Runic Claymore"
+    },
+    {
+     "guid": "7cfac919-7fc0-475e-91f4-3e869ec1f870",
+     "name": "Dual Reaver"
+    },
+    {
+     "guid": "6e633f92-81a3-4157-912c-bcdb1b9e28f1",
+     "name": "Hunter's Pack"
+    },
+    {
+     "guid": "a4f9a8ea-7955-4285-8489-7c94c439018b",
+     "name": "Spear"
+    },
+    {
+     "guid": "a14e3bea-96b9-43de-9455-99393769b356",
+     "name": "Pocket Knife"
+    },
+    {
+     "guid": "b8167003-4e4c-4405-8986-0efaaf77665f",
+     "name": "Hunter's Journal"
+    },
+    {
+     "guid": "ff5c6ad0-9b05-48af-9e90-6ebd0e73ffa7",
+     "name": "Adrenaline Shot"
+    },
+    {
+     "guid": "9f098979-e499-406c-a6a1-2bc98e88afab",
+     "name": "Hunting Knife"
+    },
+    {
+     "guid": "0941d7dd-1264-42c5-b334-6cc5d694571b",
+     "name": "Hunting Hawk"
+    },
+    {
+     "guid": "fea2f5a5-48c7-42c0-8836-1ea805cea768",
+     "name": "Hunter's Boots"
+    }
+   ]
+  },
+  {
+   "key": "Custom_The_Dragons_Dragon_s_Den",
+   "ap_id": 159,
+   "name": "Dragon's Den",
+   "hero": "The Dragons",
+   "cards": [
+    {
+     "guid": "894657f8-ab1e-4acf-b52e-538559f00d37",
+     "name": "Mecha Dragon"
+    },
+    {
+     "guid": "109af4f3-b1c5-41c3-bf28-a4551ea3108a",
+     "name": "Superfan"
+    },
+    {
+     "guid": "0152f1f7-1efd-40de-8de3-fdf936d793ed",
+     "name": "Dragon Statue"
+    },
+    {
+     "guid": "a4b80890-d2a4-4dab-bf40-b895cedb61e0",
+     "name": "Scaled Jacket"
+    },
+    {
+     "guid": "47c2b54e-188b-4ec8-83d6-db089eed0a40",
+     "name": "Event Poster"
+    },
+    {
+     "guid": "e3f3f966-2f8d-47a9-a443-fb31df1554b4",
+     "name": "Keytar"
+    },
+    {
+     "guid": "3d05c2c8-05e5-4569-a9fd-7f351035b201",
+     "name": "Wings"
+    },
+    {
+     "guid": "59f5169f-5717-4ff7-bef7-22ca274d538d",
+     "name": "Hoodie"
+    },
+    {
+     "guid": "d32d8efd-ca3c-49d5-b9e3-dc9a6d481ed9",
+     "name": "Patch"
+    },
+    {
+     "guid": "97ee275a-1fcf-4400-a197-4859af251704",
+     "name": "Scorch"
+    }
+   ]
+  },
+  {
+   "key": "Custom_The_Dragons_Headliner",
+   "ap_id": 160,
+   "name": "Headliner",
+   "hero": "The Dragons",
+   "cards": [
+    {
+     "guid": "33c070fe-7af5-4157-b81c-a98c5cbbe4c3",
+     "name": "Arcade Machine"
+    },
+    {
+     "guid": "ef504cf8-b33a-41ae-a964-7e1864de5ae1",
+     "name": "Amp"
+    },
+    {
+     "guid": "3df1d01b-db01-4970-b045-2401382a5925",
+     "name": "Sound Engineer"
+    },
+    {
+     "guid": "57347bb6-29f5-40d6-89a1-c1b4ed1a23d0",
+     "name": "Ticket Terra"
+    },
+    {
+     "guid": "41f1bb20-6e95-4943-b401-1f3c41ffce1f",
+     "name": "Neon Sign"
+    },
+    {
+     "guid": "5c5bcb43-12a9-464d-8eb6-44707ae273dd",
+     "name": "Lightstick"
+    },
+    {
+     "guid": "5db24337-1a59-4d9a-aa50-a4df31be06a6",
+     "name": "Blades"
+    },
+    {
+     "guid": "7d8bcfd8-4f9a-42f0-9104-93f64139a7e7",
+     "name": "Black Lipstick"
+    },
+    {
+     "guid": "9179a3dc-7297-4138-8011-2c7c573bd170",
+     "name": "Hover Pad"
+    },
+    {
+     "guid": "98aa3e24-d793-408b-b20b-8ce98cd4708b",
+     "name": "Vocoder"
+    }
+   ]
+  },
+  {
+   "key": "Custom_The_Dragons_Battle_of_the_Bands",
+   "ap_id": 161,
+   "name": "Battle of the Bands",
+   "hero": "The Dragons",
+   "cards": [
+    {
+     "guid": "d2862667-22f2-4f85-b337-9b0dda06f5af",
+     "name": "Guzheng"
+    },
+    {
+     "guid": "45b2aadd-105e-43a9-82f3-4afe2137676d",
+     "name": "Whistling Glaive"
+    },
+    {
+     "guid": "410dbcde-16e1-4b92-9e12-cc7b9fa90600",
+     "name": "Pipe Organ"
+    },
+    {
+     "guid": "5d9c6a35-84d0-4992-a07d-3a83e39f5474",
+     "name": "Turner"
+    },
+    {
+     "guid": "b469d6e0-2283-4a17-bda9-cc1955791a77",
+     "name": "Maracas"
+    },
+    {
+     "guid": "d6c55b70-fcc7-454c-af9c-06b99d2d01e3",
+     "name": "Tambourine"
+    },
+    {
+     "guid": "93001232-e995-43a9-82e0-bd6615ea746e",
+     "name": "Tuba"
+    },
+    {
+     "guid": "04312f35-0ac9-4fd0-9118-6367be0d4690",
+     "name": "Bass"
+    },
+    {
+     "guid": "ede5614d-3569-47f6-b590-a24e0ad69b1f",
+     "name": "Bongos"
+    },
+    {
+     "guid": "719c5db8-85ff-41ca-8494-25741c8c5f1d",
+     "name": "Cymbal"
+    }
+   ]
+  },
+  {
+   "key": "Custom_Mak_Brewing_Trouble",
+   "ap_id": 162,
+   "name": "Brewing Trouble",
+   "hero": "Mak",
+   "cards": [
+    {
+     "guid": "028d89ac-b4c4-4d3c-ba31-71b57aa33bed",
+     "name": "Potion Distillery"
+    },
+    {
+     "guid": "ad779fb4-0001-4406-8aac-a5f5ce6580eb",
+     "name": "Boiling Flask"
+    },
+    {
+     "guid": "61ddd1bd-9b9c-4a31-93bc-4fbcd148fc64",
+     "name": "Flying Potion"
+    },
+    {
+     "guid": "d9aca67c-67e1-4388-a32e-b04579ad2102",
+     "name": "Strength Potion"
+    },
+    {
+     "guid": "54040bca-14e5-4f6d-bfa8-b67658adda0b",
+     "name": "Energy Potion"
+    },
+    {
+     "guid": "4252c53d-8c2f-4dbb-974f-b45926911eac",
+     "name": "Vitality Potion"
+    },
+    {
+     "guid": "4fdc947b-3646-429e-ba4e-bb693fe44bc2",
+     "name": "Invulnerability Potion"
+    },
+    {
+     "guid": "2974e199-fa53-4d40-87a6-0ec6722a4aef",
+     "name": "Rainbow Potion"
+    },
+    {
+     "guid": "f5ab9d64-2ba8-4210-9cf7-4564413b8d00",
+     "name": "Broken Bottle"
+    },
+    {
+     "guid": "d5a56d21-6892-4a08-b57a-1af53687ff37",
+     "name": "Aludel"
+    }
+   ]
+  },
+  {
+   "key": "Custom_Dooley_Overclocked",
+   "ap_id": 163,
+   "name": "Overclocked",
+   "hero": "Dooley",
+   "cards": [
+    {
+     "guid": "7d270d9f-9201-4e1a-9d66-467e11d4b5c1",
+     "name": "Fiber Optics"
+    },
+    {
+     "guid": "7d64073a-816f-476d-b704-e58b539b9b7a",
+     "name": "Motherboard"
+    },
+    {
+     "guid": "2434460c-af35-4dde-a69f-1f8781c807d2",
+     "name": "Crypto"
+    },
+    {
+     "guid": "af085ed1-25e7-49a6-b72f-9bf8e4779132",
+     "name": "GPU"
+    },
+    {
+     "guid": "566b5c63-4201-41d3-b6d5-0eb527db396a",
+     "name": "Memory Card"
+    },
+    {
+     "guid": "8ae391d2-4267-4d73-96e5-24951a7a2d95",
+     "name": "Trojan"
+    },
+    {
+     "guid": "9e0bca07-56bd-4217-b258-ef1dabd42209",
+     "name": "Cybersecurity"
+    },
+    {
+     "guid": "a541c31d-7b4b-45f6-bceb-c9971f8b06b5",
+     "name": "Cooling Fan"
+    },
+    {
+     "guid": "434ba656-da96-429a-9db1-c22ef271cd1f",
+     "name": "Cool LEDs"
+    },
+    {
+     "guid": "b769eef3-b324-4704-91fd-3a971c6f47b4",
+     "name": "Battery"
+    }
+   ]
+  }
+ ]
+}

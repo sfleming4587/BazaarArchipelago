@@ -54,21 +54,21 @@ class TestPadlockSitsOnItsCard(unittest.TestCase):
         """Owner, 2026-10-15: "padlocks are to only be seen if the art for what it is supposed to be on top of is
         there" - an event's padlock stayed over the stash flipped over it. Memory places the option (a point, the
         centre of its art: recorded at 715,305 where the measured spot was 715,303) only while it faces you."""
-        lock, options = Padlock(card="enc_a", option=0), [(715, 303)]
+        lock = Padlock(card="enc_a")
         seen = ui(cards={"enc_a": frac((715, 305, 715, 305))})
-        self.assertEqual(padlocks.spot(lock, seen, WINDOW, SIZE, options), (687, 277, 743, 333))
+        self.assertEqual(padlocks.spot(lock, seen, WINDOW, SIZE), (687, 277, 743, 333))
         for gone in (ui(), None):  # flipped away under the stash, or the board's state unreadable
-            self.assertIsNone(padlocks.spot(lock, gone, WINDOW, SIZE, options))
+            self.assertIsNone(padlocks.spot(lock, gone, WINDOW, SIZE))
 
     def test_a_right_clicked_event_keeps_its_padlock_on_the_enlarged_art(self) -> None:
         """Owner, 2026-10-15: right-clicking an event hid its padlock; it is art on the card, so it rides along.
         Recorded: the enlarged Jungle Ruins' centre at 0.363, 0.41 of the window (matched to the owner's video)."""
-        lock, options = Padlock(card="enc_a", option=0), [(715, 303)]
+        lock = Padlock(card="enc_a")
         board = ui(hovering=True, inspecting=True, hovered_card="enc_a", cards={"enc_a": (0.363, 0.41, 0.363, 0.41)})
-        square = padlocks.spot(lock, board, WINDOW, SIZE, options)
+        square = padlocks.spot(lock, board, WINDOW, SIZE)
         self.assertEqual(tuple(round(v) for v in square), (669, 415, 725, 471))
         self.assertEqual(padlocks.alpha(lock, square, board, [], 6, 0.0, 100.0), SOLID)
-        other = Padlock(card="enc_b", option=1)  # another option, under the big view
+        other = Padlock(card="enc_b")  # another option, under the big view
         board = board._replace(cards={**board.cards, "enc_b": frac((960, 364, 960, 364))})
         self.assertEqual(padlocks.alpha(other, padlocks.spot(other, board, WINDOW, SIZE), board, [], 6, 0.0, 100.0),
                          HIDDEN)
@@ -89,11 +89,6 @@ class TestPadlockSitsOnItsCard(unittest.TestCase):
         sliding_in = board._replace(cards={"monster:2": frac((706, 1060, 958, 1300))})  # rises from below the window
         self.assertIsNone(padlocks.spot(lock, sliding_in, WINDOW, SIZE))
 
-    def test_an_event_option_uses_its_measured_place(self) -> None:
-        """Owner, 2026-10-14: events keep the measured layout until their positions are read."""
-        square = padlocks.spot(Padlock(option=1), ui(), WINDOW, SIZE, options=[(715, 303), (960, 364)])
-        self.assertEqual(square, (932, 336, 988, 392))
-
 
 class TestPadlockShows(unittest.TestCase):
     """Hidden while its card can't be bought or clicked, see-through while the game shows something over it, solid
@@ -106,6 +101,17 @@ class TestPadlockShows(unittest.TestCase):
 
     def test_solid_when_nothing_covers_it(self) -> None:
         self.assertEqual(self.alpha(ui(cards={"pasta": PASTA, "prep": PREP})), SOLID)
+
+    def test_hidden_under_our_own_tracker_or_shop_guide(self) -> None:
+        """Owner's screenshot 2026-11-11: a padlock sat on the open Tracker. Its card can't be seen under our own
+        window, so it hides there (and shows again once the window moves off it)."""
+        board = ui(cards={"pasta": PASTA})
+        lock = Padlock(card="pasta")
+        square = padlocks.spot(lock, board, WINDOW, SIZE)
+        over = (1000, 500, 1300, 900)  # the tracker, over Pasta's padlock
+        aside = (0, 0, 300, 200)
+        self.assertEqual(padlocks.alpha(lock, square, board, [], 6, 0.0, 100.0, [over]), HIDDEN)
+        self.assertEqual(padlocks.alpha(lock, square, board, [], 6, 0.0, 100.0, [aside]), SOLID)
 
     def test_hidden_under_a_dialog(self) -> None:
         self.assertEqual(self.alpha(ui(cards={"pasta": PASTA}, dialog=True)), HIDDEN)

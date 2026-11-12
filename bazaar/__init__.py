@@ -9,11 +9,13 @@ from worlds.LauncherComponents import Component, Type, components, launch
 
 from .data import (CARDS, CARDS_BY_NAME, ENCOUNTERS, EVENTS, HEROES, LEGENDARY_GUIDS, PACKS, TIERS, Encounter,
                    hero_key, tiers_on_day)
-from .items import (ENCOUNTERS_BY_ITEM, EVENT_RARITY, EXPEDITION_TICKETS, FILLER_ITEMS, GAME, GROUP_ITEMS,
-                    LEGENDARY_ITEMS, LOCK_BYPASS, SELL_TRAP, BazaarItem, encounter_item, hero_item, item_id_to_name,
-                    item_name_groups, item_name_to_id, lock_items_by_hero, pack_item)
-from .locations import (BazaarLocation, Check, card_requirements, champion_event, hero_checks, item_requirements,
-                        location_name_groups, location_name_to_id, win_location)
+from .items import (COUNTED, ENCOUNTERS_BY_ITEM, EVENT_RARITY, EXPEDITION_TICKETS, FILLER_ITEMS, GAME,
+                    ITEM_CLASSIFICATION, LEGENDARY_ITEMS, LEVEL_UP_ITEMS, PLENTIFUL, POWER_CAPS, SLOT_DATA_VERSION, TICKET_ITEMS,
+                    BazaarItem, encounter_item, hero_item, item_id_to_name, item_name_groups, item_name_to_id,
+                    lock_items_by_hero, pack_item, power_total, unlock_steps)
+from .locations import (BazaarLocation, Needs, card_requirements, card_total, champion_event, hero_checks,
+                        hero_needs, item_requirements, items_for_cards, location_name_groups, location_name_to_id,
+                        meets, power_needed, power_start, win_location)
 from .options import (INCLUDE_HERO_OPTIONS, PACK_OPTIONS, BazaarOptions, option_groups,
                       option_presets)
 
@@ -53,9 +55,7 @@ class BazaarWeb(WebWorld):
     )]
 
 
-MAX_COPIES = 3  # most copies of one item the duplicate filling adds up to
 FREE_MARGIN = 2  # spare cheaper checks each logic requirement keeps, so the fill always has room (see fit_logic)
-DEFAULT_LOGIC = {"day_10": 15, "diamond": 10, "legendary": 20}  # seeds from before slot_data carried it
 
 
 class BazaarWorld(World):
@@ -86,7 +86,6 @@ class BazaarWorld(World):
     encounter_locks: List[str]  # merchant/event lock items in the pool (see docs/ENCOUNTER-LOCKS.md)
     starter_merchants: List[str]  # merchants never locked
     event_rarity: int  # copies of Event Rarity Progression in the pool
-    unlocks_in_logic: bool  # False only for Universal Tracker on a seed made before 2026-10-06
     # unlocks some check's rule needs (see locations.item_requirements): these are progression. The class default is
     # for item-link group worlds, which never run generate_early
     gating: frozenset = frozenset()
@@ -99,7 +98,6 @@ class BazaarWorld(World):
 
     def generate_early(self) -> None:
         self.passthrough = getattr(self.multiworld, "re_gen_passthrough", {}).get(self.game)
-        self.unlocks_in_logic = True
         if self.passthrough:
             self.rebuild_from_slot_data(self.passthrough)
             return
@@ -124,9 +122,9 @@ class BazaarWorld(World):
         # start_inventory(_from_pool) creates its items before create_items: classify them from the options now
         # (review 2026-10-06: generation failed); create_items narrows this to what the pool really holds
         self.group_items = [LEGENDARY_ITEMS] if self.options.legendary_items else []
-        self.event_rarity = self.options.event_rarity_progression.value
-        self.gating = self.gated_unlocks()
-        self.event_rarity = 0
+        most_rarity = self.options.event_rarity_progression.value
+        self.power = power_total(self.group_items + [EXPEDITION_TICKETS] + LEVEL_UP_ITEMS, most_rarity)  # the most
+        self.gating = self.gated_unlocks(self.group_items, most_rarity, self.power)
         self.logic = {"day_10": self.options.logic_day_10_cards.value,
                       "last_day": self.options.logic_last_day_cards.value,
                       "diamond": self.options.logic_diamond_cards.value,
@@ -139,10 +137,12 @@ class BazaarWorld(World):
         together until each hero fits. Runs once the locked items are known."""
         def fits(logic: Dict[str, int]) -> bool:
             for hero in self.heroes:
-                needs = sorted(card_requirements(hero, len(self.lock_items.get(hero, [])),
-                                                 self.options.max_day.value, bool(self.options.pvp_win_checks),
-                                                 self.monster_tiers, logic).values())
-                if any(need and sum(n < need for n in needs) < need + FREE_MARGIN for need in needs):
+                items = self.lock_items.get(hero, [])
+                needs = sorted(card_requirements(hero, card_total(items), self.options.max_day.value,
+                                                 bool(self.options.pvp_win_checks), self.monster_tiers, logic).values())
+                # a pack is 10 cards in 1 item: count the fewest items that reach a need (owner 2026-11-10)
+                if any(need and sum(n < need for n in needs) < items_for_cards(items, need) + FREE_MARGIN
+                       for need in needs):
                     return False
             return True
         wanted = dict(self.logic)
@@ -157,13 +157,16 @@ class BazaarWorld(World):
 
     def rebuild_from_slot_data(self, data: Dict[str, Any]) -> None:
         """Universal Tracker: take every random choice and setting from the real seed instead of rolling new ones."""
+        if data.get("slot_data_version") != SLOT_DATA_VERSION:  # owner 2026-11-11: no old-seed support
+            raise OptionError(f"{self.player_name}: this The Bazaar seed was made with another apworld version - "
+                              f"install the version it was generated with to track it.")
         self.heroes = list(data["heroes"])
         self.starting_hero = data["starting_hero"]
         self.goal_count = data["heroes_required"]
         self.options.max_day.value = data["max_day"]
-        # seeds from before v0.5.2 lack these: the defaults of that time
-        self.options.pvp_win_checks.value = int(data.get("pvp_win_checks", True))
-        self.logic = data.get("logic", DEFAULT_LOGIC)
+        self.options.pvp_win_checks.value = int(data["pvp_win_checks"])
+        self.logic = data["logic"]
+        self.power = data["power_items"]
         self.starters = {}
         self.encounter_locks, self.starter_merchants, self.event_rarity = [], [], 0
         self.multiworld.push_precollected(self.create_item(hero_item(self.starting_hero)))
@@ -190,21 +193,14 @@ class BazaarWorld(World):
             return list(tiers.get(str(day), tiers.get(day, [])))
         if not self.options.monster_checks:
             return []
-        return tiers_on_day(day, TIERS[self.options.max_monster_tier.value])
+        tiers = tiers_on_day(day, TIERS[self.options.max_monster_tier.value])
+        # Monster Rarities (owner, 2026-11-10): the day's top three by default, all, or the bottom three
+        return {"top_three": tiers[-3:], "all": tiers, "bottom_three": tiers[:3]}[
+            self.options.monster_rarities.current_key]
 
     def create_item(self, name: str) -> BazaarItem:
-        if name in FILLER_ITEMS:
-            classification = ItemClassification.filler
-        elif name == SELL_TRAP:
-            classification = ItemClassification.trap
-        elif name == LOCK_BYPASS:
-            classification = ItemClassification.useful  # a buff, never required by logic
-        elif name in self.gating:
-            classification = ItemClassification.progression
-        elif name in GROUP_ITEMS or name == EVENT_RARITY or name in ENCOUNTERS_BY_ITEM                 or (name in CARDS_BY_NAME and CARDS_BY_NAME[name].hero == "Common"):
-            classification = ItemClassification.useful  # never required by logic: a choice screen always has a way on
-        else:
-            classification = ItemClassification.progression
+        # gating holds only unlocks (never filler, traps or buffs): what a check needs is progression
+        classification = ItemClassification.progression if name in self.gating else ITEM_CLASSIFICATION[name]
         return BazaarItem(name, classification, item_name_to_id[name], self.player)
 
     def get_filler_item_name(self) -> str:
@@ -216,46 +212,65 @@ class BazaarWorld(World):
             return
         slots = len(self.multiworld.get_unfilled_locations(self.player))
         pool = [hero_item(h) for h in self.heroes if h != self.starting_hero]
+        # Plentiful Items (owner, 2026-11-10): an important unlock takes `each` checks, so its copy always fits
+        each = 2 if self.options.plentiful_items else 1
 
-        packs = []
-        if self.options.legacy_card_packs:
-            wanted = {key for option, key in PACK_OPTIONS.items() if getattr(self.options, option)}
-            packs = [p for p in PACKS if p.hero in self.heroes and p.key in wanted]
-            self.random.shuffle(packs)
-            packs = packs[:max(0, slots - len(pool))]
+        def room() -> int:
+            return max(0, slots - len(pool) - len(self.plentiful_copies(pool)))
+
+        # a pack is used when its section's master switch and its own switch are both on (legacy and custom packs
+        # never share a card, so both sections can be on at once; see docs/CARD-PACKS.md)
+        sections = {False: self.options.legacy_card_packs.value, True: self.options.custom_card_packs.value}
+        wanted = {key for option, key in PACK_OPTIONS.items() if getattr(self.options, option)}
+        packs = [p for p in PACKS if sections[p.custom] and p.hero in self.heroes and p.key in wanted]
+        self.random.shuffle(packs)
+        packs = packs[:room() // each]
         excluded = {guid for p in packs for guid in p.cards}
         pool += [pack_item(p.name) for p in packs]
 
-        groups = []  # group unlocks; extra copies only make the unlock likely to turn up sooner
-        for name, copies in ((LEGENDARY_ITEMS, self.options.legendary_items.value),
-                             (EXPEDITION_TICKETS, self.options.expedition_tickets.value)):
-            copies = min(copies, max(0, slots - len(pool) - len(groups)))
-            if copies:
-                groups += [name] * copies
+        groups = []  # group unlocks; extra Legendary Items copies only make it likely to turn up sooner
+        groups += [LEGENDARY_ITEMS] * min(self.options.legendary_items.value, room())
+        # Tickets (owner, 2026-11-09): one progressive Expedition Tickets per ticket, or each ticket on its own. All or
+        # none: a progressive seed short of a copy would keep its last ticket locked forever.
+        mode = self.options.expedition_ticket_unlocks.current_key
+        stages = unlock_steps(mode, self.options.sizeinator_unlock.current_key)[item_name_to_id[EXPEDITION_TICKETS]]
+        tickets = [EXPEDITION_TICKETS] * len(stages) if mode == "progressive" \
+            else list(TICKET_ITEMS) if mode == "separate" else []
+        if len(tickets) * each <= room() - len(groups):
+            groups += tickets
         # Legendary cards are only ever locked as a group: with no Legendary Items unlock in the pool (0 copies, or
         # no room) they're simply never locked, as the option says - never one by one (review 2026-09-29)
         excluded |= LEGENDARY_GUIDS
         pool += groups
-        self.event_rarity = min(self.options.event_rarity_progression.value, max(0, slots - len(pool)))
+        level_ups = LEVEL_UP_ITEMS[:room() // each]  # always locked (owner, 2026-11-11: Shiny!), like a merchant
+        pool += level_ups
+        self.event_rarity = min(self.options.event_rarity_progression.value, room())
         pool += [EVENT_RARITY] * self.event_rarity
-        pool += [SELL_TRAP] * min(self.options.sell_traps.value, max(0, slots - len(pool)))
-        pool += [LOCK_BYPASS] * min(self.options.lock_bypasses.value, max(0, slots - len(pool)))
-        self.encounter_locks = self.pick_encounters(max(0, slots - len(pool)))
-        pool += self.encounter_locks
+        # what late monster checks can want (locations.Needs)
+        self.power = power_total(groups + level_ups, self.event_rarity)
+        for counted in COUNTED:  # traps and buffs, each by its own count option
+            pool += [counted.name] * min(getattr(self.options, counted.option).value, room())
+        encounters = self.pick_encounters(room() // each)
+        pool += encounters
+        self.encounter_locks = level_ups + encounters
+        # the copies come before the card budget; only a seed too small for its own hero unlocks twice runs short
+        copies = self.plentiful_copies(pool)[:max(0, slots - len(pool))]
+        free = slots - len(pool) - len(copies)
 
-        budget = (slots - len(pool)) * self.options.locked_cards_percent.value // 100
+        budget = free * self.options.locked_cards_percent.value // 100
         duplicated = self.options.duplicate_cards.value
         if self.options.duplicate_all_cards:  # every spare slot holds pairs, never filler (user 2026-09-30, "1 a")
-            cards = self.pick_cards((slots - len(pool)) // 2, excluded)
-            copies = list(cards)
+            cards = self.pick_cards(free // 2, excluded)
+            card_copies = list(cards)
         else:
             cards = self.pick_cards(budget, excluded)
-            copies = [name for name in cards if name in duplicated]
-            while len(cards) + len(copies) > budget:  # make room for the second copies
+            card_copies = [name for name in cards if name in duplicated]
+            while len(cards) + len(card_copies) > budget:  # make room for the second copies
                 dropped = cards.pop()
-                if dropped in copies:
-                    copies.remove(dropped)
+                if dropped in card_copies:
+                    card_copies.remove(dropped)
         pool += cards
+        copies += card_copies
 
         self.lock_items = {}
         for p in packs:
@@ -263,27 +278,22 @@ class BazaarWorld(World):
         for name in cards:
             self.lock_items.setdefault(CARDS_BY_NAME[name].hero, []).append(name)
         self.group_items = sorted(set(groups))
-        self.gating = self.gated_unlocks()
+        self.gating = self.gated_unlocks(self.group_items, self.event_rarity, self.power)
 
-        # copy counts the player set (group unlocks, duplicated cards) never grow: only the others get extras
-        chosen = set(copies) if self.options.duplicate_all_cards else set(duplicated)
-        copies += self.extra_copies(slots - len(pool) - len(copies), pool + copies,
-                                    [name for name in cards if name not in chosen])
         self.multiworld.itempool += [self.create_item(name) for name in pool]
         # extra copies: the same items, but logic never needs them (the first copy is the one that counts)
         self.multiworld.itempool += [BazaarItem(name, ItemClassification.useful, item_name_to_id[name], self.player)
                                      for name in copies]
-        # The Bazaar has no natural filler; this only happens when there's nothing left to duplicate
+        # what's left after the card budget is filler (more traps and buffs to come, owner 2026-11-10)
         self.multiworld.itempool += [self.create_filler() for _ in range(slots - len(pool) - len(copies))]
         self.fit_logic()
 
     def create_items_from_slot_data(self, data: Dict[str, Any]) -> None:
         """Universal Tracker only needs the same locations and rules; the item pool just has to be the right size."""
         self.lock_items, self.group_items = lock_items_by_hero(data["lock_items"])
-        self.encounter_locks = [item_id_to_name[i] for i in data.get("encounter_locks", [])]
-        self.event_rarity = data.get("event_rarity", 0)
-        self.unlocks_in_logic = data.get("unlocks_in_logic", False)  # seeds from before 2026-10-06 never needed them
-        self.gating = self.gated_unlocks()
+        self.encounter_locks = [item_id_to_name[i] for i in data["encounter_locks"]]
+        self.event_rarity = data["event_rarity"]
+        self.gating = self.gated_unlocks(self.group_items, self.event_rarity, self.power)
         pool = [hero_item(h) for h in self.heroes if h != self.starting_hero]
         pool += [name for names_ in self.lock_items.values() for name in names_] + self.group_items
         pool += self.encounter_locks + [EVENT_RARITY] * self.event_rarity
@@ -291,22 +301,13 @@ class BazaarWorld(World):
         self.multiworld.itempool += [self.create_item(name) for name in pool[:slots]]
         self.multiworld.itempool += [self.create_filler() for _ in range(slots - min(slots, len(pool)))]
 
-    def extra_copies(self, free: int, placed: List[str], cards: List[str]) -> List[str]:
-        """Fill `free` slots with duplicates: hero unlocks, then locked cards (max 3 each). Group unlocks never get
-        extras: their copies are an option, and a player who asked for 2 must not find a 3rd (user, 2026-09-30)."""
-        count = {name: placed.count(name) for name in set(placed)}
-        extra: List[str] = []
-        heroes = [hero_item(h) for h in self.heroes if h != self.starting_hero]
-        for tier in (heroes, self.random.sample(cards, len(cards))):
-            progressing = True
-            while progressing and len(extra) < free:
-                progressing = False
-                for name in tier:
-                    if len(extra) < free and count.get(name, 0) < MAX_COPIES:
-                        count[name] = count.get(name, 0) + 1
-                        extra.append(name)
-                        progressing = True
-        return extra
+    def plentiful_copies(self, pool: List[str]) -> List[str]:
+        """Plentiful Items: one more of each hero unlock, pack and merchant/event unlock, and a second set of
+        Expedition Tickets (progressive: any 3 of 6 reach Tiny World). Items with their own count option (Legendary
+        Items, Event Rarity Progression, Sell Traps, Lock Bypasses, Duplicate Cards) and single cards never get one."""
+        if not self.options.plentiful_items:
+            return []
+        return [name for name in pool if name in PLENTIFUL]
 
     def pick_encounters(self, free: int) -> List[str]:
         """Merchant/event lock items: locked_encounters_percent of those your heroes can meet, after setting aside
@@ -346,36 +347,36 @@ class BazaarWorld(World):
                     picked.append(candidates[group].pop())
         return picked
 
+    def hero_needs(self, hero: str) -> Dict[str, Needs]:
+        """Check name -> what it needs, for one hero: the one definition the rules use (the client's tracker and
+        Universal Tracker rebuild the same numbers from slot_data). The Champion event needs what 10 Wins needs."""
+        needs = {check.name: n for check, n in hero_needs(
+            hero, self.lock_items.get(hero, []), LEGENDARY_ITEMS in self.group_items, self.options.max_day.value,
+            bool(self.options.pvp_win_checks), self.monster_tiers, self.logic, self.event_rarity, self.power)}
+        needs[champion_event(hero)] = needs[win_location(hero)]
+        return needs
+
     def set_rules(self) -> None:
         for hero in self.heroes:
             items = self.lock_items.get(hero, [])
-            needs = card_requirements(hero, len(items), self.options.max_day.value, bool(self.options.pvp_win_checks),
-                                      self.monster_tiers, self.logic)
-            for check in hero_checks(hero, self.options.max_day.value, bool(self.options.pvp_win_checks),
-                                     self.monster_tiers):
-                self.set_check_rule(check.name, items, needs[check.name], self.unlocks_needed(check))
-            self.set_check_rule(champion_event(hero), items, needs[win_location(hero)], {})
+            for name, needs in self.hero_needs(hero).items():
+                if needs.cards or needs.packs or needs.power or needs.unlocks:
+                    self.get_location(name).access_rule = \
+                        lambda state, n=needs, i=items: meets(n, i, lambda item: state.count(item, self.player))
 
         self.multiworld.completion_condition[self.player] = \
             lambda state: state.has("Champion", self.player, self.goal_count)
 
-    def set_check_rule(self, location_name: str, items: List[str], count: int, unlocks: Dict[str, int]) -> None:
-        if count or unlocks:
-            self.get_location(location_name).access_rule = \
-                lambda state: ((not count or state.has_from_list_unique(items, self.player, count))  # dupes count once
-                               and state.has_all_counts(unlocks, self.player))
-
-    def unlocks_needed(self, check: Check) -> Dict[str, int]:
-        if not self.unlocks_in_logic:
-            return {}
-        return item_requirements(check, LEGENDARY_ITEMS in self.group_items, self.event_rarity)
-
-    def gated_unlocks(self) -> set:
-        """Unlocks some check needs: progression, so other games show them as important (user 2026-10-06)."""
-        return {name for hero in self.heroes
-                for check in hero_checks(hero, self.options.max_day.value, bool(self.options.pvp_win_checks),
-                                         self.monster_tiers)
-                for name in self.unlocks_needed(check)}
+    def gated_unlocks(self, group_items: List[str], event_rarity: int, power: int) -> set:
+        """Unlocks some check needs: progression, so other games show them as important (user 2026-10-06). Power
+        items too, once any check wants them (owner 2026-11-10)."""
+        max_day, pvp = self.options.max_day.value, bool(self.options.pvp_win_checks)
+        checks = [check for hero in self.heroes for check in hero_checks(hero, max_day, pvp, self.monster_tiers)]
+        names = {name for check in checks
+                 for name in item_requirements(check, LEGENDARY_ITEMS in group_items, event_rarity)}
+        if any(power_needed(check, power, max_day) for check in checks):
+            names |= set(POWER_CAPS)
+        return names
 
     def write_spoiler(self, spoiler_handle) -> None:
         lines = [f"The Bazaar ({self.player_name})",
@@ -391,6 +392,9 @@ class BazaarWorld(World):
             lines.append(f"  Starter merchants (never locked): {', '.join(self.starter_merchants)}")
         if self.event_rarity:
             lines.append(f"  Event Rarity Progression: {self.event_rarity} copies")
+        if self.power:
+            lines.append(f"  Power items: {self.power} (late Diamond/Legendary monster checks need them from day "
+                         f"{power_start(self.options.max_day.value, self.power)})")
         for group, starters in sorted(self.starters.items()):
             lines.append(f"  Starter cards ({group}, never locked): {', '.join(starters)}")
         days = [f"day {d}: {' / '.join(self.monster_tiers(d))}" for d in range(1, self.options.max_day.value + 1)
@@ -409,16 +413,19 @@ class BazaarWorld(World):
             "heroes_required": self.goal_count,
             "lock_items": sorted({item_name_to_id[name] for names in self.lock_items.values() for name in names}
                                  | {item_name_to_id[name] for name in self.group_items}),
+            "expedition_ticket_unlocks": self.options.expedition_ticket_unlocks.current_key,
+            "sizeinator_unlock": self.options.sizeinator_unlock.current_key,
             "death_link": bool(self.options.death_link.value),
             "death_link_amnesty": self.options.death_link_amnesty.value,
             "death_links_before_concede": self.options.death_links_before_concede.value,
             "death_links_same_run": bool(self.options.death_links_same_run.value),
             "sell_trap_days": self.options.sell_trap_days.value,
             "logic": self.logic,
+            "power_items": self.power,
             "death_link_on_concede": bool(self.options.death_link_on_concede.value),
             "encounter_locks": sorted(item_name_to_id[name] for name in self.encounter_locks),
             "event_rarity": self.event_rarity,
-            "unlocks_in_logic": True,
+            "slot_data_version": SLOT_DATA_VERSION,
             "exempt_expeditions": bool(self.options.exempt_expeditions.value),
             "created_items": self.options.created_items.value,
         }
