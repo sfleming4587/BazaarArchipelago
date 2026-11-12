@@ -39,7 +39,7 @@ def add(folder: str, target: str) -> None:
     cards = {norm(card["name"]): card for card in data["cards"]}
     with zipfile.ZipFile(target, "a", zipfile.ZIP_STORED) as out:
         have = set(out.namelist())
-        for path in sorted(pathlib.Path(folder).glob("*.png")):
+        for path in sorted(p for p in pathlib.Path(folder).iterdir() if p.suffix.lower() in (".png", ".webp")):
             card = cards.get(norm(path.stem))
             if not card:
                 print(f"skipped {path.name}: no card by that name")

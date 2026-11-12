@@ -169,8 +169,9 @@ def main() -> None:
     wanted = {guid for guid, c in raw.items() if c.get("SpawningEligibility") == "Always"} | (pack_guids & raw.keys())
     # never drop a card that already has an id, even if Tempo made it unobtainable
     wanted |= old_card_ids.keys() & raw.keys()
-    # Expedition tickets only come from events (never shops), but they're locked as their own group.
-    tickets = {guid for guid, c in raw.items() if "Expedition Ticket" in (c.get("InternalName") or "")}
+    # Expedition tickets only come from events (never shops), but they're locked as their own group. The game marks
+    # them with the hidden tag "Ticket"; names vary (patch 20.0's "Tiny World Ticket" has no "Expedition", 2026-11-09).
+    tickets = {guid for guid, c in raw.items() if "Ticket" in (c.get("HiddenTags") or [])}
     wanted |= tickets
 
     unknown_heroes = set()
