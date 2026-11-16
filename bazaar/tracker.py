@@ -1,6 +1,8 @@
 """
 The integrated tracker (user, 2026-09-29): a PopTracker-style window with a card per hero and four squares on it -
-reach day N, PvP win on day N, monster checks (a row per day: Bronze .. Legendary), 10 wins.
+reach day N, PvP win on day N, monster checks (a row per day: Bronze .. Legendary), 10 wins - each with its icon
+(ICONS, owner 2026-11-13), and under its card the menu panel's check bar (check_bar) and the hero's checks done / all
+and cards unlocked / all (the menu panel's numbers, client.hero_counts).
 
 A square's colour is its best remaining check, the PopTracker way: green = in logic, yellow = out of logic (doable,
 but logic expects more of the hero's cards first), red = not possible yet (hero locked), grey = all done. Hovering a
@@ -10,10 +12,13 @@ It only draws what the client hands it (see BazaarContext.tracker_data); the log
 in the overlay's Tk thread and needs no Pillow: the hero cards are small PNGs that Tk reads by itself.
 """
 import base64
+import json
 import pkgutil
+import zlib
 from typing import Callable, Dict, List, NamedTuple, Optional
 
 from . import screens
+from .cardart import fit_rgba, png
 from .data import HEROES, TIERS, hero_key
 from .theme import ACCENT, DIM, FONT, WINDOW_BG
 
@@ -31,6 +36,60 @@ NOTE_AT, SQUARES_AT = 0.2, 0.36  # "LOCKED" and the squares, as a share of the c
 FIT_WIDTH, FIT_HEIGHT = 0.95, 0.9  # the window must fit this share of the screen, else half-size cards
 POPUP_OFFSET = (16, 12)  # the list opens this far right of and below the pointer (or mirrored, near an edge)
 LIST_ROWS = 12  # more checks than this: the list gets two columns
+BAR_BG = "#3a3f4b"  # the empty part of a hero's check bar (check_bar)
+BAR_HEIGHT = 6  # px, a full-size card's check bar
+# Each square's icon (owner 2026-11-13: "pvp wins (Swoards clashing), day reached (Sunrise), monsters (Snake jaw
+# unhinged or something), and 10 wins (Trophy)"): game-icons.net silhouettes (tools/make_tracker_icons.py, credited in
+# README.md), in data/icons.json by square kind, drawn in the square's own colour made darker - its shadow (owner
+# 2026-11-16: "a shade darker than the background of the squares color and kind of like a shadow")
+ICON_SHADE = 0.6  # an icon's colour: its square's at this brightness
+ICON_PAD = 0.12  # an icon's margin inside its square, as a share of the square
+_ICONS: Dict[str, object] = {}  # data/icons.json, read once
+
+
+def icon_masks() -> dict:
+    """data/icons.json: {"size": n, "icons": {kind: zlib'd base64 of n*n see-through bytes}}."""
+    if not _ICONS:
+        _ICONS.update(json.loads(pkgutil.get_data(__name__, "data/icons.json").decode("utf-8")))
+    return _ICONS
+
+
+def icon_pixels(kind: str, colour: str, size: int, shade: float = ICON_SHADE):
+    """The icon for `kind` (a square's, or "sell_trap") in `colour` at `shade` brightness (a square's icon: its
+    shadow), size x size, see-through around it (cardart Pixels, RGBA); None if the data has no such icon."""
+    data = icon_masks()
+    packed = data["icons"].get(kind)
+    if packed is None:
+        return None
+    n, alpha = data["size"], zlib.decompress(base64.b64decode(packed))
+    rgb = bytes(round(int(colour[i:i + 2], 16) * shade) for i in (1, 3, 5))
+    return fit_rgba((n, n, b"".join(rgb + bytes((a,)) for a in alpha)), size, size)
+
+
+def icon_image(tk, root, kind: str, colour: str, size: int, shade: float = ICON_SHADE):
+    """icon_pixels as a Tk picture, made once per Tk window (kept on the root, like card_image)."""
+    cache = root.__dict__.setdefault("bazaar_icons", {})
+    key = (kind, colour, size, shade)
+    if key not in cache:
+        pixels = icon_pixels(kind, colour, size, shade)
+        cache[key] = tk.PhotoImage(master=root, data=base64.b64encode(png(pixels))) if pixels else None
+    return cache[key]
+
+
+def check_bar(tk, parent, width: int, height: int, done: int, total: int, fill: str):
+    """A hero's check bar: the checks you've got with this hero, of all of them (owner, 2026-10-01: "that bar should
+    represent how many checks I have gotten with her"). One drawing for the menu's hero panel and the Tracker (owner
+    2026-11-13: the Tracker shows the same, "similar to the hero guide on the main menu")."""
+    bar = tk.Canvas(parent, width=width, height=height, bg=BAR_BG, highlightthickness=0)
+    bar.create_rectangle(0, 0, 0, height, fill=fill, width=0, tags="done")
+    fill_bar(bar, done, total)
+    return bar
+
+
+def fill_bar(bar, done: int, total: int) -> None:
+    """Set a check bar (check_bar) to done of total."""
+    width, height = int(bar["width"]), int(bar["height"])
+    bar.coords("done", 0, 0, round(width * done / max(1, total)), height)
 
 
 class TrackedCheck(NamedTuple):
@@ -58,12 +117,21 @@ def hero_order() -> List[str]:
 
 
 def card_image(tk, root, hero: str, half: bool):
-    try:
-        data = pkgutil.get_data(__name__, f"data/heroes/{hero_key(hero)}.png")
-    except OSError:
-        return None  # a hero added by a patch before its card was cut: drawn as a plain card
-    image = tk.PhotoImage(master=root, data=base64.b64encode(data))  # this Tk, not whichever started first
-    return image.subsample(2) if half else image
+    """A hero's card, full or half size - decoded once per Tk window (kept on the root, so it goes with it): the
+    Tracker, the menu panel and hero pop-ups share it, and the overlay decodes them ahead (2026-11-12: the Tracker's
+    first open spent 33 ms of its 117 decoding them)."""
+    cache = root.__dict__.setdefault("bazaar_hero_cards", {})
+    if (hero, half) not in cache:
+        if (hero, False) not in cache:
+            try:
+                data = pkgutil.get_data(__name__, f"data/heroes/{hero_key(hero)}.png")
+                # this Tk, not whichever started first
+                cache[(hero, False)] = tk.PhotoImage(master=root, data=base64.b64encode(data))
+            except OSError:
+                cache[(hero, False)] = None  # a hero added by a patch before its card was cut: a plain card
+        full = cache[(hero, False)]
+        cache[(hero, True)] = full.subsample(2) if full is not None else None
+    return cache[(hero, half)]
 
 
 class Tracker:
@@ -78,8 +146,13 @@ class Tracker:
         self.data: Dict[str, dict] = {}
         self.squares: Dict[tuple, int] = {}  # (hero, kind) -> canvas rectangle id
         self.canvases: Dict[str, object] = {}
+        self.counts: Dict[str, object] = {}  # hero -> the label under its card
+        self.bars: Dict[str, object] = {}  # hero -> its check bar, above that label (check_bar)
+        self.icons: Dict[tuple, int] = {}  # (hero, kind) -> its square's icon on the hero's canvas
+        self.square_size = SQUARE
         self.images: Dict[str, object] = {}  # Tk forgets images nobody holds on to
         self.popup = None
+        self.dialog_hid = False  # the tracker withdrew for a game dialog (set_visible) and comes back after it
         self.popup_for: Optional[tuple] = None  # (hero, kind) the list shows
         self.popup_checks: list = []  # what it shows, to redraw it only when that changes
         self.popup_at: Optional[tuple] = None  # where it is (x, y)
@@ -94,14 +167,25 @@ class Tracker:
         """Window handles of the tracker and its list (so using them doesn't count as leaving the game)."""
         return [screens.window_handle(w) for w in (self.win, self.popup) if w is not None and w.winfo_exists()]
 
-    def set_visible(self, game_in_front: bool) -> None:
+    def set_visible(self, game_in_front: bool, dialog_hides: Callable[[object], bool] = lambda window: False) -> None:
         """A pinned list floats on top of everything, so it hides with the overlay when you leave the game (the
-        tracker itself is a normal window and stays)."""
+        tracker itself is a normal window and stays). A game dialog hides either only while it sits on the game
+        window (dialog_hides: owner 2026-11-16, "if I have the tracker open and it is on a seperate monitor there s no
+        reason to hide it"); withdrawn, not see-through, so it can't catch the dialog's clicks."""
         if self.popup:
-            if game_in_front and self.popup.state() != "normal":
+            show = game_in_front and not dialog_hides(self.popup)
+            if show and self.popup.state() != "normal":
                 self.popup.deiconify()
-            elif not game_in_front and self.popup.state() == "normal":
+            elif not show and self.popup.state() == "normal":
                 self.popup.withdraw()
+        if self.win is not None and self.win.winfo_exists():
+            if dialog_hides(self.win):
+                if self.win.state() == "normal":
+                    self.win.withdraw()
+                    self.dialog_hid = True
+            elif self.dialog_hid:
+                self.dialog_hid = False
+                self.win.deiconify()
 
     def monitor(self) -> tuple:
         """The monitor the tracker is on (or the game's, before it's placed)."""
@@ -117,7 +201,8 @@ class Tracker:
             self.win.update_idletasks()
             if self.win.winfo_reqwidth() > area[2] * FIT_WIDTH or self.win.winfo_reqheight() > area[3] * FIT_HEIGHT:
                 self.win.destroy()  # too big for this screen: half-size cards
-                self.win, self.squares, self.canvases, self.half = None, {}, {}, True
+                self.win, self.squares, self.canvases, self.counts, self.bars, self.half = None, {}, {}, {}, {}, True
+                self.icons = {}
                 self.images.clear()
                 self.build()
                 self.win.update_idletasks()
@@ -149,15 +234,23 @@ class Tracker:
         self.win.resizable(False, False)
         self.win.protocol("WM_DELETE_WINDOW", self.close)
         scale = 2 if self.half else 1
-        size = SQUARE // scale
+        size = self.square_size = SQUARE // scale
         for index, hero in enumerate(hero_order()):
             if hero not in self.images:
                 self.images[hero] = card_image(tk, self.root, hero, self.half)
             image = self.images[hero]
             width, height = (image.width(), image.height()) if image else (CARD_SIZE[0] // scale,
                                                                            CARD_SIZE[1] // scale)
-            canvas = tk.Canvas(self.win, width=width, height=height, bg=WINDOW_BG, highlightthickness=0)
-            canvas.grid(row=index // CARDS_PER_ROW, column=index % CARDS_PER_ROW, padx=4, pady=4)
+            cell = tk.Frame(self.win, bg=WINDOW_BG)
+            cell.grid(row=index // CARDS_PER_ROW, column=index % CARDS_PER_ROW, padx=4, pady=4)
+            canvas = tk.Canvas(cell, width=width, height=height, bg=WINDOW_BG, highlightthickness=0)
+            canvas.pack()
+            # the menu panel's check bar (owner 2026-11-13: "similar to the hero guide on the main menu"), shown in
+            # draw while the hero is in the seed and unlocked, like the menu's
+            self.bars[hero] = check_bar(tk, cell, width - 8, max(3, BAR_HEIGHT // scale), 0, 1, ACCENT)
+            # checks done and own cards unlocked, under the card (owner 2026-11-13; the menu panel's numbers)
+            self.counts[hero] = tk.Label(cell, text="", bg=WINDOW_BG, fg=DIM, font=(FONT, 8 if self.half else 9))
+            self.counts[hero].pack()
             if image:
                 canvas.create_image(0, 0, image=image, anchor="nw")
             else:
@@ -174,6 +267,8 @@ class Tracker:
                 x, y = left + column * (size + gap), top + row * (size + gap)
                 self.squares[hero, kind] = canvas.create_rectangle(x, y, x + size, y + size, width=2,
                                                                    outline="black", tags=kind)
+                # its icon: drawn in draw(), in the square's colour (icon_image), tagged like the square for hovering
+                self.icons[hero, kind] = canvas.create_image(x + size / 2, y + size / 2, tags=kind)
                 canvas.tag_bind(kind, "<Enter>", lambda e, h=hero, k=kind: self.hover(h, k, e))
                 canvas.tag_bind(kind, "<Leave>", lambda e: self.unhover())
                 canvas.tag_bind(kind, "<Button-1>", lambda e, h=hero, k=kind: self.click(h, k, e))
@@ -204,12 +299,24 @@ class Tracker:
                 note = "LOCKED"
             canvas.itemconfigure("dim", state="normal" if note else "hidden")
             canvas.itemconfigure("note", text=note)
+            counted = info and info["in_seed"] and "total" in info
+            self.counts[hero].configure(text=f"{info['done']} / {info['total']} checks  ·  {info['cards_unlocked']} / "
+                                             f"{info['cards']} cards" if counted else "")
+            bar = self.bars[hero]
+            if counted and info["unlocked"]:
+                fill_bar(bar, info["done"], info["total"])
+                if not bar.winfo_ismapped():
+                    bar.pack(before=self.counts[hero], pady=(2, 0))
+            else:
+                bar.pack_forget()
             for kind, *_ in SQUARES:
                 status = square_status([c.status for c in self.checks(hero, kind)]) if info and info["in_seed"] \
                     else None
                 canvas.itemconfigure(kind, state="hidden" if status is None else "normal")
                 if status:
                     canvas.itemconfigure(self.squares[hero, kind], fill=COLORS[status])
+                    canvas.itemconfigure(self.icons[hero, kind], image=icon_image(
+                        self.tk, self.root, kind, COLORS[status], round(self.square_size * (1 - 2 * ICON_PAD))))
         if self.popup_for and self.checks(*self.popup_for) != self.popup_checks:
             self.show_popup(*self.popup_for, keep_position=True)
 

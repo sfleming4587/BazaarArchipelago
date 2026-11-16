@@ -4,7 +4,7 @@
 
 ## Legacy packs (2026-09-30)
 
-- **The ten original hero expansions, read by the extractor into `bazaar_data.json` (`packs`, ap_id 100..).**
+- **The ten original hero expansions, in `bazaar_data.json` (`packs`, ap_id 100..).**
   Option `legacy_card_packs` (off by default) plus one switch per pack (`pack_<key>`, on by default).
 
 ## Custom packs (owner, 2026-11-10)
@@ -20,7 +20,7 @@
 - **Swapped for being weak (owner OK):** Dooley's Friends pack -> Overclocked (PC parts); Stelle's Burn pack ->
   Tinkerer's Toolbox (Tools).
 
-⚠️ **Why a separate file:** the extractor rewrites the `packs` list in `bazaar_data.json` from the game cache; custom
+⚠️ **Why a separate file:** a data update rewrites the `packs` list in `bazaar_data.json`; custom
 packs there would be wiped by the next data update.
 
 ⚠️ **Cards are keyed by guid; `name` is for reading only.** `test_custom_packs` fails if a name stops matching its

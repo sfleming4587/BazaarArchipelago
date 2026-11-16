@@ -66,9 +66,51 @@ class TestTrackerData(ClientTestBase):
         self.assertFalse(data["Karnok"]["in_seed"])
         self.assertTrue(data["Vanessa"]["in_seed"])
 
+    def test_counts_are_the_menu_panels(self) -> None:
+        """Owner, 2026-11-13: "the 0/n checks and how many cards unlocked per character shown on the tracker as well" -
+        the same numbers as the menu's hero panel, from one place (client.hero_counts)."""
+        self.ctx.stored_data[self.ctx.sent_key()] = [location_name_to_id[day_location("Vanessa", 1)]]
+        tracker = self.ctx.tracker_data()
+        for hero, info in tracker.items():
+            if info["in_seed"]:  # exactly the menu panel's numbers (menu_data reads hero_counts too)
+                self.assertEqual({k: info[k] for k in ("done", "total", "cards", "cards_unlocked")},
+                                 self.ctx.hero_counts(hero), hero)
+        self.assertEqual(tracker["Vanessa"]["done"], 1)
+        self.assertEqual(tracker["Vanessa"]["cards_unlocked"], tracker["Vanessa"]["cards"] - 20)  # 20 locked
+        self.assertNotIn("total", tracker["Karnok"])  # not in the seed: no counts
+
+
+class TestTrackerWindow(unittest.TestCase):
+    """Owner, 2026-11-13: an icon on each square (PvP swords, day sunrise, monster jaw, 10 wins trophy) and the counts
+    under each hero's card."""
+
+    def test_icons_and_counts(self) -> None:
+        import tkinter
+        from ..data import HEROES
+        from ..tracker import SQUARES, TrackedCheck, Tracker, icon_masks
+        self.assertLessEqual({kind for kind, *_ in SQUARES}, set(icon_masks()["icons"]))  # every square has its icon
+        root = tkinter.Tk()
+        try:
+            root.withdraw()
+            tracker = Tracker(tkinter, root, lambda: (0, 0, 1920, 1080))
+            checks = [TrackedCheck(kind, 1, "Bronze", kind, "green") for kind, *_ in SQUARES]
+            tracker.update({h: {"in_seed": h == "Vanessa", "unlocked": True, "checks": checks, "done": 3, "total": 30,
+                                "cards": 140, "cards_unlocked": 12} for h in HEROES})
+            tracker.open()
+            root.update_idletasks()
+            canvas = tracker.canvases["Vanessa"]
+            for kind, *_ in SQUARES:  # the square and its icon, both tagged as the square (hover works)
+                self.assertEqual(len(canvas.find_withtag(kind)), 2, kind)
+                self.assertTrue(canvas.itemcget(tracker.icons["Vanessa", kind], "image"), kind)  # drawn
+            self.assertEqual(tracker.counts["Vanessa"].cget("text"), "3 / 30 checks  ·  12 / 140 cards")
+            self.assertEqual(tracker.counts["Dooley"].cget("text"), "")  # not in the seed
+            tracker.close()
+        finally:
+            root.destroy()
+
 
 class TestShopGuideCardShapes(unittest.TestCase):
-    """User 2026-09-29: Shop Guide cards at their in-game size (1/2/3 slots), cropped, never stretched."""
+    """User 2026-09-29: Item Guide cards at their in-game size (1/2/3 slots), cropped, never stretched."""
 
     def test_shapes_follow_board_slots(self) -> None:
         from ..cardart import card_shape
@@ -138,7 +180,8 @@ class TestCardArtWorker(unittest.TestCase):
         def fake_get_data(package, resource):
             reads.append(resource)
             return shipped(card)
-        with tempfile.TemporaryDirectory() as folder, mock.patch.object(cardart, "Decoder", decoder),                 mock.patch.object(cardart.pkgutil, "get_data", fake_get_data):
+        with tempfile.TemporaryDirectory() as folder, mock.patch.object(cardart, "Decoder", decoder), \
+                mock.patch.object(cardart.pkgutil, "get_data", fake_get_data):
             for name in old_files:
                 open(os.path.join(folder, name), "w").close()
             art = cardart.CardArt(folder, 96, on_ready=lambda guid: ready.set())
@@ -159,7 +202,8 @@ class TestCardArtWorker(unittest.TestCase):
         ready, working, normal, locked_path, _, reads, _ = self.run_worker(
             lambda card: self.picture_set([card.guid]), decoder)
         self.assertTrue(ready and working)
-        self.assertTrue(normal.endswith("_96x96.png") and locked_path.endswith("_96x96_locked.png"))
+        self.assertTrue(normal.startswith(b"\x89PNG") and locked_path.startswith(b"\x89PNG"))  # from memory
+        self.assertNotEqual(normal, locked_path)
         self.assertEqual(reads, ["data/card-art.zip"])  # the shipped set, read once
 
     def test_card_the_set_lacks_is_remembered(self) -> None:
@@ -213,3 +257,110 @@ class TestCardArtWorker(unittest.TestCase):
         self.assertEqual(downloads, [])  # nothing downloaded that couldn't be shown
         self.assertFalse(working)
         self.assertIsNone(normal)
+
+
+class TestEveryItemHasRealArt(unittest.TestCase):
+    """2026-11-12 (owner: "images are not loading correctly for a number of items, they just show a blank color"):
+    12 pictures in card-art.zip were tier-coloured boxes from a source whose images had failed. Every card must
+    have a picture, and none may be blank (tools/make_card_art.blank - the one rule, also used when adding)."""
+
+    def test_every_item_has_a_picture_and_none_is_blank(self) -> None:
+        import io
+        import os
+        import sys
+        import zipfile
+        try:
+            from PIL import Image, ImageChops
+        except ImportError:
+            self.skipTest("Pillow is only needed to check the art set (a developer's machine)")
+        tools = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "tools")  # past the junction
+        if not os.path.isfile(os.path.join(tools, "make_card_art.py")):
+            self.skipTest("the art tools aren't here (an installed apworld)")
+        sys.path.insert(0, tools)
+        try:
+            from make_card_art import blank
+        finally:
+            sys.path.remove(tools)
+        from ..items import ENCOUNTER_UNLOCKS, EVENT_RARITY_ID, HERO_ITEM_IDS, UNLOCKS, item_name_to_id
+        data = os.path.join(os.path.dirname(__file__), "..", "data")
+        art = zipfile.ZipFile(os.path.join(data, "card-art.zip"))
+        names = set(art.namelist())
+        # owner 2026-11-12: pictures for ALL unlockables - each item's own picture(s), or a generic symbol
+        without = []
+        for name, item in item_name_to_id.items():
+            if item in HERO_ITEM_IDS:
+                hero = HERO_ITEM_IDS[item].lower().replace(" ", "_")
+                ok = os.path.isfile(os.path.join(data, "heroes", f"{hero}.png"))
+            elif item in ENCOUNTER_UNLOCKS or item in UNLOCKS:  # merchants, events, level-ups; cards, packs, groups
+                ok = all(f"{guid}.webp" in names for guid in ENCOUNTER_UNLOCKS.get(item) or UNLOCKS[item])
+            elif item == EVENT_RARITY_ID:  # its events, each pictured above
+                ok = True
+            else:  # no card behind it: its symbol (tools/make_item_symbols.py)
+                ok = f"item-{item}.webp" in names
+            if not ok:
+                without.append(name)
+        self.assertEqual(without, [])
+        # owner 2026-11-12: "dont publish 'every single photo' online, just the ones we use" - nothing else ships
+        used = {f"{guid}.webp" for guids in list(ENCOUNTER_UNLOCKS.values()) + list(UNLOCKS.values()) for guid in guids}
+        used |= {f"item-{item}.webp" for item in item_name_to_id.values()}
+        # owner 2026-11-13: each rarity's frame, for cards of every size and for merchants/events (cardart.FRAMES)
+        from ..cardart import FRAMES
+        from ..data import TIERS
+        used |= {f"frame-{tier}-{kind}.webp" for tier in TIERS for kind in FRAMES}
+        self.assertEqual(sorted(names - used), [])
+        # (a frame is see-through in the middle by design: blank() is for pictures)
+        self.assertEqual([n for n in sorted(names) if not n.startswith("frame-")
+                          and blank(Image.open(io.BytesIO(art.read(n))))], [])
+        # owner 2026-11-12 ("the icon in the middle is small and sitting on the top left corner"): a symbol's icon
+        # sits in the middle of its tile and fills it (drawn on make_item_symbols' fixed grid, whatever the size)
+        cramped = []
+        for name in sorted(n for n in names if n.startswith("item-")):
+            picture = Image.open(io.BytesIO(art.read(name))).convert("RGB")
+            size = picture.width
+            inside = picture.crop((size // 8, size // 8, size - size // 8, size - size // 8))  # past the tile's border
+            fill = Image.new("RGB", inside.size, inside.getpixel((0, 0)))
+            icon = ImageChops.difference(inside, fill).convert("L").point(lambda v: 255 if v > 24 else 0).getbbox()
+            middle = ((icon[0] + icon[2]) / 2 / inside.width, (icon[1] + icon[3]) / 2 / inside.height)
+            if abs(middle[0] - 0.5) > 0.15 or abs(middle[1] - 0.5) > 0.15 or icon[2] - icon[0] < 0.5 * inside.width:
+                cramped.append(name)
+        self.assertEqual(cramped, [])
+
+
+class TestCheckBar(unittest.TestCase):
+    """Owner 2026-11-13: the Tracker shows a hero's check progress "similar to the hero guide on the main menu" - one
+    bar drawing for both (tracker.check_bar / fill_bar)."""
+
+    class Bar(dict):
+        def coords(self, tag, *points):
+            self["coords"] = points
+
+    def test_the_bar_fills_by_checks_done_of_all(self) -> None:
+        from ..tracker import fill_bar
+        bar = self.Bar(width=100, height=6)
+        fill_bar(bar, 25, 100)
+        self.assertEqual(bar["coords"], (0, 0, 25, 6))
+        fill_bar(bar, 0, 0)  # no checks at all: empty, never a division by zero
+        self.assertEqual(bar["coords"], (0, 0, 0, 6))
+        fill_bar(bar, 7, 7)
+        self.assertEqual(bar["coords"], (0, 0, 100, 6))
+
+
+class TestIconsAreTheSquaresShadow(unittest.TestCase):
+    """Owner 2026-11-16: the icon "a shade darker than the background of the squares color and kind of like a shadow
+    of what it is supposed to be"; the Sell Trap marker "the skull with flames"."""
+
+    def test_an_icon_is_its_squares_colour_darker_and_see_through_around_it(self) -> None:
+        from ..tracker import COLORS, ICON_SHADE, icon_pixels
+        width, height, rgba = icon_pixels("win", COLORS["green"], 26)
+        self.assertEqual((width, height), (26, 26))
+        solid = [rgba[i:i + 3] for i in range(0, len(rgba), 4) if rgba[i + 3] == 255]
+        self.assertTrue(solid)  # the trophy is there
+        shade = bytes(round(int(COLORS["green"][i:i + 2], 16) * ICON_SHADE) for i in (1, 3, 5))
+        self.assertTrue(all(px == shade for px in solid))  # all of it in the square's colour, darker
+        self.assertEqual(rgba[3], 0)  # the corner: see-through, the square shows
+
+    def test_every_square_and_the_sell_trap_have_an_icon(self) -> None:
+        from ..tracker import SQUARES, icon_pixels
+        for kind in [kind for kind, *_ in SQUARES] + ["sell_trap"]:
+            self.assertIsNotNone(icon_pixels(kind, "#808080", 20), kind)
+        self.assertIsNone(icon_pixels("no such square", "#808080", 20))

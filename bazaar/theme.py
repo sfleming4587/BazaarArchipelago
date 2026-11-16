@@ -1,4 +1,4 @@
-"""Colours and fonts shared by every window the client shows (overlay, Shop Guide, tracker)."""
+"""Colours and fonts shared by every window the client shows (overlay, Item Guide, tracker)."""
 FONT = "Segoe UI"
 
 FG = "#ffffff"
@@ -7,7 +7,7 @@ GOOD = "#9be39b"  # all good: nothing locked, cards you can buy
 WARN = "#ff8a8a"  # something wrong: a locked hero picked, locked cards
 MUTED = "#e6d5b8"  # quiet text: the progress line
 DIM = "#8a8a8a"  # done, greyed out
-WINDOW_BG = "#16141c"  # the Shop Guide and the tracker
+WINDOW_BG = "#16141c"  # the Item Guide and the tracker
 LOCKED_X = "#e0303a"  # the red cross over a locked card's picture, the padlock on a locked card in a shop
 OUTLINE = "#1a0406"  # around the padlock, so it shows on light cards too
 # a Sell Trap (owner, 2026-10-01: "more menacing ... like a skull with a flame behind it")

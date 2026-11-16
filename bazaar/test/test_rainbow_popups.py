@@ -70,9 +70,11 @@ class TestRainbowRow(unittest.TestCase):
             root.update()
             rows = screen.toast_box.winfo_children()[0].winfo_children()
             canvases = [r for r in rows if isinstance(r, tkinter.Canvas)]
-            self.assertEqual(len(canvases), 1)  # only the good one
-            canvas = canvases[0]
-            texts = [canvas.itemcget(i, "text") for i in canvas.find_all() if canvas.type(i) == "text"]
+            self.assertEqual(len(canvases), 1)  # one pop-up at a time: the good one first
+            canvas = canvases[0]  # its background: the rainbow, see-through like every panel
+            content = [w for w in screen.toast_content.winfo_children()[0].winfo_children()
+                       if isinstance(w, tkinter.Canvas)][0]  # its text and pictures, solid, on top (2026-11-12)
+            texts = [content.itemcget(i, "text") for i in content.find_all() if content.type(i) == "text"]
             self.assertEqual(texts, ["FOUND: Hero: Dooley"])
             band = canvas.find_all()[0]
             before = canvas.itemcget(band, "fill")

@@ -23,6 +23,8 @@ import re
 from dataclasses import dataclass
 from typing import Collection, Iterator, List, Optional, Union
 
+from .data import hero_of_code
+
 DEFAULT_LOG_PATH = os.path.join(os.path.expandvars("%USERPROFILE%"), "AppData", "LocalLow", "Tempo Storm",
                                 "The Bazaar", "Player.log")
 
@@ -47,10 +49,6 @@ HANDLED_RE = re.compile(r"\[GameMessageHandler\] Handled: type=NetMessageGameSim
 
 # states in which the game shows you something to pick from (a shop, an event, a level-up, loot)
 CHOICE_STATES = ("EncounterState", "LevelUpState", "LootState", "PedestalState")
-
-# EHero enum names that differ from the display names used by the apworld
-HERO_ALIASES = {"Pyg": "Pygmalien", "Hero8": "The Dragons", "Dragon": "The Dragons", "Dragons": "The Dragons",
-                "TheDragons": "The Dragons"}
 
 
 @dataclass(frozen=True)
@@ -166,7 +164,7 @@ class LogParser:
             yield GameVersion(match[1])
             return
         if match := HERO_RE.search(line):
-            self.hero = HERO_ALIASES.get(match[1], match[1])
+            self.hero = hero_of_code(match[1])  # the game's EHero code (data.HERO_CODES)
             if not self.in_run:
                 yield HeroSelected(self.hero)
             return

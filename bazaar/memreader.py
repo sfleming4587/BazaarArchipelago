@@ -13,9 +13,10 @@ after a patch (owner, 2026-09-30). Windows only, no Archipelago imports, so it's
 import re
 import struct
 import sys
+import threading
 import time
 import uuid
-from typing import Dict, List, NamedTuple, Optional, Tuple
+from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
 from . import unity
 
@@ -31,8 +32,10 @@ UI_STATICS = ("<TransitionIn>k__BackingField", "<TooltipParentComponent>k__Backi
 LEVEL_STAT = 15  # your level among the player's stats (seen 2 -> 3 at the first level-up, 2026-09-30)
 PRESTIGE_STAT = 9  # 25 at a run's start, down on every PvP loss, 0 when the run is lost (2026-09-30)
 # Named exceptions to BLOCKED: your own character-select settings, not RNG (owner, 2026-10-01: Random must warn
-# when it can roll a locked hero). Nothing else with a blocked word in its name is ever read.
-ALLOWED_NAMES = ("_randomHeroEnabled", "_heroExcludedFromRandom")
+# when it can roll a locked hero), and the PvP fight card's info box - only its place on screen, never what it says
+# (owner 2026-11-16: "the pvp box comes from hovering the pvp fight about to happen", TOOLTIP_BOXES). Nothing else
+# with a blocked word in its name is ever read.
+ALLOWED_NAMES = ("_randomHeroEnabled", "_heroExcludedFromRandom", "_pvpOpponentTooltipViewComponent")
 BLOCKED = ("seed", "rng", "random", "opponent", "steam", "store", "title", "account", "ticket", "token", "auth")
 IDENT = re.compile(r"^[A-Za-z_<][\w<>`.\-|=$@]*$")
 STRING, VALUETYPE = 0x0E, 0x11  # MonoTypeEnum
@@ -61,6 +64,10 @@ LOADING_SECONDS = 120
 SNAPSHOT_GRACE = 10.0  # a snapshot failing this long in a row turns the reader off (see Reader.snapshot)
 GEAR_SEARCH_SECONDS = 30.0  # a missing settings gear is searched for at most this often (find_gear)
 INPUT_SEARCH_SECONDS = 30.0  # a gone input manager is searched for again at once, then at most this often (menu_layers)
+ART_SHOWN = 0.9  # an event card's art at least this big (of full size) counts as there (unity.art_scale)
+CARD_MIN_HEIGHT = 0.05  # a card shrunk below this (of the game window's height) isn't there: no padlock on a sliver
+STRIP_SECONDS = 0.5  # the pop-ups' strip is read at most this often (its anchors don't move; ~0.7 ms a read)
+UI_HOLD_SECONDS = 0.1  # a ui() read that fails part-way: the last good one stands this long (see Reader.ui)
 UI_RETRY_SECONDS = 1.0  # how often the board's on-screen flags are looked for again until found (see Reader.ui)
 # During one board read, memory is fetched in aligned blocks of this size and kept until the read ends: a card's fields
 # and its transforms' neighbours sit together, and each fetch is a call into Windows (2026-10-15: ~50 per card, 0.7 ms
@@ -79,11 +86,20 @@ EVENT_SOCKETS = "_opponentBoardSocketControllers"
 # matched the owner's video to the pixel). Read only for a monster's card - never a PvP opponent's (they have their
 # own view, and the reader never looks at other players).
 MONSTER_CARD, MONSTER = "CombatEncounterCard", "TCombatantMonster"
-# A tooltip's pieces that cover what's under them (2026-10-14, matched on 4 cards in both views). ⚠️ Chosen by name:
-# Unity's switch (unity.active) hides only some of them, and the bottom box can be empty yet "on"; the keyword boxes
+# A tooltip's pieces that cover what's under them (2026-10-14, matched on 4 cards in both views), only while Unity's
+# switch (unity.active) has them on: hovering a bare board slot's effect (the Tempo note, a
+# SocketEffect) switches all four off but leaves their old rects, which faded a padlock nothing covered (live test
+# 2026-11-12). The switch alone isn't enough the other way: the bottom box can be empty yet "on"; the keyword boxes
 # go by the right-click flag (see _tooltip_pieces).
-TOOLTIP_PIECES = ("Tags", "Box_Header", "Box_Active_Effect", "Box_Passive_Effect")
-TOOLTIP_PIECE_CHILDREN = {"Box_Active_Effect": ("Active_TooltipClock",)}
+# Each box is reached through the tooltip controller's own fields (CardTooltipController in TheBazaarRuntime.dll,
+# read 2026-11-16), never by its GameObject's name (owner 2026-11-16: "Dont do that"): a list of the four item boxes'
+# names missed a monster's rewards box (an AP marker stayed solid under it, owner 2026-11-13).
+# Fields (paths from the controller) holding a box's GameObject:
+TOOLTIP_BOXES = (("headerParent",), ("activeTooltipParent",), ("passiveEffectParent",), ("_sellPriceParent",),
+                 ("monsterRewardTooltip", "parent"), ("_heroLevelTooltipViewComponent", "_parent"),
+                 ("_pvpOpponentTooltipViewComponent", "_parent"))
+# ... and a component whose own GameObject is the box: the tags row, the cooldown clock
+TOOLTIP_PARTS = (("tooltipTagController",), ("cooldownClock",))
 
 
 class Offer(NamedTuple):
@@ -113,6 +129,15 @@ class BoardUI(NamedTuple):
     # in cards under the key
     monster_items: Tuple[Tuple[str, Optional[str]], ...] = ()
     gear: Optional[Tuple[float, float, float, float]] = None  # the settings gear at the top right (find_gear)
+    # where pop-ups sit (Reader._toast_strip): (left, centre y, right, centre y), or None off the board
+    toast_strip: Optional[Tuple[float, float, float, float]] = None
+    # the keyword tray at the bottom left (_legendTrayTooltipComponent), also one of `tooltips`: the Item Guide sits
+    # on it and doesn't fade for it (owner 2026-11-13: "Guide stays solid ONLY FROM THIS TRAY")
+    keyword_tray: Optional[Tuple[float, float, float, float]] = None
+    # event options' (monster, PvP, event cards) width and height, from their BoxCollider: they're placed as a point
+    # (cards), and an AP marker sits on their top-right corner (padlocks.spot; read live 2026-11-13: the PvP card's
+    # box matched its frame on screen)
+    sizes: Dict[str, Tuple[float, float]] = {}
 
 
 class HeroPrefs(NamedTuple):
@@ -233,7 +258,20 @@ class Memory:
                                       False, pid)
         if not self.handle:
             raise ReaderOff(f"can't open the game for reading (error {C.get_last_error()})")
-        self.blocks: Optional[dict] = None  # READ_BLOCK-aligned address -> bytes, only during one read (Reader.ui)
+
+    @property
+    def blocks(self) -> Optional[dict]:
+        """READ_BLOCK-aligned address -> bytes, only during one read (Reader.ui), and only for the thread doing it:
+        a search runs on a worker while ui() reads (client.watch_memory). ⚠️ Hot: looked up once per read()."""
+        local = self.__dict__.get("local")
+        return getattr(local, "blocks", None) if local is not None else None
+
+    @blocks.setter
+    def blocks(self, value: Optional[dict]) -> None:
+        local = self.__dict__.get("local")
+        if local is None:
+            local = self.__dict__["local"] = threading.local()
+        local.blocks = value
 
     def close(self) -> None:
         if self.handle:
@@ -247,12 +285,13 @@ class Memory:
     def read(self, address: int, size: int) -> Optional[bytes]:
         if not address or address < 0x10000 or address > 0x7FFFFFFFFFFF:
             return None
-        if self.blocks is not None:
+        blocks = self.blocks
+        if blocks is not None:
             base = address & ~(READ_BLOCK - 1)
             if address + size <= base + READ_BLOCK:
-                if base not in self.blocks:
-                    self.blocks[base] = self._fetch(base, READ_BLOCK)
-                block = self.blocks[base]
+                block = blocks.get(base, False)
+                if block is False:
+                    block = blocks[base] = self._fetch(base, READ_BLOCK)
                 if block is not None:
                     return block[address - base:address - base + size]
         return self._fetch(address, size)
@@ -589,6 +628,14 @@ class Reader:
         self.failing_since = 0.0  # when snapshots started failing (0: they aren't)
         self.offers_now: Tuple[Optional[str], frozenset] = (None, frozenset())  # (screen, offer ids), last snapshot
         self.camera: tuple = ()  # the cards' camera, last read (see _card_rects)
+        self.camera_native = 0  # ...the camera object itself (positions reads its matrix afresh)
+        # what the last ui() placed each card by: card -> ("box", rig, box collider) or ("point", art transform),
+        # native addresses - so positions() can place just those cards again, cheaply
+        self.tracks: Dict[str, tuple] = {}
+        self.last_ui: Tuple[float, Optional[BoardUI]] = (0.0, None)  # (when, the last good ui() read)
+        self.tooltip_of = 0  # the card whose tooltip the last read saw (a new one counts from its second read)
+        self.tooltip_note = ""  # what the last tooltip read found, for the client's log file (_tooltip_pieces)
+        self.strip_read: Tuple[float, Optional[tuple]] = (-STRIP_SECONDS, None)  # (when, the pop-ups' strip)
 
     def attached(self) -> bool:
         return self.memory is not None and self.memory.alive()
@@ -774,29 +821,50 @@ class Reader:
             tooltip = self._get(tooltips, "_cardTooltipController") if tooltips else 0
             card = self._get(tooltip, "_currentCard") if tooltip else 0
             hovering = bool(card)
+            seen, self.tooltip_of = self.tooltip_of, card
             dragging = (m.read(paths["drag"], 1) or b"\0")[0] == 1
             dragged = m.ptr(paths["dragged"]) if dragging else 0
             inventory = bool(toy and self._get(toy, "toyOpen"))
             inspecting = bool(tooltip and self._get(tooltip, "isLocked"))
             fight: list = []
-            cards = self._card_rects(board, fight)
+            tracks: Dict[str, tuple] = {}
+            sizes: Dict[str, Tuple[float, float]] = {}
+            cards = self._card_rects(board, fight, tracks, sizes)
             monster = self._monster_board(tooltip, card) if inspecting and card else ()
             cards.update((key, rect) for key, _template, rect in monster)
-            return BoardUI(hovering=hovering,
+            try:
+                gear = self._gear_rect()
+            except Exception:  # its dialog mid-swap: only the gear falls back to its measured place this read
+                gear = None
+            if time.monotonic() - self.strip_read[0] >= STRIP_SECONDS:
+                try:
+                    self.strip_read = (time.monotonic(), self._toast_strip(board))
+                except Exception:  # mid-change: pop-ups use their last place this read
+                    self.strip_read = (time.monotonic(), None)
+            strip = self.strip_read[1]
+            ui = BoardUI(hovering=hovering,
                            dragging=dragging,
                            inventory=inventory,
                            dialog=bool(self._get(board, "DialogOpen")),
                            revealing=bool(self._get(board, "_isRevealing")),
                            stash_moving=bool(self._get(board, "StorageMoving")),
-                           tooltips=self._tooltip_pieces(tooltips, inspecting) if hovering else (),
+                           # a new tooltip's first frame still has its old place (live test 2026-11-12: a padlock
+                           # nothing covered flashed see-through for one read), so it counts from its second read
+                           tooltips=self._tooltip_pieces(tooltips, inspecting) if hovering and card == seen else (),
+                           keyword_tray=self.keyword_tray if hovering and card == seen else None,  # set just above
                            dealing=bool(self._get(board, "_cardsBeingDealt")),
                            hovered_card=self._instance_id(card), dragged_card=self._instance_id(dragged),
                            inspecting=inspecting,
-                           cards=cards, monster_items=tuple(fight) + tuple((key, template) for key, template, _rect
+                           cards=cards, sizes=sizes, monster_items=tuple(fight) + tuple((key, template) for key, template, _rect
                                                                            in monster),
-                           gear=self._gear_rect())
-        except Exception:  # a read that made no sense this time: the padlocks fall back for now
-            return None
+                           gear=gear, toast_strip=strip)
+            self.last_ui = (time.monotonic(), ui)
+            self.tracks = tracks  # swapped whole: positions() may be reading the old one on another thread
+            return ui
+        except Exception:  # a read that made no sense this time: the last good one stands for UI_HOLD_SECONDS, then
+            # none (no padlocks). Every padlock blinked off on a single torn read before (2026-11-12, F1)
+            when, last = self.last_ui
+            return last if time.monotonic() - when < UI_HOLD_SECONDS else None
         finally:
             m.blocks = None
 
@@ -842,6 +910,30 @@ class Reader:
             return None
         return unity.ui_rect(read, transform, unity.canvas_size(read, canvas))
 
+    def _toast_strip(self, board: int) -> Optional[Tuple[float, float, float, float]]:
+        """Where pop-ups sit (owner, 2026-11-12: over your hero portrait and skills, never the chest or the money
+        pile): centred on your portrait, from halfway between your chest and your leftmost skill slot to halfway
+        between your rightmost one and your gold - all read from the board (recorded 1080p: chest 490, skill slots
+        755-1166, gold 1430, portrait y 920). (left, centre y, right, centre y) as fractions; None until the cards'
+        camera is known."""
+        read, camera = self.memory.read, self.camera
+        if not camera:
+            return None
+
+        def at(obj: int):
+            placed = unity.world(read, unity.transform_of(read, self._native(obj))) if obj else None
+            return unity.project(camera, placed[0]) if placed else None
+
+        chest, gold, portrait = (at(self._get(board, name))
+                                 for name in ("playerStashAnchor", "playerBankAnchor", "playerPortraitAnchor"))
+        sockets = self._get(board, "playerSkillSockets")
+        count = (self.memory.i32(sockets + 0x18) or 0) if sockets else 0
+        skills = [p for p in (at(self.memory.ptr(sockets + 0x20 + 8 * i)) for i in range(min(count, 12))) if p]
+        if not (chest and gold and portrait and skills):
+            return None
+        xs = [p[0] for p in skills]
+        return (chest[0] + min(xs)) / 2, portrait[1], (max(xs) + gold[0]) / 2, portrait[1]
+
     def _instance_id(self, card: int) -> Optional[str]:
         """A card's instance id (an object field holding a String)."""
         if not card:
@@ -852,7 +944,40 @@ class Reader:
     def _native(self, obj: int) -> int:
         return self.memory.ptr(obj + unity.NATIVE) if obj else 0
 
-    def _card_rects(self, board: int, fight: list) -> Dict[str, Tuple[float, float, float, float]]:
+    def positions(self, cards: Sequence[str]) -> Dict[str, Tuple[float, float, float, float]]:
+        """Where these cards are on screen this instant, placed again from the objects the last ui() found them by
+        (tracks): a handful of reads, for padlocks that follow their cards every game frame (owner 2026-11-12: "1
+        frame behind", at the game's refresh rate, and cheap). Placing only: whether a card is there at all stays
+        ui()'s call - a card that can't be placed now is left out. Any thread (memory blocks are per thread)."""
+        memory, tracks, camera = self.memory, self.tracks, self.camera_native
+        if not memory or not camera or not cards:
+            return {}
+        read, out = memory.read, {}
+        memory.blocks = {}
+        try:
+            matrix = unity.camera_matrix(read, camera)
+            for card in cards if matrix else ():
+                track = tracks.get(card)
+                try:
+                    placed = unity.world(read, track[1]) if track else None
+                    if not placed:
+                        continue
+                    if track[0] == "point":
+                        point = unity.project(matrix, placed[0])
+                        if point:
+                            out[card] = (point[0], point[1], point[0], point[1])
+                    elif unity.faces_camera(matrix, placed):
+                        rect = unity.box_rect(read, matrix, track[2], track[1], placed)
+                        if rect and rect[3] - rect[1] >= CARD_MIN_HEIGHT:
+                            out[card] = rect
+                except Exception:  # this card mid-change: left out this time, like in ui()
+                    continue
+        finally:
+            memory.blocks = None
+        return out
+
+    def _card_rects(self, board: int, fight: list, tracks: dict,
+                    sizes: Optional[dict] = None) -> Dict[str, Tuple[float, float, float, float]]:
         """Each card's rect on screen, by instance id, only while its art can be seen (owner, 2026-10-15: "padlocks
         are to only be seen if the art for what it is supposed to be on top of is there"): switched on and its face
         turned toward you (unity.faces_camera). Your board; your stash (shut, its cards face away under the shop;
@@ -860,7 +985,8 @@ class Reader:
         (OFFER_SOCKETS). Through the camera the cards themselves use (CardController.mainCamera). Event options
         too (EVENT_SOCKETS), as a point: the centre of their art, which rides into the big view when one's
         right-clicked (recorded 2026-10-15: within 2 px of the measured spots, and on the big art's centre). In a
-        monster or event fight the monster's items too: their (instance id, template) go into `fight`."""
+        monster or event fight the monster's items too: their (instance id, template) go into `fight`. `tracks` gets
+        what each placed card was placed by (see positions)."""
         read, out, matrix = self.memory.read, {}, None
         state, offered = self.offers_now
         fields = ["playerItemSockets", "playerStorageSockets"]
@@ -880,40 +1006,63 @@ class Reader:
             sockets_lists.append((self._get(events, "_items"), self._get(events, "_size") or 0, None))
         for items, count, source in sockets_lists:
             for i in range(min(count, 20) if items else 0):
-                socket = self.memory.ptr(items + 0x20 + 8 * i)
-                controller = self._get(socket, "CardController") if socket else 0
-                if not controller:
-                    continue
-                data = self._get(controller, "CardData")
-                card = self._instance_id(data)
-                if not card or source not in sources[:len(fields)] and source != fight_source and card not in offered:
-                    continue
-                if matrix is None:
-                    matrix = unity.camera_matrix(read, self._native(self._get(controller, "mainCamera"))) or ()
-                    self.camera = matrix or self.camera
-                if source is None:  # an event option: no Rig of its own, its socket moves (flips with the stash)
-                    # ⚠️ unverified that an option's controller has the camera: then the last one seen (the camera
-                    # doesn't move between screens as far as we've seen)
-                    matrix = matrix or self.camera
-                    transform = unity.transform_of(read, self._native(socket))
-                    placed = unity.world(read, transform) if matrix and unity.active(read, transform) else None
-                    facing = placed and unity.faces_camera(matrix, placed)  # the socket says which way it faces
-                    art = unity.world(read, unity.transform_of(read, self._native(controller))) if facing else None
-                    point = unity.project(matrix, art[0]) if art else None
-                    if point:
-                        out[card] = (point[0], point[1], point[0], point[1])
-                    continue
-                if not unity.active(read, unity.transform_of(read, self._native(controller))):
-                    continue  # switched off: a sold card, the frame before it leaves its slot (recorded 2026-10-15)
-                rig = self._native(self._get(controller, "Rig"))
-                placed = unity.world(read, rig) if matrix else None
-                if not placed or not unity.faces_camera(matrix, placed):
-                    continue  # turned away: the shop's under an open stash, a shut stash's under the shop
-                rect = unity.box_rect(read, matrix, self._native(self._get(controller, "BoxCollider")), rig, placed)
-                if rect:
-                    out[card] = rect
-                    if source == fight_source:
-                        fight.append((card, self._get(data, "TemplateId")))
+                try:
+                    socket = self.memory.ptr(items + 0x20 + 8 * i)
+                    controller = self._get(socket, "CardController") if socket else 0
+                    if not controller:
+                        continue
+                    data = self._get(controller, "CardData")
+                    card = self._instance_id(data)
+                    if not card or source not in sources[:len(fields)] and source != fight_source \
+                            and card not in offered:
+                        continue
+                    if source == fight_source:  # on the monster's board whether or not it's placed this read: a
+                        fight.append((card, self._get(data, "TemplateId")))  # card unplaced for a frame used to
+                        # drop out of the padlock list and back (review 2026-11-12)
+                    if not matrix:  # tried card by card: one controller without a camera hid every card (2026-11-12)
+                        camera = self._native(self._get(controller, "mainCamera"))
+                        matrix = unity.camera_matrix(read, camera) or ()
+                        self.camera = matrix or self.camera
+                        self.camera_native = camera if matrix else self.camera_native
+                    if source is None:  # an event option: no Rig of its own, its socket moves (flips with the stash)
+                        # ⚠️ unverified that an option's controller has the camera: then the last one seen (the
+                        # camera doesn't move between screens as far as we've seen)
+                        matrix = matrix or self.camera
+                        transform = unity.transform_of(read, self._native(socket))
+                        own = unity.transform_of(read, self._native(controller))
+                        visuals = self._follow(controller, ("cardVisuals",))  # EncounterController's art
+                        art = unity.art_scale(read, unity.object_transform(read, visuals))
+                        # drawn: the socket and the option itself on (a level-up orb switches itself off under the
+                        # stash; its socket stays on), and its art near full size (recorded 2026-11-12)
+                        there = unity.shown(read, transform) and unity.shown(read, own) \
+                            and (art is None or art >= ART_SHOWN)
+                        placed = unity.world(read, transform) if matrix and there else None
+                        facing = placed and unity.faces_camera(matrix, placed)  # the socket says which way it faces
+                        art_transform = unity.transform_of(read, self._native(controller)) if facing else 0
+                        art = unity.world(read, art_transform) if art_transform else None
+                        point = unity.project(matrix, art[0]) if art else None
+                        if point:
+                            out[card] = (point[0], point[1], point[0], point[1])
+                            tracks[card] = ("point", art_transform)
+                            collider = self._native(self._get(controller, "BoxCollider")) if sizes is not None else 0
+                            box = unity.box_rect(read, matrix, collider, art_transform, art) if collider else None
+                            if box:  # its size, for an AP marker on its corner (BoardUI.sizes)
+                                sizes[card] = (box[2] - box[0], box[3] - box[1])
+                        continue
+                    if not unity.shown(read, unity.transform_of(read, self._native(controller))):
+                        continue  # switched off: a sold card, the frame before it leaves its slot (recorded 2026-10-15)
+                    matrix = matrix or self.camera  # none on this card: the camera last read (it doesn't move)
+                    rig = self._native(self._get(controller, "Rig"))
+                    placed = unity.world(read, rig) if matrix else None
+                    if not placed or not unity.faces_camera(matrix, placed):
+                        continue  # turned away: the shop's under an open stash, a shut stash's under the shop
+                    collider = self._native(self._get(controller, "BoxCollider"))
+                    rect = unity.box_rect(read, matrix, collider, rig, placed)
+                    if rect and rect[3] - rect[1] >= CARD_MIN_HEIGHT:  # shrunk away: not there (2026-11-12)
+                        out[card] = rect
+                        tracks[card] = ("box", rig, collider)
+                except Exception:  # this one card is mid-change (dissolving, sold, pooled): only it goes unplaced
+                    continue  # this read - one bad card used to throw the whole read away (2026-11-12, F1)
         return out
 
     def _monster_board(self, tooltip: int, card: int) -> Tuple[Tuple[str, Optional[str], tuple], ...]:
@@ -924,7 +1073,7 @@ class Reader:
         if not combatant or self.mono.name(self.mono.klass(combatant)) != MONSTER:
             return ()
         view = self._get(tooltip, "_monsterBoardTooltip")
-        if not view or not unity.active(read, unity.transform_of(read, self._native(view))):
+        if not view or not unity.shown(read, unity.transform_of(read, self._native(view))):
             return ()
         canvas = unity.canvas_size(read, self._native(self._get(tooltip, "_canvasForWorldBounds")))
         shown = self._get(view, "_activeCards")  # a List
@@ -933,7 +1082,7 @@ class Reader:
         for i in range(min(size, 20) if items else 0):
             item = self.memory.ptr(items + 0x20 + 8 * i)
             transform = unity.transform_of(read, self._native(item)) if item else 0
-            rect = unity.ui_rect(read, transform, canvas) if transform and unity.active(read, transform) else None
+            rect = unity.ui_rect(read, transform, canvas) if transform and unity.shown(read, transform) else None
             data = self._get(item, "_clientCard") if rect else 0
             if data:
                 out.append((f"monster:{i}", self._get(data, "TemplateId"), rect))
@@ -954,38 +1103,47 @@ class Reader:
             c = self.mono.parent(c)
         return 0
 
+    def _follow(self, obj: int, path: Tuple[str, ...]) -> int:
+        """The native object at the end of a chain of fields from obj (0 where one is unset)."""
+        for name in path:
+            obj = self._get(obj, name) if obj else 0
+        return self._native(obj) if obj else 0
+
     def _tooltip_pieces(self, parent: int, inspecting: bool) -> Tuple[Tuple[float, float, float, float], ...]:
-        """The visible pieces of the card tooltips showing now, as fractions of the game window: TOOLTIP_PIECES (and
-        their children named in TOOLTIP_PIECE_CHILDREN: the cooldown clock), the sell box while Unity has it on, and
-        the keyword box - the big one beside a right-clicked card, else the tray at the bottom left (each keeps its
-        last rect while the other shows, so the right-click flag picks; matched 2026-10-14)."""
-        read, out = self.memory.read, []
+        """The visible pieces of the card tooltips showing now, as fractions of the game window: each box in
+        TOOLTIP_BOXES / TOOLTIP_PARTS while Unity draws it, and the keyword box - the big one beside a right-clicked
+        card, else the tray at the bottom left (each keeps its last rect while the other shows, so the right-click flag
+        picks; matched 2026-10-14)."""
+        read, out, notes = self.memory.read, [], []
+        self.keyword_tray = None
         cstr = lambda a: self.memory.cstr(a, 64)  # noqa: E731
         for name in ("_cardTooltipController", "_secondaryCardTooltipController"):
-            tip = self._get(parent, name)
-            if not tip or not self._get(tip, "_currentCard"):
-                continue
-            canvas = unity.canvas_size(read, self._native(self._get(tip, "_canvasForWorldBounds")))
-            root = self._native(self._get(tip, "rectTransform"))
-            mains = [c for c in unity.children(read, root) if unity.name_of(read, c, cstr) == "Tooltip_Main"]
-            for piece in unity.children(read, mains[0]) if mains else []:
-                piece_name = unity.name_of(read, piece, cstr)
-                if piece_name not in TOOLTIP_PIECES:
+            try:
+                tip = self._get(parent, name)
+                if not tip or not self._get(tip, "_currentCard"):
                     continue
-                out.append(unity.ui_rect(read, piece, canvas))
-                wanted = TOOLTIP_PIECE_CHILDREN.get(piece_name, ())
-                out += [unity.ui_rect(read, c, canvas) for c in unity.children(read, piece)
-                        if unity.name_of(read, c, cstr) in wanted]
-            sell = self._get(tip, "_sellPriceParent")
-            sell_transform = unity.transform_of(read, self._native(sell)) if sell else 0
-            if sell_transform and unity.active(read, sell_transform):
-                out.append(unity.ui_rect(read, sell_transform, canvas))
-            legend = self._get(tip, "_legendTooltipComponent" if inspecting else "_legendTrayTooltipComponent")
-            legend_transform = unity.transform_of(read, self._native(legend)) if legend else 0
-            if legend_transform:
-                backgrounds = [c for c in unity.children(read, legend_transform)
-                               if unity.name_of(read, c, cstr) == "Background"]
-                out.append(unity.ui_rect(read, backgrounds[0] if backgrounds else legend_transform, canvas))
+                canvas = unity.canvas_size(read, self._native(self._get(tip, "_canvasForWorldBounds")))
+                boxes = [(p, unity.object_transform(read, self._follow(tip, p))) for p in TOOLTIP_BOXES]
+                boxes += [(p, unity.transform_of(read, self._follow(tip, p))) for p in TOOLTIP_PARTS]
+                found = []
+                for path, box in boxes:
+                    if box and unity.shown(read, box):  # switched off: not drawn
+                        out.append(unity.ui_rect(read, box, canvas))
+                        # its GameObject's name only for the log - to check each field is the box it should be
+                        found.append(f"{'.'.join(path)}={unity.name_of(read, box, cstr)}")
+                legend = self._get(tip, "_legendTooltipComponent" if inspecting else "_legendTrayTooltipComponent")
+                legend_transform = unity.transform_of(read, self._native(legend)) if legend else 0
+                if legend_transform and unity.shown(read, legend_transform):
+                    backgrounds = [c for c in unity.children(read, legend_transform)
+                                   if unity.name_of(read, c, cstr) == "Background"]
+                    out.append(unity.ui_rect(read, backgrounds[0] if backgrounds else legend_transform, canvas))
+                    if not inspecting:  # the tray at the bottom left (BoardUI.keyword_tray)
+                        self.keyword_tray = out[-1] or None
+                # for the client's log file (2026-11-12: tooltips stopped fading padlocks on the owner's other PC)
+                notes.append(f"{name}: canvas {canvas[0]:.0f}x{canvas[1]:.0f}, used {found}")
+            except Exception as error:  # a tooltip still being built: the other one (and the board) still count
+                notes.append(f"{name}: unreadable ({error!r})")
+        self.tooltip_note = "; ".join(notes)
         return tuple(r for r in out if r)
 
     def close(self) -> None:
@@ -1068,7 +1226,7 @@ class Reader:
         if selection:
             items, size = self._get(selection, "_items"), self._get(selection, "_size") or 0
             ids = [m.mono_string(m.ptr(items + 0x20 + 8 * i)) for i in range(min(size, 20))]
-        offers = []
+        offers, by_id = [], {}
         self.offers_now = (name, frozenset(ids))  # ui() places these cards (only these) off fights
         if ids:
             by_id = self._entities()
@@ -1078,9 +1236,11 @@ class Reader:
                     offers.append(Offer(instance, None, None))
                     continue
                 offers.append(Offer(instance, self._get(card, "TemplateId"), self._get(card, "Type")))
-        return Snapshot(name, encounter, tuple(offers), *self._run_parts())
+        # Data.Entities is read once per snapshot (it was read twice: a few thousand reads each, and every snapshot
+        # pauses the board reads - review 2026-11-12)
+        return Snapshot(name, encounter, tuple(offers), *self._run_parts({obj: i for i, obj in by_id.items()}))
 
-    def _run_parts(self) -> tuple:
+    def _run_parts(self, ids: Optional[Dict[int, str]] = None) -> tuple:
         """Your level, stash, losses, prestige, day, victories and board, or None/() for any that make no sense this
         time. They're read through the Run, which
         the game tears down and replaces around a run's end: 8 s after a concede (2026-10-02) Run.Player had no
@@ -1094,7 +1254,7 @@ class Reader:
             counts = (None, None, None)
         losses, day, victories = counts
         try:
-            ids: Dict[int, str] = {}
+            ids = dict(ids or {})
             stash, board = self._container("Stash", ids), self._container("Hand", ids)
             return self._stat(LEVEL_STAT), stash, losses, self._stat(PRESTIGE_STAT), day, victories, board
         except Exception:

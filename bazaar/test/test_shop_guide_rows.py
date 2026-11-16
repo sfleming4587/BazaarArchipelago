@@ -1,4 +1,4 @@
-"""Shop Guide rows (owner, 2026-11-10): "Shrink the borders of the cards to a minimum border count of a couple pixels.
+"""Item Guide rows (owner, 2026-11-10): "Shrink the borders of the cards to a minimum border count of a couple pixels.
 DONT SHRINK THE IMAGE JUST THE BORDERS IN BETWEEN THE ROW"; "Think of it similar to how text looks in a book ... if it
 is unable then the spaces expand to make the left most word touch the left border and the right most word touch the
 right most border"; "make sure it wont break on any edge cases... AKA 0,1 item, etc. all small"."""
@@ -97,7 +97,7 @@ class TestRealWindow(unittest.TestCase):
                 guide.width = width
                 canvas.delete("all")
                 guide.cells = {}
-                bottom = guide.draw_section(0, "Test", "#ffffff", cards, framed=False)
+                bottom = guide.draw_section(0, "Test", "#ffffff", cards)
                 root.update()
                 self.assertGreater(bottom, 0)
                 rows = {}
@@ -113,6 +113,35 @@ class TestRealWindow(unittest.TestCase):
                     if len(rows[top]) > 1:
                         self.assertLessEqual(min(x0 for x0, _ in rows[top]), ROW_PAD + 8, (width, top))
                         self.assertGreaterEqual(max(x1 for _, x1 in rows[top]), width - ROW_PAD - 8, (width, top))
+            guide.shutdown()
+        finally:
+            root.destroy()
+
+
+class TestSectionOrder(unittest.TestCase):
+    def test_you_can_buy_above_locked_even_when_longer(self) -> None:
+        """Owner, 2026-11-13: "please list the 'You can buy' items before the 'locked' items" (it used to put the
+        shorter list on top)."""
+        import tempfile
+        import tkinter
+
+        from ..data import CARDS
+        from ..shop_guide import ShopGuide
+        cards = [c for c in CARDS if c.shop]
+        root = tkinter.Tk()
+        try:
+            guide = ShopGuide.create(tkinter, root, tempfile.mkdtemp(), None, (0, 0, 330, 600),
+                                     on_art=lambda guid: None, on_closed=lambda: None)
+            for locked in ({c.guid for c in cards[:3]}, {c.guid for c in cards}):  # few locked; then all but none
+                guide.locked = locked
+                guide.hidden = False
+                guide.render(force=True)
+                canvas = guide.canvas
+                titles = [canvas.itemcget(i, "text") for i in canvas.find_all() if canvas.type(i) == "text"
+                          and canvas.itemcget(i, "text").startswith(("You can buy", "LOCKED"))]
+                self.assertTrue(titles, locked and len(locked))
+                if len(titles) == 2:
+                    self.assertTrue(titles[0].startswith("You can buy"), titles)
             guide.shutdown()
         finally:
             root.destroy()

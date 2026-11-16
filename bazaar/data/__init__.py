@@ -46,8 +46,19 @@ def _load(name: str = "bazaar_data.json") -> dict:
 
 _raw = _load()
 
-GAME_VERSION: str = _raw.get("game_version", "unknown")  # The Bazaar build this data was extracted from
+GAME_VERSION: str = _raw.get("game_version", "unknown")  # The Bazaar build this data matches
 HEROES: List[str] = _raw["heroes"]
+# The game's hero codes (its EHero enum, BazaarGameShared.dll: the log's "Changing EHero to", merchant filters, Random's
+# exclusions) -> the heroes above: only Hero8 differs ("The Dragons"). Kept in bazaar_data.json, the one place the
+# mapping is kept (2026-11-16: it was copied three times).
+HERO_CODES: Dict[str, str] = _raw["hero_codes"]
+
+
+def hero_of_code(code: str) -> str:
+    """The hero a game hero code stands for (a code the data doesn't know passes through as it is)."""
+    return HERO_CODES.get(code, code)
+
+
 BASE_HEROES = ("Vanessa", "Pygmalien", "Dooley")
 DLC_HEROES = tuple(h for h in HEROES if h not in BASE_HEROES)
 
@@ -59,7 +70,7 @@ def hero_key(hero: str) -> str:
 CARDS: List[Card] = [Card(c["guid"], c["ap_id"], c["name"], c["hero"], c["tier"], c["size"], tuple(c["tags"]),
                           c["shop"], tuple(c.get("hidden_tags", ())), tuple(c.get("enchants", ())),
                           tuple(c.get("tiers", ())), c.get("ticket", False)) for c in _raw["cards"]]
-# Legacy packs come from the extractor; custom packs are hand-made and live in their own file, so an extractor run
+# Legacy packs are in the data file; custom packs are hand-made and live in their own file, so a data update
 # never touches them (see docs/CARD-PACKS.md). Both share the pack item range: legacy 100.., custom 150..
 PACKS: List[Pack] = [Pack(p["key"], p["ap_id"], p["name"], p["hero"], tuple(p["cards"])) for p in _raw["packs"]]
 PACKS += [Pack(p["key"], p["ap_id"], p["name"], p["hero"], tuple(c["guid"] for c in p["cards"]), custom=True)
@@ -74,6 +85,8 @@ EVENT_NAMES: Dict[str, str] = {e["guid"]: e["name"] for e in _raw.get("events", 
 EVENTS: Dict[str, dict] = {e["guid"]: e for e in _raw.get("events", [])}
 ENCOUNTERS: List[Encounter] = [Encounter(e["ap_id"], e["name"], tuple(e["guids"]), e["merchant"])
                                for e in _raw.get("encounters", [])]
+# each merchant/event template -> its lockable encounter (every copy of it, tutorial ones too, is one encounter)
+ENCOUNTER_OF: Dict[str, Encounter] = {g: e for e in ENCOUNTERS for g in e.guids}
 
 TIERS = ("Bronze", "Silver", "Gold", "Diamond", "Legendary")
 
@@ -93,13 +106,21 @@ def tiers_on_day(day: int, highest: str) -> List[str]:
 
 
 # Cards unlocked together by one group item.
-SHOP_CARDS = [c for c in CARDS if c.shop]  # cards a shop can sell (the Shop Guide's list, the menu's card counts)
+SHOP_CARDS = [c for c in CARDS if c.shop]  # cards a shop can sell (the Item Guide's list, the menu's card counts)
 LEGENDARY_GUIDS = frozenset(c.guid for c in CARDS if c.shop and c.tier == "Legendary")
 TICKET_GUIDS = frozenset(c.guid for c in CARDS if c.ticket)
 # item guid -> the lockable card it always spawns (Temporary Shelter -> Scrap); random spawns aren't listed
 FIXED_SPAWNS: Dict[str, Tuple[str, ...]] = {k: tuple(v) for k, v in _raw.get("fixed_spawns", {}).items()}
+# Every card of every type, by guid (bazaar_data.json's catalog, 2026-11-13): the facts a feature may need beyond `cards`
+CATALOG: Dict[str, dict] = {c["guid"]: c for c in _raw.get("catalog", [])}
+# Cards that deal random cards when sold -> how many one sale deals (the catalog's sold_deals: the game's own spawn
+# Limit, 2026-11-16): every "<Merchant>'s Package" (1), Shipment (its Custom_0 attribute: 3)... A card that always
+# deals the same card (FIXED_SPAWNS: Temporary Shelter's 2 Scrap, Colossal Popsicle's Icicles) isn't one: what it
+# deals is known, and only that is free.
+SOLD_DEALS: Dict[str, int] = {g: c["sold_deals"] for g, c in CATALOG.items()
+                              if c.get("sold_deals") and g not in FIXED_SPAWNS}
 
 CARDS_BY_NAME: Dict[str, Card] = {c.name: c for c in CARDS}
 CARDS_BY_GUID: Dict[str, Card] = {c.guid: c for c in CARDS}
-# card names are item names: two cards with one name would silently share an item id (the extractor prevents it)
-assert len(CARDS_BY_NAME) == len(CARDS), "two cards share a name - rerun tools/extract_data.py"
+# card names are item names: two cards with one name would silently share an item id (the data file never has two)
+assert len(CARDS_BY_NAME) == len(CARDS), "two cards share a name - fix the data file"

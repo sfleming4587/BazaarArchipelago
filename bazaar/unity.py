@@ -161,7 +161,11 @@ def game_object(read: Read, component: int) -> int:
 
 def transform_of(read: Read, component: int) -> int:
     """A component's GameObject's Transform (always the GameObject's first component)."""
-    go = game_object(read, component)
+    return object_transform(read, game_object(read, component))
+
+
+def object_transform(read: Read, go: int) -> int:
+    """A GameObject's own Transform. ⚠️ Not transform_of: a native GameObject is not a component."""
     return ptr(read, ptr(read, go + GAMEOBJECT_COMPONENTS) + 8) if go else 0
 
 
@@ -175,6 +179,24 @@ def active(read: Read, transform: int) -> bool:
     an empty bottom box are not - 2026-10-14)."""
     raw = read(game_object(read, transform) + GAMEOBJECT_ACTIVE, 1)
     return bool(raw and raw[0])
+
+
+def shown(read: Read, transform: int) -> bool:
+    """Unity draws it: its own switch and every parent's are on (activeInHierarchy). The one rule for "is it there"
+    behind every padlock and every covering (owner 2026-11-12: padlocks "only display when their UI element is
+    there"; a level-up orb switched off under the stash kept its padlock)."""
+    chain = ancestors(read, transform) or [transform]
+    return all(active(read, t) for t in chain)
+
+
+def art_scale(read: Read, art: int) -> Optional[float]:
+    """An event card's art (the Transform of its EncounterController.cardVisuals): its world scale, 0 while switched
+    off, None if it has none. It shrinks to 0 as the stash opens and grows back after (recorded 2026-11-12, level-up
+    screen). ⚠️ Was found by its GameObject's name until 2026-11-16; that the field is the same object is unverified."""
+    if not art:
+        return None
+    placed = world(read, art) if shown(read, art) else None
+    return abs(placed[2][0]) if placed else 0.0
 
 
 def ancestors(read: Read, transform: int) -> List[int]:

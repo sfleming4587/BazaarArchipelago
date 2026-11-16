@@ -4,13 +4,14 @@ import queue
 import types
 import unittest
 
-from ..data import CARDS_BY_NAME, ENCOUNTERS, LEGENDARY_GUIDS
+from ..data import CARDS_BY_GUID, ENCOUNTERS, LEGENDARY_GUIDS
 from ..items import BASE_ID, EVENT_RARITY_ID, SIZEINATOR, item_name_to_id
 from ..memreader import BoardUI
 from ..padlocks import Padlock, inspected
 from .test_client import ClientTestBase
 
 WINDOW = (0, 0, 1000, 500)
+CUTLASS, ICE_SWAN = "1b955b8d-0ea6-4437-935c-d588be5898c1", "fdd78910-3e5c-4244-8c13-ac90a223fae3"  # by guid
 
 
 def ui(**kw) -> BoardUI:
@@ -41,28 +42,29 @@ class TestWhere(unittest.TestCase):
 
 class TestWhatItSays(ClientTestBase):
     def test_a_card_names_its_item_and_an_unlocked_one_nothing(self) -> None:
-        swan = CARDS_BY_NAME["Ice Swan"]
+        swan = CARDS_BY_GUID[ICE_SWAN]
         pack = item_name_to_id["Pack: Chill Out"]
         self.ctx.slot_data["lock_items"] = [pack]
         self.assertEqual(self.ctx.locked_behind(swan.guid), "Pack: Chill Out")
-        self.assertIsNone(self.ctx.locked_behind(CARDS_BY_NAME["Cutlass"].guid))
+        self.assertIsNone(self.ctx.locked_behind(CUTLASS))
 
-    def test_never_just_the_card_itself(self) -> None:
-        """Owner, 2026-11-11: "Dont show the line if a locked card just says 'Locked behind: This card'"."""
-        cutlass = CARDS_BY_NAME["Cutlass"]
+    def test_a_single_cards_own_unlock_is_named_too(self) -> None:
+        """Owner, 2026-11-12: "I want EVERY 'Locked behind: {item}' available even for single card/event unlocks"
+        (was 2026-11-11: never "this card")."""
+        cutlass = CARDS_BY_GUID[CUTLASS]
         self.ctx.slot_data["lock_items"] = [item_name_to_id["Cutlass"]]
-        self.assertIn(cutlass.guid, self.ctx.locked_guids())  # locked...
-        self.assertIsNone(self.ctx.locked_behind(cutlass.guid))  # ...but its own item says nothing new
+        self.assertEqual(self.ctx.locked_behind(cutlass.guid), "Cutlass")
         self.ctx.slot_data["lock_items"] = [item_name_to_id["Legendary Items"]]
         legendary = next(iter(LEGENDARY_GUIDS - {SIZEINATOR}))
         self.assertEqual(self.ctx.locked_behind(legendary), "Legendary Items")
 
-    def test_an_event_says_nothing_for_its_own_unlock_and_names_event_rarity(self) -> None:
-        """Owner, 2026-11-11: no line for the event's own unlock; "if it was a legendary event 'Locked behind Event
-        Progression' would be cool"."""
+    def test_an_event_names_its_own_unlock_then_event_rarity(self) -> None:
+        """Owner, 2026-11-12: its own unlock is named too (was 2026-11-11: no line); then "if it was a legendary
+        event 'Locked behind Event Progression' would be cool"."""
         encounter = ENCOUNTERS[0]
         self.ctx.slot_data["encounter_locks"] = [BASE_ID + encounter.ap_id]  # where a seed lists them
-        self.assertIsNone(self.ctx.event_locked_behind(encounter.guids[0]))
+        self.assertEqual(self.ctx.event_locked_behind(encounter.guids[0]),
+                         self.ctx.item_names.lookup_in_game(BASE_ID + encounter.ap_id))
         from NetUtils import NetworkItem
         self.ctx.items_received = [NetworkItem(BASE_ID + encounter.ap_id, 0, 0, 0)]
         self.assertEqual(self.ctx.event_locked_behind(encounter.guids[0]),  # what still locks it: its rarity

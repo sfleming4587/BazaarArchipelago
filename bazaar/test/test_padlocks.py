@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 
 from .. import padlocks
 from ..memreader import BoardUI
@@ -142,6 +143,20 @@ class TestPadlockShows(unittest.TestCase):
         board = ui(hovering=True, hovered_card="prep", tooltips=PREP_TOOLTIP, cards={"prep": under_title})
         self.assertEqual(self.alpha(board, "prep"), SOLID)
 
+    def test_an_ap_marker_fades_under_its_own_cards_tooltip_but_not_its_own_picture(self) -> None:
+        """Owner 2026-11-13: "Almost impossible to get hit by its own tooltip but might as well code it in there".
+        The marker sits on its card's top-right corner, so its own (lifted) picture always reaches it."""
+        marker = Padlock(card="prep", marker="green")
+        under_title = frac((900, 150, 1000, 260))
+        board = ui(hovering=True, hovered_card="prep", tooltips=PREP_TOOLTIP, cards={"prep": under_title})
+        square = padlocks.spot(marker, board, WINDOW, SIZE)
+        covers = padlocks.coverings(board, WINDOW)
+        self.assertEqual(padlocks.alpha(marker, square, board, covers, 6, 0.0, 100.0), SEE_THROUGH)
+        alone = ui(hovering=True, hovered_card="prep", cards={"prep": PREP_HOVERED})  # its picture, no tooltip
+        square = padlocks.spot(marker, alone, WINDOW, SIZE)
+        self.assertEqual(padlocks.alpha(marker, square, alone, padlocks.coverings(alone, WINDOW), 6, 0.0, 100.0),
+                         SOLID)
+
     def test_the_padding_reaches_a_little_past_the_padlock_and_no_further(self) -> None:
         tooltip = (frac((1162, 600, 1300, 700)),)  # 5 px right of Pasta's padlock (1101-1157)
         board = ui(hovering=True, tooltips=tooltip, cards={"pasta": PASTA})
@@ -166,9 +181,101 @@ class TestPadlockShows(unittest.TestCase):
         self.assertEqual(self.alpha(board, now=100.0 + 2 * padlocks.FLIP_STAGGER, **third), SOLID)
 
 
+class TestRevealWait(unittest.TestCase):
+    """overlay._Screen.show_due_padlocks: new cards' padlocks wait for their flip - never for one that's over."""
+
+    def screen(self, began: float, ended: float, since: float):
+        from types import SimpleNamespace
+        return SimpleNamespace(board_ui=SimpleNamespace(revealing=False), reveal_began=began, reveal_ended=ended,
+                               reveal_started=False, state={"padlocks": None}, stagger_from=0.0,
+                               pending_padlocks=(("lock",), since, True))
+
+    def test_a_flip_already_over_when_the_padlocks_arrive_shows_them_at_once(self) -> None:
+        """2026-11-12 (owner's other PC: padlocks "didn't load instantly"): learned 0.9 s into a 0.8 s flip, they
+        waited another full second with the cards face-up."""
+        from ..overlay import _Screen
+        with mock.patch("time.monotonic", return_value=100.0):
+            self.assertTrue(_Screen.show_due_padlocks(self.screen(began=99.1, ended=99.9, since=100.0)))
+
+    def test_the_same_padlocks_again_keep_waiting_for_their_flip(self) -> None:
+        """Live test 2026-11-12: the shop's log line refreshed the padlocks as "not new" and they showed on face-down
+        cards ~0.9 s before the flip."""
+        from ..overlay import _Screen
+        screen = self.screen(began=0.0, ended=0.0, since=100.0)
+        screen.pending_padlocks = (("lock",), 100.0, True)
+        screen.show_due_padlocks = lambda: _Screen.show_due_padlocks(screen)
+        with mock.patch("time.monotonic", return_value=100.1):
+            self.assertFalse(_Screen.new_padlocks(screen, (("lock",), 100.1, False)))
+        self.assertEqual(screen.pending_padlocks, (("lock",), 100.0, True))  # still waiting
+        with mock.patch("time.monotonic", return_value=100.1):
+            _Screen.new_padlocks(screen, (("other",), 100.1, True))  # different cards replace it
+        self.assertEqual(screen.pending_padlocks[0], ("other",))
+
+    def test_with_no_flip_at_all_they_still_wait(self) -> None:
+        from ..overlay import FLIP_SECONDS, _Screen
+        with mock.patch("time.monotonic", return_value=100.0):
+            self.assertFalse(_Screen.show_due_padlocks(self.screen(began=90.0, ended=91.0, since=100.0)))
+        with mock.patch("time.monotonic", return_value=100.0 + FLIP_SECONDS):
+            self.assertTrue(_Screen.show_due_padlocks(self.screen(began=90.0, ended=91.0, since=100.0)))
+
+    def test_why_each_padlock_shows_as_it_does(self) -> None:
+        """The reason the log file gets (F4) is the same rule as the alpha (one source)."""
+        board = ui(hovering=True, inspecting=True, hovered_card="pasta", cards={"pasta": PASTA_INSPECTED, "prep": PREP})
+        lock = Padlock(card="prep")
+        self.assertEqual(padlocks.look(lock, padlocks.spot(lock, board, WINDOW, SIZE), board, [], 6, 0.0, 100.0),
+                         (HIDDEN, "right-click view"))
+        self.assertEqual(padlocks.look(lock, None, board, [], 6, 0.0, 100.0), (HIDDEN, "card not placed"))
+
+
 class TestOtherOverlayWindows(unittest.TestCase):
     def test_a_window_fades_only_when_something_reaches_it(self) -> None:
         """Owner, 2026-10-14: "ANY UI overlay element to only become opaque when something is being blocked by it"."""
         covers = padlocks.coverings(ui(hovering=True, tooltips=PREP_TOOLTIP), WINDOW)
         self.assertFalse(padlocks.covered((20, 300, 360, 600), covers))  # the left strip's box
         self.assertTrue(padlocks.covered((1000, 200, 1500, 300), covers))  # under the title bar
+
+
+class TestKeywordTrayLeavesTheGuide(unittest.TestCase):
+    """Owner, 2026-11-13: the keyword tray (bottom left, under the Item Guide) faded the whole guide on every hover -
+    "Guide stays solid ONLY FROM THIS TRAY, every other thing that made it go transparent will still do so"."""
+
+    def test_tray_left_out_only_when_asked(self) -> None:
+        from ..padlocks import coverings
+        tray, tip = (0.01, 0.77, 0.15, 0.97), (0.55, 0.27, 0.73, 0.49)
+        ui = BoardUI(True, False, False, False, False, tooltips=(tip, tray), hovered_card="c1", keyword_tray=tray)
+        window = (0, 0, 1000, 1000)
+        everything = coverings(ui, window)
+        self.assertEqual(len(everything), 2)  # padlocks and the other windows: the tray still counts
+        for_guide = coverings(ui, window, keyword_tray=False)
+        self.assertEqual([c.rect for c in for_guide], [c.rect for c in everything if c.rect[0] > 500])  # only the tooltip
+        no_tray = ui._replace(keyword_tray=None)  # right-click view: the big keyword box is no tray - it counts
+        self.assertEqual(len(coverings(no_tray, window, keyword_tray=False)), 2)
+
+
+class TestCheckMarkerSpot(unittest.TestCase):
+    """Owner, 2026-11-13: the AP marker sits on the card's top-right corner ("Top-right corner"); a padlock stays at
+    the centre."""
+
+    def test_top_right_corner(self) -> None:
+        from ..padlocks import MARKER_INSET, spot
+        card = (0.4, 0.3, 0.5, 0.5)  # fractions of a 1000 x 1000 window: 100 x 200 on screen
+        ui = BoardUI(False, False, False, False, False, cards={"c1": card})
+        window, size = (0, 0, 1000, 1000), 40
+        left, top, right, bottom = spot(Padlock(card="c1", marker="green"), ui, window, size)
+        self.assertAlmostEqual((left + right) / 2, 500 - size * MARKER_INSET)
+        self.assertAlmostEqual((top + bottom) / 2, 300 + size * MARKER_INSET)
+        self.assertEqual(spot(Padlock(card="c1"), ui, window, size), (430, 380, 470, 420))  # the padlock: centre
+
+    def test_an_event_option_placed_as_a_point(self) -> None:
+        """Owner's screenshot 2026-11-13: the marker sat mid-card - event options are a point (their art's centre),
+        so their size comes from their BoxCollider (BoardUI.sizes, read live: the PvP card's box matched its frame)."""
+        from ..padlocks import MARKER_INSET, spot
+        point = (0.5, 0.34, 0.5, 0.34)
+        ui = BoardUI(False, False, False, False, False, cards={"pvp_1": point}, sizes={"pvp_1": (0.1, 0.15)})
+        window, size = (0, 0, 1920, 1080), 56
+        left, top, right, bottom = spot(Padlock(card="pvp_1", marker="green"), ui, window, size)
+        card_right, card_top = 960 + 0.05 * 1920, 0.34 * 1080 - 0.075 * 1080
+        self.assertAlmostEqual((left + right) / 2, card_right - size * MARKER_INSET)
+        self.assertAlmostEqual((top + bottom) / 2, card_top + size * MARKER_INSET)
+        centre = spot(Padlock(card="pvp_1"), ui, window, size)  # a padlock still sits on the centre
+        self.assertEqual(((centre[0] + centre[2]) / 2, (centre[1] + centre[3]) / 2), (960, 0.34 * 1080))

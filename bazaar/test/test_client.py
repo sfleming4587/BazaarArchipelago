@@ -15,6 +15,13 @@ from ..logparser import (CardGained, CardSold, CardTransformed, DayReached, Hero
 
 LOCKED = next(c for c in CARDS if c.shop and c.hero == "Vanessa")
 BRONZE_MONSTER = "bb1e3506-3735-4669-be90-915a55a7ee05"  # Fanged Inglet
+# cards by their game guid (never by name: owner 2026-11-13/16)
+SCRAP, MYRRH = "6ba3778c-e760-44f3-b3b4-a4b4ca267cc2", "01f6e150-ba23-429c-a43b-2508f63fc798"
+TEMPORARY_SHELTER = "40c54925-3b1b-475d-9d68-6b668fd023fe"
+SHIPMENT = "103cd65b-0b3d-418d-92d8-0dfa5f19d7c4"
+MITTELS_PACKAGE = "029ed0ac-823c-42f9-ad2c-d851182629af"  # Mittel's Package (one of three), hidden tag Package
+VENDING_MACHINE, SODA_MACHINE = "7827d946-0204-4897-b3e4-bd7cec8e3979", "16005305-bce3-4cae-8c90-8b6560def112"
+MYSTERY_FLAVOR = "78eb19fd-4da4-45d5-b4cb-d669b50b6ed6"
 
 
 class ClientTestBase(unittest.TestCase):
@@ -26,6 +33,7 @@ class ClientTestBase(unittest.TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
         self.addCleanup(self.tmp.cleanup)
+        self.addCleanup(BazaarContext.flush_state)  # runs first: no save lands in a deleted folder
         self.loop = asyncio.new_event_loop()  # CommonContext starts background tasks, so it needs a running loop
         self.addCleanup(self.close_loop)
 
@@ -209,7 +217,8 @@ class TestCollectedChecks(ClientTestBase):
 
     def test_checks_collected_by_another_player_show_done_but_never_win(self) -> None:
         """Like Hollow Knight's client: collected checks show as done; the goal is the player's own."""
-        collected = {location_name_to_id[win_location(h)] for h in ("Vanessa", "Dooley")}             | {location_name_to_id[day_location("Dooley", d)] for d in range(1, 8)}
+        collected = {location_name_to_id[win_location(h)] for h in ("Vanessa", "Dooley")} \
+            | {location_name_to_id[day_location("Dooley", d)] for d in range(1, 8)}
         self.ctx.checked_locations = set(collected)
         self.assertEqual(self.ctx.done() & collected, collected)
         self.assertEqual(self.ctx.heroes_won(), [])
@@ -446,11 +455,13 @@ class TestStatusLine(ClientTestBase):
         self.play(HeroSelected("Vanessa"))
         self.assertIn("   Vanessa   0 / 27", self.ctx.status_line()[0])
 
-    def test_buying_a_locked_card_says_sell_it_now(self) -> None:
+    def test_buying_a_locked_card_pops_up_nothing_the_notice_says_it(self) -> None:
+        """Owner, 2026-11-12: the "SELL IT NOW" pop-ups go - the notice at the top right already says it."""
         self.ctx.overlay = mock.Mock()
         self.play(RunStarted("Vanessa"), CardGained(LOCKED.guid, "itm_x", True))
-        texts = [c.args[0] for c in self.ctx.overlay.toast.call_args_list if c.kwargs.get("warning")]
-        self.assertEqual(texts, [f"SELL IT NOW: {LOCKED.name} is locked"])
+        texts = [c.args[0] for c in self.ctx.overlay.toast.call_args_list]
+        self.assertFalse([t for t in texts if "SELL" in t and "is locked" in t])
+        self.assertIn(LOCKED.name, str(self.ctx.overlay.show_locked.call_args))
 
     def test_blocked_check_pops_up_at_once(self) -> None:
         self.ctx.overlay = mock.Mock()
@@ -484,7 +495,40 @@ class TestItemPopUps(ClientTestBase):
                                                                      NetworkItem(unlock, 1, 2, 0)]})
         calls = [c for c in self.ctx.overlay.toast.call_args_list]
         self.assertEqual([c.args[0] for c in calls], [f"FOUND: {LOCKED.name}", f"RECEIVED: {LOCKED.name} from Friend"])
-        self.assertEqual(calls[0].kwargs["cards"], [LOCKED.guid])
+        self.assertEqual(calls[0].kwargs["cards"], (f"{LOCKED.guid}@{LOCKED.tier}",))  # in its frame (2026-11-13)
+
+    def test_every_pop_up_shows_all_its_pictures(self) -> None:
+        """Owner, 2026-11-12: pictures for ALL unlockables - a hero's card, a merchant's/event's/level-up's own
+        picture, Event Rarity Progression's events (one each), and a symbol for the rest."""
+        from ..data import EVENTS
+        from ..encounters import RARITY_STAGES
+        from ..items import ENCOUNTER_UNLOCKS, EVENT_RARITY_ID, LOCK_BYPASS_ID, SELL_TRAP_ID
+        from ..data import CARDS_BY_GUID
+        self.assertEqual(self.ctx.item_pictures(item_name_to_id["Hero: Vanessa"]), ("hero:Vanessa",))
+        # owner 2026-11-13: in its rarity's frame - once, in the lowest rarity it comes in ("Once, lowest rarity")
+        armory_event = "7c179f37-5845-4041-b123-0c7da0fdabbd"  # Armory, one of its templates
+        armory = next(i for i, gs in ENCOUNTER_UNLOCKS.items() if armory_event in gs)
+        guids = ENCOUNTER_UNLOCKS[armory]
+        self.assertGreater(len({EVENTS[g]["tier"] for g in guids}), 1)  # Bronze to Diamond
+        self.assertEqual(self.ctx.item_pictures(armory), (f"{min(guids)}@Bronze",))
+        single = next(i for i, gs in ENCOUNTER_UNLOCKS.items()
+                      if len({EVENTS[g]["tier"] for g in gs if g in EVENTS}) == 1 and not EVENTS[min(gs)]["level_up"])
+        self.assertEqual(self.ctx.item_pictures(single),
+                         (f"{min(ENCOUNTER_UNLOCKS[single])}@{EVENTS[min(ENCOUNTER_UNLOCKS[single])]['tier']}",))
+        self.assertEqual(self.ctx.item_pictures(SELL_TRAP_ID), (f"item-{SELL_TRAP_ID}",))
+        self.assertEqual(self.ctx.item_pictures(item_name_to_id["Spare Change"]), (f"item-{item_name_to_id['Spare Change']}",))
+        diamond = self.ctx.item_pictures(EVENT_RARITY_ID, 0)
+        self.assertTrue(diamond)
+        self.assertTrue(all(EVENTS.get(g, {}).get("tier") == RARITY_STAGES[0] or
+                            any(EVENTS.get(x, {}).get("tier") == RARITY_STAGES[0] for i, gs in ENCOUNTER_UNLOCKS.items()
+                                if g in gs for x in gs) for g in (key.split("@")[0] for key in diamond)))
+        self.assertEqual(len(diamond), len(set(diamond)))  # one picture per event
+        self.assertTrue(all(key.endswith("@Diamond") for key in diamond))  # in the frame this copy unlocks
+        self.assertEqual(self.ctx.item_pictures(EVENT_RARITY_ID, len(RARITY_STAGES)), (f"item-{LOCK_BYPASS_ID}",))
+        pack = item_name_to_id["Pack: Chill Out"]
+        cards = self.ctx.item_pictures(pack)
+        self.assertGreater(len(cards), 3)  # every card, never "+ N more"
+        self.assertTrue(all(key == f"{key.split('@')[0]}@{CARDS_BY_GUID[key.split('@')[0]].tier}" for key in cards))
 
     def test_own_unlock_is_not_announced_twice(self) -> None:
         self.assertEqual(self.send(1, BASE_ID + LOCKED.ap_id), [])  # the UNLOCKED pop-up covers it
@@ -1134,6 +1178,7 @@ class TestSessionHygiene(ClientTestBase):
         self.ctx.room_seed, self.ctx.slot = "seed", 1
         self.play(RunStarted("Vanessa"))
         self.ctx.save_state()
+        self.ctx.flush_state()  # written by the state writer thread
         folder = self.tmp.name
         self.assertTrue(os.path.exists(os.path.join(folder, "bazaar_client_state.json")))
         self.assertFalse(any(name.endswith(".tmp") for name in os.listdir(folder)))
@@ -1465,6 +1510,48 @@ class TestShopPadlocks(ClientTestBase):
         self.enter()
         self.assertFalse(self.ctx.overlay.show_padlocks.called and self.padlocks()[0])
 
+    def test_a_torn_read_keeps_the_padlocks_and_a_lasting_one_clears_them(self) -> None:
+        """2026-11-12 (owner's other PC: padlocks "go away for a bit"): one shop read caught mid-change came back as
+        no screen and wiped every padlock until the next read. It's held NO_SCREEN_HOLD; one that lasts still clears."""
+        from ..client import NO_SCREEN_HOLD
+        from ..memreader import Snapshot
+        self.ctx.handle_snapshot(self.snapshot(self.row))
+        calls = self.ctx.overlay.show_padlocks.call_count
+        with mock.patch("time.monotonic", return_value=1000.0):
+            self.ctx.handle_snapshot(Snapshot(None, None, ()))
+        self.assertEqual(self.ctx.overlay.show_padlocks.call_count, calls)  # untouched
+        with mock.patch("time.monotonic", return_value=1000.0 + NO_SCREEN_HOLD / 2):
+            self.ctx.handle_snapshot(self.snapshot(self.row))  # back: the same row, no new reveal
+        self.assertEqual(self.padlocks(), ([f"itm_{LOCKED.guid}"], False))
+        with mock.patch("time.monotonic", return_value=2000.0):
+            self.ctx.handle_snapshot(Snapshot(None, None, ()))
+        with mock.patch("time.monotonic", return_value=2000.0 + NO_SCREEN_HOLD + 0.1):
+            self.ctx.handle_snapshot(Snapshot(None, None, ()))  # it lasted: a real screen change
+        self.assertEqual(self.padlocks(), ([], False))
+
+    def test_no_other_refresh_clears_them_during_a_torn_read_either(self) -> None:
+        """Review 2026-11-12: a log line or a stash flip during a "no screen" read refreshed the padlocks too."""
+        from ..memreader import Snapshot
+        self.ctx.handle_snapshot(self.snapshot(self.row))
+        calls = self.ctx.overlay.show_padlocks.call_count
+        with mock.patch("time.monotonic", return_value=1000.0):
+            self.ctx.handle_snapshot(Snapshot(None, None, ()))
+            self.ctx.refresh_padlocks()  # e.g. a log line handled now
+        self.assertEqual(self.ctx.overlay.show_padlocks.call_count, calls)
+
+    def test_offers_are_read_at_once_when_cards_are_dealt_or_flip_or_one_is_unknown(self) -> None:
+        """2026-11-12: padlocks came up to a second late when the offers were read after the flip."""
+        from ..client import offers_due
+        from ..memreader import BoardUI, Offer
+        still, dealing, flipping = (BoardUI(False, False, False, False, revealing=r, dealing=d)
+                                    for r, d in ((False, False), (False, True), (True, False)))
+        known = self.snapshot(self.row)
+        self.assertTrue(offers_due(still, dealing, known))
+        self.assertTrue(offers_due(still, flipping, known))
+        self.assertFalse(offers_due(flipping, flipping, known))  # only as it starts
+        self.assertFalse(offers_due(still, still, known))
+        self.assertTrue(offers_due(still, still, known._replace(offers=(Offer("itm_new", None, None),))))
+
     def test_screens_that_offer_no_row_of_items_get_none(self) -> None:
         self.ctx.handle_snapshot(self.snapshot(self.row))
         self.ctx.handle_snapshot(self.snapshot(self.row, state="Pedestal"))
@@ -1479,6 +1566,7 @@ class TestShopPadlocks(ClientTestBase):
         so which of them faces you is memory's (unity.faces_camera), never the open flag."""
         from ..memreader import BoardUI
         free = self.row[0]
+        self.play(CardGained(LOCKED.guid, "itm_a", False))  # yours, locked: it blocks checks until sold
         snapshot = self.snapshot(self.row)._replace(stash=((5, LOCKED.guid, "itm_a"), (0, free.guid, "itm_b")))
         self.ctx.handle_snapshot(snapshot)
         for opened in (True, False):
@@ -1505,6 +1593,7 @@ class TestShopPadlocks(ClientTestBase):
 
     def test_a_card_the_data_doesnt_know_never_stops_the_others_padlocks(self) -> None:
         """No sizes are needed any more (positions come from memory), so one unknown card costs nothing."""
+        self.play(CardGained(LOCKED.guid, "itm_b", False))
         self.ctx.handle_snapshot(self.snapshot(self.row)._replace(
             stash=((0, "not-a-known-card", "itm_a"), (5, LOCKED.guid, "itm_b"))))
         self.assertEqual(self.yours(), ["itm_b"])
@@ -1513,6 +1602,7 @@ class TestShopPadlocks(ClientTestBase):
         """Owner, 2026-10-14: "I would like the padlocks to show on items on the board"; 2026-11-09: only the PvP
         opponent's side has none ("In every other scenario they are visible")."""
         board = ((2, LOCKED.guid, "itm_mine"), (4, self.row[0].guid, "itm_free"))
+        self.play(CardGained(LOCKED.guid, "itm_mine", False))
         self.ctx.handle_snapshot(self.snapshot(self.row)._replace(board=board))
         self.assertEqual([lock.card for lock in self.ctx.overlay.show_board_padlocks.call_args.args[0]], ["itm_mine"])
         self.ctx.handle_snapshot(self.snapshot([], state="PVPCombat")._replace(board=board))
@@ -1523,10 +1613,48 @@ class TestShopPadlocks(ClientTestBase):
         fight) that the items have padlocks on them"."""
         from ..memreader import BoardUI
         board = ((2, LOCKED.guid, "itm_mine"),)
+        self.play(CardGained(LOCKED.guid, "itm_mine", False))
         self.ctx.handle_snapshot(self.snapshot([], state="Combat")._replace(board=board))
         fight = (("itm_theirs", LOCKED.guid), ("itm_free", self.row[0].guid))
         self.ctx.handle_board_ui(BoardUI(False, False, False, False, False, monster_items=fight))
         self.assertEqual(sorted(self.yours()), ["itm_mine", "itm_theirs"])
+
+    def test_of_two_copies_only_the_one_to_sell_has_a_padlock(self) -> None:
+        """Owner 2026-11-16: "I get a duplicate of an item that is locked but the original is unlocked for the run
+        or vice versa due to a special case... I wouldn't know which one I would need to sell so a padlock on it
+        would be nice" - the padlock sits exactly on the copies that block checks."""
+        from ..logparser import CardTransformed
+        self.play(CardTransformed("itm_old", "itm_made"))  # a copy made by a transform: allowed
+        self.play(CardGained(LOCKED.guid, "itm_bought", False))  # a copy you took: blocks checks
+        stash = ((0, LOCKED.guid, "itm_made"), (3, LOCKED.guid, "itm_bought"))
+        self.ctx.handle_snapshot(self.snapshot(self.row)._replace(stash=stash))
+        self.assertEqual(self.yours(), ["itm_bought"])
+        self.play(CardSold("itm_bought"))
+        self.ctx.handle_snapshot(self.snapshot(self.row)._replace(stash=stash[:1]))
+        self.assertEqual(self.yours(), [])  # sold: the one left is fine to keep
+
+    def test_a_free_card_bought_at_a_locked_merchant_has_the_padlock_its_twin_from_elsewhere_not(self) -> None:
+        """The "vice versa" case: the card isn't locked, but a copy taken at a locked merchant blocks checks."""
+        from ..logparser import EncounterEntered, EncounterLeft
+        from ..items import ENCOUNTER_UNLOCKS
+        free = self.row[0]
+        self.ctx.slot_data["encounter_locks"] = [i for i, guids in ENCOUNTER_UNLOCKS.items() if self.merchant in guids]
+        self.assertTrue(self.ctx.slot_data["encounter_locks"])
+        self.play(CardGained(free.guid, "itm_elsewhere", True))  # bought at an open shop: yours to keep
+        self.play(EncounterEntered(self.merchant), CardGained(free.guid, "itm_there", True), EncounterLeft())
+        stash = ((0, free.guid, "itm_elsewhere"), (3, free.guid, "itm_there"))
+        self.ctx.handle_snapshot(self.snapshot([])._replace(stash=stash))
+        self.assertEqual(self.yours(), ["itm_there"])
+
+    def test_a_sell_traps_card_has_the_burning_skull_not_a_padlock(self) -> None:
+        """Owner 2026-11-16: "The sell trap icon instead of padlock shoud be the skull with flames"."""
+        free = self.row[0]
+        self.play(CardGained(LOCKED.guid, "itm_held", False))
+        self.ctx.run["traps"] = [{"instance": "itm_trapped", "guid": free.guid, "deadline": 3}]
+        stash = ((0, LOCKED.guid, "itm_held"), (2, free.guid, "itm_trapped"), (4, free.guid, "itm_twin"))
+        self.ctx.handle_snapshot(self.snapshot(self.row)._replace(stash=stash))
+        locks = self.ctx.overlay.show_board_padlocks.call_args.args[0]
+        self.assertEqual({(lock.card, lock.kind) for lock in locks}, {("itm_held", "lock"), ("itm_trapped", "sell_trap")})
 
 
 class TestTransforms(ClientTestBase):
@@ -1703,8 +1831,12 @@ class TestEventPadlocks(ClientTestBase):
         return Snapshot(state, None, tuple(Offer(f"enc_{i}", t, k) for i, (t, k) in enumerate(offers)))
 
     def padlocks(self):
-        """The last show_padlocks call: the padlocked options' places in the row."""
-        return [lock.place for lock in self.ctx.overlay.show_padlocks.call_args.args[0]]
+        """The last show_padlocks call: the padlocked options' places in the row (AP markers aren't padlocks)."""
+        return [lock.place for lock in self.ctx.overlay.show_padlocks.call_args.args[0] if not lock.marker]
+
+    def markers(self):
+        """The last show_padlocks call's AP markers: (place in the row, colour)."""
+        return [(lock.place, lock.marker) for lock in self.ctx.overlay.show_padlocks.call_args.args[0] if lock.marker]
 
     def test_hourly_choice(self) -> None:
         self.ctx.handle_snapshot(self.screen("Choice", (self.free, "EventEncounter"), (self.locked, "EventEncounter"),
@@ -1734,6 +1866,51 @@ class TestEventPadlocks(ClientTestBase):
         self.ctx.handle_snapshot(self.screen("Choice", (self.free, "EventEncounter"),
                                              (self.locked, "EventEncounter")))
         self.assertEqual(self.padlocks(), [1])
+
+
+class TestCheckMarkers(TestEventPadlocks):
+    """Owner, 2026-11-13: "the archipelago logo on top of a colored square whenever an event shows up with an
+    incomplete check, green = in logic, yellow = out of logic. NO GREY" - on monster and PvP cards ("Monsters + PvP
+    fight"), top-right corner."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.ctx.slot_data.update(monster_tiers={str(d): ["Bronze", "Legendary"] for d in range(1, 16)},
+                                  pvp_win_checks=True, logic={"day_10": 0, "last_day": 0, "diamond": 0, "legendary": 0},
+                                  lock_items=[item_name_to_id["Legendary Items"]])
+
+    def monster(self, tier: str) -> str:
+        from ..data import MONSTERS
+        return next(g for g, m in MONSTERS.items() if m["tier"] == tier)
+
+    def test_a_monster_with_a_check_to_get(self) -> None:
+        from ..memreader import Snapshot, Offer
+        row = Snapshot("Choice", None, (Offer("m0", self.monster("Bronze"), "CombatEncounter"),
+                                        Offer("e1", self.locked, "EventEncounter"),
+                                        Offer("m2", self.monster("Legendary"), "CombatEncounter")), day=1)
+        self.ctx.handle_snapshot(row)
+        # Bronze: day 1's Bronze check, in logic; Legendary: also day 1's Legendary one, which needs Legendary Items
+        self.assertEqual(self.markers(), [(0, "green"), (2, "green")])  # one in-logic check is enough for green
+        self.assertEqual(self.padlocks(), [1])  # the locked event keeps its padlock
+        self.ctx.stored_data[self.ctx.sent_key()] = [location_name_to_id[monster_location("Vanessa", 1, "Bronze")]]
+        self.ctx.handle_snapshot(row._replace(offers=row.offers[1:]))
+        self.assertEqual(self.markers(), [(1, "yellow")])  # only the Legendary check is left: out of logic
+        self.ctx.stored_data[self.ctx.sent_key()] += [location_name_to_id[monster_location("Vanessa", 1, "Legendary")]]
+        self.ctx.handle_snapshot(row)
+        self.assertEqual(self.markers(), [])  # NO GREY: nothing for checks already done
+
+    def test_the_pvp_card(self) -> None:
+        from ..memreader import Snapshot, Offer
+        pvp = Snapshot("Choice", None, (Offer("pvp_1", "b79845a7-f806-4e7a-9011-d98ebd22a323", "PvpEncounter"),),
+                       day=3, victories=2)
+        self.ctx.handle_snapshot(pvp)
+        self.assertEqual(self.markers(), [(0, "green")])  # day 3's PvP-win check
+        self.ctx.stored_data[self.ctx.sent_key()] = [location_name_to_id[pvp_location("Vanessa", 3)]]
+        self.ctx.refresh_padlocks()  # (the same reading again is skipped as unchanged)
+        self.assertEqual(self.markers(), [])
+        self.ctx.memory = pvp._replace(victories=9)  # the 10th win would get the 10-wins check
+        self.ctx.refresh_padlocks()
+        self.assertEqual(self.markers(), [(0, "green")])
 
 
 class TestUnlocksInLogicCount(ClientTestBase):
@@ -1779,9 +1956,9 @@ class TestCreatedItems(ClientTestBase):
 
     def setUp(self) -> None:
         super().setUp()
-        from ..data import CARDS_BY_NAME
-        self.scrap, self.myrrh = CARDS_BY_NAME["Scrap"], CARDS_BY_NAME["Myrrh"]
-        self.shelter = CARDS_BY_NAME["Temporary Shelter"]
+        from ..data import CARDS_BY_GUID
+        self.scrap, self.myrrh = CARDS_BY_GUID[SCRAP], CARDS_BY_GUID[MYRRH]
+        self.shelter = CARDS_BY_GUID[TEMPORARY_SHELTER]
         self.ctx.slot_data["lock_items"] = [BASE_ID + c.ap_id for c in (LOCKED, self.scrap, self.myrrh)]
         self.now = 1000.0
         from types import SimpleNamespace
@@ -1850,6 +2027,48 @@ class TestCreatedItems(ClientTestBase):
         self.spawn("itm_r", LOCKED.guid, ("itm_scrap", self.scrap.guid))
         self.assertIn("UNTIL", self.ctx.blocked_reason())  # nothing you have always makes this one
 
+    def test_special_cases_free_a_sold_packages_reward_once(self) -> None:
+        """Owner, 2026-11-13: Farai's "HELP WANTED: Urgent deliveries" packages, sold to their merchant, give a random
+        item - "these rewards should be a special case". One package, one free card."""
+        package = MITTELS_PACKAGE
+        self.level(1)
+        self.look()
+        self.play(CardGained(package, "itm_pkg", False))  # Farai's event hands it over (a logged gain)
+        self.look(("itm_pkg", package))
+        self.play(CardSold("itm_pkg"))  # sold to Mittel
+        self.spawn("itm_reward", LOCKED.guid)  # its reward: a random enchanted Medium item, locked here
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.spawn("itm_other", LOCKED.guid, ("itm_reward", LOCKED.guid))  # the package is used up
+        self.assertIn("UNTIL", self.ctx.blocked_reason())
+
+    def test_special_cases_free_a_sold_shipments_three_items(self) -> None:
+        """Owner, 2026-11-13: Shipment "upon being sold turns into 3 small items, that should be allowed in the
+        special cases as well"."""
+        from ..data import CARDS_BY_GUID
+        shipment = CARDS_BY_GUID[SHIPMENT]
+        self.level(1)
+        self.look()
+        self.play(CardGained(shipment.guid, "itm_ship", False))
+        self.look(("itm_ship", shipment.guid))
+        self.play(CardSold("itm_ship"))
+        rewards = [(f"itm_r{i}", LOCKED.guid) for i in range(3)]
+        self.look(*rewards)  # all three appear together
+        self.now += 3
+        self.look(*rewards)
+        self.assertIsNone(self.ctx.blocked_reason())
+        self.spawn("itm_4th", LOCKED.guid, *rewards)  # a fourth is no reward of it
+        self.assertIn("UNTIL", self.ctx.blocked_reason())
+
+    def test_a_packages_reward_is_judged_under_locked(self) -> None:
+        package = MITTELS_PACKAGE
+        self.level(2)
+        self.look()
+        self.play(CardGained(package, "itm_pkg", False))
+        self.look(("itm_pkg", package))
+        self.play(CardSold("itm_pkg"))
+        self.spawn("itm_reward", LOCKED.guid)
+        self.assertIn("UNTIL", self.ctx.blocked_reason())  # Locked: like every special case but The Cult
+
     def test_special_cases_free_the_first_reagent_transform_only(self) -> None:
         self.level(1)
         self.look()
@@ -1905,9 +2124,9 @@ class TestCreatedItems(ClientTestBase):
         self.assertIsNone(self.ctx.blocked_reason())
 
     def test_vending_machine_counts_like_soda_machine(self) -> None:
-        from ..data import CARDS_BY_NAME
+        from ..data import CARDS_BY_GUID
         self.level(1)
-        machine, flavour = CARDS_BY_NAME["Vending Machine"], CARDS_BY_NAME["Mystery Flavor"]
+        machine, flavour = CARDS_BY_GUID[VENDING_MACHINE], CARDS_BY_GUID[MYSTERY_FLAVOR]
         self.ctx.slot_data["lock_items"].append(BASE_ID + flavour.ap_id)
         self.play(CardGained(machine.guid, "itm_v", False))
         self.look(("itm_v", machine.guid))
@@ -1931,9 +2150,9 @@ class TestCreatedItems(ClientTestBase):
 
     def test_special_cases_free_soda_machines_drinks(self) -> None:
         """Owner, 2026-10-07: "soda machine should be in the rule 2 selected cases list" (it picks at random)."""
-        from ..data import CARDS_BY_NAME
+        from ..data import CARDS_BY_GUID
         self.level(1)
-        soda, flavour = CARDS_BY_NAME["Soda Machine"], CARDS_BY_NAME["Mystery Flavor"]
+        soda, flavour = CARDS_BY_GUID[SODA_MACHINE], CARDS_BY_GUID[MYSTERY_FLAVOR]
         self.ctx.slot_data["lock_items"].append(BASE_ID + flavour.ap_id)
         self.play(CardGained(soda.guid, "itm_soda", False))
         self.look(("itm_soda", soda.guid))

@@ -22,3 +22,7 @@ __pycache__/
 
 # card pictures the owner supplies for make_card_art.py --add (the converted ones ship in card-art.zip)
 /docs/CardImages/
+
+# this PC only
+/tools/local/
+/docs/local/

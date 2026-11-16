@@ -1,3 +1,4 @@
+import time
 import unittest
 from unittest import mock
 
@@ -57,7 +58,8 @@ class TestRunTornDown(unittest.TestCase):
         reader.memory.ptr.return_value = 1
         reader.mono.is_a.return_value = True
         fields = {"StateName": "Encounter", "CurrentEncounterId": "guid", "SelectionSet": 0}
-        with mock.patch.object(Reader, "_get", lambda self, obj, name: fields[name]),                 mock.patch.object(Reader, "_stat", side_effect=ReaderOff("field Attributes not found")):
+        with mock.patch.object(Reader, "_get", lambda self, obj, name: fields[name]), \
+                mock.patch.object(Reader, "_stat", side_effect=ReaderOff("field Attributes not found")):
             snapshot = reader.snapshot()
         self.assertEqual(snapshot, memreader.Snapshot("Encounter", "guid", (), None, ()))
 
@@ -69,7 +71,8 @@ class TestRunTornDown(unittest.TestCase):
         reader.memory.ptr.return_value = 1
         reader.mono.is_a.return_value = True
         fields = {"StateName": "Encounter", "CurrentEncounterId": "guid", "SelectionSet": 0}
-        with mock.patch.object(Reader, "_get", lambda self, obj, name: fields[name]),                 mock.patch.object(Reader, "_stat", return_value=7), mock.patch.object(Reader, "_container", return_value=()):
+        with mock.patch.object(Reader, "_get", lambda self, obj, name: fields[name]), \
+                mock.patch.object(Reader, "_stat", return_value=7), mock.patch.object(Reader, "_container", return_value=()):
             snapshot = reader.snapshot()
         self.assertEqual((snapshot.level, snapshot.losses, snapshot.prestige), (7, None, 7))
 
@@ -225,7 +228,7 @@ class TestFightBoardNeverInPvP(unittest.TestCase):
         reader._get = mock.Mock(return_value=0)
         reader._offer_sockets = mock.Mock(return_value=0)
         reader._state_now = mock.Mock(return_value=state if now == "same" else now)
-        reader._card_rects(0x1000, [])
+        reader._card_rects(0x1000, [], {})
         return [c.args[1] for c in reader._offer_sockets.call_args_list]
 
     def test_a_monster_or_event_fight_reads_the_monsters_items(self) -> None:
@@ -284,3 +287,91 @@ class TestBoardReadFetchesBlocks(unittest.TestCase):
         memory.read(0x10008, 8)
         memory.read(0x10008, 8)
         self.assertEqual(fetched, [(0x10008, 8)] * 2)  # live values every time
+
+
+class TestTornBoardReads(unittest.TestCase):
+    """2026-11-12 (owner's other PC: padlocks "go away for a bit"): a board read that fails part-way used to read as
+    no board at all, hiding every padlock. The last good read now stands for UI_HOLD_SECONDS."""
+
+    def reader(self, last_age: float) -> Reader:
+        reader = Reader()
+        reader.memory, reader.ui_paths = mock.Mock(), {"statics": {}}  # every read fails (no statics)
+        reader.last_ui = (time.monotonic() - last_age, "last good read")
+        return reader
+
+    def test_a_torn_read_keeps_the_last_good_one(self) -> None:
+        self.assertEqual(self.reader(0.0).ui(), "last good read")
+
+    def test_a_lasting_failure_is_no_read(self) -> None:
+        self.assertIsNone(self.reader(memreader.UI_HOLD_SECONDS + 0.05).ui())
+
+
+class TestReadBlocksPerThread(unittest.TestCase):
+    """2026-11-12: the gear search now runs on a worker thread while ui() reads; one read's block cache must never
+    be seen (or switched off) by the other thread."""
+
+    def test_each_thread_has_its_own(self) -> None:
+        import threading
+        memory = memreader.Memory.__new__(memreader.Memory)
+        memory.blocks = {1: b"x"}
+        seen = []
+        worker = threading.Thread(target=lambda: seen.append(memory.blocks))
+        worker.start()
+        worker.join()
+        self.assertEqual(seen, [None])
+        self.assertEqual(memory.blocks, {1: b"x"})
+
+
+class TestTooltipPiecesSwitchedOff(unittest.TestCase):
+    """Live test 2026-11-12: hovering a bare Tempo note slot (a SocketEffect) shows only the keyword box, but the big
+    tooltip's pieces kept their old rects, switched off - and faded the Black Lipstick's padlock under them."""
+
+    # what the controller's fields point at (native objects), as in TheBazaarRuntime.dll's CardTooltipController
+    HEADER, REWARDS, TAGS, PVP = (0.3, 0.4, 0.5, 0.6), (0.3, 0.6, 0.5, 0.8), (0.3, 0.35, 0.5, 0.4), (0.3, 0.6, 0.5, 0.7)
+
+    def pieces(self, on: bool, fields=("headerParent", "tooltipTagController")):
+        """A tooltip whose controller has only `fields` set (monsterRewardTooltip.parent for "monsterRewardTooltip").
+        Every GameObject is called "x": nothing may be picked by its name (owner 2026-11-16)."""
+        owners = {"headerParent": "go_header", "monsterRewardTooltip": "reward_tip", "tooltipTagController": "tags",
+                  "_pvpOpponentTooltipViewComponent": "pvp_view"}
+        rects = {"t_go_header": self.HEADER, "t_go_rewards": self.REWARDS, "t_tags": self.TAGS, "t_go_pvp": self.PVP}
+        reader = Reader()
+        reader.memory = mock.Mock()
+
+        def get(obj, name):
+            if name == "_currentCard" or obj == "parent" and name == "_cardTooltipController":
+                return "tip"
+            if obj == "tip" and name in fields:
+                return owners[name]
+            if obj == "pvp_view" and name == "_parent":
+                return "go_pvp"
+            return "go_rewards" if obj == "reward_tip" and name == "parent" else 0
+        reader._get = get
+        reader._native = lambda obj: obj
+        with mock.patch.multiple(memreader.unity,
+                                 canvas_size=lambda read, t: (1920.0, 1080.0),
+                                 name_of=lambda read, t, cstr: "x",
+                                 shown=lambda read, t: on,
+                                 object_transform=lambda read, go: f"t_{go}" if go else 0,
+                                 transform_of=lambda read, c: f"t_{c}" if c else 0,
+                                 ui_rect=lambda read, t, canvas: rects[t]):
+            return reader._tooltip_pieces("parent", inspecting=False)
+
+    def test_pieces_switched_on_cover(self) -> None:
+        self.assertEqual(self.pieces(on=True), (self.HEADER, self.TAGS))
+
+    def test_a_monsters_rewards_box_covers(self) -> None:
+        """Owner 2026-11-13: an AP marker stayed solid under a monster's rewards box - it wasn't one of the four item
+        boxes the reader knew by name. It's reached through monsterRewardTooltip.parent now."""
+        self.assertEqual(self.pieces(on=True, fields=("headerParent", "monsterRewardTooltip")),
+                         (self.HEADER, self.REWARDS))
+
+    def test_the_pvp_fight_cards_box_covers(self) -> None:
+        """Owner 2026-11-16: hovering the PvP fight about to happen shows a box with information on it. Only its place
+        is read - its field is the one named exception to the reader's "opponent" guard."""
+        self.assertEqual(self.pieces(on=True, fields=("_pvpOpponentTooltipViewComponent",)), (self.PVP,))
+        self.assertTrue(memreader.blocked("_pvpOpponentTooltipViewComponent"))  # still a blocked word, allowed by name
+        self.assertIn("_pvpOpponentTooltipViewComponent", memreader.ALLOWED_NAMES)
+
+    def test_pieces_switched_off_cover_nothing(self) -> None:
+        self.assertEqual(self.pieces(on=False), ())

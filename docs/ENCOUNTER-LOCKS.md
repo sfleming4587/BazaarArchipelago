@@ -39,7 +39,7 @@ sit behind a progressive item. Designed with the owner 2026-10-01 and 2026-10-02
 ## How the world builds it
 
 - **One lock item per merchant/event name**, covering every template of it: Sharpening Kit has a template per
-  rarity, Aila has eight. `tools/extract_data.py` groups templates by display name once and stores the guid lists
+  rarity, Aila has eight. the data file groups templates by display name once and stores the guid lists
   in `encounters`; everything after that works on guids. Item names: `Merchant: <name>` or `Event: <name>`; ids
   `BASE + ap_id`, ap_ids from 5000, kept by name and never reused. Event Rarity Progression is `BASE + 310`.
 - **Lockable = every `EventEncounter` that isn't a level-up reward, part of an expedition, or `SpawningEligibility

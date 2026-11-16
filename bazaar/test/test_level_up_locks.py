@@ -72,7 +72,7 @@ class TestLikeALockedMerchant(ClientTestBase):
         self.ctx.use_bypass(item.guid)
         self.assertIsNone(self.ctx.blocked_reason())
 
-    def test_padlock_on_the_level_up_option_and_no_self_naming_label(self) -> None:
+    def test_padlock_on_the_level_up_option_and_its_own_unlock_named(self) -> None:
         self.play(RunStarted("Vanessa"), DayReached(2))
         other = "1453be13-1d81-45ea-82a5-7d1ef35ec78b"  # Get Bronze item: a level-up event, never locked
         screen = self.level_up((other, "EventEncounter"), (SHINY, "EncounterStep"))
@@ -80,7 +80,7 @@ class TestLikeALockedMerchant(ClientTestBase):
         self.ctx.handle_snapshot(screen)
         locks = self.ctx.overlay.show_padlocks.call_args.args[0]
         self.assertEqual([lock.card for lock in locks], ["x_1"])
-        self.assertIsNone(locks[0].why)  # "Locked behind: Level Up: Shiny!" would only name itself
+        self.assertEqual(locks[0].why, "Level Up: Shiny!")  # every one named (owner, 2026-11-12)
 
     def test_every_option_locked_lets_one_through(self) -> None:
         self.play(RunStarted("Vanessa"), DayReached(2))

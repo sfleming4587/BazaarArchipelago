@@ -29,6 +29,20 @@ standard uses the select cases for defaults"). Seeds from before the option beha
 - "Vending machine should count ... I am only counting soda machine and vending machine since they have a limited pool
   of items that can be acquired" - both in `OWNER_SPAWNS` (Mystery Flavor is the only lockable card either makes).
   Other random spawners (Assembly Line's Loot item) are judged under Special Cases.
+- **Every card that deals cards when sold frees that many cards under Special Cases** (owner 2026-11-16: "Every
+  sell-reward card, however some of those only offer a skill which can never be padlocked in the first place... but
+  nothing lost including them"). How many is the game's own number: `data.SOLD_DEALS`, from the catalog's
+  `sold_deals` (the spawn `Limit` of an ability triggered by selling the card itself - a
+  fixed value, or the card's own attribute on its starting tier). 146 cards on 1.0.13175: the 124 `<Merchant>'s
+  Package`s (1), Shipment (its `Custom_0`: 3), Piñata and Safe (3), Junkyard Club, Junkyard Repairbot (2), Raffle Ticket, Fortune Cookie, Mysterious Gift, Skill Voucher, Learning Crystal, Magician's Top
+  Hat, Chimeric Egg and the 7 music notes (1). A card that appears within `SOLD_MEMORY` of the sale is free until the
+  sale's count is used up (`client.sold_reward`). ⚠️ A card that always deals the same card (`fixed_spawns`: Temporary
+  Shelter's 2 Scrap, Colossal Popsicle's Icicles) frees only that card, never a random one (`data.SOLD_DEALS` leaves
+  them out; caught by the Temporary Shelter test). Was until 2026-11-16: only packages (2026-11-13, Farai's "HELP
+  WANTED: Urgent deliveries": "these rewards should be a special case") and Shipment ("upon being sold turns into 3
+  small items, that should be allowed in the special cases as well"), with Shipment's 3 written in the code.
+  ⚠️ Unverified in game: that a package sold to the WRONG merchant gives nothing (then a random spawn right after it
+  would be wrongly freed - one card at most).
 - Assembly Line's "At the end of each fight, transform the item to the left into a Friend from any Hero" follows the
   transform rules (free only for a Reagent under Special Cases). Its "upgrade an item of a lower tier" changes no
   card, so nothing to judge.
@@ -37,7 +51,7 @@ standard uses the select cases for defaults"). Seeds from before the option beha
 
 | | Allowed (0) | Special Cases (1) | Locked (2) |
 |---|---|---|---|
-| Spawned card | free | free if one of your items always makes exactly that card (`fixed_spawns`) or it's a Soda/Vending Machine drink, or at Wink/The Cult; else judged | free at The Cult; else judged |
+| Spawned card | free | free if one of your items always makes exactly that card (`fixed_spawns`) or it's a Soda/Vending Machine drink, the reward of a card you just sold (as many as the game says it deals: `data.SOLD_DEALS`), or at Wink/The Cult; else judged | free at The Cult; else judged |
 | Transformed card | free | free if the old card was a Reagent (and not itself a transform result), or at Wink/The Cult; else judged | free at The Cult; else judged |
 | Cards The Cult hands out (logged gains) | free | free | free |
 

@@ -70,6 +70,20 @@ class TestHierarchy(unittest.TestCase):
         self.assertEqual(unity.children(arena.read, root), [101, 103])
 
 
+class TestTransformOfAGameObject(unittest.TestCase):
+    """2026-11-16: a tooltip box held as a GameObject field (the sell box) went through transform_of, which takes a
+    component - it read the GameObject's component list as if it were a GameObject."""
+
+    def test_a_game_object_and_its_component_reach_the_same_transform(self) -> None:
+        arena = Arena()
+        components = arena.put(struct.pack("<QQ", 0, 0xAB))  # (type, Component*) pairs: the Transform first
+        go = arena.put(bytes(unity.GAMEOBJECT_COMPONENTS) + struct.pack("<Q", components))
+        component = arena.put(bytes(unity.COMPONENT_GAMEOBJECT) + struct.pack("<Q", go))
+        self.assertEqual(unity.object_transform(arena.read, go), 0xAB)
+        self.assertEqual(unity.transform_of(arena.read, component), 0xAB)
+        self.assertNotEqual(unity.transform_of(arena.read, go), 0xAB)
+
+
 class TestUiRect(unittest.TestCase):
     def test_a_box_on_the_screen_canvas_counts_from_the_top(self) -> None:
         """Canvas units are its pixels with y up (the tooltip canvas: 3840 x 2160 at scale 0.5 on 1920 x 1080)."""
@@ -108,3 +122,31 @@ class TestFacesCamera(unittest.TestCase):
         # t=1.717 s: past edge-on, they've swapped
         self.assertFalse(self.faces((3.290, -0.155, 1.955), (0.936, 0.0, 0.0, 0.352)))
         self.assertTrue(self.faces((-5.740, 0.371, 1.494), (-0.352, 0.0, 0.0, 0.936)))
+
+
+class TestDrawn(unittest.TestCase):
+    """Owner 2026-11-12: padlocks "only display when their UI element is there" - for every padlock and covering."""
+
+    def shown(self, switches):
+        from unittest import mock
+        with mock.patch.object(unity, "ancestors", lambda read, t: list(switches)), \
+            mock.patch.object(unity, "active", lambda read, t: switches[t]):
+            return unity.shown(None, "self")
+
+    def test_drawn_only_while_it_and_every_parent_are_on(self) -> None:
+        self.assertTrue(self.shown({"self": True, "parent": True, "root": True}))
+        self.assertFalse(self.shown({"self": True, "parent": False, "root": True}))  # a level-up orb's case
+        self.assertFalse(self.shown({"self": False, "parent": True, "root": True}))
+
+    def art(self, art, on=True, scale=1.0):
+        from unittest import mock
+        with mock.patch.multiple(unity, shown=lambda read, t: on,
+                                 world=lambda read, t: ((0, 0, 0), (0, 0, 0, 1), (scale, scale, scale))):
+            return unity.art_scale(None, art)
+
+    def test_an_event_cards_art_size_is_read_and_none_without_art(self) -> None:
+        """Recorded 2026-11-12 on the level-up screen: the art shrinks to 0 and switches off under the stash. The art
+        is reached through EncounterController.cardVisuals, never by its name (2026-11-16)."""
+        self.assertEqual(self.art("visuals", scale=0.26), 0.26)
+        self.assertEqual(self.art("visuals", on=False), 0.0)
+        self.assertIsNone(self.art(0))  # an orb: its own switch says it (unity.shown)

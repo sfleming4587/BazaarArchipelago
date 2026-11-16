@@ -108,6 +108,7 @@ def item_requirements(check: Check, legendary_items: bool, event_rarity: int) ->
 
 
 WIN_PACKS = 2  # owner 2026-11-10: "at least 2 card packs for this character to get 10 wins"
+WINS_TO_WIN = 10  # PvP wins that win a run (the game's EndRunVictoryState): the "10 wins" check
 
 
 def power_start(max_day: int, total: int) -> int:

@@ -1,7 +1,7 @@
 import unittest
 
 from ..overlay import below, overlaps, strips
-from ..data import CARDS
+from ..data import CARDS, CARDS_BY_GUID
 
 
 class TestStrips(unittest.TestCase):
@@ -87,7 +87,7 @@ def _all_widgets(widget):
 
 
 def _placeholders(guide) -> list:
-    """(width, height) of each "no picture" box the Shop Guide draws."""
+    """(width, height) of each "no picture" box the Item Guide draws."""
     out = []
     for item in guide.canvas.find_withtag("placeholder"):
         x0, y0, x1, y1 = guide.canvas.coords(item)
@@ -176,10 +176,141 @@ class TestFlamingPvPWarning(unittest.TestCase):
             root.destroy()
 
 
-class TestUnlockPopupPictures(unittest.TestCase):
-    """Owner, 2026-10-02: an UNLOCKED pop-up shows the unlocked cards' pictures."""
+class TestPopUpQueue(unittest.TestCase):
+    """Owner, 2026-11-12: one pop-up at a time, queued; 3 s alone down to 1 s with 10 waiting; a rainbow one always
+    6 s ("maybe 6 seconds", after seeing 3)."""
 
-    def test_pictures_show_once_ready_and_the_newest_popup_stays_at_the_bottom(self) -> None:
+    def test_none_is_ever_dropped(self) -> None:
+        """Owner, 2026-11-12: show ALL of them - a burst of 100 keeps all 100 (no cap)."""
+        import types
+        from ..overlay import Toast, _Screen
+        screen = types.SimpleNamespace(state={"toasts": []})
+        for i in range(100):
+            _Screen.new_toast(screen, Toast(f"t{i}"))
+        self.assertEqual(len(screen.state["toasts"]), 100)
+
+    def test_timing(self) -> None:
+        from ..overlay import toast_seconds
+        self.assertEqual(toast_seconds(1, False), 3.0)
+        self.assertAlmostEqual(toast_seconds(5, False), 3.0 - 2.0 * 4 / 9)
+        self.assertEqual(toast_seconds(10, False), 1.0)
+        self.assertEqual(toast_seconds(25, False), 1.0)
+        self.assertEqual(toast_seconds(25, True), 6.0)
+        self.assertEqual(toast_seconds(1, True), 6.0)
+
+    def test_the_queue_moves_on_and_times_each_as_it_starts(self) -> None:
+        """A pop-up's time starts once it's drawn, complete (owner 2026-11-12: "do not display until all UI
+        elements are ready"); one whose pictures never come is drawn anyway after TOAST_WAIT."""
+        import types
+        from ..overlay import TOAST_WAIT, Toast, _Screen, toast_seconds
+        screen = types.SimpleNamespace(state={"toasts": [Toast(f"t{i}") for i in range(4)]}, toast_shown=None,
+                                       toast_waiting={Toast("t0"): 100.0}, toast_sizes={}, drawn={"toasts": "x"})
+        self.assertFalse(_Screen.next_toast(screen, 100.5))  # its pictures are coming: no time runs, nothing shows
+        self.assertIsNone(screen.state["toasts"][0].expires)
+        self.assertTrue(_Screen.next_toast(screen, 100.0 + TOAST_WAIT))  # waited long enough: drawn anyway
+        self.assertIsNone(screen.drawn["toasts"])
+        screen.toast_shown = Toast("t0")  # drawn now
+        self.assertTrue(_Screen.next_toast(screen, 103.0))
+        first = screen.state["toasts"][0]
+        self.assertEqual((first.text, first.expires), ("t0", 103.0 + toast_seconds(4, False)))
+        self.assertFalse(_Screen.next_toast(screen, 103.5))  # still showing
+        screen.game_in_front = False  # you clicked away: the clock stops, nothing runs out unseen
+        _Screen.next_toast(screen, 104.0)
+        _Screen.next_toast(screen, 110.0)
+        self.assertAlmostEqual(screen.state["toasts"][0].expires, first.expires + 6.5)
+        first = screen.state["toasts"][0]
+        screen.game_in_front = True
+        _Screen.next_toast(screen, 110.0)
+        # its time is up while the next one's pictures aren't ready: still a change, so it's redrawn - the old
+        # drawing stayed on screen otherwise (owner 2026-11-12: the pack's pop-up "not going away")
+        self.assertTrue(_Screen.next_toast(screen, first.expires))
+        self.assertEqual(screen.state["toasts"][0].text, "t1")
+        self.assertIsNone(screen.state["toasts"][0].expires)
+        screen.toast_shown = Toast("t1")
+        _Screen.next_toast(screen, first.expires)  # drawn: it starts, timed by the 3 left
+        self.assertEqual(screen.state["toasts"][0].text, "t1")
+        self.assertAlmostEqual(screen.state["toasts"][0].expires, first.expires + toast_seconds(3, False))
+
+
+class TestPopUpPlace(unittest.TestCase):
+    """Owner, 2026-11-12: over your hero portrait and skills (never the chest or the gold), fixed height, wider when
+    the pictures need it, out to the game window's edges; the strip is read from the board (recorded 1080p)."""
+    STRIP = (622, 920, 1298, 920)
+    WINDOW = (0, 0, 1920, 1080)
+
+    def test_its_strip_then_wider_both_ways_then_the_window(self) -> None:
+        from ..overlay import toast_place
+        self.assertEqual(toast_place(self.STRIP, (1565, 0, 341, 950), self.WINDOW, 170, 300), (622, 835, 676, 170))
+        self.assertEqual(toast_place(self.STRIP, (1565, 0, 341, 950), self.WINDOW, 170, 1200), (360, 835, 1200, 170))
+        self.assertEqual(toast_place(self.STRIP, (1565, 0, 341, 950), self.WINDOW, 170, 5000), (0, 835, 1920, 170))
+
+    def test_on_the_menu_the_last_strip_from_a_run(self) -> None:
+        """Owner, 2026-11-12: "Keep the same EXACT positioning of the popups in run" on the main menu."""
+        import types
+        from ..overlay import _Screen
+        screen = types.SimpleNamespace(board_ui=types.SimpleNamespace(toast_strip=(0.3, 0.85, 0.7, 0.85)))
+        self.assertEqual(_Screen.toast_strip(screen), (0.3, 0.85, 0.7, 0.85))
+        screen.board_ui = None  # the menu: the game dropped the board
+        self.assertEqual(_Screen.toast_strip(screen), (0.3, 0.85, 0.7, 0.85))
+        self.assertIsNone(_Screen.toast_strip(types.SimpleNamespace(board_ui=None)))  # no run seen yet
+
+    def test_kept_across_restarts(self) -> None:
+        import os
+        import tempfile
+        import types
+        from ..overlay import _Screen, load_strip
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "bazaar_overlay.json")
+            self.assertIsNone(load_strip(path))  # nothing yet
+            screen = types.SimpleNamespace(board_ui=types.SimpleNamespace(toast_strip=(0.3, 0.85, 0.7, 0.85)),
+                                           overlay=types.SimpleNamespace(overlay_file=path))
+            _Screen.toast_strip(screen)
+            self.assertEqual(load_strip(path), (0.3, 0.85, 0.7, 0.85))  # the next session starts with it
+
+    def test_off_the_board_the_bottom_of_the_right_column(self) -> None:
+        from ..overlay import toast_place
+        self.assertEqual(toast_place(None, (1565, 0, 341, 950), self.WINDOW, 170, 900), (1565, 780, 341, 170))
+
+    def test_pictures_as_big_as_the_box_allows(self) -> None:
+        """Owner, 2026-11-12: "cards could've filled more of the overlay" - one row if that's bigger, else two."""
+        from ..overlay import toast_fit
+        self.assertEqual(toast_fit([1.0], 640, 120, 4), (1, 120))  # one picture: the full height
+        rows, tall = toast_fit([0.5, 1.0, 1.5, 1.0] * 2 + [1.0, 0.5], 640, 120, 4)  # a pack of 10
+        self.assertEqual(rows, 1)
+        self.assertGreater(tall, 60)  # bigger than the smallest
+        self.assertEqual(toast_fit([1.0] * 30, 640, 120, 4)[0], 2)  # the resting box: two rows at most
+        self.assertEqual(toast_fit([1.0] * 89, 1100, 200, 4, 6)[0], 4)  # the taller box: more rows, bigger
+        self.assertEqual(toast_fit([], 640, 120, 4), (0, 0.0))
+
+    def test_never_over_the_side_columns(self) -> None:
+        """Owner, 2026-11-12: "no overlay should be able to sit on another overlay" - wider stops at the columns."""
+        from ..overlay import toast_place
+        self.assertEqual(toast_place(self.STRIP, (1565, 0, 341, 950), self.WINDOW, 170, 5000, (367, 1561)),
+                         (367, 835, 1194, 170))
+
+    def test_a_long_header_is_measured_as_it_wraps(self) -> None:
+        """2026-11-12: a two-line header pushed the picture off the pop-up's bottom."""
+        from ..overlay import text_lines
+        measure = lambda text: 10 * len(text)  # noqa: E731
+        self.assertEqual(text_lines(measure, "short", 100), 1)
+        self.assertEqual(text_lines(measure, "aaaa bbbb cccc dddd", 100), 2)  # "aaaa bbbb" fits, "cccc" doesn't
+        self.assertEqual(text_lines(measure, "x " * 40, 100), 8)
+
+    def test_two_even_rows(self) -> None:
+        from ..overlay import toast_rows
+        rows, span = toast_rows([30] * 12, 4)
+        self.assertEqual([len(r) for r in rows], [6, 6])
+        self.assertEqual(span, 6 * 30 + 5 * 4)
+        self.assertEqual(toast_rows([60], 4), ([[0]], 60))
+        self.assertEqual(toast_rows([], 4), ([], 0))
+        rows, _span = toast_rows([30] * 12, 4, 4)
+        self.assertEqual([len(r) for r in rows], [3, 3, 3, 3])
+
+
+class TestPopUpShowsAllItsPictures(unittest.TestCase):
+    """Owner, 2026-11-12: "This way we can show ALL the card arts that were unlocked" - never "+ N more"."""
+
+    def test_every_picture_once_ready_only_the_first_pop_up(self) -> None:
         import queue
         import sys
         import tempfile
@@ -187,8 +318,9 @@ class TestUnlockPopupPictures(unittest.TestCase):
         import types
         from unittest import mock
         from .. import cardart
-        from ..overlay import MAX_TOAST_PICTURES, Toast, _Screen
-        cards = [c for c in CARDS if c.shop and c.size == "Small"][:MAX_TOAST_PICTURES + 2]
+        from ..memreader import BoardUI
+        from ..overlay import Toast, _Screen
+        cards = [c for c in CARDS if c.shop and c.size == "Small"][:12]
         with mock.patch.dict(sys.modules, {"PIL": None}), \
                 tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp, \
                 mock.patch.object(cardart, "Decoder", side_effect=OSError("no SDL2 in this test")):
@@ -198,64 +330,51 @@ class TestUnlockPopupPictures(unittest.TestCase):
                                              guide_file=None, commands=queue.Queue(), on_bypass=None)
                 screen = _Screen(fake, tkinter, root)
                 screen.relayout((0, 0, 1920, 1080))
-                guids = tuple(c.guid for c in cards)
-                screen.new_toast(Toast("UNLOCKED: a pack", 1e12, False, False, guids, False))
-                screen.new_toast(Toast("FOUND: something", 1e12, False, False, (), False))
+                screen.board_ui = BoardUI(False, False, False, False, False,
+                                          toast_strip=(622 / 1920, 920 / 1080, 1298 / 1920, 920 / 1080))
+                screen.new_toast(Toast("UNLOCKED: a pack", None, False, False, tuple(c.guid for c in cards)))
+                screen.new_toast(Toast("FOUND: something"))
                 screen.render()
                 root.update()
 
-                def pictures():
-                    return [w for w in _all_widgets(screen.toast_box)
-                            if isinstance(w, tkinter.Label) and w.cget("image")]
-                self.assertEqual(pictures(), [])  # none made yet: text only, nothing breaks
+                def canvas():
+                    return next(w for w in _all_widgets(screen.toast_content) if isinstance(w, tkinter.Canvas))
+
+                def kinds(kind):
+                    return [i for i in canvas().find_all() if canvas().type(i) == kind]
+                self.assertFalse(screen.toast_box.winfo_ismapped() and screen.toast_box.winfo_children()
+                                 and any(isinstance(w, tkinter.Canvas) for w in _all_widgets(screen.toast_box)))
+                # nothing shows while its pictures are made (owner 2026-11-12: "do not display until all UI elements
+                # are ready")
+                [(row, art)] = screen.toast_art.items()  # one size for all twelve
                 for card in cards:
-                    with open(screen.guide.art.path(card, False), "wb") as f:
-                        f.write(cardart.png((48, 96, bytes(48 * 96 * 3))))
-                self.assertTrue(screen.new_art(cards[0].guid))  # the waiting pop-up is redrawn
+                    with open(art.path(card, False), "wb") as f:
+                        f.write(cardart.png((row // 2, row, bytes(row // 2 * row * 3))))
+                self.assertTrue(screen.new_art(cards[0].guid))  # the showing pop-up is redrawn
                 self.assertFalse(screen.new_art("not-in-a-pop-up"))
                 screen.render()
                 root.update()
-                self.assertEqual(len(pictures()), MAX_TOAST_PICTURES)
-                labels = [w.cget("text") for w in _all_widgets(screen.toast_box) if isinstance(w, tkinter.Label)]
-                self.assertIn("+ 2 more", labels)
-                rows = sorted((w.winfo_y(), w.winfo_children()[0].cget("text"))
-                              for w in screen.toast_box.winfo_children()[0].winfo_children())
-                self.assertEqual([text for _, text in rows], ["UNLOCKED: a pack", "FOUND: something"])
-                screen.guide.shutdown()
+                self.assertEqual(len(kinds("image")), 12)  # all twelve, in one row as big as fits
+                self.assertEqual(len({canvas().coords(i)[1] for i in kinds("image")}), 1)
+                self.assertGreater(row, 60)  # bigger than the smallest
+                x, y = screen.toast_box.winfo_x(), screen.toast_box.winfo_y()
+                self.assertTrue(622 <= x and y + screen.toast_box.winfo_height() <= 1080)  # on its strip
+                # ten Medium cards would be 60 px in the resting box: it reaches down to the window's bottom instead,
+                # same top, and they're bigger (owner 2026-11-12: "cards could've filled more of the overlay")
+                medium = tuple(c.guid for c in CARDS if c.shop and c.size == "Medium")[:10]
+                resting_top = screen.toast_box.winfo_y()
+                plan = screen.toast_frame(Toast("UNLOCKED: ten", None, False, False, medium))
+                self.assertEqual(plan["top"], resting_top)
+                self.assertEqual(plan["top"] + plan["height"], 1080)
+                self.assertGreater(plan["size"], 60)
+                # a long header makes it taller downward only: never onto the health bar (owner 2026-11-12)
+                long = screen.toast_frame(Toast("A header long enough to wrap onto more lines than one " * 4))
+                self.assertEqual(long["top"], screen.toast_frame(Toast("short"))["top"])
+                self.assertGreater(long["height"], screen.toast_frame(Toast("short"))["height"])
+                for art in screen.toast_art.values():
+                    art.shutdown()
             finally:
                 root.destroy()
-
-
-class TestPopUpsFillTheRoom(unittest.TestCase):
-    """Owner, 2026-10-02: show as many pop-ups as fit, never past the top; whole ones go, oldest first."""
-
-    def test_too_many_keep_the_newest_whole_and_stay_under_the_notices(self) -> None:
-        import queue
-        import tkinter
-        import types
-        from ..overlay import Toast, _Screen
-        root = tkinter.Tk()
-        try:
-            fake = types.SimpleNamespace(only_over_game=False, game_window=(0, 0, 1280, 720), art_cache_dir=None,
-                                         guide_file=None, commands=queue.Queue(), on_bypass=None)
-            screen = _Screen(fake, tkinter, root)
-            screen.relayout((0, 0, 1280, 720))
-            screen.state["deathlink"] = "Friend fell."
-            for i in range(8):
-                screen.new_toast(Toast(f"RECEIVED: a rather long item name number {i} " + "and more words " * 12,
-                                  1e12, False, False, (), False))
-            screen.render()
-            root.update()
-            rows = screen.toast_box.winfo_children()[0].winfo_children()
-            texts = [r.winfo_children()[0].cget("text") for r in rows]
-            self.assertIn("number 7", texts[0])  # the newest is kept
-            self.assertLess(len(rows), 8)  # some didn't fit and went whole
-            x, y, w, h = screen.layout["right"]
-            top = screen.toast_box.winfo_y()
-            self.assertGreaterEqual(top, y + screen.drawn["notices_height"])  # under the notices, never over them
-            self.assertEqual(screen.toast_box.winfo_height(), screen.toast_box.winfo_reqheight())  # nothing cut off
-        finally:
-            root.destroy()
 
 
 class TestPadlocksOnReveal(unittest.TestCase):
@@ -361,30 +480,121 @@ class TestPadlockCommands(unittest.TestCase):
         self.assertIsNone(overlay.commands.get_nowait()[1][0])
 
 
+def _plain_merchant() -> int:
+    from ..merchants import deals_any_hero
+    from ..shop_guide import MERCHANTS
+    return min(m for m, stocks in MERCHANTS.items() if not any(deals_any_hero(s) for s in stocks))
+
+
+def _merchant(guid: str) -> int:
+    from ..data import ENCOUNTER_OF
+    return ENCOUNTER_OF[guid].ap_id
+
+
+# merchants by their game guid (the live, non-tutorial template), as Item Guide keys
+ANTIQUARIAN = _merchant("e840f7a3-0a04-455d-852c-286dc5011efc")  # The Antiquarian
+MITTEL = _merchant("912c8b09-3b76-4aa1-8e21-245e0dfb5046")
+CHRONOS = _merchant("b1288f12-2cf9-4473-a43e-4dd521703990")
+PRINTER_3D = "723880db-8a97-4833-a9a1-80c75cde4c17"  # 3D Printer, Dooley's
+
+
+PLAIN_MERCHANT = _plain_merchant()
+
+
 class TestShopGuideLists(unittest.TestCase):
     """Owner, 2026-10-01: the guide opens any time, with Search, Size, Rarity and Merchant filters."""
 
     def test_filters_narrow_by_name_size_and_rarity(self) -> None:
-        from ..shop_guide import ANY, SHOP_CARDS, guide_cards
+        from ..shop_guide import SHOP_CARDS, guide_cards
         card = next(c for c in SHOP_CARDS if c.hero == "Vanessa")
-        found = guide_cards(SHOP_CARDS, "Vanessa", ANY, card.name[1:5].upper(), card.size, card.tier)
+        found = guide_cards(SHOP_CARDS, "Vanessa", None, card.name[1:5].upper(), card.size, card.tier)
         self.assertIn(card, found)
         self.assertTrue(all(c.size == card.size and c.tier == card.tier for c in found))
         self.assertTrue(all(card.name[1:5].lower() in c.name.lower() for c in found))
 
     def test_any_merchant_means_your_hero_and_common_cards(self) -> None:
         from ..shop_guide import ANY, SHOP_CARDS, guide_cards
-        self.assertEqual({c.hero for c in guide_cards(SHOP_CARDS, "Vanessa", ANY, "", ANY, ANY)},
+        self.assertEqual({c.hero for c in guide_cards(SHOP_CARDS, "Vanessa", None, "", ANY, ANY)},
                          {"Vanessa", "Common"})
-        self.assertEqual(len(guide_cards(SHOP_CARDS, None, ANY, "", ANY, ANY)), len(SHOP_CARDS))
+        self.assertEqual(len(guide_cards(SHOP_CARDS, None, None, "", ANY, ANY)), len(SHOP_CARDS))
 
     def test_a_merchant_lists_what_it_could_stock(self) -> None:
         from ..merchants import possible_stock
         from ..shop_guide import ANY, MERCHANTS, SHOP_CARDS, guide_cards
-        name, entries = next((n, e) for n, e in MERCHANTS.items() if len(e) == 1)
-        expected = {c.guid for c in possible_stock(entries[0]["stock"], "Vanessa", SHOP_CARDS)}
-        self.assertEqual({c.guid for c in guide_cards(SHOP_CARDS, "Vanessa", name, "", ANY, ANY)}, expected)
-        self.assertFalse(any(n.startswith("[DEBUG]") for n in MERCHANTS))
+        key, stocks = next((m, s) for m, s in MERCHANTS.items() if len(s) == 1)
+        expected = {c.guid for c in possible_stock(stocks[0], "Vanessa", SHOP_CARDS)}
+        # Hero on Any: everything it could deal you while playing Vanessa (other heroes' cards included, if it can)
+        self.assertEqual({c.guid for c in guide_cards(SHOP_CARDS, ANY, key, "", ANY, ANY, playing="Vanessa")},
+                         expected)
+        # Hero on Vanessa: only Vanessa's and Common cards of it
+        self.assertEqual({c.guid for c in guide_cards(SHOP_CARDS, "Vanessa", key, "", ANY, ANY)},
+                         {g for g in expected if CARDS_BY_GUID[g].hero in ("Vanessa", "Common")})
+        # the debug merchants (the game never deals them: spawn mode Never) are in no lock, so never listed
+        from ..data import ENCOUNTERS, EVENTS, MERCHANT_DATA
+        never = {g for g in MERCHANT_DATA if EVENTS[g]["spawns"] == "Never"}
+        self.assertTrue(never)
+        self.assertFalse(never & {g for e in ENCOUNTERS if e.ap_id in MERCHANTS for g in e.guids})
+
+
+class TestShopGuideHeroFilter(unittest.TestCase):
+    """Owner, 2026-11-13: "I want a hero filter available either way and on merchants with 'Ignore hero' it simply
+    just defaults the option to 'Any' hero instead of the usual default of the current hero"."""
+
+    def test_default_is_your_hero_but_any_on_a_merchant_that_deals_any_hero(self) -> None:
+        from ..shop_guide import ANY, default_hero
+        self.assertEqual(default_hero(ANTIQUARIAN, "Jules"), ANY)  # deals every hero's cards
+        # Mittel and Chronos deal other heroes' cards only to a player with a certain skill: never counted (owner,
+        # 2026-11-13: "Just pretend the skills dont exist")
+        self.assertEqual(default_hero(MITTEL, "Jules"), "Jules")
+        self.assertEqual(default_hero(CHRONOS, "Jules"), "Jules")
+        self.assertEqual(default_hero(PLAIN_MERCHANT, "Jules"), "Jules")
+        self.assertEqual(default_hero(None, "Jules"), "Jules")
+        self.assertEqual(default_hero(PLAIN_MERCHANT, None), ANY)  # no hero known (menu, not connected)
+
+    def test_chronos_never_lists_another_heroes_cards(self) -> None:
+        """Owner, 2026-11-13: the guide showed 3D Printer and Alpha Ray (Dooley's) at Chronos while playing Jules -
+        they came from groups that need a skill. Playing Dooley they're right (Chronos deals Turbo-able items)."""
+        from ..shop_guide import ANY, SHOP_CARDS, guide_cards
+        jules = {c.guid: c.hero for c in guide_cards(SHOP_CARDS, ANY, CHRONOS, "", ANY, ANY, playing="Jules")}
+        self.assertNotIn(PRINTER_3D, jules)
+        self.assertLessEqual(set(jules.values()), {"Jules", "Common"})
+        dooley = {c.guid for c in guide_cards(SHOP_CARDS, ANY, CHRONOS, "", ANY, ANY, playing="Dooley")}
+        self.assertIn(PRINTER_3D, dooley)
+
+    def test_any_hero_merchant_with_any_hero_lists_other_heroes_and_with_your_hero_only_yours(self) -> None:
+        from ..shop_guide import ANY, SHOP_CARDS, guide_cards
+        anyone = {c.hero for c in guide_cards(SHOP_CARDS, ANY, ANTIQUARIAN, "", ANY, ANY, playing="Jules")}
+        self.assertTrue(anyone - {"Jules", "Common"}, anyone)
+        mine = {c.hero for c in guide_cards(SHOP_CARDS, "Jules", ANTIQUARIAN, "", ANY, ANY, playing="Jules")}
+        self.assertTrue(mine)
+        self.assertLessEqual(mine, {"Jules", "Common"})
+
+    def test_walking_into_a_merchant_sets_the_hero_filter_and_a_pick_stays(self) -> None:
+        import tempfile
+        import tkinter
+
+        from ..shop_guide import ANY, ShopGuide
+        root = tkinter.Tk()
+        try:
+            guide = ShopGuide.create(tkinter, root, tempfile.mkdtemp(), None, (0, 0, 300, 600),
+                                     on_art=lambda guid: None, on_closed=lambda: None)
+            hero = guide.filters["hero"]
+            self.assertEqual(hero.get(), ANY)  # nothing known yet
+            guide.set_context("Jules", [])
+            self.assertEqual(hero.get(), "Jules")  # your hero by default
+            guide.show_offer(("Shop", [], ANTIQUARIAN))
+            self.assertEqual(hero.get(), ANY)
+            guide.show_offer(("Shop 2", [], PLAIN_MERCHANT))
+            self.assertEqual(hero.get(), "Jules")
+            hero.set("Vanessa")  # your own pick stays while you're at that merchant
+            guide.show_offer(("Shop 2", [], PLAIN_MERCHANT))
+            guide.set_context("Jules", ["x"])  # same hero, new locks: no reset
+            self.assertEqual(hero.get(), "Vanessa")
+            guide.set_context("Karnok", [])  # a new hero: back to the default
+            self.assertEqual(hero.get(), "Karnok")
+            guide.shutdown()
+        finally:
+            root.destroy()
 
 
 class TestShopGuideKeepsOfferedCards(unittest.TestCase):
@@ -399,6 +609,10 @@ class TestShopGuideKeepsOfferedCards(unittest.TestCase):
             guide = ShopGuide.create(tkinter, root, tempfile.mkdtemp(), None, (0, 0, 300, 600),
                                      on_art=lambda guid: None, on_closed=lambda: None)
             guide.show_offer(("An event", [last.guid], None))
+            root.update()
+            texts = _guide_texts(guide)
+            self.assertIn(last.name, texts)  # on screen: in the lists, whatever the cap
+            self.assertFalse(any(text.startswith("On offer now") for text in texts))  # no section of its own (2026-11-13)
             guide.show_offer(("An event", [], None))  # bought: gone from the offer
             root.update()
             self.assertIn(last.name, _guide_texts(guide))
@@ -473,7 +687,7 @@ class TestHoverLetsClicksThrough(unittest.TestCase):
 
 
 class TestDropdownsStayOpen(unittest.TestCase):
-    """Owner's video, 2026-11-11: the Shop Guide's Merchant/Size/Rarity lists closed at once - the overlay re-claimed
+    """Owner's video, 2026-11-11: the Item Guide's Merchant/Size/Rarity lists closed at once - the overlay re-claimed
     "always on top" every POLL_MS and lifted the guide over its own open list. Not while you use our windows."""
 
     def test_no_top_claiming_while_one_of_ours_is_in_front(self) -> None:
@@ -501,3 +715,159 @@ class TestDropdownsStayOpen(unittest.TestCase):
                 self.assertTrue(attributes.called)
         finally:
             root.destroy()
+
+
+class TestPopUpShowsOnlyWhenPainted(unittest.TestCase):
+    """Owner, 2026-11-13: the next pop-up's first frame or two showed the previous unlock - "only show the popup if
+    it is ready and everything is rendered for display". A pop-up (or any panel) coming on screen stays fully
+    see-through for REVEAL_SECONDS, whether its window was hidden in between or not."""
+
+    def test_new_pop_up_is_see_through_until_painted(self) -> None:
+        import queue
+        import tempfile
+        import tkinter
+        import types
+        from ..overlay import Toast, _Screen
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+            root = tkinter.Tk()
+            try:
+                fake = types.SimpleNamespace(only_over_game=False, game_window=(0, 0, 1920, 1080), art_cache_dir=tmp,
+                                             guide_file=None, commands=queue.Queue(), on_bypass=None)
+                screen = _Screen(fake, tkinter, root)
+                screen.relayout((0, 0, 1920, 1080))
+                windows = (screen.toast_box, screen.toast_content)
+                alpha = lambda w: float(w.attributes("-alpha"))  # noqa: E731
+                for text in ("FOUND: first", "FOUND: second"):  # the second replaces the first while it shows
+                    screen.state["toasts"] = [Toast(text)]
+                    screen.drawn["toasts"] = None
+                    screen.render()
+                    root.update_idletasks()  # no timers: the fade rounds are run by hand below
+                    self.assertTrue(all(w.state() == "normal" for w in windows))
+                    self.assertEqual([alpha(w) for w in windows], [0.0, 0.0])  # on screen, not seen yet
+                    screen.fade_padlocks()  # a fade tick before it's painted keeps it see-through
+                    self.assertEqual([alpha(w) for w in windows], [0.0, 0.0])
+                    for window in windows:
+                        screen.revealing[window] = [0.0, 1]  # its time is up, one fade round to go
+                    screen.fade_padlocks()
+                    self.assertTrue(all(alpha(w) > 0.5 for w in windows))  # now it shows
+                    self.assertFalse(set(windows) & set(screen.revealing))
+            finally:
+                root.destroy()
+
+
+class TestUseBypassNeverUnderTheGear(unittest.TestCase):
+    """Owner, 2026-11-13: "Use lock bypass can be over the 'gear icon' on the top right for settings AKA impossible to
+    click since it goes see through when you hover it" - the notices start below the gear."""
+
+    def test_notices_and_their_buttons_clear_the_gear(self) -> None:
+        import queue
+        import tkinter
+        import types
+        from ..overlay import BUTTON_PAD, SETTINGS_GEAR, _Screen
+        for window in ((0, 0, 1920, 1080), (0, 0, 1280, 720), (100, 50, 2560, 1440)):
+            root = tkinter.Tk()
+            try:
+                fake = types.SimpleNamespace(only_over_game=False, game_window=window, art_cache_dir=None,
+                                             guide_file=None, commands=queue.Queue(), on_bypass=None)
+                screen = _Screen(fake, tkinter, root)
+                screen.relayout(window)
+                screen.state["locked"] = ("CHECKS ARE BLOCKED", [("Cutlass (Vanessa) - SELL OR USE BYPASS", "g1")],
+                                          True, False)
+                screen.render()
+                root.update_idletasks()
+                x, y, w, h = window
+                k = h / 1080
+                gear_bottom = y + (SETTINGS_GEAR[3] + BUTTON_PAD) * k  # the gear and the pad around it
+                geometry = screen.notice_box.geometry()  # WxH+X+Y, as placed
+                top = int(geometry.split("+")[2])
+                self.assertGreaterEqual(top, gear_bottom - 1, (window, geometry))
+                buttons = [b for b in _all_widgets(screen.notice_box) if isinstance(b, tkinter.Button)]
+                self.assertTrue(any(b.cget("text") == "Use Bypass" for b in buttons))
+            finally:
+                root.destroy()
+
+
+class TestPopUpHitBoxStartsBelowThePortraitLine(unittest.TestCase):
+    """Owner, 2026-11-13: "sometimes when the cards flip it will blip out the popup ... move the hitbox a little further
+    from the top ... probably below the health bar" - only what reaches below the portrait's centre line fades it."""
+
+    def test_a_card_row_brushing_its_top_doesnt_fade_it(self) -> None:
+        import types
+        from .. import padlocks
+        from ..memreader import BoardUI
+        from ..overlay import _Screen
+        screen = types.SimpleNamespace(layout={"window": (0, 0, 1920, 1080)}, overlay=None,
+                                       board_ui=BoardUI(False, False, False, False, False,
+                                                        toast_strip=(622 / 1920, 920 / 1080, 1298 / 1920, 920 / 1080)))
+        screen.toast_strip = lambda: _Screen.toast_strip(screen)
+        popup = (622, 840, 1298, 1000)  # its top above the portrait line (920)
+        hit = _Screen.toast_hit_box(screen, popup)
+        self.assertAlmostEqual(hit[1], 920)
+        row_bottom = [((700, 560, 950, 860), "c1")]  # a flipping card reaching the pop-up's top
+        self.assertTrue(padlocks.covered(popup, row_bottom))  # the old box blinked it out
+        self.assertFalse(padlocks.covered(hit, row_bottom))
+        tooltip = [((800, 700, 1100, 950), "c2")]  # a tooltip reaching well into it still fades it
+        self.assertTrue(padlocks.covered(hit, tooltip))
+        screen.board_ui, screen.last_toast_strip = None, None  # off the board, no strip: the whole pop-up
+        self.assertEqual(_Screen.toast_hit_box(screen, popup), popup)
+
+
+class TestDialogHidesOnlyWhatIsOverTheGame(unittest.TestCase):
+    """Owner 2026-11-16: "Only hide portions of the overlay if it is in front of the bazaar game window, if I have the
+    tracker open and it is on a seperate monitor there s no reason to hide it" - for every game dialog (the Esc menu,
+    a loading screen, the new-day screen) and every window."""
+
+    GAME = (0, 0, 1920, 1080)  # the game window: x, y, width, height
+
+    class Window:
+        def __init__(self, x, y, w=300, h=400, state="normal"):
+            self.x, self.y, self.w, self.h, self._state = x, y, w, h, state
+
+        def winfo_exists(self): return True
+        def winfo_rootx(self): return self.x
+        def winfo_rooty(self): return self.y
+        def winfo_width(self): return self.w
+        def winfo_height(self): return self.h
+        def state(self): return self._state
+        def withdraw(self): self._state = "withdrawn"
+        def deiconify(self): self._state = "normal"
+
+    def screen(self, dialog: bool):
+        import types
+        from ..memreader import BoardUI
+        from ..overlay import _Screen
+        screen = types.SimpleNamespace(layout={"window": self.GAME},
+                                       board_ui=BoardUI(False, False, False, dialog, False))
+        screen.overlay_factor = lambda: _Screen.overlay_factor(screen)
+        return lambda window: _Screen.dialog_hides(screen, window)
+
+    def test_a_window_on_the_game_hides_one_on_another_monitor_stays(self) -> None:
+        hides = self.screen(dialog=True)
+        self.assertTrue(hides(self.Window(1600, 100)))  # on the game window (a corner of it is enough)
+        self.assertTrue(hides(self.Window(1800, 100)))
+        self.assertFalse(hides(self.Window(1920, 100)))  # the next monitor, right beside it
+        self.assertFalse(hides(self.Window(-1500, 300)))  # a monitor on the left
+
+    def test_nothing_hides_without_a_dialog(self) -> None:
+        self.assertFalse(self.screen(dialog=False)(self.Window(100, 100)))
+
+    def test_the_tracker_and_its_list_withdraw_over_the_game_and_come_back_after(self) -> None:
+        from ..tracker import Tracker
+        tracker = Tracker.__new__(Tracker)
+        tracker.win, tracker.popup, tracker.dialog_hid = self.Window(100, 100), self.Window(500, 100), False
+        tracker.set_visible(True, self.screen(dialog=True))
+        self.assertEqual((tracker.win.state(), tracker.popup.state()), ("withdrawn", "withdrawn"))
+        tracker.set_visible(True, self.screen(dialog=False))
+        self.assertEqual((tracker.win.state(), tracker.popup.state()), ("normal", "normal"))
+        elsewhere = Tracker.__new__(Tracker)
+        elsewhere.win, elsewhere.popup, elsewhere.dialog_hid = self.Window(-1500, 100), None, False
+        elsewhere.set_visible(True, self.screen(dialog=True))
+        self.assertEqual(elsewhere.win.state(), "normal")  # on another monitor: stays
+
+    def test_a_tracker_you_minimised_stays_minimised(self) -> None:
+        from ..tracker import Tracker
+        tracker = Tracker.__new__(Tracker)
+        tracker.win, tracker.popup, tracker.dialog_hid = self.Window(100, 100, state="iconic"), None, False
+        tracker.set_visible(True, self.screen(dialog=True))
+        tracker.set_visible(True, self.screen(dialog=False))
+        self.assertEqual(tracker.win.state(), "iconic")  # the dialog never touched it, so it doesn't bring it back

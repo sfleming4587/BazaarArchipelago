@@ -61,23 +61,24 @@ only shows while The Bazaar is the active window, and it fades while you read a 
 - **Padlocks:** a red padlock on every locked card you're offered (in shops, level-ups, loot and events), on every
   locked merchant or event you're offered a choice of, and on
   the locked cards in your open stash.
-- **The header (top left):** your hero, day, goal progress and Lock Bypasses, with buttons for the Shop Guide
+- **The header (top left):** your hero, day, goal progress and Lock Bypasses, with buttons for the Item Guide
   and the Tracker.
   It turns red if the client isn't connected to the multiworld.
 - **Notices (top right):** **CHECKS ARE BLOCKED** and why, any locked card you're holding (with a **Use Bypass**
   button when you have one), Sell Traps (you'll know them by the flaming skull) and DeathLinks.
 - **Pop-ups (bottom right):** everything you receive, send or find, always with the other player's name - and
   pictures of the cards you just unlocked.
-- **Shop Guide (left column):** pictures of the cards on offer right now, framed in gold, then everything a
-  merchant could stock, with the locked ones crossed out. Open it any time; search it or filter it by size,
-  rarity or merchant.
+- **Item Guide (left column):** pictures of everything a merchant could stock, each in its rarity's frame like in
+  the game, the cards on screen right now always included, with the locked ones crossed out. Open it any time;
+  search it or filter it by size, rarity, hero or merchant.
 - **The hero panel (main menu):** every hero in your multiworld with their checks and how many of their cards
   you've unlocked; locked heroes have a padlock. It warns you if the hero you picked is locked, or if Random could
   roll one you can't play.
-- **Tracker:** every hero's checks at a glance, colour-coded green, yellow, red and grey, PopTracker-style. Hover
-  a square to see its checks, or click to keep the list open.
+- **Tracker:** every hero's checks at a glance, colour-coded green, yellow, red and grey, PopTracker-style, with an
+  icon on each square and each hero's checks done and cards unlocked under its card. Hover a square to see its
+  checks, or click to keep the list open.
 
-The Tracker and the Shop Guide are normal windows: drag them anywhere, even onto a second monitor.
+The Tracker and the Item Guide are normal windows: drag them anywhere, even onto a second monitor.
 
 ## Getting set up (Windows)
 
@@ -193,7 +194,7 @@ Playing through the Tempo launcher? It runs the game as administrator, so the cl
 Windows' prompt when the client asks, or start the Archipelago Launcher with "Run as administrator".
 Otherwise, give the client a minute or two after starting the game. If the client says the memory reader turned itself off,
 restart the game once. If it says so again, a game patch probably changed something, and padlocks stay off until a
-newer `bazaar.apworld` supports it. The Shop Guide still crosses out locked cards, and everything else keeps
+newer `bazaar.apworld` supports it. The Item Guide still crosses out locked cards, and everything else keeps
 working.
 
 **The client doesn't react to the game at all.**
@@ -229,7 +230,12 @@ Open an [issue](https://github.com/sfleming4587/BazaarArchipelago/issues) and at
 ## Credits
 
 Card pictures are courtesy of [Bazaar DB](https://bazaardb.gg) - thank you! The card art and hero pictures belong
-to The Bazaar. The Bazaar is made by Tempo; this project isn't affiliated with or endorsed by them. Thanks for
-playing, and good luck at the Bazaar!
+to The Bazaar. The Bazaar is made by Tempo; this project isn't affiliated with or endorsed by them.
+
+The Tracker's icons and the Sell Trap skull are from [game-icons.net](https://game-icons.net), under
+[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/): sunrise, sword clash and trophy by Lorc, snake tongue by Delapouite,
+burning skull by Skoll.
+
+Thanks for playing, and good luck at the Bazaar!
 
 *Want to help build it? See [DEVELOPERS.md](DEVELOPERS.md).*

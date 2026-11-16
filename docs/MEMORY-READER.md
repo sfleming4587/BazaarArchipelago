@@ -361,10 +361,28 @@ of guessing. Offsets found on 2026-09-30: assembly list +0xA0, class cache +0x4D
   - **The on/off switch of each card (2026-10-15 recording):** a sold card's GameObject turns off one frame before it
     leaves its slot; cards are skipped while off. Card backs during a reveal are *not* a rotation of the card (it
     faces you throughout), so the flip timers stay.
+  - **A tooltip piece counts only while its own switch is on** (2026-11-12, live test): hovering a bare board slot's
+    effect (the Tempo note, a `SocketEffect`) shows only the keyword box; the four big pieces are switched off but
+    keep their old rects, which faded the Black Lipstick's padlock with nothing over it.
+  - **Each tooltip box is reached through `CardTooltipController`'s own fields, never by its GameObject's name**
+    (2026-11-16, owner: no string matching): `memreader.TOOLTIP_BOXES` / `TOOLTIP_PARTS` - header, active and
+    passive effects, sell box, monster rewards (`monsterRewardTooltip.parent`), hero level-up box, tags row,
+    cooldown clock. Field names come from `TheBazaarRuntime.dll` (read 2026-11-16). The old list of four box
+    names missed the monster rewards box (an AP marker stayed solid under it, owner 2026-11-13).
+    ⚠️ Unverified live: that each field is the same box the old names picked - the `Tooltip read:` log line
+    prints `field=GameObject name` for every box it used. ⚠️ A GameObject field needs
+    `unity.object_transform`, not `transform_of` (that one takes a component); the old sell-box read used
+    `transform_of` and probably never counted. The PvP fight card's info box
+    (`_pvpOpponentTooltipViewComponent._parent`) is the one named exception to the `BLOCKED` word "opponent" - only
+    its place on screen (owner 2026-11-16: "the pvp box comes from hovering the pvp fight about to happen").
+    ⚠️ The keyword box still picks its `Background` child by name (`LegendTooltipComponent` has no field for it).
   - ⚠️ The on/off switch hides only some tooltip pieces (the sell box); the keyword boxes and an empty bottom box
-    stay "on" - see `memreader.TOOLTIP_PIECES` for the chosen pieces and the right-click rule for the keyword boxes.
+    stay "on" - see `memreader.TOOLTIP_BOXES` for the boxes and the right-click rule for the keyword boxes.
     A padlock just below a short tooltip can go 30% with nothing over it; never hidden. Not finished: the pieces'
     own transparency.
+  - **The keyword tray is labelled** (2026-11-13): `BoardUI.keyword_tray` is the `_legendTrayTooltipComponent` rect
+    (hover, not right-click), also in `tooltips`; the Item Guide ignores it (docs/OVERLAY.md). Confirmed live: on
+    every hover over a keyword card the only rect touching the guide was the tray, really drawn there.
   - ⚠️ A Unity update can move these offsets: then positions read nothing (no padlocks on cards), never wrong ones.
 - **K-mem9 (2026-10-02):** a game that is still loading fails other checks too, not just the assembly list:
   "MonoImage.class_cache not found" 5 s after "still loading" turned the reader off for the whole session (no
@@ -377,6 +395,13 @@ of guessing. Offsets found on 2026-09-30: assembly list +0xA0, class cache +0x4D
 card is, read from memory (K-mem11); the list beside the board names only those cards.** Owner, 2026-10-14: "I
 basically want these padlocks to appear as if they are ART on the card"; "NEVER GUESSED". (2026-10-01 to 10-14 they
 were placed by measured proportions of the window; that is gone, event options included since 2026-10-15.)
+
+**Moving cards are placed again without a full read: `Reader.positions(cards)` (2026-11-12).** Each `ui()` keeps, per
+card it placed, what it placed it by (`Reader.tracks`: the Rig and BoxCollider, or an event option's art transform)
+and the camera object; `positions` reads just those again - the camera matrix, the transform chain, the box - for the
+padlock follower (docs/OVERLAY.md "How padlocks keep up"). Whether a card is there at all stays `ui()`'s call: the
+follower only asks for cards the last `ui()` placed. ⚠️ `tracks` is swapped whole after each good read (another
+thread reads it); memory blocks are per thread.
 
 - **Who decides what** (one job each): `client.refresh_padlocks` says *which* cards (their instance ids: locked
   offers on `ITEM_SCREENS`, locked stash and board cards everywhere, PvP fights included); `memreader.ui` says
@@ -419,6 +444,32 @@ were placed by measured proportions of the window; that is gone, event options i
   padlocks show, event options included (owner 2026-10-15: "padlocks are to only be seen if the art for what it is
   supposed to be on top of is there"; until then event options followed the mouse's position, with your board's
   width for your level as if full: 4/6/8 slots at levels 1-3, 10 after, and a fixed 1 s wait).
+- **A padlock shows only while its element is drawn, and only something drawn fades it** (owner 2026-11-12:
+  "make this a universal fix for all padlocks that they only display when their UI element is there"; "make sure
+  that padlocks only hide when an actual game element is covering it"). One test, `unity.shown`: the object and
+  every parent switched on (Unity's activeInHierarchy) - for cards, event and level-up options, a monster's items,
+  and every tooltip piece. Plus: an event card's art (`unity.art_scale`: its `EncounterController.cardVisuals`, since 2026-11-16 - was
+  its child found by the name "Transform"; ⚠️ that the field is that same object is unverified live) at least
+  `memreader.ART_SHOWN` of full size, and a card's rect at least `CARD_MIN_HEIGHT` tall. A new tooltip counts from
+  its second read (its first frame still has its old place). Recorded live on the level-up screen: under the stash
+  the orb option switches itself off (its socket stays on - the old check) and the card option's art shrinks to 0;
+  both come back popped in ~0.1 s after the stash shuts. Hovering a bare Tempo slot (a `SocketEffect`) switches the
+  big tooltip's pieces off but leaves their old rects. ⚠️ Not yet watched: a level-up/event screen's first pop-in,
+  fights' attack animations - the trace below shows them.
+- **A torn read never hides padlocks on its own** (2026-11-12, after the owner's 2-person test on another PC:
+  padlocks "go away for a bit", "didn't load instantly"). One card or tooltip that fails to read is skipped, not the
+  whole read; a board read that fails outright keeps the last good one `memreader.UI_HOLD_SECONDS` (0.1 s); a shop
+  read that comes back "no screen" keeps the padlocks `client.NO_SCREEN_HOLD` (0.7 s). What's on offer is read at
+  once when the game starts dealing or flipping, or while a card on offer isn't registered yet (`client.offers_due`),
+  not up to 0.3 s later; and padlocks that arrive after their flip is already over show at once (they waited a full
+  `FLIP_SECONDS` with the cards face-up - reproduced by calling `show_due_padlocks`). ⚠️ The causes were found by
+  reading the code; none was seen on that PC.
+- **The client's log file traces every padlock** (2026-11-12): `Padlocks: {card: why}` whenever one's reason changes
+  (`padlocks.look`: card not placed, dialog, under our window, right-click view, flipping, covered, solid; or no
+  board read), with the board's flags; and `Tooltip read:` with what a tooltip read found (its canvas, each box
+  used as `field=GameObject name`). Ask for that log first when a padlock misbehaves. ⚠️ OPEN 2026-11-12: on the owner's
+  other PC tooltips did not fade padlocks (dragged and enlarged cards did); not reproduced - the trace shows whether
+  the tooltip's pieces were read (a patch renaming a field reads 0 boxes for it).
 - Each padlock is its own small window: see-through around the lock, click-through (`WS_EX_TRANSPARENT`), never
   focused, shown only while the game is in front.
 - If a check fails the reader turns itself off until the game restarts, says so once, and shops fall back to the
@@ -435,8 +486,10 @@ Not built yet: locked heroes on the character select screen (owner wants it; nee
 Read as fractions of the window it was (0.928, 0.030, 0.973, 0.109); a capture of the game window put that box
 exactly on the gear. Used for the overlay windows that get out of its way (docs/OVERLAY.md).
 
-- Nothing static points to the dialog: `find_gear` searches for it by its vtable like the input manager (~16 s,
-  worker thread, on the board only, at most every `GEAR_SEARCH_SECONDS`). Seven FightMenuDialogs existed; only the
+- Nothing static points to the dialog: `find_gear` searches for it by its vtable like the input manager (~16 s;
+  11.2 s measured 2026-11-12; on the board only, at most every `GEAR_SEARCH_SECONDS`). **It runs beside the board
+  reads, never instead of them** (2026-11-12, live test): awaited in the read loop, it froze every padlock for its
+  whole length at each run start. Same for the menu's input-manager search. `Memory.blocks` is per thread for this. Seven FightMenuDialogs existed; only the
   live one's button is switched on. Kept while its class still matches and the button is on; then searched again.
 - ⚠️ The hierarchy's root ("Dialogs") reads a canvas size of ~1e-44, not 0: the canvas is the outermost ancestor
   with a size of at least 1 ("Buttons").
@@ -459,7 +512,7 @@ status line.
    list in the left strip: "Herma: Cellar is locked (2nd card)". That replaces today's "could sell any of N cards"
    list with the real cards. Overlay rules still apply: only beside the board, never over the shop cards, text
    at least 10 px. Naming the position ("2nd card") needs the selection order to match the screen (test below).
-   The Shop Guide could highlight the same cards.
+   The Item Guide could highlight the same cards.
 4. **PvP results** from `Victories`/`Losses`: no more "did you win?" prompt or exit-task guess.
 5. **DeathLink** the moment `Losses` goes up with `Prestige <= 0` (owner's ruling) - BUILT 2026-10-06.
 6. **Monster checks** from the choice card's tier plus the health result, so a won fight is never missed and a

@@ -173,9 +173,10 @@ class TestLogParser(unittest.TestCase):
         self.assertEqual(run_events(lines)[0], RunStarted("The Dragons"))
 
     def test_hero_alias(self) -> None:
-        lines = ["[x] [RunConfigurationCache] RunConfigurationCache: Changing EHero to Pyg",
+        """The log prints the game's hero code (owner's logs, 2026-11-16: Hero8 17x, Pygmalien, ...; never "Pyg")."""
+        lines = ["[x] [RunConfigurationCache] RunConfigurationCache: Changing EHero to Hero8",
                  "[x] [StartRunAppState] Run initialization finalized."]
-        self.assertEqual(run_events(lines)[0], RunStarted("Pygmalien"))
+        self.assertEqual(run_events(lines)[0], RunStarted("The Dragons"))
 
 
 class TestLogTailer(unittest.TestCase):

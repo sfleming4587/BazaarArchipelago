@@ -44,7 +44,7 @@ class TestCustomPackData(unittest.TestCase):
     def test_ids_unique_and_apart_from_legacy(self) -> None:
         ids = [p.ap_id for p in PACKS]
         self.assertEqual(len(ids), len(set(ids)))
-        # the extractor numbers legacy packs up from 100; custom packs start at 150 so the two never meet
+        # legacy packs are numbered up from 100; custom packs start at 150 so the two never meet
         self.assertTrue(all(150 <= p.ap_id < 200 for p in CUSTOM))
         self.assertTrue(all(p.ap_id < 150 for p in LEGACY))
 

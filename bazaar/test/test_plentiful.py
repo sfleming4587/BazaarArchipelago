@@ -120,9 +120,12 @@ class TestSpareCopyPopUps(ClientTestBase):
         self.ctx.overlay = mock.Mock()
         self.ctx.slot = 1
         self.ctx.slot_data["lock_items"] = [cutlass]
-        self.ctx.items_received = [NetworkItem(item_name_to_id["Spare Change"], 1, 1, 0)] +             [NetworkItem(cutlass, 1, 1, 0)] * 2
+        self.ctx.items_received = [NetworkItem(item_name_to_id["Spare Change"], 1, 1, 0)] + \
+            [NetworkItem(cutlass, 1, 1, 0)] * 2
         self.ctx.on_package("ReceivedItems", {"index": 2, "items": [NetworkItem(cutlass, 1, 1, 0)]})
         call = self.ctx.overlay.toast.call_args
         self.assertEqual(call.args[0], "FOUND: Cutlass (spare copy)")
-        self.assertEqual(call.kwargs["cards"], [CARDS_BY_NAME["Cutlass"].guid])
+        from ..data import CARDS_BY_GUID
+        cutlass_card = CARDS_BY_GUID["1b955b8d-0ea6-4437-935c-d588be5898c1"]  # Cutlass, by guid
+        self.assertEqual(call.kwargs["cards"], (f"{cutlass_card.guid}@{cutlass_card.tier}",))  # framed, 2026-11-13
 
